@@ -1,0 +1,17 @@
+{
+    "name": "Safira Cash",
+    "short_name": "Safira",
+    "description": "App Safira Cash - Gerencie sua carteira digital com facilidade.",
+    "start_url": "/?source=pwa",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#000000",
+    "theme_color": "#0F172A",
+    "orientation": "portrait-primary",
+    "categories": ["finance", "business"],
+    "lang": "pt-BR",
+    "dir": "ltr",
+    "related_applications": [],
+    "prefer_related_applications": false
+  }
+  
