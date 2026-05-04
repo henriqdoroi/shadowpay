@@ -210,7 +210,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       await axios.post(
-        "https://shadowpay-delta.vercel.app/api/webhooks/notifications/subscribe",
+        "https://shadowpay-production-2ca8.up.railway.app/api/webhooks/notifications/subscribe",
         { subscription },
         {
           headers: { Authorization: `Bearer ${authToken}` },
@@ -230,7 +230,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     try {
       const response = await axios.get(
-        "https://shadowpay-delta.vercel.app/api/user/profile",
+        "https://shadowpay-production-2ca8.up.railway.app/api/user/profile",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -308,7 +308,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     try {
       const response = await axios.post<LoginResponse>(
-        "https://shadowpay-delta.vercel.app/api/auth/login",
+        "https://shadowpay-production-2ca8.up.railway.app/api/auth/login",
         { email, password },
         {
           headers: {
@@ -370,7 +370,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     try {
       const response = await axios.post(
-        "https://shadowpay-delta.vercel.app/api/auth/register",
+        "https://shadowpay-production-2ca8.up.railway.app/api/auth/register",
         data,
         {
           headers: {
