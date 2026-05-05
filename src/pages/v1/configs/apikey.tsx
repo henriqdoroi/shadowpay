@@ -80,7 +80,7 @@ function ApiKeyContent() {
     setIsLoading(true);
     try {
       const response = await axios.get<CredentialsResponse>(
-        "https://api.safira.cash/api/credentials",
+        "https://shadowpay-production-2ca8.up.railway.app/api/credentials",
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (response.data.success) {
@@ -115,7 +115,7 @@ function ApiKeyContent() {
     if (!token || !credentials[0]) return;
     try {
       await axios.put(
-        `https://api.safira.cash/api/credentials/${credentials[0].id}/ip`,
+        `https://shadowpay-production-2ca8.up.railway.app/api/credentials/${credentials[0].id}/ip`,
         { seller_ip: sellerIp },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -131,7 +131,7 @@ function ApiKeyContent() {
     setIsGenerating(true);
     try {
       const response = await axios.post<CreateCredentialResponse>(
-        "https://api.safira.cash/api/credentials",
+        "https://shadowpay-production-2ca8.up.railway.app/api/credentials",
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -158,7 +158,7 @@ function ApiKeyContent() {
     setRenewingId(id);
     try {
       const response = await axios.put<RenewCredentialResponse>(
-        `https://api.safira.cash/api/credentials/${id}/renew`,
+        `https://shadowpay-production-2ca8.up.railway.app/api/credentials/${id}/renew`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -90,7 +90,7 @@ function WebhookContent() {
     setIsLoading(true);
     try {
       const response = await axios.get<WebhooksResponse>(
-        "https://api.safira.cash/api/webhooks",
+        "https://shadowpay-production-2ca8.up.railway.app/api/webhooks",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -128,7 +128,7 @@ function WebhookContent() {
       }
 
       const response = await axios.post(
-        "https://api.safira.cash/api/webhooks",
+        "https://shadowpay-production-2ca8.up.railway.app/api/webhooks",
         requestData,
         {
           headers: {
@@ -161,7 +161,7 @@ function WebhookContent() {
 
     try {
       const response = await axios.delete(
-        `https://api.safira.cash/api/webhooks/${id}`,
+        `https://shadowpay-production-2ca8.up.railway.app/api/webhooks/${id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

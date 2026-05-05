@@ -128,7 +128,7 @@ function RecivementsContent() {
     setIsLoadingFees(true);
     try {
       const { data } = await axios.get<FeesResponse>(
-        "https://api.safira.cash/api/user/fees",
+        "https://shadowpay-production-2ca8.up.railway.app/api/user/fees",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -201,7 +201,7 @@ function RecivementsContent() {
       if (endDateParam) params.append("endDate", endDateParam);
 
       const response = await axios.get(
-        `https://api.safira.cash/api/user/deposits-report?${params.toString()}`,
+        `https://shadowpay-production-2ca8.up.railway.app/api/user/deposits-report?${params.toString()}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -230,7 +230,7 @@ function RecivementsContent() {
         endDate: end,
       });
       const response = await axios.get(
-        `https://api.safira.cash/api/user/deposits-report?${params.toString()}`,
+        `https://shadowpay-production-2ca8.up.railway.app/api/user/deposits-report?${params.toString()}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -329,7 +329,7 @@ function RecivementsContent() {
     setIsProcessingDeposit(true);
     try {
       const response = await axios.post(
-        "https://api.safira.cash/api/payments/internal/deposit",
+        "https://shadowpay-production-2ca8.up.railway.app/api/payments/internal/deposit",
         {
           amount: valorBruto,
           paymentMethod: "pix",

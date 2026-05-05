@@ -419,8 +419,8 @@ export default function CreateProduct() {
 
       // ---------- Requisição ----------
       const url = id
-        ? `https://api.safira.cash/api/products/${id}`
-        : "https://api.safira.cash/api/products";
+        ? `https://shadowpay-production-2ca8.up.railway.app/api/products/${id}`
+        : "https://shadowpay-production-2ca8.up.railway.app/api/products";
       const method = id ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -1972,7 +1972,7 @@ export default function CreateProduct() {
                                               "http"
                                             )
                                           ? formData.productImage
-                                          : `https://api.safira.cash/uploads/products/${formData.productImage}`
+                                          : `https://shadowpay-production-2ca8.up.railway.app/uploads/products/${formData.productImage}`
                                       }
                                       alt="Produto"
                                       className="object-cover w-full h-full"
@@ -2624,7 +2624,7 @@ export default function CreateProduct() {
                                                 "http"
                                               )
                                             ? formData.productImage
-                                            : `https://api.safira.cash/uploads/products/${formData.productImage}`
+                                            : `https://shadowpay-production-2ca8.up.railway.app/uploads/products/${formData.productImage}`
                                         }
                                         alt="Produto"
                                         className="object-cover w-full h-full"

@@ -65,7 +65,7 @@ export default function Profile() {
         if (!token) throw new Error("Token não encontrado");
 
         const response = await fetch(
-          "https://api.safira.cash/api/user/profile",
+          "https://shadowpay-production-2ca8.up.railway.app/api/user/profile",
           {
             method: "GET",
             headers: {
@@ -120,7 +120,7 @@ export default function Profile() {
 
       // Chama a API para alterar a senha
       const response = await fetch(
-        "https://api.safira.cash/api/auth/password",
+        "https://shadowpay-production-2ca8.up.railway.app/api/auth/password",
         {
           method: "PUT",
           headers: {

@@ -348,7 +348,7 @@ export default function EditProduct() {
         const token = localStorage.getItem("token");
         if (!token) return console.error("Token não encontrado");
 
-        const res = await fetch(`https://api.safira.cash/api/products/${id}`, {
+        const res = await fetch(`https://shadowpay-production-2ca8.up.railway.app/api/products/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -372,7 +372,7 @@ export default function EditProduct() {
               : "";
           if (!filename) return null;
           const sanitized = filename.replace(/^\/+/, "");
-          return `https://api.safira.cash/${
+          return `https://shadowpay-production-2ca8.up.railway.app/${
             sanitized.startsWith("uploads/")
               ? sanitized
               : `uploads/products/${sanitized}`
@@ -704,7 +704,7 @@ export default function EditProduct() {
       formDataToSend.append("checkoutConfig", JSON.stringify(checkoutConfig));
 
       // ---------- Requisição ----------
-      const url = `https://api.safira.cash/api/products/${id}`;
+      const url = `https://shadowpay-production-2ca8.up.railway.app/api/products/${id}`;
       const response = await fetch(url, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
@@ -2326,7 +2326,7 @@ export default function EditProduct() {
                                               "http"
                                             )
                                           ? formData.productImage
-                                          : `https://api.safira.cash/uploads/products/${formData.productImage}`
+                                          : `https://shadowpay-production-2ca8.up.railway.app/uploads/products/${formData.productImage}`
                                       }
                                       alt="Produto"
                                       className="object-cover w-full h-full"
@@ -2876,7 +2876,7 @@ export default function EditProduct() {
                                                 "http"
                                               )
                                             ? formData.productImage
-                                            : `https://api.safira.cash/uploads/products/${formData.productImage}`
+                                            : `https://shadowpay-production-2ca8.up.railway.app/uploads/products/${formData.productImage}`
                                         }
                                         alt="Produto"
                                         className="object-cover w-full h-full"

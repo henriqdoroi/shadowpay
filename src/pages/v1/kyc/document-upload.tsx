@@ -62,7 +62,7 @@ function DocumentUploadContent() {
 
         try {
             const response = await axios.post(
-                'https://api.safira.cash/api/user/kyc/start',
+                'https://shadowpay-production-2ca8.up.railway.app/api/user/kyc/start',
                 {},
                 {
                     headers: {
@@ -146,7 +146,7 @@ function DocumentUploadContent() {
             formData.append('companyDocumentImage', cnpjDocument);
 
             const response = await axios.post(
-                'https://api.safira.cash/api/user/kyc/documents',
+                'https://shadowpay-production-2ca8.up.railway.app/api/user/kyc/documents',
                 formData,
                 {
                     headers: {

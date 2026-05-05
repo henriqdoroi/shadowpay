@@ -88,7 +88,7 @@ function DashboardContent() {
       (async () => {
         try {
           const res = await axios.get(
-            "https://api.safira.cash/api/user/profile",
+            "https://shadowpay-production-2ca8.up.railway.app/api/user/profile",
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -205,7 +205,7 @@ function DashboardContent() {
         setIsLoadingStats(true);
         try {
           const res = await axios.get(
-            "https://api.safira.cash/api/user/dashboard-stats",
+            "https://shadowpay-production-2ca8.up.railway.app/api/user/dashboard-stats",
             { headers: { Authorization: `Bearer ${token}` } }
           );
           if (res.data.success) {
@@ -234,7 +234,7 @@ function DashboardContent() {
         limit: "20",
       });
       const res = await axios.get(
-        `https://api.safira.cash/api/user/transactions-report?${params.toString()}`,
+        `https://shadowpay-production-2ca8.up.railway.app/api/user/transactions-report?${params.toString()}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

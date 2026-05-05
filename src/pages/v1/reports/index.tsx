@@ -106,7 +106,7 @@ function ReportsContent() {
       if (endDate) params.append("endDate", endDate);
 
       const response = await axios.get(
-        `https://api.safira.cash/api/user/transactions-report?${params.toString()}`,
+        `https://shadowpay-production-2ca8.up.railway.app/api/user/transactions-report?${params.toString()}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -171,7 +171,7 @@ function ReportsContent() {
     setIsLoadingStats(true);
     try {
       const response = await axios.get(
-        "https://api.safira.cash/api/user/dashboard-stats",
+        "https://shadowpay-production-2ca8.up.railway.app/api/user/dashboard-stats",
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

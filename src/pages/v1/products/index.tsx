@@ -112,7 +112,7 @@ export default function Products() {
                   if (!token) throw new Error("Token não encontrado");
 
                   const res = await fetch(
-                    `https://api.safira.cash/api/products/${productId}`,
+                    `https://shadowpay-production-2ca8.up.railway.app/api/products/${productId}`,
                     {
                       method: "DELETE",
                       headers: {
@@ -155,7 +155,7 @@ export default function Products() {
         const headers = { Authorization: `Bearer ${token}` };
 
         // 1) Busca produtos
-        const prodRes = await fetch("https://api.safira.cash/api/products", {
+        const prodRes = await fetch("https://shadowpay-production-2ca8.up.railway.app/api/products", {
           headers,
         });
         if (!prodRes.ok)
@@ -175,7 +175,7 @@ export default function Products() {
         let salesFetched: any[] = [];
         try {
           const r = await fetch(
-            "https://api.safira.cash/api/sales?status=approved&limit=1000",
+            "https://shadowpay-production-2ca8.up.railway.app/api/sales?status=approved&limit=1000",
             { headers }
           );
           if (r.ok) salesFetched = parseSalesResponse(await r.json());
@@ -187,7 +187,7 @@ export default function Products() {
         if (!Array.isArray(salesFetched) || salesFetched.length === 0) {
           try {
             const r2 = await fetch(
-              "https://api.safira.cash/api/sales?limit=1000",
+              "https://shadowpay-production-2ca8.up.railway.app/api/sales?limit=1000",
               { headers }
             );
             if (r2.ok) salesFetched = parseSalesResponse(await r2.json());
