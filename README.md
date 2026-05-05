@@ -1,40 +1,167 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# ShadowPay - Backend
 
-## Getting Started
+Backend do gateway de pagamento ShadowPay. Stack: **NestJS + Prisma + PostgreSQL**.
 
-First, run the development server:
+> Status atual: **Fase 1 (auth + perfil)**. Login e registro funcionam end-to-end com o frontend. Integração Simpay e demais endpoints virão nas próximas fases.
+
+---
+
+## Pré-requisitos
+
+- Node.js 20+ e npm
+- PostgreSQL 14+ (local ou em nuvem - Supabase, Neon, Railway, Render, etc.)
+- Frontend rodando (já está em `https://shadowpay-delta.vercel.app`)
+
+---
+
+## Setup local (5 minutos)
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# 1) Instala dependências
+npm install
+
+# 2) Cria seu .env a partir do exemplo e edita
+cp .env.example .env
+# Edite DATABASE_URL e JWT_SECRET
+
+# 3) Gera o cliente Prisma
+npm run prisma:generate
+
+# 4) Cria as tabelas no banco
+npm run prisma:migrate
+
+# 5) Sobe o servidor em desenvolvimento
+npm run start:dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Vai subir em `http://localhost:3333`. Teste com:
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+```bash
+curl http://localhost:3333/api/health
+# {"status":"ok","service":"shadowpay-backend",...}
+```
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+---
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+## Endpoints já prontos
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Método | Rota                  | Auth | O que faz                          |
+| ------ | --------------------- | ---- | ---------------------------------- |
+| GET    | `/api/health`         | ❌   | Healthcheck (Railway/Render usa)  |
+| POST   | `/api/auth/register`  | ❌   | Cria seller + wallet + credentials + KYC |
+| POST   | `/api/auth/login`     | ❌   | Retorna JWT + dados do seller      |
+| GET    | `/api/user/profile`   | ✅   | Dados completos do seller logado   |
 
-## Learn More
+Resposta de `register` e `login` (compatível com o `AuthContext.tsx` do frontend):
 
-To learn more about Next.js, take a look at the following resources:
+```json
+{
+  "success": true,
+  "message": "...",
+  "data": {
+    "seller": { "...": "..." },
+    "token": "eyJhbGciOiJIUzI1NiIs...",
+    "message": "..."
+  }
+}
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Conectando ao frontend
 
-## Deploy on Vercel
+O frontend está hardcoded em `https://api.safira.cash`. Você tem **duas opções**:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Opção A — Apontar DNS (recomendado em produção)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+Configura o DNS de `api.safira.cash` (ou o domínio que você for usar) pra apontar pro servidor onde rodar esse backend. O frontend não precisa mudar.
+
+### Opção B — Trocar a URL no frontend
+
+Editar o `src/contexts/AuthContext.tsx` no repo do frontend e trocar todas as ocorrências de `https://api.safira.cash` pelo seu novo domínio (ou `http://localhost:3333` em dev). Melhor ainda: criar uma variável de ambiente `NEXT_PUBLIC_API_URL` e usar `process.env.NEXT_PUBLIC_API_URL` no lugar.
+
+---
+
+## Deploy no Railway (recomendado pra começar)
+
+1. Criar conta em https://railway.app
+2. **New Project → Deploy from GitHub repo** (esse backend)
+3. Clicar em **+ New → Database → Add PostgreSQL**
+4. No serviço do backend: **Variables → Add Variable**
+   - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` (referência ao Postgres)
+   - `JWT_SECRET` = (gerar com `openssl rand -hex 64`)
+   - `JWT_EXPIRES_IN` = `7d`
+   - `CORS_ORIGINS` = `https://shadowpay-delta.vercel.app`
+   - `NODE_ENV` = `production`
+   - `BCRYPT_SALT_ROUNDS` = `12`
+5. **Settings → Build Command**: `npm install && npm run prisma:generate && npm run build`
+6. **Settings → Start Command**: `npm run prisma:deploy && npm run start:prod`
+7. **Settings → Networking → Generate Domain**
+
+Em ~3 minutos você tem URL tipo `https://shadowpay-backend-production.up.railway.app`.
+
+---
+
+## Estrutura de pastas
+
+```
+shadowpay-backend/
+├─ prisma/
+│  └─ schema.prisma         # entidades do banco
+├─ src/
+│  ├─ main.ts               # bootstrap (CORS, helmet, validação)
+│  ├─ app.module.ts         # módulo raiz
+│  ├─ health.controller.ts  # /api/health
+│  ├─ prisma/               # cliente Prisma como provider
+│  ├─ auth/
+│  │  ├─ auth.controller.ts # /api/auth/{login,register}
+│  │  ├─ auth.service.ts    # lógica de bcrypt + jwt
+│  │  ├─ jwt.strategy.ts    # validação do token
+│  │  ├─ jwt-auth.guard.ts  # @UseGuards()
+│  │  └─ dto/               # validação de payload
+│  └─ users/
+│     ├─ users.controller.ts    # /api/user/profile
+│     ├─ users.service.ts       # busca + estatísticas
+│     ├─ seller.serializer.ts   # converte pro formato do front
+│     └─ current-user.decorator.ts
+├─ .env.example
+└─ package.json
+```
+
+---
+
+## Segurança já incluída
+
+- **bcrypt** com 12 rounds (configurável via env)
+- **JWT** assinado com secret de no mínimo 64 chars
+- **helmet** (headers de segurança)
+- **rate limit** global (5 req/s, 30/10s, 200/min) + limites mais apertados em `register`/`login`
+- **class-validator** valida e rejeita payloads inválidos antes de chegar no service
+- **CORS** restrito às origens declaradas em `CORS_ORIGINS`
+- **Senha nunca volta na resposta** (serializer remove `passwordHash`)
+- **Mensagem genérica de login inválido** (não vaza se o e-mail existe)
+
+---
+
+## Próximas fases
+
+- **Fase 2:** Integração com Simpay (criar transação Pix/cartão, receber webhook, atualizar saldo)
+- **Fase 3:** Endpoints `/v1/products/sales`, `/v1/reports`, `/v2/manager/*`
+- **Fase 4:** Saques (`/v2/manager/withdraw`), 2FA, push notifications, KYC fluxo completo
+- **Fase 5:** Observabilidade (logs estruturados, Sentry, métricas), backup de banco, fila de webhooks
+
+---
+
+## Aviso de produção
+
+Esse é o esqueleto sólido pro backend rodar — mas **antes de processar dinheiro de cliente real**, você ainda precisa:
+
+- Auditoria de segurança independente
+- Testes de carga (k6, Artillery)
+- Backup automático do Postgres com retenção
+- WAF/Cloudflare na frente
+- Monitoramento e on-call
+- Conciliação financeira diária com o PSP
+- Ambiente de homologação separado de produção
+
+Tudo isso está fora do escopo de gerar código. É operação.
