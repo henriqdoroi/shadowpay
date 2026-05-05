@@ -2,11 +2,14 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
+import * as express from 'express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
+    // Capturar rawBody é essencial pra verificar assinatura HMAC do webhook do PSP.
+    rawBody: true,
   });
 
   const config = app.get(ConfigService);
@@ -14,6 +17,10 @@ async function bootstrap() {
 
   // Segurança
   app.use(helmet());
+
+  // Aumenta o limite do JSON body pra payloads de KYC com URLs longas
+  app.use(express.json({ limit: '2mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
   // CORS — origens permitidas vêm do .env
   const corsOrigins = (config.get<string>('CORS_ORIGINS') || '')
