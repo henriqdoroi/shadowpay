@@ -15,6 +15,7 @@ import { KycModule } from './kyc/kyc.module';
 import { TwoFactorModule } from './two-factor/two-factor.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { ManagerModule } from './manager/manager.module';
+import { CompatModule } from './compat/compat.module';
 
 import { HealthController } from './health.controller';
 
@@ -44,6 +45,9 @@ import { HealthController } from './health.controller';
     TwoFactorModule,
     WebhooksModule,
     ManagerModule,
+
+    // Compatibilidade com endpoints "antigos" usados pelo frontend
+    CompatModule,
   ],
   controllers: [HealthController],
   providers: [
