@@ -1,24 +1,44 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "declaration": false,
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "target": "ES2022",
-    "sourceMap": true,
-    "outDir": "./dist",
-    "baseUrl": "./",
-    "incremental": true,
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
     "skipLibCheck": true,
+    "noEmit": true,
+    "strict": true,
     "strictNullChecks": true,
-    "noImplicitAny": false,
-    "strictBindCallApply": false,
-    "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false,
+    "noUncheckedIndexedAccess": true,
     "esModuleInterop": true,
-    "resolveJsonModule": true
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "exclude": ["node_modules", "dist"]
+  "include": ["next-env.d.ts", "src/components/**/*.ts", "src/components/**/*.tsx", "src/contexts/**/*.ts", "src/contexts/**/*.tsx", "src/hooks/**/*.ts", "src/hooks/**/*.tsx", "src/lib/**/*.ts", "src/lib/**/*.tsx", "src/pages/**/*.ts", "src/pages/**/*.tsx", "src/styles/**/*.ts", "src/styles/**/*.tsx"],
+  "exclude": [
+    "node_modules",
+    "backend",
+    "prisma",
+    "src/app.module.ts",
+    "src/main.ts",
+    "src/health.controller.ts",
+    "src/auth",
+    "src/compat",
+    "src/kyc",
+    "src/manager",
+    "src/notifications",
+    "src/prisma",
+    "src/psp",
+    "src/reports",
+    "src/transactions",
+    "src/two-factor",
+    "src/users",
+    "src/webhooks",
+    "src/withdrawals"
+  ]
 }
