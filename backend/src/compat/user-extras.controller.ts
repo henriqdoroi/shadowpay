@@ -231,7 +231,7 @@ export class UserExtrasController {
       where: { sellerId: user.id },
       data: { status: 'PENDING', message: 'Iniciado pelo seller.' },
     });
-    return { success: true, message: 'Fluxo de KYC iniciado.' };
+    const k = await this.prisma.kyc.findUnique({ where: { sellerId: user.id } }); return { success: true, message: 'Fluxo de KYC iniciado.', data: { kycId: k?.id } };
   }
 
   @Post('kyc/documents')

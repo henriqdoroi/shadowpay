@@ -1,16 +1,6 @@
 /**
  * Módulo de compatibilidade. Aqui ficam todas as rotas que o frontend espera
  * em paths "antigos" que não batem com o nosso layout canônico.
- *
- *   /api/admin/*               -> ManagerService
- *   /api/user/fees,*-report,kyc/* -> Reports + Transactions + Withdrawals + Kyc
- *   /api/auth/password         -> UsersService.changePassword
- *   /api/credentials           -> UsersService + Prisma
- *   /api/pages/2fa/*           -> TwoFactorService
- *   /api/payments/*            -> Transactions + Withdrawals
- *   /api/sales (extras)        -> Transactions
- *   /api/products (stub)       -> não implementado
- *   /api/webhooks (seller)     -> não implementado
  */
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
@@ -31,28 +21,18 @@ import { PaymentsController } from './payments.controller';
 import { SellerWebhooksController } from './seller-webhooks.controller';
 import { ProductsController } from './products.controller';
 import { SalesExtrasController } from './sales-extras.controller';
+import { SellerAcquirersController } from './seller-acquirers.controller';
 
 @Module({
   imports: [
-    AuthModule,
-    UsersModule,
-    ManagerModule,
-    ReportsModule,
-    TransactionsModule,
-    WithdrawalsModule,
-    KycModule,
-    TwoFactorModule,
+    AuthModule, UsersModule, ManagerModule, ReportsModule,
+    TransactionsModule, WithdrawalsModule, KycModule, TwoFactorModule,
   ],
   controllers: [
-    AdminController,
-    UserExtrasController,
-    AuthExtrasController,
-    CredentialsController,
-    TwoFactorPagesController,
-    PaymentsController,
-    SellerWebhooksController,
-    ProductsController,
-    SalesExtrasController,
+    AdminController, UserExtrasController, AuthExtrasController,
+    CredentialsController, TwoFactorPagesController, PaymentsController,
+    SellerWebhooksController, ProductsController, SalesExtrasController,
+    SellerAcquirersController,
   ],
 })
 export class CompatModule {}
