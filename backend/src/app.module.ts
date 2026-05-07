@@ -15,46 +15,42 @@ import { KycModule } from './kyc/kyc.module';
 import { TwoFactorModule } from './two-factor/two-factor.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { ManagerModule } from './manager/manager.module';
-import { CompatModule } from './compat/compat.module';
 
 import { HealthController } from './health.controller';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: ['.env'],
-    }),
-    // Rate limit global - protege contra brute force em login
-    ThrottlerModule.forRoot([
-      { name: 'short', ttl: 1000, limit: 5 },
-      { name: 'medium', ttl: 10_000, limit: 30 },
-      { name: 'long', ttl: 60_000, limit: 200 },
-    ]),
+    imports: [
+          ConfigModule.forRoot({
+                  isGlobal: true,
+                  envFilePath: ['.env'],
+          }),
+          // Rate limit global - protege contra brute force em login
+          ThrottlerModule.forRoot([
+            { name: 'short', ttl: 1000, limit: 5 },
+            { name: 'medium', ttl: 10_000, limit: 30 },
+            { name: 'long', ttl: 60_000, limit: 200 },
+                ]),
 
-    PrismaModule,
-    AuthModule,
-    PspModule,
+          PrismaModule,
+          AuthModule,
+          PspModule,
 
-    UsersModule,
-    NotificationsModule,
-    TransactionsModule,
-    WithdrawalsModule,
-    ReportsModule,
-    KycModule,
-    TwoFactorModule,
-    WebhooksModule,
-    ManagerModule,
-
-    // Compatibilidade com endpoints "antigos" usados pelo frontend
-    CompatModule,
-  ],
-  controllers: [HealthController],
-  providers: [
-    {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard,
-    },
-  ],
+          UsersModule,
+          NotificationsModule,
+          TransactionsModule,
+          WithdrawalsModule,
+          ReportsModule,
+          KycModule,
+          TwoFactorModule,
+          WebhooksModule,
+          ManagerModule,
+        ],
+    controllers: [HealthController],
+    providers: [
+      {
+              provide: APP_GUARD,
+              useClass: ThrottlerGuard,
+      },
+        ],
 })
-export class AppModule {}
+  export class AppModule {}
