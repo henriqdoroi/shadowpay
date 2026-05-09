@@ -1,5 +1,9 @@
 /**
  * /api/products — info-products do seller (gera checkout).
+ * Aceita preco em varios formatos pra ser tolerante com o frontend Safira:
+ *   - priceCents: 2156
+ *   - price: "21.56" | "21,56" | "R$ 21,56"
+ *   - priceReais / valor / preco: 21.56
  */
 import {
   BadRequestException,
@@ -15,42 +19,35 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Type } from 'class-transformer';
-import {
-  IsEnum,
-  IsInt,
-  IsOptional,
-  IsString,
-  IsUrl,
-  Max,
-  MaxLength,
-  Min,
-} from 'class-validator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../users/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 
-class ListQuery {
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number = 1;
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(1000) pageSize?: number;
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(1000) limit?: number;
-  @IsOptional() @IsString() search?: string;
-  @IsOptional() @IsEnum(['ACTIVE', 'DRAFT', 'ARCHIVED']) status?: 'ACTIVE'|'DRAFT'|'ARCHIVED';
-}
-
-class CreateProductDto {
-  @IsString() @MaxLength(180) name!: string;
-  @IsOptional() @IsString() @MaxLength(2000) description?: string;
-  @Type(() => Number) @IsInt() @Min(0) priceCents!: number;
-  @IsOptional() @IsEnum(['ACTIVE', 'DRAFT', 'ARCHIVED']) status?: 'ACTIVE'|'DRAFT'|'ARCHIVED';
-  @IsOptional() @IsUrl() imageUrl?: string;
-}
-
-class UpdateProductDto {
-  @IsOptional() @IsString() @MaxLength(180) name?: string;
-  @IsOptional() @IsString() @MaxLength(2000) description?: string;
-  @IsOptional() @Type(() => Number) @IsInt() @Min(0) priceCents?: number;
-  @IsOptional() @IsEnum(['ACTIVE', 'DRAFT', 'ARCHIVED']) status?: 'ACTIVE'|'DRAFT'|'ARCHIVED';
-  @IsOptional() @IsUrl() imageUrl?: string;
+function parsePriceCents(body: any): number | null {
+  // priceCents direto
+  if (typeof body?.priceCents === 'number' && Number.isFinite(body.priceCents)) {
+    return Math.round(body.priceCents);
+  }
+  if (typeof body?.priceCents === 'string') {
+    const n = parseInt(body.priceCents, 10);
+    if (Number.isFinite(n)) return n;
+  }
+  // price/preco/valor/priceReais
+  for (const key of ['price', 'preco', 'valor', 'priceReais', 'amount']) {
+    const v = body?.[key];
+    if (v == null) continue;
+    if (typeof v === 'number') return Math.round(v * 100);
+    if (typeof v === 'string') {
+      // "R$ 21,56" -> "21.56"
+      const cleaned = v
+        .replace(/[^\d,.\-]/g, '')
+        .replace(/\.(?=\d{3}(\D|$))/g, '') // remove . como separador de milhar
+        .replace(',', '.');
+      const f = parseFloat(cleaned);
+      if (Number.isFinite(f)) return Math.round(f * 100);
+    }
+  }
+  return null;
 }
 
 function checkoutUrl(productId: string): string {
@@ -60,16 +57,20 @@ function checkoutUrl(productId: string): string {
 
 function serialize(p: any) {
   if (!p) return null;
+  const reais = (p.priceCents / 100);
   return {
     id: p.id,
     sellerId: p.sellerId,
     name: p.name,
     description: p.description ?? null,
     priceCents: p.priceCents,
-    price: (p.priceCents / 100).toFixed(2),
+    price: reais.toFixed(2),
+    priceReais: reais,
+    valor: reais.toFixed(2).replace('.', ','),
     status: p.status,
     imageUrl: p.imageUrl ?? null,
     salesCount: p.salesCount,
+    sales: p.salesCount,
     checkoutUrl: checkoutUrl(p.id),
     createdAt: p.createdAt?.toISOString?.() ?? null,
     updatedAt: p.updatedAt?.toISOString?.() ?? null,
@@ -82,18 +83,16 @@ export class ProductsController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Get()
-  async list(@CurrentUser() user: { id: string }, @Query() q: ListQuery) {
-    const page = q.page || 1;
-    const pageSize = q.pageSize || q.limit || 20;
+  async list(@CurrentUser() user: { id: string }, @Query() q: any) {
+    const page = Math.max(1, parseInt(String(q.page || 1), 10) || 1);
+    const pageSize = Math.min(1000, Math.max(1, parseInt(String(q.pageSize || q.limit || 20), 10) || 20));
     const skip = (page - 1) * pageSize;
     const where: any = { sellerId: user.id };
-    if (q.status) where.status = q.status;
+    if (q.status && ['ACTIVE','DRAFT','ARCHIVED'].includes(q.status)) where.status = q.status;
     if (q.search) where.name = { contains: q.search, mode: 'insensitive' };
 
     const [items, total] = await Promise.all([
-      this.prisma.product.findMany({
-        where, orderBy: { createdAt: 'desc' }, skip, take: pageSize,
-      }),
+      this.prisma.product.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: pageSize }),
       this.prisma.product.count({ where }),
     ]);
 
@@ -103,7 +102,7 @@ export class ProductsController {
       success: true,
       data,
       products: data,
-      pagination: { page, pageSize, total, totalPages, pages: totalPages },
+      pagination: { page, pageSize, total, totalPages, pages: totalPages, current: page },
     };
   }
 
@@ -115,19 +114,26 @@ export class ProductsController {
   }
 
   @Post()
-  async create(
-    @CurrentUser() user: { id: string },
-    @Body() dto: CreateProductDto,
-  ) {
-    if (!dto.name?.trim()) throw new BadRequestException('Nome obrigatorio.');
+  async create(@CurrentUser() user: { id: string }, @Body() body: any) {
+    const name = String(body?.name ?? body?.title ?? '').trim();
+    if (!name) throw new BadRequestException('Nome obrigatorio.');
+
+    const priceCents = parsePriceCents(body);
+    if (priceCents == null || priceCents < 0) {
+      throw new BadRequestException('Preco invalido. Use priceCents (inteiro) ou price ("21,56").');
+    }
+
+    const status = body?.status && ['ACTIVE','DRAFT','ARCHIVED'].includes(body.status)
+      ? body.status : 'ACTIVE';
+
     const p = await this.prisma.product.create({
       data: {
         sellerId: user.id,
-        name: dto.name.trim(),
-        description: dto.description ?? null,
-        priceCents: dto.priceCents,
-        status: dto.status ?? 'ACTIVE',
-        imageUrl: dto.imageUrl ?? null,
+        name,
+        description: body?.description ?? null,
+        priceCents,
+        status,
+        imageUrl: body?.imageUrl ?? null,
       },
     });
     return { success: true, data: serialize(p), product: serialize(p) };
@@ -137,20 +143,21 @@ export class ProductsController {
   async update(
     @CurrentUser() user: { id: string },
     @Param('id') id: string,
-    @Body() dto: UpdateProductDto,
+    @Body() body: any,
   ) {
     const existing = await this.prisma.product.findFirst({ where: { id, sellerId: user.id } });
     if (!existing) throw new NotFoundException('Produto nao encontrado.');
-    const p = await this.prisma.product.update({
-      where: { id },
-      data: {
-        ...(dto.name !== undefined && { name: dto.name.trim() }),
-        ...(dto.description !== undefined && { description: dto.description }),
-        ...(dto.priceCents !== undefined && { priceCents: dto.priceCents }),
-        ...(dto.status !== undefined && { status: dto.status }),
-        ...(dto.imageUrl !== undefined && { imageUrl: dto.imageUrl }),
-      },
-    });
+
+    const data: any = {};
+    if (body?.name !== undefined) data.name = String(body.name).trim();
+    if (body?.description !== undefined) data.description = body.description ?? null;
+    if (body?.imageUrl !== undefined) data.imageUrl = body.imageUrl ?? null;
+    if (body?.status && ['ACTIVE','DRAFT','ARCHIVED'].includes(body.status)) data.status = body.status;
+
+    const cents = parsePriceCents(body);
+    if (cents !== null) data.priceCents = cents;
+
+    const p = await this.prisma.product.update({ where: { id }, data });
     return { success: true, data: serialize(p) };
   }
 

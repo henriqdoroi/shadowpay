@@ -66,5 +66,9 @@ export function serializeSeller(seller: any) {
           message: seller.kyc.message,
         }
       : { status: 'NOT_STARTED', message: '' },
+
+    // Frontend Safira espera essas listas mesmo se vazias
+    transactions: seller.transactions ?? [],
+    withdrawals: seller.withdrawals ?? [],
   };
 }
