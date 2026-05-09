@@ -347,3 +347,22 @@ model IdempotencyKey {
   @@index([sellerId])
   @@index([expiresAt])
 }
+
+// --------------------------------------------------------------------
+// SellerWebhook (URLs cadastradas pelo seller pra receber eventos)
+// --------------------------------------------------------------------
+
+model SellerWebhook {
+  id        String   @id @default(uuid())
+  sellerId  String
+  url       String
+  events    String[] // ['transaction.paid','withdrawal.paid','transaction.refunded',...]
+  secret    String?  // segredo HMAC pra assinar payloads
+  active    Boolean  @default(true)
+  lastSentAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sellerId])
+  @@index([active])
+}

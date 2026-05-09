@@ -13,8 +13,8 @@ import { serializeTransaction } from '../transactions/transaction.serializer';
 
 class PageDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number = 1;
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit?: number = 20;
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) pageSize?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(1000) limit?: number = 20;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(1000) pageSize?: number;
   @IsOptional() @IsString() startDate?: string;
   @IsOptional() @IsString() endDate?: string;
   @IsOptional() @IsString() status?: string;

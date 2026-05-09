@@ -13,8 +13,8 @@ import { serializeTransaction } from '../transactions/transaction.serializer';
 
 class ListQuery {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number = 1;
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) pageSize?: number;
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(1000) pageSize?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(1000) limit?: number;
   @IsOptional() @IsString() search?: string;
   @IsOptional() @IsString() status?: string;
   @IsOptional() @IsString() kycStatus?: string;
@@ -32,7 +32,7 @@ class WithdrawalStatusDto {
 class UpsertAcquirerDto {
   @IsString() name!: string;
   @IsOptional() @IsBoolean() enabled?: boolean;
-  @IsObject() config!: any;
+  @IsOptional() @IsObject() config?: any;
 }
 
 @Controller('admin')
@@ -192,6 +192,7 @@ export class AdminController {
         sellers: items.map((s) => ({
           ...serializeSeller(s),
           companyName: s.companyName,
+          transactions: [],
         })),
         pagination: { pages, page, total, pageSize },
       },
