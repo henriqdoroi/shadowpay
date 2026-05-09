@@ -23,6 +23,7 @@ import {
 import { Type } from 'class-transformer';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminGuard } from './admin.guard';
+import { Audited } from '../audit/audited.decorator';
 import { ManagerService } from './manager.service';
 
 class ListQuery {
@@ -85,8 +86,16 @@ class UpsertAcquirerDto {
   @IsObject() config!: any;
 }
 
+class WalletAdjustDto {
+  @IsNumber() amount!: number;
+  @IsString() @MaxLength(200) reason!: string;
+}
+
 /**
  * /api/manager/* — todas exigem JWT + isAdministrator.
+ *
+ * Cada ação sensível é decorada com @Audited(...) — vai parar em AuditLog
+ * com actor, IP, userAgent, requestId.
  */
 @Controller('manager')
 @UseGuards(JwtAuthGuard, AdminGuard)
@@ -111,18 +120,27 @@ export class ManagerController {
   }
 
   @Patch('users/:id')
+  @Audited('manager.user.update', { targetType: 'Seller', targetIdFrom: 'params.id' })
   updateSeller(@Param('id') id: string, @Body() body: UpdateSellerDto) {
     return this.service.updateSeller(id, body);
   }
 
   @Post('users/:id/kyc/approve')
+  @Audited('manager.kyc.approve', { targetType: 'Seller', targetIdFrom: 'params.id' })
   approveKyc(@Param('id') id: string, @Body() body: KycReviewDto) {
     return this.service.approveKyc(id, body.message);
   }
 
   @Post('users/:id/kyc/reject')
+  @Audited('manager.kyc.reject', { targetType: 'Seller', targetIdFrom: 'params.id' })
   rejectKyc(@Param('id') id: string, @Body() body: KycReviewDto) {
     return this.service.rejectKyc(id, body.message ?? '');
+  }
+
+  @Post('users/:id/wallet/adjust')
+  @Audited('manager.wallet.adjust', { targetType: 'Seller', targetIdFrom: 'params.id' })
+  walletAdjust(@Param('id') id: string, @Body() body: WalletAdjustDto) {
+    return this.service.walletAdjust(id, body.amount, body.reason);
   }
 
   // ---- Transactions
@@ -138,7 +156,14 @@ export class ManagerController {
   }
 
   @Patch('withdraw/:id')
-  updateWithdrawalStatus(@Param('id') id: string, @Body() body: WithdrawalStatusDto) {
+  @Audited('manager.withdrawal.update', {
+    targetType: 'Withdrawal',
+    targetIdFrom: 'params.id',
+  })
+  updateWithdrawalStatus(
+    @Param('id') id: string,
+    @Body() body: WithdrawalStatusDto,
+  ) {
     return this.service.updateWithdrawalStatus(id, body.status);
   }
 
@@ -149,13 +174,14 @@ export class ManagerController {
   }
 
   @Post('adquerers')
+  @Audited('manager.acquirer.upsert')
   upsertAcquirer(@Body() body: UpsertAcquirerDto) {
     return this.service.upsertAcquirer(body);
   }
 
-  // alias antigo do frontend
-  @Get('psp-key')
-  pspKeys() {
-    return this.service.listAcquirers();
+  // ---- Audit logs
+  @Get('audit')
+  listAudit(@Query() q: ListQuery) {
+    return this.service.listAudit(q.page, q.pageSize);
   }
 }

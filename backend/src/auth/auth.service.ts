@@ -13,6 +13,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { serializeSeller } from '../users/seller.serializer';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class AuthService {
@@ -22,6 +23,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
+    private readonly email: EmailService,
   ) {}
 
   // ----------------------------------------------------------------
@@ -95,6 +97,9 @@ export class AuthService {
     if (!seller) {
       throw new BadRequestException('Falha ao criar conta.');
     }
+
+    // Email de boas-vindas (não bloqueia a resposta)
+    this.email.sendWelcome(seller.email, seller.companyName).catch(() => {});
 
     const token = this.signToken(seller.id);
 

@@ -302,3 +302,48 @@ model Acquirer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// --------------------------------------------------------------------
+// AuditLog (registro imutável de ações sensíveis — admin/manager)
+// --------------------------------------------------------------------
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?  // sellerId que fez a ação (null = sistema)
+  actorEmail String?
+  action     String   // "manager.user.block", "manager.kyc.approve", etc.
+  targetType String?  // "Seller", "Withdrawal", "Transaction"
+  targetId   String?
+  before     Json?    // estado anterior
+  after      Json?    // estado novo
+  ip         String?
+  userAgent  String?
+  requestId  String?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
+// --------------------------------------------------------------------
+// IdempotencyKey (cache de respostas pra POSTs repetidos)
+// --------------------------------------------------------------------
+
+model IdempotencyKey {
+  id           String   @id @default(uuid())
+  sellerId     String
+  key          String
+  method       String   // "POST"
+  path         String   // "/api/withdrawals"
+  bodyHash     String   // hash sha256 do body — protege contra reuso de key com body diferente
+  statusCode   Int
+  responseBody Json
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime // TTL (ex: 24h)
+
+  @@unique([sellerId, key, path])
+  @@index([sellerId])
+  @@index([expiresAt])
+}

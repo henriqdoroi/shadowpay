@@ -2,6 +2,7 @@ import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { IsString, Length } from 'class-validator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../users/current-user.decorator';
+import { SkipKyc } from '../common/decorators/skip-kyc.decorator';
 import { TwoFactorService } from './two-factor.service';
 
 class CodeDto {
@@ -12,6 +13,7 @@ class CodeDto {
 
 @Controller('2fa')
 @UseGuards(JwtAuthGuard)
+@SkipKyc()
 export class TwoFactorController {
   constructor(private readonly service: TwoFactorService) {}
 

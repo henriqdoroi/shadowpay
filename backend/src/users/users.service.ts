@@ -9,12 +9,14 @@ import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { serializeSeller } from './seller.serializer';
 import { UpdateProfileDto, ChangePasswordDto } from './dto/update-profile.dto';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly email: EmailService,
   ) {}
 
   async getProfile(sellerId: string) {
@@ -91,10 +93,10 @@ export class UsersService {
     return { success: true, message: 'Perfil atualizado.', data: serializeSeller(seller) };
   }
 
-  async changePassword(sellerId: string, dto: ChangePasswordDto) {
+  async changePassword(sellerId: string, dto: ChangePasswordDto, ip?: string | null) {
     const seller = await this.prisma.seller.findUnique({
       where: { id: sellerId },
-      select: { passwordHash: true },
+      select: { passwordHash: true, email: true },
     });
     if (!seller) throw new NotFoundException();
 
@@ -111,6 +113,7 @@ export class UsersService {
       where: { id: sellerId },
       data: { passwordHash },
     });
+    this.email.sendPasswordChanged(seller.email, ip ?? null).catch(() => {});
     return { success: true, message: 'Senha alterada com sucesso.' };
   }
 

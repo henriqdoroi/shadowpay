@@ -2,6 +2,8 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { serializeSeller } from '../users/seller.serializer';
 import { serializeTransaction } from '../transactions/transaction.serializer';
+import { WalletService } from '../wallet/wallet.service';
+import { EmailService } from '../email/email.service';
 
 /**
  * Painel de admin do gateway. Tudo aqui passa pelo AdminGuard,
@@ -9,7 +11,11 @@ import { serializeTransaction } from '../transactions/transaction.serializer';
  */
 @Injectable()
 export class ManagerService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly wallet: WalletService,
+    private readonly email: EmailService,
+  ) {}
 
   // ----------------------------------------------------------------
   // Sellers / Users
@@ -103,6 +109,10 @@ export class ManagerService {
       where: { sellerId },
       data: { status: 'APPROVED', message: message ?? 'Aprovado.', reviewedAt: new Date() },
     });
+    const seller = await this.prisma.seller.findUnique({ where: { id: sellerId } });
+    if (seller) {
+      this.email.sendKycApproved(seller.email, seller.companyName).catch(() => {});
+    }
     return { success: true, data: k };
   }
 
@@ -114,7 +124,24 @@ export class ManagerService {
       where: { sellerId },
       data: { status: 'BANNED', message, reviewedAt: new Date() },
     });
+    const seller = await this.prisma.seller.findUnique({ where: { id: sellerId } });
+    if (seller) {
+      this.email.sendKycRejected(seller.email, seller.companyName, message).catch(() => {});
+    }
     return { success: true, data: k };
+  }
+
+  /** Ajuste manual de saldo (positivo ou negativo). Usa lock atômico. */
+  async walletAdjust(sellerId: string, amount: number, reason: string) {
+    if (!Number.isFinite(amount) || amount === 0) {
+      throw new BadRequestException('Valor inválido.');
+    }
+    if (!reason?.trim()) {
+      throw new BadRequestException('Motivo obrigatório.');
+    }
+    await this.wallet.adminAdjust(sellerId, amount, `[admin] ${reason}`);
+    const fresh = await this.prisma.wallet.findFirst({ where: { sellerId } });
+    return { success: true, data: fresh };
   }
 
   // ----------------------------------------------------------------
@@ -177,15 +204,54 @@ export class ManagerService {
     };
   }
 
-  async updateWithdrawalStatus(id: string, status: 'PAID' | 'FAILED' | 'PROCESSING') {
-    const w = await this.prisma.withdrawal.update({
+  /**
+   * Aprova/rejeita um saque manualmente. Mexe na wallet de forma atômica:
+   * - PAID: consome o hold (blockedBalance -= amount).
+   * - FAILED: libera o hold (blockedBalance -> balance).
+   * - PROCESSING: só muda status.
+   */
+  async updateWithdrawalStatus(
+    id: string,
+    status: 'PAID' | 'FAILED' | 'PROCESSING',
+  ) {
+    const w = await this.prisma.withdrawal.findUnique({ where: { id } });
+    if (!w) throw new NotFoundException('Saque não encontrado.');
+
+    if (status === 'PAID') {
+      if (w.status === 'PAID') return { success: true, data: w };
+      await this.wallet.consumeHold(w.sellerId, Number(w.amount), w.id);
+      const updated = await this.prisma.withdrawal.update({
+        where: { id },
+        data: { status: 'PAID', paidAt: new Date() },
+      });
+      const seller = await this.prisma.seller.findUnique({ where: { id: w.sellerId } });
+      if (seller) {
+        this.email
+          .sendWithdrawalPaid(seller.email, Number(w.amount), seller.companyName)
+          .catch(() => {});
+      }
+      return { success: true, data: updated };
+    }
+
+    if (status === 'FAILED') {
+      if (w.status === 'FAILED') return { success: true, data: w };
+      // Só libera se estava reservado (PENDING/PROCESSING)
+      if (w.status === 'PENDING' || w.status === 'PROCESSING') {
+        await this.wallet.releaseHold(w.sellerId, Number(w.amount), w.id);
+      }
+      const updated = await this.prisma.withdrawal.update({
+        where: { id },
+        data: { status: 'FAILED', paidAt: null },
+      });
+      return { success: true, data: updated };
+    }
+
+    // PROCESSING — só transição de status
+    const updated = await this.prisma.withdrawal.update({
       where: { id },
-      data: {
-        status,
-        paidAt: status === 'PAID' ? new Date() : null,
-      },
+      data: { status: 'PROCESSING' },
     });
-    return { success: true, data: w };
+    return { success: true, data: updated };
   }
 
   // ----------------------------------------------------------------
@@ -212,6 +278,31 @@ export class ManagerService {
       },
     });
     return { success: true, data: a };
+  }
+
+  // ----------------------------------------------------------------
+  // Audit log
+  // ----------------------------------------------------------------
+  async listAudit(page = 1, pageSize = 20) {
+    const skip = (page - 1) * pageSize;
+    const [items, total] = await Promise.all([
+      this.prisma.auditLog.findMany({
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: pageSize,
+      }),
+      this.prisma.auditLog.count(),
+    ]);
+    return {
+      success: true,
+      data: items,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      },
+    };
   }
 
   // ----------------------------------------------------------------

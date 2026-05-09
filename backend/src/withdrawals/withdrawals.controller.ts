@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import { IsInt, IsOptional, Min, Max } from 'class-validator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../users/current-user.decorator';
+import { Idempotent } from '../idempotency/idempotent.decorator';
 import { WithdrawalsService } from './withdrawals.service';
 import { CreateWithdrawalDto } from './dto/create-withdrawal.dto';
 
@@ -37,6 +38,7 @@ export class WithdrawalsController {
   }
 
   @Post()
+  @Idempotent()
   create(@CurrentUser() user: { id: string }, @Body() dto: CreateWithdrawalDto) {
     return this.service.create(user.id, dto);
   }

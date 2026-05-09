@@ -1,24 +1,28 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Logger as PinoLogger } from 'nestjs-pino';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import * as express from 'express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger: ['error', 'warn', 'log', 'debug', 'verbose'],
+    bufferLogs: true,
     // Capturar rawBody é essencial pra verificar assinatura HMAC do webhook do PSP.
     rawBody: true,
   });
 
+  // Substitui o logger nativo pelo Pino
+  app.useLogger(app.get(PinoLogger));
+
   const config = app.get(ConfigService);
-  const logger = new Logger('Bootstrap');
 
   // Segurança
   app.use(helmet());
 
-  // Aumenta o limite do JSON body pra payloads de KYC com URLs longas
+  // Body parsers — limites generosos pra payloads de KYC
   app.use(express.json({ limit: '2mb' }));
   app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
@@ -46,11 +50,31 @@ async function bootstrap() {
   // Prefixo global - o frontend já chama /api/...
   app.setGlobalPrefix('api');
 
+  // OpenAPI/Swagger em /api/docs
+  if (config.get<string>('NODE_ENV') !== 'production' || config.get<string>('SWAGGER_ENABLED') === '1') {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('ShadowPay API')
+      .setDescription('Backend de gateway de pagamento PIX. Auth: Bearer JWT.')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .addServer('https://shadowpay-production-2ca8.up.railway.app', 'Produção')
+      .addServer('http://localhost:3333', 'Local')
+      .build();
+    const doc = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('api/docs', app, doc, {
+      swaggerOptions: { persistAuthorization: true },
+    });
+  }
+
   const port = Number(config.get<string>('PORT')) || 3333;
   await app.listen(port, '0.0.0.0');
 
-  logger.log(`🚀 ShadowPay backend rodando na porta ${port}`);
-  logger.log(`📡 CORS liberado para: ${corsOrigins.join(', ') || '(qualquer origem)'}`);
+  const logger = app.get(PinoLogger);
+  logger.log(
+    `🚀 ShadowPay backend rodando na porta ${port} | CORS: ${
+      corsOrigins.join(', ') || '(*)'
+    }`,
+  );
 }
 
 bootstrap();

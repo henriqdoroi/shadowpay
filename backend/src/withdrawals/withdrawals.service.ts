@@ -1,12 +1,13 @@
 import {
-  Injectable,
   BadRequestException,
+  Injectable,
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateWithdrawalDto } from './dto/create-withdrawal.dto';
 import { PspService } from '../psp/psp.service';
+import { WalletService } from '../wallet/wallet.service';
 
 function serialize(w: any) {
   if (!w) return null;
@@ -31,6 +32,7 @@ export class WithdrawalsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly psp: PspService,
+    private readonly wallet: WalletService,
   ) {}
 
   async list(sellerId: string, page = 1, pageSize = 20) {
@@ -66,39 +68,51 @@ export class WithdrawalsService {
   }
 
   async create(sellerId: string, dto: CreateWithdrawalDto) {
-    // Verifica saldo disponível antes mesmo de tocar no PSP
-    const wallet = await this.prisma.wallet.findFirst({
-      where: { sellerId },
-    });
-    if (!wallet) {
-      throw new BadRequestException('Carteira não encontrada para esse seller.');
-    }
-    const available = Number(wallet.balance);
-    if (available < dto.amount) {
-      throw new BadRequestException(
-        `Saldo insuficiente. Disponível: R$ ${available.toFixed(2)}`,
-      );
+    if (!Number.isFinite(dto.amount) || dto.amount <= 0) {
+      throw new BadRequestException('Valor inválido.');
     }
 
-    if (!this.psp.isConfigured()) {
-      throw new ServiceUnavailableException({
-        success: false,
-        code: 'PSP_NOT_CONFIGURED',
-        message:
-          'Saques precisam de um PSP ativo. Configure SIMPAY_API_KEY nas variáveis de ambiente.',
+    // 1) Cria a Withdrawal em status PENDING
+    const w = await this.prisma.withdrawal.create({
+      data: {
+        sellerId,
+        amount: dto.amount,
+        feeAmount: 0,
+        pixKey: dto.pixKey ?? null,
+        pixKeyType: dto.pixKeyType ?? null,
+        bankAccount: dto.bankAccount ?? null,
+        status: 'PENDING',
+      },
+    });
+
+    // 2) Reserva o saldo (move balance -> blockedBalance) com lock atômico.
+    //    Se saldo insuficiente, lança e marcamos a withdrawal como FAILED.
+    try {
+      await this.wallet.holdForWithdraw(sellerId, dto.amount, w.id);
+    } catch (err) {
+      await this.prisma.withdrawal.update({
+        where: { id: w.id },
+        data: { status: 'FAILED' },
       });
+      throw err;
+    }
+
+    // 3) Dispara o payout no PSP. Sem PSP configurado, fica PENDING — admin
+    //    pode aprovar/rejeitar manual no painel manager (que vai chamar
+    //    consumeHold/releaseHold via WalletService).
+    if (!this.psp.isConfigured()) {
+      // O saldo já está reservado. Saque PENDING aguarda admin/PSP.
+      const fresh = await this.prisma.withdrawal.findUnique({ where: { id: w.id } });
+      return { success: true, data: serialize(fresh) };
     }
 
     // Quando PSP estiver pronto:
-    //   1. cria Withdrawal status PENDING
-    //   2. bloqueia valor na wallet (move balance -> blockedBalance)
-    //   3. dispara payout PIX no PSP
-    //   4. atualiza withdrawal com externalId
-    //   5. webhook do PSP confirma e libera/falha
+    //   - this.psp.createPayout({...})
+    //   - atualiza withdrawal com externalId + status PROCESSING
+    //   - webhook do PSP confirma e chama consumeHold/releaseHold
     throw new ServiceUnavailableException({
-      success: false,
       code: 'PSP_NOT_CONFIGURED',
-      message: 'Aguardando integração com PSP.',
+      message: 'Integração com PSP em provisionamento.',
     });
   }
 }

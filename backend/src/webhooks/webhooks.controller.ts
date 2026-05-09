@@ -1,6 +1,8 @@
 import { Controller, Headers, HttpCode, HttpStatus, Param, Post, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { SkipThrottle } from '@nestjs/throttler';
+import { Public } from '../common/decorators/public.decorator';
+import { SkipKyc } from '../common/decorators/skip-kyc.decorator';
 import { WebhooksService } from './webhooks.service';
 
 /**
@@ -8,6 +10,8 @@ import { WebhooksService } from './webhooks.service';
  * O segredo de assinatura está em SIMPAY_WEBHOOK_SECRET.
  */
 @Controller('webhooks/psp')
+@Public()
+@SkipKyc()
 export class WebhooksController {
   constructor(private readonly service: WebhooksService) {}
 
