@@ -366,3 +366,29 @@ model SellerWebhook {
   @@index([sellerId])
   @@index([active])
 }
+
+// --------------------------------------------------------------------
+// Product (info-product que o seller vende — gera checkout)
+// --------------------------------------------------------------------
+
+enum ProductStatus {
+  ACTIVE
+  DRAFT
+  ARCHIVED
+}
+
+model Product {
+  id          String        @id @default(uuid())
+  sellerId    String
+  name        String
+  description String?
+  priceCents  Int
+  status      ProductStatus @default(ACTIVE)
+  imageUrl    String?
+  salesCount  Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([sellerId])
+  @@index([status])
+}

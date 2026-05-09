@@ -282,7 +282,11 @@ export class AdminController {
 
   @Post('adquerers')
   upsertAcquirer(@Body() body: UpsertAcquirerDto) {
-    return this.manager.upsertAcquirer(body);
+    return this.manager.upsertAcquirer({
+      name: body.name,
+      enabled: body.enabled,
+      config: body.config ?? {},
+    });
   }
 
   @Get('kyc/:sellerId')

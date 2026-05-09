@@ -1,4 +1,4 @@
-import { Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../users/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
@@ -12,7 +12,6 @@ export class CredentialsController {
     private readonly users: UsersService,
   ) {}
 
-  // GET /api/credentials — lista as credenciais ativas do seller
   @Get()
   async list(@CurrentUser() user: { id: string }) {
     const items = await this.prisma.credentials.findMany({
@@ -32,9 +31,21 @@ export class CredentialsController {
     };
   }
 
-  // POST /api/credentials — gera um novo par e revoga o anterior
+  // POST /api/credentials — gera novo par e revoga o anterior
   @Post()
   rotate(@CurrentUser() user: { id: string }) {
+    return this.users.rotateCredentials(user.id);
+  }
+
+  // PUT /api/credentials/:id/renew — alias usado pelo frontend
+  @Put(':id/renew')
+  renewById(@CurrentUser() user: { id: string }, @Param('id') _id: string) {
+    return this.users.rotateCredentials(user.id);
+  }
+
+  // POST /api/credentials/:id/renew — alias adicional
+  @Post(':id/renew')
+  renewByIdPost(@CurrentUser() user: { id: string }, @Param('id') _id: string) {
     return this.users.rotateCredentials(user.id);
   }
 }
