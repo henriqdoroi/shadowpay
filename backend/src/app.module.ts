@@ -29,6 +29,9 @@ import { IdempotencyModule } from './idempotency/idempotency.module';
 import { AuditInterceptor } from './audit/audit.interceptor';
 import { IdempotencyInterceptor } from './idempotency/idempotency.interceptor';
 
+// Camada de compatibilidade pro frontend antigo (Safira shell)
+import { CompatModule } from './compat/compat.module';
+
 import { HealthController } from './health.controller';
 
 @Module({
@@ -37,9 +40,7 @@ import { HealthController } from './health.controller';
       isGlobal: true,
       envFilePath: ['.env'],
     }),
-    // Logger Pino — substitui o logger nativo do Nest globalmente
     LoggerModule.forRoot(buildLoggerConfig()),
-    // Rate limit global - protege contra brute force em login
     ThrottlerModule.forRoot([
       { name: 'short', ttl: 1000, limit: 5 },
       { name: 'medium', ttl: 10_000, limit: 30 },
@@ -48,7 +49,6 @@ import { HealthController } from './health.controller';
 
     PrismaModule,
 
-    // Cross-cutting providers (@Global)
     WalletModule,
     EmailModule,
     AuditModule,
@@ -66,19 +66,15 @@ import { HealthController } from './health.controller';
     TwoFactorModule,
     WebhooksModule,
     ManagerModule,
+
+    // Aliases legados que o frontend Safira ainda espera
+    CompatModule,
   ],
   controllers: [HealthController],
   providers: [
-    // Filtro global de exceções (shape uniforme + log estruturado)
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
-
-    // Throttler em primeiro
     { provide: APP_GUARD, useClass: ThrottlerGuard },
-
-    // KYC obrigatório pra TUDO. Endpoints de onboarding usam @SkipKyc().
     { provide: APP_GUARD, useClass: KycApprovedGuard },
-
-    // Interceptors globais
     { provide: APP_INTERCEPTOR, useClass: IdempotencyInterceptor },
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
   ],
