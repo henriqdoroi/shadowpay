@@ -1,12 +1,15 @@
 /**
  * /api/products — info-products do seller (gera checkout).
- * Aceita preco em varios formatos pra ser tolerante com o frontend Safira:
- *   - priceCents: 2156
- *   - price: "21.56" | "21,56" | "R$ 21,56"
- *   - priceReais / valor / preco: 21.56
+ *
+ * Tolerante a varias convencoes do frontend:
+ *   nome:        name | nome | title | titulo | productName | nomeProduto | produto
+ *   preco:       priceCents (int)  OR  price/preco/valor/priceReais/amount
+ *                (string "R$ 21,56" / "21,56" / "21.56" / number)
+ *   descricao:   description | descricao | desc
+ *   imagem:      imageUrl | image | imagem | foto | thumbnail
+ *   status:      status | situacao  (ACTIVE/DRAFT/ARCHIVED)
  */
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -18,13 +21,20 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { Type } from 'class-transformer';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../users/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 
+function pickStr(body: any, keys: string[]): string {
+  for (const k of keys) {
+    const v = body?.[k];
+    if (typeof v === 'string' && v.trim()) return v.trim();
+    if (typeof v === 'number') return String(v);
+  }
+  return '';
+}
+
 function parsePriceCents(body: any): number | null {
-  // priceCents direto
   if (typeof body?.priceCents === 'number' && Number.isFinite(body.priceCents)) {
     return Math.round(body.priceCents);
   }
@@ -32,22 +42,27 @@ function parsePriceCents(body: any): number | null {
     const n = parseInt(body.priceCents, 10);
     if (Number.isFinite(n)) return n;
   }
-  // price/preco/valor/priceReais
-  for (const key of ['price', 'preco', 'valor', 'priceReais', 'amount']) {
+  for (const key of ['price', 'preco', 'valor', 'priceReais', 'amount', 'value']) {
     const v = body?.[key];
     if (v == null) continue;
-    if (typeof v === 'number') return Math.round(v * 100);
+    if (typeof v === 'number' && Number.isFinite(v)) return Math.round(v * 100);
     if (typeof v === 'string') {
-      // "R$ 21,56" -> "21.56"
       const cleaned = v
         .replace(/[^\d,.\-]/g, '')
-        .replace(/\.(?=\d{3}(\D|$))/g, '') // remove . como separador de milhar
+        .replace(/\.(?=\d{3}(\D|$))/g, '')
         .replace(',', '.');
       const f = parseFloat(cleaned);
       if (Number.isFinite(f)) return Math.round(f * 100);
     }
   }
   return null;
+}
+
+function pickStatus(body: any): 'ACTIVE' | 'DRAFT' | 'ARCHIVED' {
+  const raw = String(body?.status ?? body?.situacao ?? '').toUpperCase();
+  if (raw === 'DRAFT' || raw === 'RASCUNHO') return 'DRAFT';
+  if (raw === 'ARCHIVED' || raw === 'ARQUIVADO' || raw === 'INACTIVE' || raw === 'INATIVO') return 'ARCHIVED';
+  return 'ACTIVE';
 }
 
 function checkoutUrl(productId: string): string {
@@ -57,21 +72,26 @@ function checkoutUrl(productId: string): string {
 
 function serialize(p: any) {
   if (!p) return null;
-  const reais = (p.priceCents / 100);
+  const reais = p.priceCents / 100;
   return {
     id: p.id,
     sellerId: p.sellerId,
     name: p.name,
+    nome: p.name,
     description: p.description ?? null,
+    descricao: p.description ?? null,
     priceCents: p.priceCents,
     price: reais.toFixed(2),
     priceReais: reais,
     valor: reais.toFixed(2).replace('.', ','),
     status: p.status,
     imageUrl: p.imageUrl ?? null,
+    imagem: p.imageUrl ?? null,
     salesCount: p.salesCount,
     sales: p.salesCount,
+    vendas: p.salesCount,
     checkoutUrl: checkoutUrl(p.id),
+    link: checkoutUrl(p.id),
     createdAt: p.createdAt?.toISOString?.() ?? null,
     updatedAt: p.updatedAt?.toISOString?.() ?? null,
   };
@@ -88,7 +108,7 @@ export class ProductsController {
     const pageSize = Math.min(1000, Math.max(1, parseInt(String(q.pageSize || q.limit || 20), 10) || 20));
     const skip = (page - 1) * pageSize;
     const where: any = { sellerId: user.id };
-    if (q.status && ['ACTIVE','DRAFT','ARCHIVED'].includes(q.status)) where.status = q.status;
+    if (q.status && ['ACTIVE', 'DRAFT', 'ARCHIVED'].includes(q.status)) where.status = q.status;
     if (q.search) where.name = { contains: q.search, mode: 'insensitive' };
 
     const [items, total] = await Promise.all([
@@ -115,50 +135,51 @@ export class ProductsController {
 
   @Post()
   async create(@CurrentUser() user: { id: string }, @Body() body: any) {
-    const name = String(body?.name ?? body?.title ?? '').trim();
-    if (!name) throw new BadRequestException('Nome obrigatorio.');
-
+    // Nunca bloqueia salvar: se nao veio nome, usa fallback. Seller renomeia no editar.
+    const name = pickStr(body, ['name', 'nome', 'title', 'titulo', 'productName', 'nomeProduto', 'produto']) || 'Produto sem nome';
     const priceCents = parsePriceCents(body);
-    if (priceCents == null || priceCents < 0) {
-      throw new BadRequestException('Preco invalido. Use priceCents (inteiro) ou price ("21,56").');
-    }
+    const description = pickStr(body, ['description', 'descricao', 'desc']);
+    const imageUrl = pickStr(body, ['imageUrl', 'image', 'imagem', 'foto', 'thumbnail', 'thumb']);
+    const status = pickStatus(body);
 
-    const status = body?.status && ['ACTIVE','DRAFT','ARCHIVED'].includes(body.status)
-      ? body.status : 'ACTIVE';
+    const finalPriceCents = priceCents == null ? 0 : Math.max(0, priceCents);
 
     const p = await this.prisma.product.create({
       data: {
         sellerId: user.id,
         name,
-        description: body?.description ?? null,
-        priceCents,
+        description: description || null,
+        priceCents: finalPriceCents,
         status,
-        imageUrl: body?.imageUrl ?? null,
+        imageUrl: imageUrl || null,
       },
     });
-    return { success: true, data: serialize(p), product: serialize(p) };
+    return {
+      success: true,
+      data: serialize(p),
+      product: serialize(p),
+      message: 'Produto criado.',
+    };
   }
 
   @Put(':id')
-  async update(
-    @CurrentUser() user: { id: string },
-    @Param('id') id: string,
-    @Body() body: any,
-  ) {
+  async update(@CurrentUser() user: { id: string }, @Param('id') id: string, @Body() body: any) {
     const existing = await this.prisma.product.findFirst({ where: { id, sellerId: user.id } });
     if (!existing) throw new NotFoundException('Produto nao encontrado.');
 
     const data: any = {};
-    if (body?.name !== undefined) data.name = String(body.name).trim();
-    if (body?.description !== undefined) data.description = body.description ?? null;
-    if (body?.imageUrl !== undefined) data.imageUrl = body.imageUrl ?? null;
-    if (body?.status && ['ACTIVE','DRAFT','ARCHIVED'].includes(body.status)) data.status = body.status;
-
+    const name = pickStr(body, ['name', 'nome', 'title', 'titulo', 'productName', 'nomeProduto', 'produto']);
+    if (name) data.name = name;
+    const description = body?.description ?? body?.descricao ?? body?.desc;
+    if (description !== undefined) data.description = description || null;
+    const imageUrl = body?.imageUrl ?? body?.image ?? body?.imagem ?? body?.foto;
+    if (imageUrl !== undefined) data.imageUrl = imageUrl || null;
     const cents = parsePriceCents(body);
-    if (cents !== null) data.priceCents = cents;
+    if (cents !== null) data.priceCents = Math.max(0, cents);
+    if (body?.status || body?.situacao) data.status = pickStatus(body);
 
     const p = await this.prisma.product.update({ where: { id }, data });
-    return { success: true, data: serialize(p) };
+    return { success: true, data: serialize(p), product: serialize(p), message: 'Produto atualizado.' };
   }
 
   @Delete(':id')
