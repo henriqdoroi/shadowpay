@@ -386,6 +386,15 @@ model Product {
   status      ProductStatus @default(ACTIVE)
   imageUrl    String?
   salesCount  Int           @default(0)
+
+  // Configuracoes de checkout
+  backRedirectUrl String?
+  upsellProductId String?
+  upsellUrl       String?
+  warrantyDays    Int     @default(7)
+  supportEmail    String?
+  supportPhone    String?
+
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 

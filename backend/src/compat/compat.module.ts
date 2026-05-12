@@ -19,7 +19,7 @@ import { CredentialsController } from './credentials.controller';
 import { TwoFactorPagesController } from './two-factor-pages.controller';
 import { PaymentsController } from './payments.controller';
 import { SellerWebhooksController } from './seller-webhooks.controller';
-import { ProductsController } from './products.controller';
+import { ProductsController, ProductsPublicController } from './products.controller';
 import { SalesExtrasController } from './sales-extras.controller';
 import { SellerAcquirersController } from './seller-acquirers.controller';
 
@@ -31,7 +31,7 @@ import { SellerAcquirersController } from './seller-acquirers.controller';
   controllers: [
     AdminController, UserExtrasController, AuthExtrasController,
     CredentialsController, TwoFactorPagesController, PaymentsController,
-    SellerWebhooksController, ProductsController, SalesExtrasController,
+    SellerWebhooksController, ProductsController, ProductsPublicController, SalesExtrasController,
     SellerAcquirersController,
   ],
 })
