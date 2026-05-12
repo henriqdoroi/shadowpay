@@ -1,12 +1,15 @@
 /**
  * /api/products — info-products do seller (gera checkout).
  *
- * Tolerante a varias convencoes do frontend:
+ * Aceita JSON e multipart/form-data (com upload de imagem opcional).
+ *
+ * Convencoes do frontend:
  *   nome:        name | nome | title | titulo | productName | nomeProduto | produto
  *   preco:       priceCents (int)  OR  price/preco/valor/priceReais/amount
- *                (string "R$ 21,56" / "21,56" / "21.56" / number)
+ *                ("R$ 21,56" / "21,56" / "21.56" / number)
  *   descricao:   description | descricao | desc
- *   imagem:      imageUrl | image | imagem | foto | thumbnail
+ *   imagem URL:  imageUrl | image | imagem | foto | thumbnail
+ *   imagem file: campo "image" / "imagem" / "foto" no multipart -> stored como data URL base64 (ate ter S3)
  *   status:      status | situacao  (ACTIVE/DRAFT/ARCHIVED)
  */
 import {
@@ -21,8 +24,11 @@ import {
   Post,
   Put,
   Query,
+  UploadedFiles,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../users/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
@@ -42,6 +48,24 @@ function pickStr(body: any, keys: string[]): string {
 }
 
 function parsePriceCents(body: any): number | null {
+  const trySrc = (v: any): number | null => {
+    if (v == null) return null;
+    if (typeof v === 'number' && Number.isFinite(v)) {
+      // Heuristica: se valor > 10000 e nao tem casa decimal, ja eh em centavos
+      // Mas pra ser seguro, se vier via 'priceCents' deixa int, senao multiplica.
+      return null;
+    }
+    if (typeof v === 'string') {
+      const cleaned = v
+        .replace(/[^\d,.\-]/g, '')
+        .replace(/\.(?=\d{3}(\D|$))/g, '')
+        .replace(',', '.');
+      const f = parseFloat(cleaned);
+      if (Number.isFinite(f)) return Math.round(f * 100);
+    }
+    return null;
+  };
+
   if (typeof body?.priceCents === 'number' && Number.isFinite(body.priceCents)) {
     return Math.round(body.priceCents);
   }
@@ -53,14 +77,8 @@ function parsePriceCents(body: any): number | null {
     const v = body?.[key];
     if (v == null) continue;
     if (typeof v === 'number' && Number.isFinite(v)) return Math.round(v * 100);
-    if (typeof v === 'string') {
-      const cleaned = v
-        .replace(/[^\d,.\-]/g, '')
-        .replace(/\.(?=\d{3}(\D|$))/g, '')
-        .replace(',', '.');
-      const f = parseFloat(cleaned);
-      if (Number.isFinite(f)) return Math.round(f * 100);
-    }
+    const fromStr = trySrc(v);
+    if (fromStr !== null) return fromStr;
   }
   return null;
 }
@@ -75,6 +93,11 @@ function pickStatus(body: any): 'ACTIVE' | 'DRAFT' | 'ARCHIVED' {
 function checkoutUrl(productId: string): string {
   const base = process.env.CHECKOUT_BASE_URL || 'https://shadowpay-delta.vercel.app';
   return `${base}/checkout/${productId}`;
+}
+
+function fileToDataUrl(f: Express.Multer.File): string {
+  const mime = f.mimetype || 'application/octet-stream';
+  return `data:${mime};base64,${f.buffer.toString('base64')}`;
 }
 
 function serialize(p: any) {
@@ -138,25 +161,33 @@ export class ProductsController {
   @Get(':id')
   async findOne(@CurrentUser() user: { id: string }, @Param('id') id: string) {
     const p = await this.prisma.product.findFirst({ where: { id, sellerId: user.id } });
-    if (!p) {
-      throw new NotFoundException({
-        code: 'NOT_FOUND',
-        message: `Produto ${id} nao encontrado pra esse seller.`,
-      });
-    }
+    if (!p) throw new NotFoundException({ code: 'NOT_FOUND', message: `Produto ${id} nao encontrado.` });
     return { success: true, data: serialize(p) };
   }
 
   @Post()
-  async create(@CurrentUser() user: { id: string }, @Body() body: any) {
+  @UseInterceptors(AnyFilesInterceptor())
+  async create(
+    @CurrentUser() user: { id: string },
+    @Body() body: any,
+    @UploadedFiles() files: Express.Multer.File[] = [],
+  ) {
     const name = pickStr(body, NAME_KEYS);
     const priceCents = parsePriceCents(body);
     const description = pickStr(body, DESC_KEYS);
-    const imageUrl = pickStr(body, IMAGE_KEYS);
+    let imageUrl = pickStr(body, IMAGE_KEYS);
     const status = pickStatus(body);
 
+    // Se veio upload de imagem, vira data URL base64 (ate termos S3/Cloudinary)
+    if (!imageUrl && files?.length) {
+      const f = files.find((x) => /^image\//i.test(x.mimetype || '')) ?? files[0];
+      if (f && f.size < 1.5 * 1024 * 1024) {
+        imageUrl = fileToDataUrl(f);
+      }
+    }
+
     if (!name) {
-      this.logger.warn(`POST /products: nome ausente. Body keys: ${Object.keys(body ?? {}).join(', ')}`);
+      this.logger.warn(`POST /products: nome ausente. Keys=${Object.keys(body ?? {}).join(',')} files=${files?.length || 0}`);
       throw new BadRequestException({
         code: 'NAME_REQUIRED',
         message: 'Nome do produto e obrigatorio.',
@@ -166,10 +197,9 @@ export class ProductsController {
     }
 
     if (priceCents == null || priceCents < 0) {
-      this.logger.warn(`POST /products: preco invalido. Body: ${JSON.stringify(body)}`);
       throw new BadRequestException({
         code: 'PRICE_REQUIRED',
-        message: 'Preco do produto e obrigatorio (ex: 21.56 ou "R$ 21,56").',
+        message: 'Preco do produto e obrigatorio.',
         receivedKeys: Object.keys(body ?? {}),
         accept: PRICE_KEYS,
       });
@@ -185,30 +215,30 @@ export class ProductsController {
         imageUrl: imageUrl || null,
       },
     });
-    return {
-      success: true,
-      data: serialize(p),
-      product: serialize(p),
-      message: 'Produto criado.',
-    };
+    return { success: true, data: serialize(p), product: serialize(p), message: 'Produto criado.' };
   }
 
   @Put(':id')
-  async update(@CurrentUser() user: { id: string }, @Param('id') id: string, @Body() body: any) {
+  @UseInterceptors(AnyFilesInterceptor())
+  async update(
+    @CurrentUser() user: { id: string },
+    @Param('id') id: string,
+    @Body() body: any,
+    @UploadedFiles() files: Express.Multer.File[] = [],
+  ) {
     const existing = await this.prisma.product.findFirst({ where: { id, sellerId: user.id } });
-    if (!existing) {
-      throw new NotFoundException({
-        code: 'NOT_FOUND',
-        message: `Produto ${id} nao encontrado pra esse seller.`,
-      });
-    }
+    if (!existing) throw new NotFoundException({ code: 'NOT_FOUND', message: `Produto ${id} nao encontrado.` });
 
     const data: any = {};
     const name = pickStr(body, NAME_KEYS);
     if (name) data.name = name;
     const description = body?.description ?? body?.descricao ?? body?.desc;
     if (description !== undefined) data.description = description || null;
-    const imageUrl = body?.imageUrl ?? body?.image ?? body?.imagem ?? body?.foto;
+    let imageUrl = body?.imageUrl ?? body?.image ?? body?.imagem ?? body?.foto;
+    if (imageUrl === undefined && files?.length) {
+      const f = files.find((x) => /^image\//i.test(x.mimetype || '')) ?? files[0];
+      if (f && f.size < 1.5 * 1024 * 1024) imageUrl = fileToDataUrl(f);
+    }
     if (imageUrl !== undefined) data.imageUrl = imageUrl || null;
     const cents = parsePriceCents(body);
     if (cents !== null) data.priceCents = Math.max(0, cents);
@@ -221,12 +251,7 @@ export class ProductsController {
   @Delete(':id')
   async remove(@CurrentUser() user: { id: string }, @Param('id') id: string) {
     const p = await this.prisma.product.findFirst({ where: { id, sellerId: user.id } });
-    if (!p) {
-      throw new NotFoundException({
-        code: 'NOT_FOUND',
-        message: `Produto ${id} nao encontrado pra esse seller.`,
-      });
-    }
+    if (!p) throw new NotFoundException({ code: 'NOT_FOUND', message: `Produto ${id} nao encontrado.` });
     await this.prisma.product.delete({ where: { id } });
     return { success: true, message: 'Removido.' };
   }
