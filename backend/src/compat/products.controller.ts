@@ -10,10 +10,12 @@
  *   status:      status | situacao  (ACTIVE/DRAFT/ARCHIVED)
  */
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
+  Logger,
   NotFoundException,
   Param,
   Post,
@@ -24,6 +26,11 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../users/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
+
+const NAME_KEYS = ['name', 'nome', 'title', 'titulo', 'productName', 'nomeProduto', 'produto'];
+const PRICE_KEYS = ['priceCents', 'price', 'preco', 'valor', 'priceReais', 'amount', 'value'];
+const DESC_KEYS = ['description', 'descricao', 'desc'];
+const IMAGE_KEYS = ['imageUrl', 'image', 'imagem', 'foto', 'thumbnail', 'thumb'];
 
 function pickStr(body: any, keys: string[]): string {
   for (const k of keys) {
@@ -100,6 +107,8 @@ function serialize(p: any) {
 @Controller('products')
 @UseGuards(JwtAuthGuard)
 export class ProductsController {
+  private readonly logger = new Logger('Products');
+
   constructor(private readonly prisma: PrismaService) {}
 
   @Get()
@@ -129,27 +138,49 @@ export class ProductsController {
   @Get(':id')
   async findOne(@CurrentUser() user: { id: string }, @Param('id') id: string) {
     const p = await this.prisma.product.findFirst({ where: { id, sellerId: user.id } });
-    if (!p) throw new NotFoundException('Produto nao encontrado.');
+    if (!p) {
+      throw new NotFoundException({
+        code: 'NOT_FOUND',
+        message: `Produto ${id} nao encontrado pra esse seller.`,
+      });
+    }
     return { success: true, data: serialize(p) };
   }
 
   @Post()
   async create(@CurrentUser() user: { id: string }, @Body() body: any) {
-    // Nunca bloqueia salvar: se nao veio nome, usa fallback. Seller renomeia no editar.
-    const name = pickStr(body, ['name', 'nome', 'title', 'titulo', 'productName', 'nomeProduto', 'produto']) || 'Produto sem nome';
+    const name = pickStr(body, NAME_KEYS);
     const priceCents = parsePriceCents(body);
-    const description = pickStr(body, ['description', 'descricao', 'desc']);
-    const imageUrl = pickStr(body, ['imageUrl', 'image', 'imagem', 'foto', 'thumbnail', 'thumb']);
+    const description = pickStr(body, DESC_KEYS);
+    const imageUrl = pickStr(body, IMAGE_KEYS);
     const status = pickStatus(body);
 
-    const finalPriceCents = priceCents == null ? 0 : Math.max(0, priceCents);
+    if (!name) {
+      this.logger.warn(`POST /products: nome ausente. Body keys: ${Object.keys(body ?? {}).join(', ')}`);
+      throw new BadRequestException({
+        code: 'NAME_REQUIRED',
+        message: 'Nome do produto e obrigatorio.',
+        receivedKeys: Object.keys(body ?? {}),
+        accept: NAME_KEYS,
+      });
+    }
+
+    if (priceCents == null || priceCents < 0) {
+      this.logger.warn(`POST /products: preco invalido. Body: ${JSON.stringify(body)}`);
+      throw new BadRequestException({
+        code: 'PRICE_REQUIRED',
+        message: 'Preco do produto e obrigatorio (ex: 21.56 ou "R$ 21,56").',
+        receivedKeys: Object.keys(body ?? {}),
+        accept: PRICE_KEYS,
+      });
+    }
 
     const p = await this.prisma.product.create({
       data: {
         sellerId: user.id,
         name,
         description: description || null,
-        priceCents: finalPriceCents,
+        priceCents,
         status,
         imageUrl: imageUrl || null,
       },
@@ -165,10 +196,15 @@ export class ProductsController {
   @Put(':id')
   async update(@CurrentUser() user: { id: string }, @Param('id') id: string, @Body() body: any) {
     const existing = await this.prisma.product.findFirst({ where: { id, sellerId: user.id } });
-    if (!existing) throw new NotFoundException('Produto nao encontrado.');
+    if (!existing) {
+      throw new NotFoundException({
+        code: 'NOT_FOUND',
+        message: `Produto ${id} nao encontrado pra esse seller.`,
+      });
+    }
 
     const data: any = {};
-    const name = pickStr(body, ['name', 'nome', 'title', 'titulo', 'productName', 'nomeProduto', 'produto']);
+    const name = pickStr(body, NAME_KEYS);
     if (name) data.name = name;
     const description = body?.description ?? body?.descricao ?? body?.desc;
     if (description !== undefined) data.description = description || null;
@@ -185,7 +221,12 @@ export class ProductsController {
   @Delete(':id')
   async remove(@CurrentUser() user: { id: string }, @Param('id') id: string) {
     const p = await this.prisma.product.findFirst({ where: { id, sellerId: user.id } });
-    if (!p) throw new NotFoundException('Produto nao encontrado.');
+    if (!p) {
+      throw new NotFoundException({
+        code: 'NOT_FOUND',
+        message: `Produto ${id} nao encontrado pra esse seller.`,
+      });
+    }
     await this.prisma.product.delete({ where: { id } });
     return { success: true, message: 'Removido.' };
   }
