@@ -25,6 +25,7 @@ import Image from "next/image";
 import Head from "next/head";
 import { motion } from "framer-motion";
 import { ArrowUp, ArrowDown } from "lucide-react";
+import ShadowPanel from "@/components/ShadowPanel";
 
 /* Count-up suave (Shadow Design Language) */
 function useCountUp(target: number, duration = 1300) {
@@ -679,6 +680,7 @@ function DashboardContent() {
             </main>
           </SidebarInset>
         </SidebarProvider>
+        <ShadowPanel />
       </div>
     </>
   );
