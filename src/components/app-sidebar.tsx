@@ -23,7 +23,21 @@ import {
   SidebarMenu,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import Image from "next/image";
+function ShadowMark({ size = 26 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
+      <defs>
+        <linearGradient id="sg-sidebar" x1="0" y1="0" x2="48" y2="48">
+          <stop offset="0" stopColor="#A855F7" />
+          <stop offset="1" stopColor="#3B82F6" />
+        </linearGradient>
+      </defs>
+      <circle cx="24" cy="24" r="21" stroke="url(#sg-sidebar)" strokeWidth="2" opacity="0.6" />
+      <circle cx="24" cy="24" r="8" fill="url(#sg-sidebar)" />
+      <circle cx="24" cy="24" r="13" stroke="url(#sg-sidebar)" strokeWidth="1.5" opacity="0.35" />
+    </svg>
+  );
+}
 
 const data = {
   user: {
@@ -166,15 +180,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
         <SidebarMenu>
-          <SidebarMenuItem className="flex items-center justify-center">
-            <a href="#">
-              <Image
-                src="/safira-logo.png"
-                alt="Safira Cash Logo"
-                width={120}
-                height={16}
-              />
-            </a>
+          <SidebarMenuItem className="flex items-center justify-center gap-2.5 py-2">
+            <ShadowMark size={26} />
+            <span className="text-display text-base font-bold tracking-tight text-white">
+              ShadowPay
+            </span>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>

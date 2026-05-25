@@ -123,7 +123,7 @@ export default function App(props: AppProps) {
   return (
     <>
       <Head>
-        <title>Safira Cash | Sua carteira digital segura!</title>
+        <title>ShadowPay — Elite Financial Infrastructure</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta
