@@ -185,6 +185,38 @@ const formatDate = (dateString: string) => {
   });
 };
 
+function KycDocPreview({ url, label }: { url?: string | null; label: string }) {
+  const u = url?.trim();
+  if (!u) {
+    return (
+      <p className="text-sm text-muted-foreground text-center py-6">
+        Documento não disponível
+      </p>
+    );
+  }
+  const isPdf =
+    u.startsWith("data:application/pdf") || u.toLowerCase().includes(".pdf");
+  return (
+    <div className="space-y-2">
+      {isPdf ? (
+        <iframe src={u} title={label} className="w-full h-72 rounded bg-white" />
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={u} alt={label} className="max-h-72 w-auto mx-auto rounded" />
+      )}
+      <a
+        href={u}
+        download={label}
+        target="_blank"
+        rel="noreferrer"
+        className="block text-center text-xs text-blue-600 hover:underline"
+      >
+        Abrir / Baixar
+      </a>
+    </div>
+  );
+}
+
 const getKycStatusBadge = (status: string) => {
   const statusConfig = {
     NOT_STARTED: {
@@ -1767,23 +1799,11 @@ function UsersManagerContent() {
                     <Label className="text-sm font-medium">
                       Documento (Frente)
                     </Label>
-                    <div className="border rounded-lg p-4 bg-muted text-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          const url =
-                            kycSeller?.kyc?.[0]?.documentFrontImage?.trim();
-                          if (url) {
-                            window.open(url, "_blank");
-                          } else {
-                            alert("Documento não disponível");
-                          }
-                        }}
-                        className="cursor-pointer w-full"
-                      >
-                        Visualizar Documento (Frente)
-                      </Button>
+                    <div className="border rounded-lg p-2 bg-muted">
+                      <KycDocPreview
+                        url={kycSeller?.kyc?.[0]?.documentFrontImage}
+                        label="Documento (Frente)"
+                      />
                     </div>
                   </div>
 
@@ -1792,45 +1812,22 @@ function UsersManagerContent() {
                     <Label className="text-sm font-medium">
                       Documento (Verso)
                     </Label>
-                    <div className="border rounded-lg p-4 bg-muted text-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          const url =
-                            kycSeller?.kyc?.[0]?.documentBackImage?.trim();
-                          if (url) {
-                            window.open(url, "_blank");
-                          } else {
-                            alert("Documento não disponível");
-                          }
-                        }}
-                        className="cursor-pointer w-full"
-                      >
-                        Visualizar Documento (Verso)
-                      </Button>
+                    <div className="border rounded-lg p-2 bg-muted">
+                      <KycDocPreview
+                        url={kycSeller?.kyc?.[0]?.documentBackImage}
+                        label="Documento (Verso)"
+                      />
                     </div>
                   </div>
 
                   {/* Selfie */}
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Selfie</Label>
-                    <div className="border rounded-lg p-4 bg-muted text-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          const url = kycSeller?.kyc?.[0]?.selfieImage?.trim();
-                          if (url) {
-                            window.open(url, "_blank");
-                          } else {
-                            alert("Selfie não disponível");
-                          }
-                        }}
-                        className="cursor-pointer w-full"
-                      >
-                        Visualizar Selfie
-                      </Button>
+                    <div className="border rounded-lg p-2 bg-muted">
+                      <KycDocPreview
+                        url={kycSeller?.kyc?.[0]?.selfieImage}
+                        label="Selfie"
+                      />
                     </div>
                   </div>
 
@@ -1839,27 +1836,11 @@ function UsersManagerContent() {
                     <Label className="text-sm font-medium">
                       Documento da Empresa
                     </Label>
-                    <div className="border rounded-lg p-4 bg-muted text-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          const url =
-                            kycSeller?.kyc?.[0]?.companyDocumentImage?.trim();
-                          if (url) {
-                            window.open(url, "_blank");
-                          } else {
-                            alert("Documento da empresa não disponível");
-                          }
-                        }}
-                        className="cursor-pointer w-full"
-                      >
-                        {kycSeller?.kyc?.[0]?.companyDocumentImage?.includes(
-                          ".pdf"
-                        )
-                          ? "Visualizar PDF"
-                          : "Visualizar Documento da Empresa"}
-                      </Button>
+                    <div className="border rounded-lg p-2 bg-muted">
+                      <KycDocPreview
+                        url={kycSeller?.kyc?.[0]?.companyDocumentImage}
+                        label="Documento da Empresa"
+                      />
                     </div>
                   </div>
                 </div>
