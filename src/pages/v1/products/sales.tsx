@@ -110,7 +110,7 @@ export default function Sales() {
 
       // 1️⃣ Busca todas as vendas da página
       const res = await axios.get(
-        `https://shadowpay-production-2ca8.up.railway.app/api/sales?page=${page}&limit=${limit}`,
+        `https://shadowpay-api-production.up.railway.app/api/sales?page=${page}&limit=${limit}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const fetchedSales: Sale[] = res.data.data.sales || [];
@@ -123,7 +123,7 @@ export default function Sales() {
       if (saleIds) {
         // 3️⃣ Busca todas as transações relacionadas pelo saleId
         const txRes = await axios.get(
-          `https://shadowpay-production-2ca8.up.railway.app/api/admin/transactions?saleIds=${saleIds}`,
+          `https://shadowpay-api-production.up.railway.app/api/admin/transactions?saleIds=${saleIds}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         transactions = txRes.data.data.transactions || [];

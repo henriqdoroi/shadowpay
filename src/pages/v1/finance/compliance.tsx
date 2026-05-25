@@ -54,7 +54,7 @@ export default function Compliance() {
         }
 
         const response = await fetch(
-          "https://shadowpay-production-2ca8.up.railway.app/api/payments/infringements",
+          "https://shadowpay-api-production.up.railway.app/api/payments/infringements",
           {
             headers: {
               Authorization: `Bearer ${token}`,

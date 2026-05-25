@@ -217,7 +217,7 @@ export default function TransactionsPage() {
       });
 
       const response = await fetch(
-        `https://shadowpay-production-2ca8.up.railway.app/api/admin/transactions?${queryParams.toString()}`,
+        `https://shadowpay-api-production.up.railway.app/api/admin/transactions?${queryParams.toString()}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

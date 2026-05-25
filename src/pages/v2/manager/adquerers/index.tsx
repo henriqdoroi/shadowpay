@@ -79,7 +79,7 @@ export default function AdquerersPage() {
     xgate_id: "",
   });
 
-  const API_BASE = "https://shadowpay-production-2ca8.up.railway.app/api/admin";
+  const API_BASE = "https://shadowpay-api-production.up.railway.app/api/admin";
 
   useEffect(() => {
     fetchAdquirentes();

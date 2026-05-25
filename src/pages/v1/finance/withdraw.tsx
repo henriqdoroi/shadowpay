@@ -224,7 +224,7 @@ function WithdrawContent() {
         if (!user?.id) throw new Error("Usuário não identificado");
 
         const response = await axios.get<FeesResponse>(
-          "https://shadowpay-production-2ca8.up.railway.app/api/user/fees",
+          "https://shadowpay-api-production.up.railway.app/api/user/fees",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -290,7 +290,7 @@ function WithdrawContent() {
       (async () => {
         try {
           const res = await axios.get(
-            "https://shadowpay-production-2ca8.up.railway.app/api/user/profile",
+            "https://shadowpay-api-production.up.railway.app/api/user/profile",
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -320,7 +320,7 @@ function WithdrawContent() {
 
     try {
       const response = await axios.get<FeesResponse>(
-        "https://shadowpay-production-2ca8.up.railway.app/api/user/fees",
+        "https://shadowpay-api-production.up.railway.app/api/user/fees",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -360,7 +360,7 @@ function WithdrawContent() {
       });
 
       const response = await axios.get(
-        `https://shadowpay-production-2ca8.up.railway.app/api/user/withdraws-report?${params.toString()}`,
+        `https://shadowpay-api-production.up.railway.app/api/user/withdraws-report?${params.toString()}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -557,7 +557,7 @@ function WithdrawContent() {
     setIs2FALoading(true);
 
     try {
-      const res = await fetch("https://shadowpay-production-2ca8.up.railway.app/api/pages/2fa/verify", {
+      const res = await fetch("https://shadowpay-api-production.up.railway.app/api/pages/2fa/verify", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -611,7 +611,7 @@ function WithdrawContent() {
     setIsProcessingWithdraw(true);
     try {
       const response = await axios.post(
-        "https://shadowpay-production-2ca8.up.railway.app/api/payments/internal/withdraw",
+        "https://shadowpay-api-production.up.railway.app/api/payments/internal/withdraw",
         {
           amount: valorSaque,
           pixKey: pixKey.trim(),
@@ -637,7 +637,7 @@ function WithdrawContent() {
         // Enviar notificação push para saque
         try {
           await axios.post(
-            "https://shadowpay-production-2ca8.up.railway.app/api/webhooks/notifications/send", // Ajuste a rota correta para enviar notificação saque
+            "https://shadowpay-api-production.up.railway.app/api/webhooks/notifications/send", // Ajuste a rota correta para enviar notificação saque
             {
               title: "Saque aprovado",
               body: `Seu saque de R$ ${parseFloat(data.amountNet).toFixed(

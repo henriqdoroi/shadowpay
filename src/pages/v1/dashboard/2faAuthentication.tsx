@@ -33,7 +33,7 @@ export default function TwoFAModal({
     setError("");
     try {
       const res = await axios.get(
-        "https://shadowpay-production-2ca8.up.railway.app/api/pages/2fa/setup",
+        "https://shadowpay-api-production.up.railway.app/api/pages/2fa/setup",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -56,7 +56,7 @@ export default function TwoFAModal({
 
     try {
       const res = await axios.post(
-        "https://shadowpay-production-2ca8.up.railway.app/api/pages/2fa/verify",
+        "https://shadowpay-api-production.up.railway.app/api/pages/2fa/verify",
         { token: userToken },
         { headers: { Authorization: `Bearer ${token}` } }
       );

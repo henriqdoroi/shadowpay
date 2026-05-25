@@ -128,7 +128,7 @@ function RecivementsContent() {
     setIsLoadingFees(true);
     try {
       const { data } = await axios.get<FeesResponse>(
-        "https://shadowpay-production-2ca8.up.railway.app/api/user/fees",
+        "https://shadowpay-api-production.up.railway.app/api/user/fees",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -201,7 +201,7 @@ function RecivementsContent() {
       if (endDateParam) params.append("endDate", endDateParam);
 
       const response = await axios.get(
-        `https://shadowpay-production-2ca8.up.railway.app/api/user/deposits-report?${params.toString()}`,
+        `https://shadowpay-api-production.up.railway.app/api/user/deposits-report?${params.toString()}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -230,7 +230,7 @@ function RecivementsContent() {
         endDate: end,
       });
       const response = await axios.get(
-        `https://shadowpay-production-2ca8.up.railway.app/api/user/deposits-report?${params.toString()}`,
+        `https://shadowpay-api-production.up.railway.app/api/user/deposits-report?${params.toString()}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -329,7 +329,7 @@ function RecivementsContent() {
     setIsProcessingDeposit(true);
     try {
       const response = await axios.post(
-        "https://shadowpay-production-2ca8.up.railway.app/api/payments/internal/deposit",
+        "https://shadowpay-api-production.up.railway.app/api/payments/internal/deposit",
         {
           amount: valorBruto,
           paymentMethod: "pix",

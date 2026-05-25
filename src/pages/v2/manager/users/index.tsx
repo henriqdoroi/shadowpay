@@ -330,7 +330,7 @@ function UsersManagerContent() {
       if (!token) throw new Error("Token de acesso não encontrado");
 
       const response = await fetch(
-        `https://shadowpay-production-2ca8.up.railway.app/api/admin/sellers/${sellerId}`,
+        `https://shadowpay-api-production.up.railway.app/api/admin/sellers/${sellerId}`,
         {
           method: "DELETE",
           headers: {
@@ -402,7 +402,7 @@ function UsersManagerContent() {
       };
 
       const sellerResponse = await fetch(
-        `https://shadowpay-production-2ca8.up.railway.app/api/admin/sellers/${userFormData.id}`,
+        `https://shadowpay-api-production.up.railway.app/api/admin/sellers/${userFormData.id}`,
         {
           method: "PATCH",
           headers: {
@@ -432,7 +432,7 @@ function UsersManagerContent() {
         };
 
         const walletResponse = await fetch(
-          `https://shadowpay-production-2ca8.up.railway.app/api/admin/wallets/${userFormData.id}/adjust-balance`,
+          `https://shadowpay-api-production.up.railway.app/api/admin/wallets/${userFormData.id}/adjust-balance`,
           {
             method: "PATCH",
             headers: {
@@ -465,7 +465,7 @@ function UsersManagerContent() {
       if (!token) throw new Error("Token não encontrado");
 
       const response = await fetch(
-        "https://shadowpay-production-2ca8.up.railway.app/api/admin/adquerers",
+        "https://shadowpay-api-production.up.railway.app/api/admin/adquerers",
         {
           method: "GET",
           headers: {
@@ -512,7 +512,7 @@ function UsersManagerContent() {
           queryParams.append("adquererId", filters.adquererId);
 
         const response = await fetch(
-          `https://shadowpay-production-2ca8.up.railway.app/api/admin/sellers?${queryParams.toString()}`,
+          `https://shadowpay-api-production.up.railway.app/api/admin/sellers?${queryParams.toString()}`,
           {
             method: "GET",
             headers: {
@@ -569,7 +569,7 @@ function UsersManagerContent() {
       if (filters.isActive) queryParams.append("isActive", filters.isActive);
 
       const response = await fetch(
-        `https://shadowpay-production-2ca8.up.railway.app/api/admin/sellers?${queryParams}`,
+        `https://shadowpay-api-production.up.railway.app/api/admin/sellers?${queryParams}`,
         {
           method: "GET",
           headers: {
@@ -655,7 +655,7 @@ function UsersManagerContent() {
       }
 
       const response = await fetch(
-        `https://shadowpay-production-2ca8.up.railway.app/api/admin/sellers/${sellerId}`,
+        `https://shadowpay-api-production.up.railway.app/api/admin/sellers/${sellerId}`,
         {
           method: "GET",
           headers: {
@@ -695,7 +695,7 @@ function UsersManagerContent() {
       }
 
       const response = await fetch(
-        `https://shadowpay-production-2ca8.up.railway.app/api/admin/sellers/${sellerId}`,
+        `https://shadowpay-api-production.up.railway.app/api/admin/sellers/${sellerId}`,
         {
           method: "GET",
           headers: {
@@ -735,7 +735,7 @@ function UsersManagerContent() {
       }
 
       const response = await fetch(
-        `https://shadowpay-production-2ca8.up.railway.app/api/admin/kyc/${kycId}/approve`,
+        `https://shadowpay-api-production.up.railway.app/api/admin/kyc/${kycId}/approve`,
         {
           method: "PATCH",
           headers: {
@@ -779,7 +779,7 @@ function UsersManagerContent() {
       }
 
       const response = await fetch(
-        `https://shadowpay-production-2ca8.up.railway.app/api/admin/kyc/${kycId}/reject`,
+        `https://shadowpay-api-production.up.railway.app/api/admin/kyc/${kycId}/reject`,
         {
           method: "PATCH",
           headers: {
@@ -841,7 +841,7 @@ function UsersManagerContent() {
       }
 
       const response = await fetch(
-        `https://shadowpay-production-2ca8.up.railway.app/api/admin/sellers/${sellerId}/fees`,
+        `https://shadowpay-api-production.up.railway.app/api/admin/sellers/${sellerId}/fees`,
         {
           method: "PATCH",
           headers: {
@@ -889,7 +889,7 @@ function UsersManagerContent() {
       }
 
       const response = await fetch(
-        `https://shadowpay-production-2ca8.up.railway.app/api/admin/sellers/${sellerId}`,
+        `https://shadowpay-api-production.up.railway.app/api/admin/sellers/${sellerId}`,
         {
           method: "GET",
           headers: {

@@ -121,7 +121,7 @@ function FeeContent() {
 
       // 1) Buscar dados do usuário (fees + sellerId + adquirente)
       const feesResponse = await axios.get<FeesResponse>(
-        "https://shadowpay-production-2ca8.up.railway.app/api/user/fees",
+        "https://shadowpay-api-production.up.railway.app/api/user/fees",
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
