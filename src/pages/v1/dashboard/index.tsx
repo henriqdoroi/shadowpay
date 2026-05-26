@@ -20,11 +20,13 @@ import {
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ShadowPanel from "@/components/ShadowPanel";
 import TwoFAModal from "./2faAuthentication";
+import { ShadowLogo } from "@/components/shadow/ShadowLogo";
 
 import {
   Search,
   Bell,
   MessageCircle,
+  MessageSquare,
   HelpCircle,
   ChevronDown,
   LayoutDashboard,
@@ -60,7 +62,7 @@ import {
   ShoppingCart,
   ReceiptText,
   RotateCcw,
-  Banknote,
+  DollarSign,
   Zap,
 } from "lucide-react";
 
@@ -88,57 +90,6 @@ const T = {
   cardShadowHover:
     "0 4px 6px rgba(15, 23, 42, 0.05), 0 10px 15px rgba(15, 23, 42, 0.08)",
 };
-
-/* ============================================================
- * SVG: ShadowPay panther mascot (chrome / metallic) — placeholder
- * ============================================================ */
-function PantherMark({ size = 64 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size * 1.05}
-      viewBox="0 0 100 105"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-label="ShadowPay"
-    >
-      <defs>
-        <linearGradient id="pm-chrome" x1="0" y1="0" x2="100" y2="105">
-          <stop offset="0" stopColor="#F1F5F9" />
-          <stop offset="0.35" stopColor="#94A3B8" />
-          <stop offset="0.62" stopColor="#475569" />
-          <stop offset="1" stopColor="#0F172A" />
-        </linearGradient>
-        <linearGradient id="pm-highlight" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="white" stopOpacity="0.85" />
-          <stop offset="0.5" stopColor="white" stopOpacity="0.25" />
-          <stop offset="1" stopColor="white" stopOpacity="0" />
-        </linearGradient>
-        <radialGradient id="pm-glow" cx="50%" cy="55%" r="55%">
-          <stop offset="0" stopColor="#A855F7" stopOpacity="0.35" />
-          <stop offset="1" stopColor="#7C3AED" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      {/* glow */}
-      <ellipse cx="50" cy="58" rx="40" ry="38" fill="url(#pm-glow)" />
-      {/* shape: stylized feline head silhouette */}
-      <path
-        d="M50 6 C 36 6 24 14 18 28 L 12 30 L 16 38 L 14 46 C 14 58 18 70 26 80 C 32 88 40 92 50 92 C 60 92 68 88 74 80 C 82 70 86 58 86 46 L 84 38 L 88 30 L 82 28 C 76 14 64 6 50 6 Z M 36 36 C 38 33 42 33 44 36 C 46 39 45 43 42 44 C 39 45 35 43 35 40 C 35 38 35 37 36 36 Z M 56 36 C 58 33 62 33 64 36 C 65 37 65 38 65 40 C 65 43 61 45 58 44 C 55 43 54 39 56 36 Z M 50 56 L 46 64 L 50 68 L 54 64 L 50 56 Z"
-        fill="url(#pm-chrome)"
-        stroke="rgba(15,23,42,0.25)"
-        strokeWidth="0.8"
-      />
-      {/* highlight */}
-      <path
-        d="M50 8 C 38 8 26 16 22 28 L 18 32 L 22 36 L 20 44 C 20 50 22 56 26 62"
-        fill="url(#pm-highlight)"
-        opacity="0.65"
-      />
-      {/* small inner mark */}
-      <circle cx="50" cy="82" r="1.5" fill="#0F172A" opacity="0.4" />
-    </svg>
-  );
-}
 
 /* ============================================================
  * MAIN DASHBOARD
@@ -517,11 +468,14 @@ function DashboardContent() {
       </Head>
 
       <div
-        className="min-h-screen w-full"
+        className="relative min-h-screen w-full"
         style={{
           background: T.bg,
           color: T.text,
           fontFamily: "'Satoshi', 'Inter', sans-serif",
+          backgroundImage:
+            "radial-gradient(rgba(15, 23, 42, 0.04) 1px, transparent 1px)",
+          backgroundSize: "20px 20px",
         }}
       >
         <div className="flex min-h-screen">
@@ -541,7 +495,7 @@ function DashboardContent() {
               className="flex flex-col items-center gap-2 px-6 py-7"
               style={{ borderBottom: `1px solid ${T.border}` }}
             >
-              <PantherMark size={86} />
+              <ShadowLogo size={120} />
               <div className="text-center leading-tight">
                 <div
                   className="text-[14px] font-bold tracking-[0.18em] text-slate-700"
@@ -845,7 +799,7 @@ function DashboardContent() {
                 <div className="grid grid-cols-1 md:grid-cols-[170px_1fr] gap-4 p-5 md:p-7">
                   {/* Mascot */}
                   <div className="hidden md:flex items-center justify-center">
-                    <PantherMark size={140} />
+                    <ShadowLogo size={140} glow />
                   </div>
 
                   {/* Greeting + actions */}
@@ -883,7 +837,7 @@ function DashboardContent() {
                         className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-[13px] font-semibold text-slate-700 transition-all hover:bg-slate-50"
                         style={{ border: `1px solid ${T.border}` }}
                       >
-                        <Receipt className="h-4 w-4" /> Criar checkout
+                        <MessageSquare className="h-4 w-4" /> Criar checkout
                       </button>
                       <button
                         onClick={() => router.push("/v1/finance/withdraw")}
@@ -894,7 +848,7 @@ function DashboardContent() {
                           boxShadow: "0 8px 24px -8px rgba(124, 58, 237, 0.45)",
                         }}
                       >
-                        <Banknote className="h-4 w-4" /> Sacar
+                        <DollarSign className="h-4 w-4" /> Sacar
                       </button>
                     </div>
                   </div>
@@ -1453,34 +1407,33 @@ function DashboardContent() {
                       "0 8px 24px -8px rgba(124, 58, 237, 0.4)",
                   }}
                 >
-                  {/* Glow orb */}
+                  {/* Big halo behind orb */}
                   <div
-                    className="pointer-events-none absolute -right-6 -bottom-6 h-40 w-40 rounded-full"
+                    className="pointer-events-none absolute -right-10 -bottom-10 h-52 w-52 rounded-full"
                     style={{
                       background:
-                        "radial-gradient(circle, rgba(168,85,247,0.45) 0%, rgba(124,58,237,0.15) 50%, transparent 70%)",
+                        "radial-gradient(circle, rgba(168,85,247,0.55) 0%, rgba(124,58,237,0.18) 45%, transparent 70%)",
+                      filter: "blur(8px)",
                     }}
                   />
-                  <div
-                    className="pointer-events-none absolute right-4 bottom-4 h-28 w-28 rounded-full"
-                    style={{
-                      background:
-                        "radial-gradient(circle, rgba(255,255,255,0.18) 0%, rgba(124,58,237,0.05) 60%, transparent 100%)",
-                      border: "1px solid rgba(255,255,255,0.06)",
-                    }}
-                  >
-                    <div className="flex h-full items-center justify-center">
-                      <div
-                        className="flex h-16 w-16 items-center justify-center rounded-full text-white"
-                        style={{
-                          background:
-                            "radial-gradient(circle, rgba(168,85,247,0.8) 0%, rgba(124,58,237,0.4) 70%)",
-                          boxShadow: "0 0 32px rgba(168,85,247,0.5)",
-                        }}
-                      >
-                        <Sparkles className="h-7 w-7" />
-                      </div>
-                    </div>
+
+                  {/* Orbital ring with logo */}
+                  <div className="pointer-events-none absolute right-2 bottom-2 flex h-32 w-32 items-center justify-center">
+                    <div
+                      className="absolute inset-0 rounded-full"
+                      style={{
+                        background:
+                          "radial-gradient(circle, rgba(255,255,255,0.10) 0%, rgba(124,58,237,0.04) 55%, transparent 100%)",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                        boxShadow:
+                          "inset 0 0 20px rgba(168,85,247,0.15), 0 0 40px rgba(168,85,247,0.18)",
+                      }}
+                    />
+                    <ShadowLogo
+                      size={64}
+                      glow
+                      glowColor="rgba(168, 85, 247, 0.55)"
+                    />
                   </div>
 
                   <div className="relative">
