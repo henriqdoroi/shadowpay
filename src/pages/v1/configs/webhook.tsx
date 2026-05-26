@@ -1,25 +1,10 @@
-import { AppSidebar } from "@/components/app-sidebar";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+"use client";
+
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import axios from "axios";
+import Head from "next/head";
+import { toast } from "sonner";
 import {
   Plug,
   Plus,
@@ -28,14 +13,18 @@ import {
   XCircle,
   Webhook as WebhookIcon,
 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import axios from "axios";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { toast } from "sonner";
-import Head from "next/head";
-import { motion } from "framer-motion";
+import { LightShell } from "@/components/LightShell";
 import ShadowPanel from "@/components/ShadowPanel";
+
+const API = "https://shadowpay-api-production.up.railway.app";
 
 interface WebhookConnection {
   id: string;
@@ -46,11 +35,6 @@ interface WebhookConnection {
   lastSentAt?: string;
   description?: string;
   sellerId: string;
-}
-
-interface WebhooksResponse {
-  success: boolean;
-  data: WebhookConnection[];
 }
 
 interface CreateWebhookRequest {
@@ -64,527 +48,421 @@ const webhookTypes = [
   { value: "PRODUCTS", label: "Produtos" },
 ];
 
-const SHADOW_BG =
-  "radial-gradient(1100px 700px at 85% -10%, #0B1020 0%, #060A14 55%, #03060F 100%)";
-
 function WebhookContent() {
   const { user, token } = useAuth();
   const [webhooks, setWebhooks] = useState<WebhookConnection[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [newWebhookUrl, setNewWebhookUrl] = useState("");
-  const [newWebhookType, setNewWebhookType] = useState<string>("");
-  const [newWebhookDescription, setNewWebhookDescription] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [url, setUrl] = useState("");
+  const [type, setType] = useState<string>("");
+  const [creating, setCreating] = useState(false);
 
   const fetchWebhooks = async () => {
     if (!token) return;
-
-    setIsLoading(true);
+    setLoading(true);
     try {
-      const response = await axios.get<WebhooksResponse>(
-        "https://shadowpay-api-production.up.railway.app/api/webhooks",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.data.success) {
-        setWebhooks(response.data.data);
-      } else {
-        toast.error("Erro ao carregar webhooks");
-      }
-    } catch (error) {
-      console.error("Erro ao buscar webhooks:", error);
+      const r = await axios.get(`${API}/api/webhooks`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (r.data?.success) setWebhooks(r.data.data);
+      else toast.error("Erro ao carregar webhooks");
+    } catch (e) {
+      console.error(e);
       toast.error("Erro ao conectar com o servidor");
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   const createWebhook = async () => {
-    if (!token || !newWebhookUrl.trim() || !newWebhookType) return;
-
-    setIsCreating(true);
+    if (!token || !url.trim() || !type) return;
+    setCreating(true);
     try {
-      const requestData: CreateWebhookRequest = {
-        url: newWebhookUrl.trim(),
-        eventType: newWebhookType as "TRANSACTIONS" | "PRODUCTS",
+      const body: CreateWebhookRequest = {
+        url: url.trim(),
+        eventType: type as "TRANSACTIONS" | "PRODUCTS",
       };
-
-      if (newWebhookDescription.trim()) {
-        requestData.description = newWebhookDescription.trim();
-      }
-
-      const response = await axios.post(
-        "https://shadowpay-api-production.up.railway.app/api/webhooks",
-        requestData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.data.success) {
+      const r = await axios.post(`${API}/api/webhooks`, body, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (r.data?.success) {
         await fetchWebhooks();
-        closeModal();
-        toast.success("Webhook criado com sucesso!");
+        close();
+        toast.success("Webhook criado!");
       } else {
-        toast.error(response.data.message || "Erro ao criar webhook");
+        toast.error(r.data?.message || "Erro ao criar webhook");
       }
-    } catch (error: any) {
-      console.error("Erro ao criar webhook:", error);
-      const errorMessage =
-        error.response?.data?.message || "Erro ao conectar com o servidor";
-      toast.error(errorMessage);
+    } catch (e: any) {
+      toast.error(
+        e?.response?.data?.message || "Erro ao conectar com o servidor"
+      );
     } finally {
-      setIsCreating(false);
+      setCreating(false);
     }
   };
 
   const deleteWebhook = async (id: string) => {
     if (!token) return;
-
     try {
-      const response = await axios.delete(
-        `https://shadowpay-api-production.up.railway.app/api/webhooks/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.data.success) {
+      const r = await axios.delete(`${API}/api/webhooks/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (r.data?.success) {
         await fetchWebhooks();
-        toast.success("Webhook deletado com sucesso!");
+        toast.success("Webhook deletado!");
       } else {
-        toast.error(response.data.message || "Erro ao deletar webhook");
+        toast.error(r.data?.message || "Erro ao deletar");
       }
-    } catch (error: any) {
-      console.error("Erro ao deletar webhook:", error);
-      const errorMessage =
-        error.response?.data?.message || "Erro ao conectar com o servidor";
-      toast.error(errorMessage);
+    } catch (e: any) {
+      toast.error(
+        e?.response?.data?.message || "Erro ao conectar com o servidor"
+      );
     }
   };
 
   useEffect(() => {
-    if (user && token) {
-      fetchWebhooks();
-    }
+    if (user && token) fetchWebhooks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, token]);
 
-  const formatDate = (dateString: string) => {
-    return new Intl.DateTimeFormat("pt-BR", {
+  const fmt = (s: string) =>
+    new Intl.DateTimeFormat("pt-BR", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-    }).format(new Date(dateString));
-  };
+    }).format(new Date(s));
 
-  const getStatusBadge = (isActive: boolean) =>
-    isActive ? (
-      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-emerald-300">
+  const statusBadge = (active: boolean) =>
+    active ? (
+      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
         <CheckCircle className="h-3 w-3" /> Ativo
       </span>
     ) : (
-      <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-white/60">
+      <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
         <XCircle className="h-3 w-3" /> Inativo
       </span>
     );
 
-  const getTypeBadge = (eventType: string) => {
+  const typeBadge = (t: string) => {
     const map: Record<string, { color: string; label: string }> = {
       TRANSACTIONS: {
-        color: "bg-violet-500/15 text-violet-300 border-violet-500/30",
+        color: "bg-violet-50 text-violet-700 border-violet-200",
         label: "Transações",
       },
       PRODUCTS: {
-        color: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+        color: "bg-amber-50 text-amber-700 border-amber-200",
         label: "Produtos",
       },
     };
-    const config = map[eventType] ?? {
-      color: "bg-white/10 text-white/60 border-white/15",
-      label: eventType,
+    const cfg = map[t] ?? {
+      color: "bg-slate-50 text-slate-600 border-slate-200",
+      label: t,
     };
     return (
       <span
-        className={`inline-block rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide ${config.color}`}
+        className={`inline-block rounded-full border px-2.5 py-1 text-[11px] font-semibold ${cfg.color}`}
       >
-        {config.label}
+        {cfg.label}
       </span>
     );
   };
 
-  const openModal = () => {
-    setShowAddModal(true);
+  const close = () => {
+    setShowAdd(false);
+    setUrl("");
+    setType("");
   };
 
-  const closeModal = () => {
-    setShowAddModal(false);
-    setNewWebhookUrl("");
-    setNewWebhookType("");
-    setNewWebhookDescription("");
-  };
+  const truncate = (u: string, n = 50) =>
+    u.length <= n ? u : u.substring(0, n) + "...";
 
-  const truncateUrl = (url: string, maxLength: number = 50) => {
-    if (url.length <= maxLength) return url;
-    return url.substring(0, maxLength) + "...";
-  };
-
-  const activeWebhooks = webhooks?.filter((w) => w.isActive).length || 0;
-  const totalWebhooks = webhooks?.length || 0;
+  const total = webhooks?.length || 0;
+  const active = webhooks?.filter((w) => w.isActive).length || 0;
 
   const kpis = [
     {
       label: "Total de webhooks",
-      value: String(totalWebhooks),
-      sub: "Webhooks configurados",
+      value: String(total),
+      sub: "Configurados",
       icon: <Plug className="h-4 w-4" />,
-      accent: "#8B5CF6",
+      color: "#7C3AED",
     },
     {
       label: "Webhooks ativos",
-      value: String(activeWebhooks),
-      sub: "Funcionando corretamente",
+      value: String(active),
+      sub: "Funcionando",
       icon: <CheckCircle className="h-4 w-4" />,
-      accent: "#34D399",
+      color: "#22C55E",
     },
   ];
+
+  const inputCls =
+    "h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-violet-300 focus:ring-2 focus:ring-violet-100";
 
   return (
     <>
       <Head>
         <title>ShadowPay — Webhooks</title>
       </Head>
+      <LightShell>
+        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
+              Integrações
+            </p>
+            <h1
+              className="text-[28px] font-bold tracking-tight text-slate-900"
+              style={{
+                fontFamily: "'Clash Display', sans-serif",
+                letterSpacing: "-0.005em",
+              }}
+            >
+              Webhooks
+            </h1>
+            <p className="mt-1 text-[14px] text-slate-500">
+              Receba notificações em tempo real dos eventos da sua conta.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowAdd(true)}
+            className="inline-flex h-10 items-center gap-2 rounded-xl px-5 text-[13px] font-semibold text-white transition-transform hover:-translate-y-0.5"
+            style={{
+              background: "#7C3AED",
+              boxShadow: "0 8px 20px -8px rgba(124,58,237,0.55)",
+            }}
+          >
+            <Plus className="h-4 w-4" /> Conectar webhook
+          </button>
+        </header>
 
-      <div className="min-h-screen">
-        <SidebarProvider>
-          <AppSidebar />
-          <SidebarInset className="text-white" style={{ background: SHADOW_BG }}>
-            <header className="flex flex-col gap-4 px-4 pt-6 sm:flex-row sm:items-center sm:justify-between lg:px-8">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger className="text-white/60 hover:text-white" />
-                <div>
-                  <h1
-                    className="text-2xl font-bold tracking-tight text-white md:text-[28px]"
-                    style={{ fontFamily: "'Clash Display', sans-serif" }}
-                  >
-                    Webhooks
-                  </h1>
-                  <p className="mt-1 text-xs text-white/40">
-                    Receba notificações em tempo real dos eventos da sua conta
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={openModal}
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
-                style={{
-                  background: "linear-gradient(120deg, #7C3AED, #6366F1)",
-                  boxShadow: "0 14px 36px -14px rgba(124,58,237,0.7)",
-                }}
-              >
-                <Plus className="h-4 w-4" />
-                Conectar webhook
-              </button>
-            </header>
-
-            <main className="flex flex-col gap-5 p-4 lg:p-8">
-              {/* KPIs */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {kpis.map((k, i) => (
-                  <motion.div
-                    key={k.label}
-                    initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
-                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                    transition={{
-                      duration: 0.7,
-                      delay: i * 0.06,
-                      ease: [0.22, 1, 0.36, 1],
-                    }}
-                    className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl"
-                  >
-                    <div
-                      className="pointer-events-none absolute -left-8 -top-10 h-28 w-28 rounded-full opacity-50 blur-2xl transition-opacity duration-500 group-hover:opacity-80"
-                      style={{ background: `${k.accent}22` }}
-                    />
-                    <div className="relative mb-4 flex items-center gap-2.5">
-                      <span
-                        className="flex h-8 w-8 items-center justify-center rounded-lg"
-                        style={{ background: `${k.accent}1f`, color: k.accent }}
-                      >
-                        {k.icon}
-                      </span>
-                      <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
-                        {k.label}
-                      </span>
-                    </div>
-                    <div
-                      className="relative text-3xl font-semibold tracking-tight text-white"
-                      style={{ fontFamily: "'Clash Display', sans-serif" }}
-                    >
-                      {k.value}
-                    </div>
-                    <p className="relative mt-1.5 text-xs text-white/35">
-                      {k.sub}
-                    </p>
-                  </motion.div>
-                ))}
-
-                <motion.div
-                  initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
-                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                  transition={{ duration: 0.7, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
-                  className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl"
+        <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {kpis.map((k) => (
+            <div
+              key={k.label}
+              className="rounded-2xl p-5"
+              style={{
+                background: "#FFFFFF",
+                border: "1px solid rgba(15,23,42,0.06)",
+                boxShadow:
+                  "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-semibold text-slate-500">
+                  {k.label}
+                </p>
+                <span
+                  className="flex h-7 w-7 items-center justify-center rounded-lg"
+                  style={{ background: `${k.color}14`, color: k.color }}
                 >
-                  <div
-                    className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full blur-3xl"
-                    style={{ background: "rgba(99,102,241,0.2)" }}
-                  />
-                  <div className="relative mb-4 flex items-center gap-2.5">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/15 text-indigo-300">
-                      <Plus className="h-4 w-4" />
-                    </span>
-                    <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
-                      Conectar webhook
-                    </span>
-                  </div>
-                  <p className="relative mb-4 text-xs text-white/40">
-                    Configure novos webhooks para receber notificações em tempo
-                    real
-                  </p>
-                  <button
-                    onClick={openModal}
-                    className="relative inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
-                    style={{
-                      background: "linear-gradient(120deg, #7C3AED, #6366F1)",
-                      boxShadow: "0 14px 36px -14px rgba(124,58,237,0.7)",
-                    }}
-                  >
-                    <Plus className="h-4 w-4" /> Conectar webhook
-                  </button>
-                </motion.div>
+                  {k.icon}
+                </span>
               </div>
-
-              {/* Lista de webhooks */}
-              <motion.div
-                initial={{ opacity: 0, y: 18 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
-                className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] backdrop-blur-xl"
+              <div
+                className="mt-2 text-[28px] font-bold leading-none tracking-tight text-slate-900"
+                style={{ fontFamily: "'Clash Display', sans-serif" }}
               >
-                <div className="border-b border-white/[0.06] px-5 py-4">
-                  <h2
-                    className="text-sm font-semibold text-white"
-                    style={{ fontFamily: "'Clash Display', sans-serif" }}
-                  >
-                    Webhooks conectados
-                  </h2>
-                </div>
-                <div className="p-2 sm:p-4">
-                  {isLoading ? (
-                    <div className="space-y-3">
-                      {Array.from({ length: 3 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="h-14 animate-pulse rounded-xl bg-white/10"
-                        />
-                      ))}
-                    </div>
-                  ) : !webhooks || webhooks.length === 0 ? (
-                    <div className="py-14 text-center">
-                      <WebhookIcon className="mx-auto mb-3 h-8 w-8 text-violet-400/40" />
-                      <h3 className="text-base font-semibold text-white/80">
-                        Nenhum webhook configurado
-                      </h3>
-                      <p className="mx-auto mt-1 max-w-md text-sm text-white/40">
-                        Configure seu primeiro webhook para começar a receber
-                        notificações dos eventos da sua conta.
-                      </p>
-                      <button
-                        onClick={openModal}
-                        className="mx-auto mt-5 inline-flex items-center gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-xs font-semibold text-violet-200 transition-colors hover:bg-violet-500/20"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        Conectar primeiro webhook
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-sm">
-                        <thead>
-                          <tr className="text-[11px] uppercase tracking-wider text-white/40">
-                            <th className="px-3 py-2 font-medium">URL</th>
-                            <th className="px-3 py-2 font-medium">Tipo</th>
-                            <th className="px-3 py-2 font-medium">Status</th>
-                            <th className="px-3 py-2 font-medium">Criado em</th>
-                            <th className="px-3 py-2 font-medium">
-                              Último disparo
-                            </th>
-                            <th className="px-3 py-2 text-right font-medium">
-                              Ações
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {webhooks.map((webhook) => (
-                            <tr
-                              key={webhook.id}
-                              className="border-t border-white/[0.05] transition-colors hover:bg-white/[0.03]"
-                            >
-                              <td className="px-3 py-3">
-                                <div className="flex items-center gap-3">
-                                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300">
-                                    <WebhookIcon className="h-3.5 w-3.5" />
-                                  </span>
-                                  <div className="min-w-0">
-                                    <p className="truncate font-medium text-white/90">
-                                      {truncateUrl(webhook.url)}
-                                    </p>
-                                    <p className="truncate text-xs text-white/40">
-                                      {
-                                        webhook.url
-                                          .replace("https://", "")
-                                          .replace("http://", "")
-                                          .split("/")[0]
-                                      }
-                                    </p>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-3 py-3">
-                                {getTypeBadge(webhook.eventType)}
-                              </td>
-                              <td className="px-3 py-3">
-                                {getStatusBadge(webhook.isActive)}
-                              </td>
-                              <td className="px-3 py-3 text-white/50">
-                                {formatDate(webhook.createdAt)}
-                              </td>
-                              <td className="px-3 py-3 text-white/50">
-                                {webhook.lastSentAt
-                                  ? formatDate(webhook.lastSentAt)
-                                  : "Nunca"}
-                              </td>
-                              <td className="px-3 py-3 text-right">
-                                <button
-                                  onClick={() => deleteWebhook(webhook.id)}
-                                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-rose-500/25 bg-rose-500/10 px-2.5 text-xs text-rose-300 transition-colors hover:bg-rose-500/20"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                  <span className="hidden sm:inline">
-                                    Excluir
-                                  </span>
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            </main>
-          </SidebarInset>
-        </SidebarProvider>
-
-        {/* Modal de adicionar webhook */}
-        <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-center">
-                Conectar novo webhook
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-6">
-              <div className="space-y-1 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 text-center">
-                <p className="text-sm font-medium text-white/80">
-                  Configure um webhook
-                </p>
-                <p className="text-xs text-white/45">
-                  Receba notificações em tempo real sobre eventos da sua conta
-                </p>
+                {k.value}
               </div>
-
-              <div className="space-y-3">
-                <Label className="flex items-center gap-2 text-sm font-medium">
-                  <Plug className="h-4 w-4" />
-                  URL do webhook
-                </Label>
-                <Input
-                  value={newWebhookUrl}
-                  onChange={(e) => setNewWebhookUrl(e.target.value)}
-                  placeholder="https://api.exemplo.com/webhook"
-                  className="text-sm"
-                />
-                <p className="text-xs text-white/40">
-                  Insira a URL completa onde deseja receber as notificações
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">Tipo de evento</Label>
-                <Select value={newWebhookType} onValueChange={setNewWebhookType}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione o tipo de evento" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {webhookTypes.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-white/40">
-                  Escolha que tipo de eventos você deseja receber
-                </p>
-              </div>
-
-              <div className="space-y-1 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 text-center">
-                <p className="text-sm font-medium text-white/80">
-                  Informações importantes
-                </p>
-                <div className="space-y-0.5 text-xs text-white/45">
-                  <p>• O webhook será testado após a configuração</p>
-                  <p>• Certifique-se de que a URL está acessível</p>
-                  <p>• Você pode configurar múltiplos webhooks</p>
-                  <p>• Os dados serão enviados via POST em JSON</p>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <Button variant="outline" onClick={closeModal} className="flex-1">
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={createWebhook}
-                  className="flex-1 cursor-pointer"
-                  disabled={
-                    !newWebhookUrl.trim() || !newWebhookType || isCreating
-                  }
-                >
-                  {isCreating ? "Conectando…" : "Conectar webhook"}
-                </Button>
-              </div>
+              <p className="mt-1.5 text-xs text-slate-400">{k.sub}</p>
             </div>
-          </DialogContent>
-        </Dialog>
-        <ShadowPanel />
-      </div>
+          ))}
+        </section>
+
+        <div
+          className="overflow-hidden rounded-2xl"
+          style={{
+            background: "#FFFFFF",
+            border: "1px solid rgba(15,23,42,0.06)",
+            boxShadow:
+              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+          }}
+        >
+          <div
+            className="px-5 py-4"
+            style={{ borderBottom: "1px solid rgba(15,23,42,0.06)" }}
+          >
+            <h2
+              className="text-[14px] font-semibold text-slate-900"
+              style={{ fontFamily: "'Clash Display', sans-serif" }}
+            >
+              Webhooks conectados
+            </h2>
+          </div>
+
+          <div className="p-2 sm:p-4">
+            {loading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="h-14 animate-pulse rounded-xl"
+                    style={{ background: "#F1F2F6" }}
+                  />
+                ))}
+              </div>
+            ) : !webhooks || webhooks.length === 0 ? (
+              <div className="py-14 text-center">
+                <WebhookIcon className="mx-auto mb-3 h-8 w-8 text-violet-300" />
+                <h3 className="text-base font-semibold text-slate-700">
+                  Nenhum webhook configurado
+                </h3>
+                <p className="mx-auto mt-1 max-w-md text-sm text-slate-400">
+                  Configure seu primeiro webhook para receber notificações.
+                </p>
+                <button
+                  onClick={() => setShowAdd(true)}
+                  className="mx-auto mt-5 inline-flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-xs font-semibold text-violet-700 hover:bg-violet-100"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Conectar primeiro webhook
+                </button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="text-[10px] uppercase tracking-[0.16em] text-slate-400">
+                      <th className="px-3 py-2.5 font-semibold">URL</th>
+                      <th className="px-3 py-2.5 font-semibold">Tipo</th>
+                      <th className="px-3 py-2.5 font-semibold">Status</th>
+                      <th className="px-3 py-2.5 font-semibold">Criado</th>
+                      <th className="px-3 py-2.5 font-semibold">
+                        Último disparo
+                      </th>
+                      <th className="px-3 py-2.5 text-right font-semibold">
+                        Ações
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {webhooks.map((w) => (
+                      <tr
+                        key={w.id}
+                        className="transition-colors hover:bg-slate-50/50"
+                        style={{ borderTop: "1px solid rgba(15,23,42,0.04)" }}
+                      >
+                        <td className="px-3 py-3">
+                          <div className="flex items-center gap-3">
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+                              <WebhookIcon className="h-3.5 w-3.5" />
+                            </span>
+                            <div className="min-w-0">
+                              <p className="truncate font-medium text-slate-900">
+                                {truncate(w.url)}
+                              </p>
+                              <p className="truncate text-xs text-slate-400">
+                                {w.url
+                                  .replace("https://", "")
+                                  .replace("http://", "")
+                                  .split("/")[0]}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">{typeBadge(w.eventType)}</td>
+                        <td className="px-3 py-3">{statusBadge(w.isActive)}</td>
+                        <td className="px-3 py-3 text-slate-500">
+                          {fmt(w.createdAt)}
+                        </td>
+                        <td className="px-3 py-3 text-slate-500">
+                          {w.lastSentAt ? fmt(w.lastSentAt) : "Nunca"}
+                        </td>
+                        <td className="px-3 py-3 text-right">
+                          <button
+                            onClick={() => deleteWebhook(w.id)}
+                            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-2.5 text-xs text-rose-700 hover:bg-rose-100"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            <span className="hidden sm:inline">Excluir</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      </LightShell>
+
+      {/* Modal adicionar */}
+      <Dialog open={showAdd} onOpenChange={setShowAdd}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Conectar novo webhook</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-slate-700">
+                <Plug className="h-4 w-4" />
+                URL do webhook
+              </label>
+              <input
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://api.exemplo.com/webhook"
+                className={inputCls}
+              />
+              <p className="mt-1.5 text-xs text-slate-400">
+                URL completa onde receber as notificações
+              </p>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                Tipo de evento
+              </label>
+              <select
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                className={inputCls}
+              >
+                <option value="">Selecione…</option>
+                {webhookTypes.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div
+              className="rounded-xl p-3 text-xs text-slate-500"
+              style={{ background: "#F8F9FC" }}
+            >
+              <p className="font-semibold text-slate-700">
+                Informações importantes
+              </p>
+              <p>• Será testado após a configuração</p>
+              <p>• Certifique-se de que a URL está acessível</p>
+              <p>• Dados enviados via POST em JSON</p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={close}
+                className="flex-1 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={createWebhook}
+                disabled={!url.trim() || !type || creating}
+                className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+                style={{ background: "#7C3AED" }}
+              >
+                {creating ? "Conectando…" : "Conectar webhook"}
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <ShadowPanel />
     </>
   );
 }
