@@ -1048,47 +1048,32 @@ function UsersManagerContent() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen text-white">
       <SidebarProvider>
         <AppSidebar />
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2">
-            <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Separator
-                orientation="vertical"
-                className="mr-2 data-[orientation=vertical]:h-4"
-              />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink href="#">Safira Cash</BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden md:block" />
-                  <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink href="/v2/manager">
-                      Administrativo
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden md:block" />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>Usuários</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
+        <SidebarInset
+          className="text-white"
+          style={{
+            background:
+              "radial-gradient(1100px 700px at 85% -10%, #0B1020 0%, #060A14 55%, #03060F 100%)",
+          }}
+        >
+          <header className="flex items-center gap-3 px-4 pt-6 lg:px-8">
+            <SidebarTrigger className="text-white/60 hover:text-white" />
+            <div>
+              <h1
+                className="text-2xl font-bold tracking-tight text-white md:text-[28px]"
+                style={{ fontFamily: "'Clash Display', sans-serif" }}
+              >
+                Gerenciamento de Sellers
+              </h1>
+              <p className="mt-1 text-xs text-white/40">
+                Visualize e gerencie todos os sellers cadastrados na plataforma
+              </p>
             </div>
           </header>
 
-          <div className="flex flex-1 flex-col gap-6 p-4 pt-0 min-h-screen bg-background">
-            {/* Título */}
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold tracking-tight">
-                Gerenciamento de Sellers
-              </h1>
-              <p className="text-muted-foreground">
-                Visualize e gerencie todos os sellers cadastrados na plataforma.
-              </p>
-            </div>
+          <div className="flex flex-1 flex-col gap-5 p-4 lg:p-8">
 
             {/* Filtros */}
             <Card
