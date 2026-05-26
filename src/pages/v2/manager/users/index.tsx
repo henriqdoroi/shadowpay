@@ -1068,8 +1068,31 @@ function UsersManagerContent() {
         </p>
       </header>
 
-      <div className="flex flex-col gap-5">
-
+      <div
+        className="flex flex-col gap-5"
+        style={{
+          // força tokens shadcn pra LIGHT só nessa subtree
+          ["--background" as any]: "#FFFFFF",
+          ["--foreground" as any]: "#0F172A",
+          ["--card" as any]: "#FFFFFF",
+          ["--card-foreground" as any]: "#0F172A",
+          ["--popover" as any]: "#FFFFFF",
+          ["--popover-foreground" as any]: "#0F172A",
+          ["--primary" as any]: "#7C3AED",
+          ["--primary-foreground" as any]: "#FFFFFF",
+          ["--secondary" as any]: "#F1F5F9",
+          ["--secondary-foreground" as any]: "#0F172A",
+          ["--muted" as any]: "#F8FAFC",
+          ["--muted-foreground" as any]: "#64748B",
+          ["--accent" as any]: "#F1F5F9",
+          ["--accent-foreground" as any]: "#0F172A",
+          ["--destructive" as any]: "#EF4444",
+          ["--border" as any]: "rgba(15, 23, 42, 0.08)",
+          ["--input" as any]: "rgba(15, 23, 42, 0.10)",
+          ["--ring" as any]: "rgba(124, 58, 237, 0.30)",
+          color: "#0F172A",
+        }}
+      >
             {/* Filtros */}
             <Card
               className="
