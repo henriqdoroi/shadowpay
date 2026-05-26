@@ -1,41 +1,33 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
 import {
   RefreshCw,
   PiggyBank,
   HandCoins,
   ShoppingBag,
   Users,
+  Filter,
 } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import Head from "next/head";
+import { motion } from "framer-motion";
+import ShadowPanel from "@/components/ShadowPanel";
 
 interface Transaction {
   id: string;
-  transactionType: "deposit" | "withdraw" | "sale";
-  paymentMethod: "pix" | "card" | "boleto";
-  status: "pending" | "approved" | "rejected" | "cancelled";
-  amountGross: number;
-  amountNet: number;
-  description: string;
+  method?: string;
+  status: string;
+  grossAmount?: string | number;
+  netAmount?: string | number;
+  customer?: { name?: string; email?: string };
   createdAt: string;
   updatedAt: string;
 }
@@ -60,6 +52,9 @@ interface TransactionsResponse {
   transactions: Transaction[];
   pagination: Pagination;
 }
+
+const SHADOW_BG =
+  "radial-gradient(1100px 700px at 85% -10%, #0B1020 0%, #060A14 55%, #03060F 100%)";
 
 function ReportsContent() {
   const { user, token } = useAuth();
@@ -87,7 +82,7 @@ function ReportsContent() {
   });
 
   const [isLoadingStats, setIsLoadingStats] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [, setCurrentPage] = useState(1);
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -132,28 +127,29 @@ function ReportsContent() {
         setCurrentPage(page);
 
         // Atualiza dashboard a partir das transações filtradas
-        const approved: Transaction[] = apiData.transactions.filter(
-          (t: Transaction) => t.status === "approved"
+        // (serializer retorna status PAID/PENDING/... , grossAmount/netAmount, method, customer)
+        const approved: Transaction[] = (apiData.transactions || []).filter(
+          (t: Transaction) => String(t.status).toUpperCase() === "PAID"
         );
 
         setDashboardStats({
           blockedBalance: dashboardStats.blockedBalance, // não muda com filtro
           grossRevenue: approved.reduce(
-            (sum: number, t: Transaction) => sum + t.amountGross,
+            (sum: number, t: Transaction) => sum + Number(t.grossAmount || 0),
             0
           ),
           netRevenue: approved.reduce(
-            (sum: number, t: Transaction) => sum + t.amountNet,
+            (sum: number, t: Transaction) => sum + Number(t.netAmount || 0),
             0
           ),
           totalPixGenerated: approved.filter(
-            (t: Transaction) => t.paymentMethod === "pix"
+            (t: Transaction) => String(t.method).toUpperCase() === "PIX"
           ).length,
-          totalSales: approved.filter(
-            (t: Transaction) => t.transactionType === "sale"
-          ).length,
+          totalSales: approved.length,
           uniqueCustomers: new Set(
-            approved.map((t: Transaction) => t.description)
+            approved.map(
+              (t: Transaction) => t.customer?.email || t.customer?.name || t.id
+            )
           ).size,
         });
       }
@@ -198,6 +194,7 @@ function ReportsContent() {
       fetchTransactions(1); // sempre traz mês atual
       fetchDashboardStats();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, token]);
 
   const handleRefreshStats = () => fetchDashboardStats();
@@ -207,176 +204,189 @@ function ReportsContent() {
     new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
-    }).format(value);
+    }).format(value || 0);
+
+  const cards = [
+    {
+      title: "Faturamento bruto",
+      icon: <PiggyBank className="h-4 w-4" />,
+      accent: "#34D399",
+      value: formatCurrency(dashboardStats.grossRevenue),
+      subtitle: "no período",
+    },
+    {
+      title: "Faturamento líquido",
+      icon: <HandCoins className="h-4 w-4" />,
+      accent: "#22D3EE",
+      value: formatCurrency(dashboardStats.netRevenue),
+      subtitle: "no período",
+    },
+    {
+      title: "Qtd. de vendas",
+      icon: <ShoppingBag className="h-4 w-4" />,
+      accent: "#8B5CF6",
+      value: String(dashboardStats.totalSales),
+      subtitle: "vendas aprovadas",
+    },
+    {
+      title: "Pix gerados",
+      icon: (
+        <Image
+          src="/pix-icon.svg"
+          width={16}
+          height={16}
+          className="object-contain brightness-0 invert"
+          alt="Pix"
+        />
+      ),
+      accent: "#6366F1",
+      value: String(dashboardStats.totalPixGenerated),
+      subtitle: "transações",
+    },
+    {
+      title: "Qtd. de clientes",
+      icon: <Users className="h-4 w-4" />,
+      accent: "#F59E0B",
+      value: String(dashboardStats.uniqueCustomers),
+      subtitle: "clientes únicos",
+    },
+  ];
+
+  const inputCls =
+    "h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-violet-500/50 focus:bg-white/[0.05] [color-scheme:dark]";
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden">
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center justify-between px-2">
-            <div className="flex items-center gap-2 overflow-hidden">
-              <SidebarTrigger className="-ml-1" />
-              <Separator
-                orientation="vertical"
-                className="mr-2 data-[orientation=vertical]:h-4"
-              />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink href="#">Safira Cash</BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden md:block" />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>Relatórios</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-            </div>
+    <>
+      <Head>
+        <title>ShadowPay — Relatórios</title>
+      </Head>
 
-            <Button
-              onClick={handleRefreshStats}
-              disabled={isLoadingStats}
-              variant="outline"
-              className="flex items-center gap-2 h-8 text-sm"
-            >
-              <RefreshCw
-                className={`h-3 w-3 ${isLoadingStats ? "animate-spin" : ""}`}
-              />
-              {isLoadingStats ? "Atualizando..." : "Atualizar"}
-            </Button>
-          </header>
+      <div className="min-h-screen w-full overflow-x-hidden">
+        <SidebarProvider>
+          <AppSidebar />
+          <SidebarInset className="text-white" style={{ background: SHADOW_BG }}>
+            {/* Header */}
+            <header className="flex flex-col gap-4 px-4 pt-6 sm:flex-row sm:items-center sm:justify-between lg:px-8">
+              <div className="flex items-center gap-3">
+                <SidebarTrigger className="text-white/60 hover:text-white" />
+                <div>
+                  <h1
+                    className="text-2xl font-bold tracking-tight text-white md:text-[28px]"
+                    style={{ fontFamily: "'Clash Display', sans-serif" }}
+                  >
+                    Relatórios
+                  </h1>
+                  <p className="mt-1 text-xs text-white/40">
+                    Analise o desempenho do seu negócio por período
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleRefreshStats}
+                disabled={isLoadingStats}
+                className="flex h-9 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 text-sm text-white/80 transition-colors hover:bg-white/[0.07] hover:text-white"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${isLoadingStats ? "animate-spin" : ""}`}
+                />
+                {isLoadingStats ? "Atualizando…" : "Atualizar"}
+              </button>
+            </header>
 
-          <div className="flex flex-col gap-4 px-2 pt-4 w-full max-w-full">
-            <div className="flex gap-2 justify-between">
-              <input
-                type="date"
-                className="border rounded px-2 py-1 text-sm w-1/2"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-              <input
-                type="date"
-                className="border rounded px-2 py-1 text-sm w-1/2"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
-            </div>
-            <Button
-              onClick={handleFilterApply}
-              variant="outline"
-              className="mt-2 h-8 text-sm w-full"
-            >
-              Aplicar Filtro
-            </Button>
-
-            <div className="grid gap-2 grid-cols-2 w-full mt-2">
-              {[
-                {
-                  title: "Faturamento bruto",
-                  icon: (
-                    <PiggyBank className="h-5 w-5 flex-shrink-0 text-green-500" />
-                  ),
-                  value: formatCurrency(dashboardStats.grossRevenue),
-                  subtitle: "30 dias",
-                  type: "square",
-                },
-                {
-                  title: "Faturamento líquido",
-                  icon: (
-                    <HandCoins className="h-5 w-5 flex-shrink-0 text-blue-500" />
-                  ),
-                  value: formatCurrency(dashboardStats.netRevenue),
-                  subtitle: "30 dias",
-                  type: "square",
-                },
-                {
-                  title: "Qtd. de vendas",
-                  icon: (
-                    <ShoppingBag className="h-5 w-5 flex-shrink-0 text-purple-500" />
-                  ),
-                  value: (
-                    <>
-                      {dashboardStats.totalSales}{" "}
-                      <span className="font-normal text-xs opacity-40">
-                        vendas
-                      </span>
-                    </>
-                  ),
-                  subtitle: "30 dias",
-                  type: "square",
-                },
-                {
-                  title: "Pix Gerados",
-                  icon: (
-                    <Image
-                      src="/pix-icon.svg"
-                      width={20}
-                      height={20}
-                      className="brightness-0 invert object-contain flex-shrink-0"
-                      alt="Pix icon"
+            <main className="flex flex-col gap-5 p-4 lg:p-8">
+              {/* Filtro de período */}
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl"
+              >
+                <div className="mb-4 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
+                  <Filter className="h-3.5 w-3.5" /> Filtrar período
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                  <div className="flex-1">
+                    <label className="mb-1.5 block text-xs text-white/50">
+                      Data inicial
+                    </label>
+                    <input
+                      type="date"
+                      className={inputCls}
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
                     />
-                  ),
-                  value: (
-                    <>
-                      {dashboardStats.totalPixGenerated}{" "}
-                      <span className="font-normal text-xs opacity-40">
-                        transações
+                  </div>
+                  <div className="flex-1">
+                    <label className="mb-1.5 block text-xs text-white/50">
+                      Data final
+                    </label>
+                    <input
+                      type="date"
+                      className={inputCls}
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
+                  </div>
+                  <button
+                    onClick={handleFilterApply}
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
+                    style={{
+                      background: "linear-gradient(120deg, #7C3AED, #6366F1)",
+                      boxShadow: "0 14px 36px -14px rgba(124,58,237,0.7)",
+                    }}
+                  >
+                    Aplicar filtro
+                  </button>
+                </div>
+              </motion.div>
+
+              {/* KPIs */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {cards.map((c, i) => (
+                  <motion.div
+                    key={c.title}
+                    initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
+                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    transition={{
+                      duration: 0.7,
+                      delay: i * 0.06,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                    className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl"
+                  >
+                    <div
+                      className="pointer-events-none absolute -left-8 -top-10 h-28 w-28 rounded-full opacity-50 blur-2xl transition-opacity duration-500 group-hover:opacity-80"
+                      style={{ background: `${c.accent}22` }}
+                    />
+                    <div className="relative mb-4 flex items-center gap-2.5">
+                      <span
+                        className="flex h-8 w-8 items-center justify-center rounded-lg"
+                        style={{ background: `${c.accent}1f`, color: c.accent }}
+                      >
+                        {c.icon}
                       </span>
-                    </>
-                  ),
-                  subtitle: "30 dias",
-                  type: "square",
-                },
-                {
-                  title: "Qtd. de clientes",
-                  icon: (
-                    <Users className="h-5 w-5 flex-shrink-0 text-orange-500" />
-                  ),
-                  value: (
-                    <>
-                      {dashboardStats.uniqueCustomers}{" "}
-                      <span className="font-normal text-xs opacity-40">
-                        clientes
+                      <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
+                        {c.title}
                       </span>
-                    </>
-                  ),
-                  type: "rectangle",
-                },
-              ].map(({ title, icon, value, subtitle, type }) => (
-                <Card
-                  key={title}
-                  className={`
-                    p-3
-                    w-full
-                    ${type === "square" ? "aspect-square" : "h-28"}
-                    flex flex-col justify-between
-                    ${type === "rectangle" ? "col-span-2" : ""}
-                  `}
-                >
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between text-sm font-semibold break-words">
-                      <span>{title}</span>
-                      {icon}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <h3 className="text-lg font-bold leading-tight break-words">
-                      {value}
-                    </h3>
-                    {subtitle && (
-                      <p className="text-xs text-muted-foreground mt-1 break-words">
-                        {subtitle}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
-    </div>
+                    </div>
+                    <div
+                      className="relative text-2xl font-semibold tracking-tight text-white"
+                      style={{ fontFamily: "'Clash Display', sans-serif" }}
+                    >
+                      {c.value}
+                    </div>
+                    <p className="relative mt-1.5 text-xs text-white/35">
+                      {c.subtitle}
+                    </p>
+                  </motion.div>
+                ))}
+              </div>
+            </main>
+          </SidebarInset>
+        </SidebarProvider>
+        <ShadowPanel />
+      </div>
+    </>
   );
 }
 

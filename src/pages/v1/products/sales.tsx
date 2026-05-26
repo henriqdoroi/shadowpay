@@ -2,35 +2,25 @@
 
 import { AppSidebar } from "@/components/app-sidebar";
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Eye, ChevronLeft, ChevronRight } from "lucide-react";
-import { useRouter } from "next/router";
-import { useEffect, useState, useRef } from "react";
+  ChevronLeft,
+  ChevronRight,
+  ShoppingCart,
+  CheckCircle2,
+  Clock,
+  Receipt,
+  RefreshCw,
+} from "lucide-react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import axios from "axios";
+import Head from "next/head";
+import { motion } from "framer-motion";
+import ShadowPanel from "@/components/ShadowPanel";
 
 interface Sale {
   id: string;
@@ -60,6 +50,9 @@ const mapTransactionStatusToSale = (txStatus: string) => {
   }
 };
 
+const SHADOW_BG =
+  "radial-gradient(1100px 700px at 85% -10%, #0B1020 0%, #060A14 55%, #03060F 100%)";
+
 export default function Sales() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,7 +71,7 @@ export default function Sales() {
     new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
-    }).format(Number(value));
+    }).format(Number(value) || 0);
 
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return "-";
@@ -94,13 +87,31 @@ export default function Sales() {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      pendente: { variant: "secondary" as const, label: "Pendente" },
-      aprovado: { variant: "default" as const, label: "Aprovado" },
-      reprovado: { variant: "destructive" as const, label: "Reprovado" },
+    const map: Record<string, { color: string; label: string }> = {
+      pendente: {
+        color: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+        label: "Pendente",
+      },
+      aprovado: {
+        color: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+        label: "Aprovado",
+      },
+      reprovado: {
+        color: "bg-rose-500/15 text-rose-300 border-rose-500/30",
+        label: "Reprovado",
+      },
     };
-    const config = statusConfig[status as keyof typeof statusConfig];
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    const cfg = map[status] ?? {
+      color: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+      label: status,
+    };
+    return (
+      <span
+        className={`inline-block rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide ${cfg.color}`}
+      >
+        {cfg.label}
+      </span>
+    );
   };
 
   const fetchSales = async (page: number) => {
@@ -166,190 +177,278 @@ export default function Sales() {
     if (p >= 1 && p <= totalPages) setPage(p);
   };
 
-  if (loading) return <div className="p-4">Carregando pedidos...</div>;
+  const stats = useMemo(() => {
+    const approved = sales.filter((s) => s.status === "aprovado").length;
+    const pending = sales.filter((s) => s.status === "pendente").length;
+    const pageValue = sales
+      .filter((s) => s.status === "aprovado")
+      .reduce((acc, s) => acc + (Number(s.price) || 0), 0);
+    return { approved, pending, pageValue };
+  }, [sales]);
+
+  const kpis = [
+    {
+      label: "Total de pedidos",
+      value: String(totalCount),
+      icon: <ShoppingCart className="h-4 w-4" />,
+      accent: "#8B5CF6",
+    },
+    {
+      label: "Aprovados (página)",
+      value: String(stats.approved),
+      icon: <CheckCircle2 className="h-4 w-4" />,
+      accent: "#34D399",
+    },
+    {
+      label: "Pendentes (página)",
+      value: String(stats.pending),
+      icon: <Clock className="h-4 w-4" />,
+      accent: "#F59E0B",
+    },
+    {
+      label: "Receita da página",
+      value: formatCurrency(stats.pageValue),
+      icon: <Receipt className="h-4 w-4" />,
+      accent: "#6366F1",
+    },
+  ];
+
+  const renderPageNumbers = () => {
+    const maxPagesToShow = 5;
+    let start = Math.max(1, page - 2);
+    let end = Math.min(totalPages, page + 2);
+    if (page <= 3) {
+      start = 1;
+      end = Math.min(totalPages, maxPagesToShow);
+    } else if (page >= totalPages - 2) {
+      start = Math.max(1, totalPages - maxPagesToShow + 1);
+      end = totalPages;
+    }
+    const nums = [];
+    for (let i = start; i <= end; i++) nums.push(i);
+    return nums.map((i) => (
+      <button
+        key={i}
+        onClick={() => handleGoToPage(i)}
+        className={`flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-sm font-semibold transition-colors ${
+          page === i
+            ? "bg-violet-500/20 text-violet-200"
+            : "border border-white/[0.08] bg-white/[0.03] text-white/70 hover:bg-white/[0.07]"
+        }`}
+      >
+        {i}
+      </button>
+    ));
+  };
 
   return (
-    <div className="min-h-screen">
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2">
-            <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Separator
-                orientation="vertical"
-                className="mr-2 data-[orientation=vertical]:h-4"
-              />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink href="#">Safira Cash</BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden md:block" />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>Pedidos</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-            </div>
-          </header>
+    <>
+      <Head>
+        <title>ShadowPay — Pedidos</title>
+      </Head>
 
-          <div className="flex flex-1 flex-col gap-6 p-4 pt-0 min-h-screen">
-            <h1 className="text-2xl font-bold">Pedidos de Vendas</h1>
-            <p className="text-muted-foreground">
-              Acompanhe o status de todas as vendas realizadas
-            </p>
+      <div className="min-h-screen">
+        <SidebarProvider>
+          <AppSidebar />
+          <SidebarInset className="text-white" style={{ background: SHADOW_BG }}>
+            {/* Header */}
+            <header className="flex flex-col gap-4 px-4 pt-6 sm:flex-row sm:items-center sm:justify-between lg:px-8">
+              <div className="flex items-center gap-3">
+                <SidebarTrigger className="text-white/60 hover:text-white" />
+                <div>
+                  <h1
+                    className="text-2xl font-bold tracking-tight text-white md:text-[28px]"
+                    style={{ fontFamily: "'Clash Display', sans-serif" }}
+                  >
+                    Pedidos de Vendas
+                  </h1>
+                  <p className="mt-1 text-xs text-white/40">
+                    Acompanhe o status de todas as vendas realizadas
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => fetchSales(page)}
+                disabled={loading}
+                className="flex h-9 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 text-sm text-white/80 transition-colors hover:bg-white/[0.07] hover:text-white"
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                {loading ? "Atualizando…" : "Atualizar"}
+              </button>
+            </header>
 
-            <Card className="p-6 min-w-[280px] max-w-[360px] w-full md:min-w-auto md:max-w-none flex flex-col justify-between mt-4">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Eye className="h-5 w-5" /> Lista de Pedidos
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Produto</TableHead>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Valor</TableHead>
-                      <TableHead>Pagamento</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Celular</TableHead>
-                      <TableHead>Documento</TableHead>
-                      <TableHead>Data</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sales.map((sale) => (
-                      <TableRow key={sale.id}>
-                        <TableCell>{sale.productName || "-"}</TableCell>
-                        <TableCell>
-                          {sale.name || "-"}
-                          <br />
-                          <span className="text-sm text-muted-foreground">
-                            {sale.email || "-"}
-                          </span>
-                        </TableCell>
-                        <TableCell>{formatCurrency(sale.price)}</TableCell>
-                        <TableCell>{sale.paymentType || "-"}</TableCell>
-                        <TableCell>
-                          {getStatusBadge(sale.status || "pendente")}
-                        </TableCell>
-                        <TableCell>{sale.celular || "-"}</TableCell>
-                        <TableCell>{sale.document || "-"}</TableCell>
-                        <TableCell>{formatDate(sale.createdAt)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+            <main className="flex flex-col gap-5 p-4 lg:p-8">
+              {/* KPIs */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {kpis.map((k, i) => (
+                  <motion.div
+                    key={k.label}
+                    initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
+                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    transition={{
+                      duration: 0.7,
+                      delay: i * 0.06,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                    className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl"
+                  >
+                    <div
+                      className="pointer-events-none absolute -left-8 -top-10 h-28 w-28 rounded-full opacity-50 blur-2xl transition-opacity duration-500 group-hover:opacity-80"
+                      style={{ background: `${k.accent}22` }}
+                    />
+                    <div className="relative mb-4 flex items-center gap-2.5">
+                      <span
+                        className="flex h-8 w-8 items-center justify-center rounded-lg"
+                        style={{ background: `${k.accent}1f`, color: k.accent }}
+                      >
+                        {k.icon}
+                      </span>
+                      <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
+                        {k.label}
+                      </span>
+                    </div>
+                    <div
+                      className="relative text-2xl font-semibold tracking-tight text-white"
+                      style={{ fontFamily: "'Clash Display', sans-serif" }}
+                    >
+                      {k.value}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Tabela */}
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] backdrop-blur-xl"
+              >
+                <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
+                  <h2
+                    className="flex items-center gap-2 text-sm font-semibold text-white"
+                    style={{ fontFamily: "'Clash Display', sans-serif" }}
+                  >
+                    <Receipt className="h-4 w-4 text-violet-300" />
+                    Lista de Pedidos
+                  </h2>
+                  <span className="text-xs text-white/40">
+                    {totalCount} {totalCount === 1 ? "pedido" : "pedidos"}
+                  </span>
+                </div>
+
+                <div className="overflow-x-auto p-2 sm:p-4">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="text-[11px] uppercase tracking-wider text-white/40">
+                        <th className="px-3 py-2 font-medium">Produto</th>
+                        <th className="px-3 py-2 font-medium">Cliente</th>
+                        <th className="px-3 py-2 font-medium">Valor</th>
+                        <th className="px-3 py-2 font-medium">Pagamento</th>
+                        <th className="px-3 py-2 font-medium">Status</th>
+                        <th className="px-3 py-2 font-medium">Celular</th>
+                        <th className="px-3 py-2 font-medium">Documento</th>
+                        <th className="px-3 py-2 font-medium">Data</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loading ? (
+                        Array.from({ length: 5 }).map((_, i) => (
+                          <tr
+                            key={i}
+                            className="animate-pulse border-t border-white/[0.05]"
+                          >
+                            {Array.from({ length: 8 }).map((__, j) => (
+                              <td key={j} className="px-3 py-3">
+                                <div className="h-4 w-full max-w-[120px] rounded bg-white/10" />
+                              </td>
+                            ))}
+                          </tr>
+                        ))
+                      ) : sales.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="py-14 text-center">
+                            <Receipt className="mx-auto mb-3 h-7 w-7 text-violet-400/40" />
+                            <p className="text-sm font-medium text-white/60">
+                              Nenhum pedido encontrado
+                            </p>
+                            <p className="mt-1 text-xs text-white/35">
+                              Suas vendas aparecem aqui em tempo real.
+                            </p>
+                          </td>
+                        </tr>
+                      ) : (
+                        sales.map((sale) => (
+                          <tr
+                            key={sale.id}
+                            className="border-t border-white/[0.05] transition-colors hover:bg-white/[0.03]"
+                          >
+                            <td className="px-3 py-3 font-medium text-white/90">
+                              {sale.productName || "-"}
+                            </td>
+                            <td className="px-3 py-3">
+                              <p className="text-white/90">{sale.name || "-"}</p>
+                              <p className="text-xs text-white/40">
+                                {sale.email || "-"}
+                              </p>
+                            </td>
+                            <td className="px-3 py-3 font-medium text-white/90">
+                              {formatCurrency(sale.price)}
+                            </td>
+                            <td className="px-3 py-3 text-white/60">
+                              {sale.paymentType || "-"}
+                            </td>
+                            <td className="px-3 py-3">
+                              {getStatusBadge(sale.status || "pendente")}
+                            </td>
+                            <td className="px-3 py-3 text-white/60">
+                              {sale.celular || "-"}
+                            </td>
+                            <td className="px-3 py-3 text-white/60">
+                              {sale.document || "-"}
+                            </td>
+                            <td className="px-3 py-3 text-white/50">
+                              {formatDate(sale.createdAt)}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
 
                 {/* Paginação */}
                 {totalPages > 1 && (
-                  <div className="flex flex-col gap-3 mt-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="text-sm text-muted-foreground text-center sm:text-left">
+                  <div className="flex flex-col gap-3 border-t border-white/[0.06] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="text-center text-xs text-white/40 sm:text-left">
                       Mostrando {(page - 1) * limit + 1}-
-                      {Math.min(page * limit, totalCount)} de {totalCount}{" "}
-                      pedidos
+                      {Math.min(page * limit, totalCount)} de {totalCount} pedidos
                     </div>
-
-                    <div className="flex items-center justify-center space-x-1 sm:space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
+                    <div className="flex items-center justify-center gap-1.5">
+                      <button
                         onClick={handlePrevPage}
                         disabled={page === 1}
-                        className="px-2 sm:px-3 cursor-pointer"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/70 transition-colors hover:bg-white/[0.07] disabled:opacity-40"
                       >
                         <ChevronLeft className="h-4 w-4" />
-                        <span className="hidden sm:inline ml-1">Anterior</span>
-                      </Button>
-
-                      {(() => {
-                        const maxPagesToShow = 5; // Quantidade máxima de páginas visíveis
-                        let start = Math.max(1, page - 2);
-                        let end = Math.min(totalPages, page + 2);
-
-                        if (page <= 3) {
-                          start = 1;
-                          end = Math.min(totalPages, maxPagesToShow);
-                        } else if (page >= totalPages - 2) {
-                          start = Math.max(1, totalPages - maxPagesToShow + 1);
-                          end = totalPages;
-                        }
-
-                        const pages = [];
-                        if (start > 1) {
-                          pages.push(
-                            <Button
-                              key={1}
-                              variant={page === 1 ? "default" : "outline"}
-                              size="sm"
-                              className="w-8 h-8 p-0"
-                              onClick={() => handleGoToPage(1)}
-                            >
-                              1
-                            </Button>
-                          );
-                          if (start > 2) {
-                            pages.push(<span key="start-ellipsis">...</span>);
-                          }
-                        }
-
-                        for (let i = start; i <= end; i++) {
-                          pages.push(
-                            <Button
-                              key={i}
-                              variant={page === i ? "default" : "outline"}
-                              size="sm"
-                              className="w-8 h-8 p-0"
-                              onClick={() => handleGoToPage(i)}
-                            >
-                              {i}
-                            </Button>
-                          );
-                        }
-
-                        if (end < totalPages) {
-                          if (end < totalPages - 1) {
-                            pages.push(<span key="end-ellipsis">...</span>);
-                          }
-                          pages.push(
-                            <Button
-                              key={totalPages}
-                              variant={
-                                page === totalPages ? "default" : "outline"
-                              }
-                              size="sm"
-                              className="w-8 h-8 p-0"
-                              onClick={() => handleGoToPage(totalPages)}
-                            >
-                              {totalPages}
-                            </Button>
-                          );
-                        }
-
-                        return pages;
-                      })()}
-
-                      <Button
-                        variant="outline"
-                        size="sm"
+                      </button>
+                      {renderPageNumbers()}
+                      <button
                         onClick={handleNextPage}
                         disabled={page === totalPages}
-                        className="px-2 sm:px-3 cursor-pointer"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/70 transition-colors hover:bg-white/[0.07] disabled:opacity-40"
                       >
-                        <span className="hidden sm:inline mr-1">Próximo</span>
                         <ChevronRight className="h-4 w-4" />
-                      </Button>
+                      </button>
                     </div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
-    </div>
+              </motion.div>
+            </main>
+          </SidebarInset>
+        </SidebarProvider>
+        <ShadowPanel />
+      </div>
+    </>
   );
 }

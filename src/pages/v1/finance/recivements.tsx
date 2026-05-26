@@ -1,15 +1,5 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
@@ -19,14 +9,6 @@ import { QRCodeSVG } from "qrcode.react"; // QR Code em SVG
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -47,6 +29,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { toast } from "sonner";
+import Head from "next/head";
+import { motion } from "framer-motion";
+import ShadowPanel from "@/components/ShadowPanel";
 
 interface Deposit {
   id: string;
@@ -86,6 +71,9 @@ interface FeesResponse {
     };
   };
 }
+
+const SHADOW_BG =
+  "radial-gradient(1100px 700px at 85% -10%, #0B1020 0%, #060A14 55%, #03060F 100%)";
 
 function RecivementsContent() {
   const { user, token } = useAuth();
@@ -261,6 +249,7 @@ function RecivementsContent() {
       fetchFees();
       fetchTotalDepositsOfDay(startISO, endISO);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPeriod, user, token]);
 
   useEffect(() => {
@@ -282,6 +271,7 @@ function RecivementsContent() {
     }, 5000);
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactionId, token, currentPage]);
 
   const handlePageChange = (page: number) => {
@@ -304,20 +294,35 @@ function RecivementsContent() {
       minute: "2-digit",
     });
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { color: string; text: string }> = {
-      approved: { color: "bg-green-100 text-green-800", text: "APROVADO" },
-      pending: { color: "bg-orange-100 text-orange-800", text: "PENDENTE" },
-      refunded: { color: "bg-gray-200 text-gray-800", text: "EXTORNADO" },
-      rejected: { color: "bg-red-100 text-red-800", text: "REJEITADO" },
-      cancelled: { color: "bg-gray-100 text-gray-800", text: "CANCELADO" },
+    const map: Record<string, { color: string; text: string }> = {
+      approved: {
+        color: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+        text: "APROVADO",
+      },
+      pending: {
+        color: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+        text: "PENDENTE",
+      },
+      refunded: {
+        color: "bg-white/10 text-white/60 border-white/15",
+        text: "EXTORNADO",
+      },
+      rejected: {
+        color: "bg-rose-500/15 text-rose-300 border-rose-500/30",
+        text: "REJEITADO",
+      },
+      cancelled: {
+        color: "bg-white/10 text-white/50 border-white/15",
+        text: "CANCELADO",
+      },
     };
-    const config = statusConfig[status.toLowerCase()] || {
-      color: "bg-gray-100 text-gray-800",
+    const config = map[status.toLowerCase()] || {
+      color: "bg-white/10 text-white/60 border-white/15",
       text: status.toUpperCase(),
     };
     return (
       <span
-        className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${config.color}`}
+        className={`inline-block rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide ${config.color}`}
       >
         {config.text}
       </span>
@@ -366,371 +371,412 @@ function RecivementsContent() {
     if (user && token) fetchDeposits(currentPage);
   };
 
+  const selectCls =
+    "rounded-lg border border-white/[0.08] bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-violet-500/50 [color-scheme:dark]";
+
   return (
-    <div className="min-h-screen">
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 px-2 sm:px-4">
-            <div className="flex items-center gap-2 px-2 sm:px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Separator
-                orientation="vertical"
-                className="mr-2 data-[orientation=vertical]:h-4"
-              />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink href="#">Safira Cash</BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden md:block" />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>Recebimentos</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-            </div>
-          </header>
+    <>
+      <Head>
+        <title>ShadowPay — Recebimentos</title>
+      </Head>
 
-          <div className="flex flex-1 flex-col gap-6 p-4 pt-0 min-h-screen sm:p-6 md:p-8">
-            {/* Cards */}
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-              <Card className="p-4 w-full sm:p-6">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span className="text-xl sm:text-2xl font-semibold">
-                      Total Transacionado
+      <div className="min-h-screen">
+        <SidebarProvider>
+          <AppSidebar />
+          <SidebarInset className="text-white" style={{ background: SHADOW_BG }}>
+            {/* Header */}
+            <header className="flex items-center gap-3 px-4 pt-6 lg:px-8">
+              <SidebarTrigger className="text-white/60 hover:text-white" />
+              <div>
+                <h1
+                  className="text-2xl font-bold tracking-tight text-white md:text-[28px]"
+                  style={{ fontFamily: "'Clash Display', sans-serif" }}
+                >
+                  Recebimentos
+                </h1>
+                <p className="mt-1 text-xs text-white/40">
+                  Receba via PIX e acompanhe seus depósitos
+                </p>
+              </div>
+            </header>
+
+            <main className="flex flex-col gap-5 p-4 lg:p-8">
+              {/* Cards */}
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {/* Total transacionado */}
+                <motion.div
+                  initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                  className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl"
+                >
+                  <div
+                    className="pointer-events-none absolute -left-8 -top-10 h-28 w-28 rounded-full opacity-50 blur-2xl"
+                    style={{ background: "#8B5CF622" }}
+                  />
+                  <div className="relative mb-4 flex items-center justify-between">
+                    <span className="flex items-center gap-2.5">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300">
+                        <Wallet className="h-4 w-4" />
+                      </span>
+                      <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
+                        Total transacionado
+                      </span>
                     </span>
-                    <Wallet className="h-4 w-4 text-muted-foreground" />
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-2xl sm:text-3xl font-bold">
-                        {formatCurrency(totalDepositos)}
-                      </h3>
-                      <select
-                        className="border rounded px-2 py-1 text-sm"
-                        value={selectedPeriod ? selectedPeriod.days : 7} // ou outro valor padrão
-                        onChange={(e) => {
-                          const selected = periodOptions.find(
-                            (opt) => opt.days === Number(e.target.value)
-                          );
-                          if (selected) setSelectedPeriod(selected);
-                        }}
-                      >
-                        {periodOptions.map((option) => (
-                          <option key={option.days} value={option.days}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <p className="text-xs sm:text-sm text-muted-foreground">
-                      {quantidadeDepositos} transações
-                    </p>
-                    <div className="flex items-center gap-2 text-sm font-medium text-green-600">
-                      <span>Período Hoje</span>
-                      <ArrowUpIcon className="w-4 h-4" />
-                      <span>{((totalDepositos / 1000) * 100).toFixed(1)}%</span>
-                    </div>
+                    <select
+                      className={selectCls}
+                      value={selectedPeriod ? selectedPeriod.days : 7}
+                      onChange={(e) => {
+                        const selected = periodOptions.find(
+                          (opt) => opt.days === Number(e.target.value)
+                        );
+                        if (selected) setSelectedPeriod(selected);
+                      }}
+                    >
+                      {periodOptions.map((option) => (
+                        <option
+                          key={option.days}
+                          value={option.days}
+                          className="bg-[#0B1020] text-white"
+                        >
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                </CardContent>
-              </Card>
+                  <div
+                    className="relative text-3xl font-semibold tracking-tight text-white"
+                    style={{ fontFamily: "'Clash Display', sans-serif" }}
+                  >
+                    {formatCurrency(totalDepositos)}
+                  </div>
+                  <p className="relative mt-1.5 text-xs text-white/35">
+                    {quantidadeDepositos} transações aprovadas no período
+                  </p>
+                  <div className="relative mt-2 flex items-center gap-1.5 text-xs font-medium text-emerald-400">
+                    <ArrowUpIcon className="h-3.5 w-3.5" />
+                    <span>{((totalDepositos / 1000) * 100).toFixed(1)}%</span>
+                  </div>
+                </motion.div>
 
-              <Card className="hidden sm:block">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span className="text-xl sm:text-2xl font-semibold">
-                      Depositar Dinheiro
+                {/* Depositar */}
+                <motion.div
+                  initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  transition={{ duration: 0.7, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+                  className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl"
+                >
+                  <div className="mb-4 flex items-center gap-2.5">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/15 text-indigo-300">
+                      <ArrowDownToLine className="h-4 w-4" />
                     </span>
-                    <ArrowDownToLine className="h-4 w-4 text-muted-foreground" />
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="valor-deposito">Valor do Depósito</Label>
-                      <div className="relative">
-                        <Input
-                          id="valor-deposito"
-                          type="number"
-                          placeholder="0,00"
-                          value={depositoValue}
-                          onChange={(e) => setDepositoValue(e.target.value)}
-                          className="w-full pr-20 sm:pr-32 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                        />
-                        {valorBruto > 0 && !isLoadingFees && (
-                          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
-                            = {formatCurrency(valorLiquido)}
-                          </div>
-                        )}
-                      </div>
+                    <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
+                      Depositar dinheiro
+                    </span>
+                  </div>
+                  <div className="space-y-3">
+                    <label className="block text-xs text-white/50">
+                      Valor do depósito
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="valor-deposito"
+                        type="number"
+                        placeholder="0,00"
+                        value={depositoValue}
+                        onChange={(e) => setDepositoValue(e.target.value)}
+                        className="h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 pr-28 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-violet-500/50 focus:bg-white/[0.05] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      />
                       {valorBruto > 0 && !isLoadingFees && (
-                        <div className="space-y-1">
-                          <p className="text-xs sm:text-sm text-muted-foreground">
-                            Taxa fixa: {formatCurrency(valorTaxaFixa)} + Taxa
-                            percentual: {(pixFees.percentualin || 0).toFixed(2)}
-                            %
-                          </p>
-                          <p className="text-xs sm:text-sm text-muted-foreground">
-                            Valor líquido que você receberá:{" "}
-                            <span className="font-medium text-green-600">
-                              {formatCurrency(valorLiquido)}
-                            </span>
-                          </p>
-                          <p className="text-xs sm:text-sm text-muted-foreground">
-                            Total a pagar:{" "}
-                            <span className="font-medium">
-                              {formatCurrency(valorBruto)}
-                            </span>
-                          </p>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-white/50">
+                          = {formatCurrency(valorLiquido)}
                         </div>
                       )}
-                      {isLoadingFees && (
-                        <p className="text-xs text-muted-foreground animate-pulse">
-                          Carregando taxas...
-                        </p>
-                      )}
                     </div>
-                    <Button
-                      className="w-full cursor-pointer"
+                    {valorBruto > 0 && !isLoadingFees && (
+                      <div className="space-y-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-xs text-white/50">
+                        <p>
+                          Taxa fixa: {formatCurrency(valorTaxaFixa)} + percentual:{" "}
+                          {(pixFees.percentualin || 0).toFixed(2)}%
+                        </p>
+                        <p>
+                          Você receberá:{" "}
+                          <span className="font-medium text-emerald-400">
+                            {formatCurrency(valorLiquido)}
+                          </span>
+                        </p>
+                        <p>
+                          Total a pagar:{" "}
+                          <span className="font-medium text-white/80">
+                            {formatCurrency(valorBruto)}
+                          </span>
+                        </p>
+                      </div>
+                    )}
+                    {isLoadingFees && (
+                      <p className="animate-pulse text-xs text-white/40">
+                        Carregando taxas...
+                      </p>
+                    )}
+                    <button
                       onClick={handleDeposito}
                       disabled={
                         valorBruto <= 0 || isProcessingDeposit || isLoadingFees
                       }
+                      className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+                      style={{
+                        background: "linear-gradient(120deg, #7C3AED, #6366F1)",
+                        boxShadow: "0 14px 36px -14px rgba(124,58,237,0.7)",
+                      }}
                     >
                       {isProcessingDeposit
                         ? "Processando..."
                         : "Confirmar Depósito"}
-                    </Button>
+                    </button>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                </motion.div>
+              </div>
 
-            {/* Histórico */}
-            <Card className="min-w-[280px] max-w-[360px] w-full md:min-w-auto md:max-w-none">
-              <CardHeader>
-                <CardTitle>Histórico de Recebimentos PIX</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="hidden sm:table-cell">
+              {/* Histórico */}
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.16, ease: [0.22, 1, 0.36, 1] }}
+                className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] backdrop-blur-xl"
+              >
+                <div className="border-b border-white/[0.06] px-5 py-4">
+                  <h2
+                    className="text-sm font-semibold text-white"
+                    style={{ fontFamily: "'Clash Display', sans-serif" }}
+                  >
+                    Histórico de Recebimentos PIX
+                  </h2>
+                </div>
+                <div className="overflow-x-auto p-2 sm:p-4">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="text-[11px] uppercase tracking-wider text-white/40">
+                        <th className="hidden px-3 py-2 font-medium sm:table-cell">
                           Transação
-                        </TableHead>
-                        <TableHead>Data</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Valor</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {deposits.map((deposit) => (
-                        <TableRow key={deposit.id}>
-                          <TableCell className="hidden sm:table-cell">
-                            <div className="flex items-center gap-3">
-                              <div className="w-2 h-2 rounded-full bg-foreground" />
-                              <div>
-                                <p className="font-medium">
-                                  {deposit.description ||
-                                    `Depósito via ${getMethodLabel(
-                                      deposit.paymentMethod
-                                    )}`}
-                                </p>
-                                <div className="flex items-center gap-2 mt-1">
+                        </th>
+                        <th className="px-3 py-2 font-medium">Data</th>
+                        <th className="px-3 py-2 font-medium">Status</th>
+                        <th className="px-3 py-2 text-right font-medium">Valor</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {deposits.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="py-12 text-center">
+                            <Wallet className="mx-auto mb-3 h-6 w-6 text-violet-400/40" />
+                            <p className="text-sm font-medium text-white/60">
+                              Nenhum recebimento no período
+                            </p>
+                            <p className="mt-1 text-xs text-white/35">
+                              Seus depósitos PIX aparecem aqui.
+                            </p>
+                          </td>
+                        </tr>
+                      ) : (
+                        deposits.map((deposit) => (
+                          <tr
+                            key={deposit.id}
+                            className="border-t border-white/[0.05] transition-colors hover:bg-white/[0.03]"
+                          >
+                            <td className="hidden px-3 py-3 sm:table-cell">
+                              <div className="flex items-center gap-3">
+                                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/15">
                                   <Image
                                     src="/pix-icon.svg"
-                                    width={16}
-                                    height={16}
-                                    className="brightness-0 invert"
+                                    width={14}
+                                    height={14}
+                                    className="opacity-80 brightness-0 invert"
                                     alt="Pix"
                                   />
-                                  <span className="text-sm text-muted-foreground">
+                                </span>
+                                <div>
+                                  <p className="font-medium text-white/90">
+                                    {deposit.description ||
+                                      `Depósito via ${getMethodLabel(
+                                        deposit.paymentMethod
+                                      )}`}
+                                  </p>
+                                  <span className="text-xs text-white/40">
                                     {getMethodLabel(deposit.paymentMethod)}
                                   </span>
                                 </div>
                               </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{formatDate(deposit.createdAt)}</TableCell>
-                          <TableCell>
-                            {getStatusBadge(deposit.status)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <span className="font-medium text-foreground">
+                            </td>
+                            <td className="px-3 py-3 text-white/50">
+                              {formatDate(deposit.createdAt)}
+                            </td>
+                            <td className="px-3 py-3">
+                              {getStatusBadge(deposit.status)}
+                            </td>
+                            <td className="px-3 py-3 text-right font-semibold text-emerald-400">
                               +{formatCurrency(deposit.amountGross)}
-                            </span>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+
                   {/* Paginação */}
                   {totalPages > 1 && (
-                    <div className="flex flex-col gap-3 mt-4 items-center sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex flex-wrap items-center justify-center gap-2">
+                    <div className="flex flex-col gap-3 border-t border-white/[0.06] px-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="text-center text-xs text-white/40 sm:text-left">
                         Mostrando {(currentPage - 1) * 10 + 1}-
                         {Math.min(currentPage * 10, totalItems)} de {totalItems}{" "}
                         recebimentos
                       </div>
-                      <div className="flex items-center justify-center space-x-1 sm:space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
                           disabled={currentPage === 1 || isLoading}
                           onClick={() => handlePageChange(currentPage - 1)}
-                          className="px-2 sm:px-3 cursor-pointer"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/70 transition-colors hover:bg-white/[0.07] disabled:opacity-40"
                         >
                           <ChevronLeft className="h-4 w-4" />
-                          <span className="hidden sm:inline ml-1">
-                            Anterior
-                          </span>
-                        </Button>
-                        <div className="flex items-center space-x-1">
-                          {Array.from(
-                            { length: Math.min(totalPages, 3) },
-                            (_, i) => {
-                              const pageNum =
-                                Math.max(
-                                  1,
-                                  Math.min(currentPage - 1, totalPages - 2)
-                                ) + i;
-                              return (
-                                <Button
-                                  key={pageNum}
-                                  variant={
-                                    currentPage === pageNum
-                                      ? "default"
-                                      : "outline"
-                                  }
-                                  size="sm"
-                                  className="w-8 h-8 p-0 cursor-pointer"
-                                  onClick={() => handlePageChange(pageNum)}
-                                  disabled={isLoading}
-                                >
-                                  {pageNum}
-                                </Button>
-                              );
-                            }
-                          )}
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
+                        </button>
+                        {Array.from(
+                          { length: Math.min(totalPages, 3) },
+                          (_, i) => {
+                            const pageNum =
+                              Math.max(
+                                1,
+                                Math.min(currentPage - 1, totalPages - 2)
+                              ) + i;
+                            return (
+                              <button
+                                key={pageNum}
+                                onClick={() => handlePageChange(pageNum)}
+                                disabled={isLoading}
+                                className={`flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-sm font-semibold transition-colors ${
+                                  currentPage === pageNum
+                                    ? "bg-violet-500/20 text-violet-200"
+                                    : "border border-white/[0.08] bg-white/[0.03] text-white/70 hover:bg-white/[0.07]"
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          }
+                        )}
+                        <button
                           disabled={currentPage === totalPages || isLoading}
                           onClick={() => handlePageChange(currentPage + 1)}
-                          className="px-2 sm:px-3 cursor-pointer"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/70 transition-colors hover:bg-white/[0.07] disabled:opacity-40"
                         >
-                          <span className="hidden sm:inline mr-1">Próximo</span>
                           <ChevronRight className="h-4 w-4" />
-                        </Button>
+                        </button>
                       </div>
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+              </motion.div>
+            </main>
+          </SidebarInset>
+        </SidebarProvider>
 
-      {/* Modal PIX */}
-      <Dialog open={showPixModal} onOpenChange={setShowPixModal}>
-        <DialogContent className="sm:max-w-md w-full px-4">
-          <DialogHeader>
-            <DialogTitle className="text-center">Pagamento PIX</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-6 text-center">
-            <p className="text-sm text-muted-foreground">Valor do depósito</p>
-            <p className="text-2xl font-bold">{formatCurrency(valorBruto)}</p>
-            {pixCode && (
-              <div className="flex justify-center my-4">
-                <QRCodeSVG
+        {/* Modal PIX */}
+        <Dialog open={showPixModal} onOpenChange={setShowPixModal}>
+          <DialogContent className="w-full px-4 sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-center">Pagamento PIX</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6 text-center">
+              <p className="text-sm text-white/50">Valor do depósito</p>
+              <p className="text-2xl font-bold text-white">
+                {formatCurrency(valorBruto)}
+              </p>
+              {pixCode && (
+                <div className="my-4 flex justify-center">
+                  <div className="rounded-2xl bg-white p-3">
+                    <QRCodeSVG
+                      value={pixCode}
+                      size={200}
+                      bgColor="#fff"
+                      fgColor="#000"
+                      level="Q"
+                      includeMargin
+                    />
+                  </div>
+                </div>
+              )}
+              <div className="space-y-2 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-white/50">Taxa fixa:</span>
+                  <span className="text-rose-400">
+                    -{formatCurrency(valorTaxaFixa)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-white/50">
+                    Taxa percentual ({pixFees.percentualin.toFixed(2)}%):
+                  </span>
+                  <span className="text-rose-400">
+                    -{formatCurrency(valorTaxaPercentual)}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t border-white/[0.08] pt-2 text-sm font-medium">
+                  <span className="text-white/70">Total das taxas:</span>
+                  <span className="text-rose-400">
+                    -{formatCurrency(valorTaxaTotal)}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t border-white/[0.08] pt-2 text-sm font-bold">
+                  <span className="text-white/80">Você receberá:</span>
+                  <span className="text-emerald-400">
+                    {formatCurrency(valorLiquido)}
+                  </span>
+                </div>
+              </div>
+
+              <Label className="text-sm font-medium">
+                Código PIX (Copiar e Colar)
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  className="w-full text-sm sm:text-base"
                   value={pixCode}
-                  size={200}
-                  bgColor="#fff"
-                  fgColor="#000"
-                  level="Q"
-                  includeMargin
+                  readOnly
+                  placeholder="Código PIX será gerado..."
                 />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={copyPixCode}
+                  disabled={!pixCode}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
               </div>
-            )}
-            <div className="bg-muted/50 p-3 rounded-lg space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Taxa fixa:</span>
-                <span className="text-red-600">
-                  -{formatCurrency(valorTaxaFixa)}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">
-                  Taxa percentual ({pixFees.percentualin.toFixed(2)}%):
-                </span>
-                <span className="text-red-600">
-                  -{formatCurrency(valorTaxaPercentual)}
-                </span>
-              </div>
-              <div className="border-t pt-2 flex justify-between text-sm font-medium">
-                <span>Total das taxas:</span>
-                <span className="text-red-600">
-                  -{formatCurrency(valorTaxaTotal)}
-                </span>
-              </div>
-              <div className="border-t pt-2 flex justify-between text-sm font-bold">
-                <span>Valor líquido que você receberá:</span>
-                <span className="text-green-600">
-                  {formatCurrency(valorLiquido)}
-                </span>
-              </div>
-            </div>
 
-            <Label className="text-sm font-medium">
-              Código PIX (Copiar e Colar)
-            </Label>
-            <div className="flex gap-2">
-              <Input
-                className="w-full text-sm sm:text-base"
-                value={pixCode}
-                readOnly
-                placeholder="Código PIX será gerado..."
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={copyPixCode}
-                disabled={!pixCode}
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
+              <div className="space-y-2 rounded-xl border border-white/[0.06] bg-white/[0.03] p-4 text-xs text-white/50">
+                <p className="font-medium text-white/70">Aguardando pagamento...</p>
+                <p>• Escaneie o QR Code ou copie o código PIX</p>
+                <p>• Abra seu app de banco e faça o pagamento</p>
+                <p>• O depósito será processado automaticamente</p>
+              </div>
 
-            <div className="text-center space-y-3 p-4 bg-muted/50 rounded-lg text-xs text-muted-foreground">
-              <p className="font-medium">Aguardando pagamento...</p>
-              <p>• Escaneie o QR Code ou copie o código PIX</p>
-              <p>• Abra seu app de banco e faça o pagamento</p>
-              <p>• O depósito será processado automaticamente</p>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Button
+                  variant="outline"
+                  onClick={closeModal}
+                  className="flex-1 cursor-pointer"
+                >
+                  Cancelar
+                </Button>
+                <Button onClick={closeModal} className="flex-1 cursor-pointer">
+                  Já Paguei
+                </Button>
+              </div>
             </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Button
-                variant="outline"
-                onClick={closeModal}
-                className="flex-1 cursor-pointer"
-              >
-                Cancelar
-              </Button>
-              <Button onClick={closeModal} className="flex-1 cursor-pointer">
-                Já Paguei
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+          </DialogContent>
+        </Dialog>
+        <ShadowPanel />
+      </div>
+    </>
   );
 }
 

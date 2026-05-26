@@ -1,30 +1,11 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Plus,
   ExternalLink,
@@ -33,9 +14,16 @@ import {
   Package,
   ChevronLeft,
   ChevronRight,
+  ShoppingBag,
+  CheckCircle2,
+  TrendingUp,
+  Boxes,
 } from "lucide-react";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Head from "next/head";
+import { motion } from "framer-motion";
+import ShadowPanel from "@/components/ShadowPanel";
 
 interface Product {
   id: string;
@@ -48,6 +36,27 @@ interface Product {
   checkoutUrl: string;
 }
 
+/* Count-up suave (Shadow Design Language) */
+function useCountUp(target: number, duration = 1100) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const t0 = performance.now();
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - t0) / duration);
+      const eased = p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
+      setValue(target * eased);
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return value;
+}
+
+const SHADOW_BG =
+  "radial-gradient(1100px 700px at 85% -10%, #0B1020 0%, #060A14 55%, #03060F 100%)";
+
 export default function Products() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
@@ -57,7 +66,7 @@ export default function Products() {
     new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
-    }).format(value);
+    }).format(value || 0);
 
   const formatDate = (dateString: string) =>
     new Intl.DateTimeFormat("pt-BR", {
@@ -67,13 +76,31 @@ export default function Products() {
     }).format(new Date(dateString));
 
   const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      ativo: { variant: "default" as const, label: "Ativo" },
-      inativo: { variant: "secondary" as const, label: "Inativo" },
-      rascunho: { variant: "outline" as const, label: "Rascunho" },
+    const map: Record<string, { color: string; label: string }> = {
+      ativo: {
+        color: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+        label: "Ativo",
+      },
+      inativo: {
+        color: "bg-white/10 text-white/55 border-white/15",
+        label: "Inativo",
+      },
+      rascunho: {
+        color: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+        label: "Rascunho",
+      },
     };
-    const config = statusConfig[status as keyof typeof statusConfig];
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    const cfg = map[status] ?? {
+      color: "bg-white/10 text-white/55 border-white/15",
+      label: status,
+    };
+    return (
+      <span
+        className={`inline-block rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide ${cfg.color}`}
+      >
+        {cfg.label}
+      </span>
+    );
   };
 
   const handleEdit = (productId: string) =>
@@ -273,181 +300,312 @@ export default function Products() {
     fetchProducts();
   }, []);
 
-  if (loading) return <div className="p-4">Carregando produtos...</div>;
+  // Métricas derivadas
+  const stats = useMemo(() => {
+    const total = products.length;
+    const active = products.filter((p) => p.status === "ativo").length;
+    const totalSales = products.reduce((acc, p) => acc + (p.sales || 0), 0);
+    const revenue = products.reduce(
+      (acc, p) => acc + (p.price || 0) * (p.sales || 0),
+      0
+    );
+    return { total, active, totalSales, revenue };
+  }, [products]);
+
+  const animatedRevenue = useCountUp(stats.revenue);
+
+  const kpis = [
+    {
+      label: "Total de produtos",
+      value: String(stats.total),
+      icon: <Boxes className="h-4 w-4" />,
+      accent: "#8B5CF6",
+    },
+    {
+      label: "Produtos ativos",
+      value: String(stats.active),
+      icon: <CheckCircle2 className="h-4 w-4" />,
+      accent: "#34D399",
+    },
+    {
+      label: "Vendas aprovadas",
+      value: String(stats.totalSales),
+      icon: <ShoppingBag className="h-4 w-4" />,
+      accent: "#6366F1",
+    },
+    {
+      label: "Receita estimada",
+      value: formatCurrency(animatedRevenue),
+      icon: <TrendingUp className="h-4 w-4" />,
+      accent: "#F59E0B",
+    },
+  ];
 
   return (
-    <div className="min-h-screen">
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2">
-            <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Separator
-                orientation="vertical"
-                className="mr-2 data-[orientation=vertical]:h-4"
-              />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink href="#">Safira Cash</BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden md:block" />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>Produtos</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-            </div>
-          </header>
+    <>
+      <Head>
+        <title>ShadowPay — Produtos</title>
+      </Head>
 
-          <div className="flex flex-1 flex-col gap-6 p-4 pt-0 min-h-screen">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h1 className="text-2xl font-bold">Meus Produtos</h1>
-                <p className="text-muted-foreground">
-                  Gerencie seus info-produtos e acompanhe as vendas
-                </p>
+      <div className="min-h-screen">
+        <SidebarProvider>
+          <AppSidebar />
+          <SidebarInset className="text-white" style={{ background: SHADOW_BG }}>
+            {/* Header */}
+            <header className="flex flex-col gap-4 px-4 pt-6 sm:flex-row sm:items-center sm:justify-between lg:px-8">
+              <div className="flex items-center gap-3">
+                <SidebarTrigger className="text-white/60 hover:text-white" />
+                <div>
+                  <h1
+                    className="text-2xl font-bold tracking-tight text-white md:text-[28px]"
+                    style={{ fontFamily: "'Clash Display', sans-serif" }}
+                  >
+                    Meus Produtos
+                  </h1>
+                  <p className="mt-1 text-xs text-white/40">
+                    Gerencie seus produtos e acompanhe as vendas
+                  </p>
+                </div>
               </div>
-              <Button
+              <button
                 onClick={handleNewProduct}
-                className="flex items-center gap-2 cursor-pointer"
+                className="group relative inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
+                style={{
+                  background: "linear-gradient(120deg, #7C3AED, #6366F1)",
+                  boxShadow: "0 14px 36px -14px rgba(124,58,237,0.7)",
+                }}
               >
                 <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">Novo Produto</span>
-                <span className="sm:hidden">Novo</span>
-              </Button>
-            </div>
-            <Card className="p-6 min-w-[280px] max-w-[360px] w-full md:min-w-auto md:max-w-none flex flex-col justify-between">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="h-5 w-5" />
-                  Lista de Produtos
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-1/4">Produto</TableHead>
-                      <TableHead className="w-1/12">Status</TableHead>
-                      <TableHead className="w-1/12">Preço</TableHead>
-                      <TableHead className="w-1/12">Vendas</TableHead>
-                      <TableHead className="w-1/6">Criado em</TableHead>
-                      <TableHead className="w-1/4 text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {products.map((product) => (
-                      <TableRow key={product.id}>
-                        <TableCell className="truncate max-w-[200px]">
-                          <div className="space-y-1">
-                            <p className="font-medium">{product.name}</p>
-                            <p className="text-sm text-muted-foreground line-clamp-1">
-                              {product.description}
+                Novo Produto
+              </button>
+            </header>
+
+            <main className="flex flex-col gap-5 p-4 lg:p-8">
+              {/* KPIs */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {kpis.map((k, i) => (
+                  <motion.div
+                    key={k.label}
+                    initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
+                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    transition={{
+                      duration: 0.7,
+                      delay: i * 0.06,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                    className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl"
+                  >
+                    <div
+                      className="pointer-events-none absolute -left-8 -top-10 h-28 w-28 rounded-full opacity-50 blur-2xl transition-opacity duration-500 group-hover:opacity-80"
+                      style={{ background: `${k.accent}22` }}
+                    />
+                    <div className="relative mb-4 flex items-center gap-2.5">
+                      <span
+                        className="flex h-8 w-8 items-center justify-center rounded-lg"
+                        style={{ background: `${k.accent}1f`, color: k.accent }}
+                      >
+                        {k.icon}
+                      </span>
+                      <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
+                        {k.label}
+                      </span>
+                    </div>
+                    <div
+                      className="relative text-2xl font-semibold tracking-tight text-white"
+                      style={{ fontFamily: "'Clash Display', sans-serif" }}
+                    >
+                      {k.value}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Tabela de produtos */}
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] backdrop-blur-xl"
+              >
+                <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
+                  <h2
+                    className="flex items-center gap-2 text-sm font-semibold text-white"
+                    style={{ fontFamily: "'Clash Display', sans-serif" }}
+                  >
+                    <Package className="h-4 w-4 text-violet-300" />
+                    Lista de Produtos
+                  </h2>
+                  <span className="text-xs text-white/40">
+                    {products.length} {products.length === 1 ? "item" : "itens"}
+                  </span>
+                </div>
+
+                <div className="overflow-x-auto p-2 sm:p-4">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="text-[11px] uppercase tracking-wider text-white/40">
+                        <th className="px-3 py-2 font-medium">Produto</th>
+                        <th className="px-3 py-2 font-medium">Status</th>
+                        <th className="px-3 py-2 font-medium">Preço</th>
+                        <th className="px-3 py-2 font-medium">Vendas</th>
+                        <th className="px-3 py-2 font-medium">Criado em</th>
+                        <th className="px-3 py-2 text-right font-medium">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loading ? (
+                        Array.from({ length: 4 }).map((_, i) => (
+                          <tr
+                            key={i}
+                            className="animate-pulse border-t border-white/[0.05]"
+                          >
+                            <td className="px-3 py-3">
+                              <div className="h-4 w-40 rounded bg-white/10" />
+                            </td>
+                            <td className="px-3 py-3">
+                              <div className="h-6 w-16 rounded-full bg-white/10" />
+                            </td>
+                            <td className="px-3 py-3">
+                              <div className="h-4 w-16 rounded bg-white/10" />
+                            </td>
+                            <td className="px-3 py-3">
+                              <div className="h-4 w-12 rounded bg-white/10" />
+                            </td>
+                            <td className="px-3 py-3">
+                              <div className="h-4 w-20 rounded bg-white/10" />
+                            </td>
+                            <td className="px-3 py-3 text-right">
+                              <div className="ml-auto h-8 w-32 rounded bg-white/10" />
+                            </td>
+                          </tr>
+                        ))
+                      ) : products.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-14 text-center">
+                            <Package className="mx-auto mb-3 h-7 w-7 text-violet-400/40" />
+                            <p className="text-sm font-medium text-white/60">
+                              Nenhum produto cadastrado
                             </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>{getStatusBadge(product.status)}</TableCell>
-                        <TableCell className="font-medium">
-                          {formatCurrency(product.price)}
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-medium">{product.sales}</span>
-                          <span className="text-sm text-muted-foreground ml-1">
-                            vendas
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {formatDate(product.createdAt)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center gap-2 justify-end">
-                            {/* <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewOrders(product.id)}
-                              className="h-8 cursor-pointer"
+                            <p className="mt-1 text-xs text-white/35">
+                              Crie seu primeiro produto para começar a vender.
+                            </p>
+                            <button
+                              onClick={handleNewProduct}
+                              className="mx-auto mt-4 inline-flex items-center gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-xs font-semibold text-violet-200 transition-colors hover:bg-violet-500/20"
                             >
-                              <Eye className="h-3 w-3 mr-1" />
-                              <span className="hidden sm:inline">Pedidos</span>
-                            </Button> */}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleAccessLink(product)}
-                              className="h-8 cursor-pointer"
-                            >
-                              <ExternalLink className="h-3 w-3 mr-1" />
-                              <span className="hidden sm:inline">Link</span>
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEdit(product.id)}
-                              className="h-8 cursor-pointer"
-                            >
-                              <Edit className="h-3 w-3 mr-1" />
-                              <span className="hidden sm:inline">Editar</span>
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleDelete(product.id, product.name)
-                              }
-                              className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer"
-                            >
-                              <Trash2 className="h-3 w-3 mr-1" />
-                              <span className="hidden sm:inline">Excluir</span>
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                              <Plus className="h-3.5 w-3.5" />
+                              Criar produto
+                            </button>
+                          </td>
+                        </tr>
+                      ) : (
+                        products.map((product) => (
+                          <tr
+                            key={product.id}
+                            className="border-t border-white/[0.05] transition-colors hover:bg-white/[0.03]"
+                          >
+                            <td className="px-3 py-3">
+                              <div className="flex items-center gap-3">
+                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300">
+                                  <Package className="h-4 w-4" />
+                                </span>
+                                <div className="min-w-0">
+                                  <p className="truncate font-medium text-white/90">
+                                    {product.name}
+                                  </p>
+                                  <p className="line-clamp-1 max-w-[240px] text-xs text-white/40">
+                                    {product.description}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-3 py-3">
+                              {getStatusBadge(product.status)}
+                            </td>
+                            <td className="px-3 py-3 font-medium text-white/90">
+                              {formatCurrency(product.price)}
+                            </td>
+                            <td className="px-3 py-3">
+                              <span className="font-semibold text-white">
+                                {product.sales}
+                              </span>
+                              <span className="ml-1 text-xs text-white/40">
+                                vendas
+                              </span>
+                            </td>
+                            <td className="px-3 py-3 text-white/50">
+                              {product.createdAt
+                                ? formatDate(product.createdAt)
+                                : "—"}
+                            </td>
+                            <td className="px-3 py-3">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  onClick={() => handleAccessLink(product)}
+                                  title="Abrir link do checkout"
+                                  className="flex h-8 items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 text-xs text-white/70 transition-colors hover:bg-white/[0.07] hover:text-white"
+                                >
+                                  <ExternalLink className="h-3.5 w-3.5" />
+                                  <span className="hidden sm:inline">Link</span>
+                                </button>
+                                <button
+                                  onClick={() => handleEdit(product.id)}
+                                  title="Editar produto"
+                                  className="flex h-8 items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 text-xs text-white/70 transition-colors hover:bg-white/[0.07] hover:text-white"
+                                >
+                                  <Edit className="h-3.5 w-3.5" />
+                                  <span className="hidden sm:inline">Editar</span>
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleDelete(product.id, product.name)
+                                  }
+                                  title="Excluir produto"
+                                  className="flex h-8 items-center gap-1.5 rounded-lg border border-rose-500/25 bg-rose-500/10 px-2.5 text-xs text-rose-300 transition-colors hover:bg-rose-500/20"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  <span className="hidden sm:inline">Excluir</span>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
 
                 {/* Paginação */}
-                <div className="flex flex-col gap-3 mt-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="text-sm text-muted-foreground text-center sm:text-left">
-                    Mostrando 1-{products.length} de {products.length} produtos
-                  </div>
-                  <div className="flex items-center justify-center space-x-1 sm:space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled
-                      className="px-2 sm:px-3"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      <span className="hidden sm:inline ml-1">Anterior</span>
-                    </Button>
-                    <div className="flex items-center space-x-1">
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="w-8 h-8 p-0"
-                      >
-                        1
-                      </Button>
+                {!loading && products.length > 0 && (
+                  <div className="flex flex-col gap-3 border-t border-white/[0.06] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="text-center text-xs text-white/40 sm:text-left">
+                      Mostrando 1-{products.length} de {products.length} produtos
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled
-                      className="px-2 sm:px-3"
-                    >
-                      <span className="hidden sm:inline mr-1">Próximo</span>
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center justify-center gap-1.5">
+                      <button
+                        disabled
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/70 transition-colors hover:bg-white/[0.07] disabled:opacity-40"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/20 text-sm font-semibold text-violet-200">
+                        1
+                      </button>
+                      <button
+                        disabled
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/70 transition-colors hover:bg-white/[0.07] disabled:opacity-40"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
-    </div>
+                )}
+              </motion.div>
+            </main>
+          </SidebarInset>
+        </SidebarProvider>
+        <ShadowPanel />
+      </div>
+    </>
   );
 }
