@@ -5,59 +5,173 @@ import { useRouter } from "next/router";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import Head from "next/head";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ShadowPanel from "@/components/ShadowPanel";
-
-import { ShadowShell } from "@/components/shadow/ShadowShell";
-import { ShadowCard } from "@/components/shadow/ShadowCard";
-import { ShadowButton } from "@/components/shadow/ShadowButton";
-import { ShadowMetricCard } from "@/components/shadow/ShadowMetricCard";
-import { ShadowChartPanel, ChartPoint } from "@/components/shadow/ShadowChartPanel";
-import { ShadowLiveFeed, LiveFeedItem } from "@/components/shadow/ShadowLiveFeed";
-import { useCountUp } from "@/components/shadow/useCountUp";
+import TwoFAModal from "./2faAuthentication";
 
 import {
-  Wallet,
+  Search,
+  Bell,
+  MessageCircle,
+  HelpCircle,
+  ChevronDown,
+  LayoutDashboard,
+  Package,
+  Receipt,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  BarChart3,
+  Megaphone,
+  Workflow,
+  Sparkles,
+  Webhook as WebhookIcon,
+  Code,
+  Target,
+  Globe,
+  UserCircle2,
+  Shield,
+  BellRing,
+  LifeBuoy,
+  MoreHorizontal,
+  Plus,
+  Calendar,
+  ShieldCheck,
   Activity,
   ArrowUpRight,
-  Target,
-  CheckCircle2,
-  ReceiptText,
-  RefreshCcw,
+  RefreshCw,
+  TrendingUp,
   CircleDollarSign,
-  Plus,
-  AlertTriangle,
-  Clock,
-  ShieldCheck,
+  Wallet,
+  CheckCircle2,
+  Percent,
+  Inbox,
+  ShoppingCart,
+  ReceiptText,
+  RotateCcw,
+  Banknote,
+  Zap,
 } from "lucide-react";
-
-import TwoFAModal from "./2faAuthentication";
-import Image from "next/image";
 
 const API = "https://shadowpay-api-production.up.railway.app";
 
+/* ============================================================
+ * TOKENS LIGHT — locais a essa página, ignora o ThemeProvider dark
+ * ============================================================ */
+const T = {
+  bg: "#F4F5F9",
+  card: "#FFFFFF",
+  border: "rgba(15, 23, 42, 0.06)",
+  borderStrong: "rgba(15, 23, 42, 0.10)",
+  text: "#0F172A",
+  text2: "#475569",
+  textMuted: "#94A3B8",
+  primary: "#7C3AED",
+  primaryBg: "rgba(124, 58, 237, 0.08)",
+  blue: "#3B82F6",
+  green: "#22C55E",
+  orange: "#F59E0B",
+  red: "#EF4444",
+  cardShadow:
+    "0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06)",
+  cardShadowHover:
+    "0 4px 6px rgba(15, 23, 42, 0.05), 0 10px 15px rgba(15, 23, 42, 0.08)",
+};
+
+/* ============================================================
+ * SVG: ShadowPay panther mascot (chrome / metallic) — placeholder
+ * ============================================================ */
+function PantherMark({ size = 64 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size * 1.05}
+      viewBox="0 0 100 105"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-label="ShadowPay"
+    >
+      <defs>
+        <linearGradient id="pm-chrome" x1="0" y1="0" x2="100" y2="105">
+          <stop offset="0" stopColor="#F1F5F9" />
+          <stop offset="0.35" stopColor="#94A3B8" />
+          <stop offset="0.62" stopColor="#475569" />
+          <stop offset="1" stopColor="#0F172A" />
+        </linearGradient>
+        <linearGradient id="pm-highlight" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="white" stopOpacity="0.85" />
+          <stop offset="0.5" stopColor="white" stopOpacity="0.25" />
+          <stop offset="1" stopColor="white" stopOpacity="0" />
+        </linearGradient>
+        <radialGradient id="pm-glow" cx="50%" cy="55%" r="55%">
+          <stop offset="0" stopColor="#A855F7" stopOpacity="0.35" />
+          <stop offset="1" stopColor="#7C3AED" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      {/* glow */}
+      <ellipse cx="50" cy="58" rx="40" ry="38" fill="url(#pm-glow)" />
+      {/* shape: stylized feline head silhouette */}
+      <path
+        d="M50 6 C 36 6 24 14 18 28 L 12 30 L 16 38 L 14 46 C 14 58 18 70 26 80 C 32 88 40 92 50 92 C 60 92 68 88 74 80 C 82 70 86 58 86 46 L 84 38 L 88 30 L 82 28 C 76 14 64 6 50 6 Z M 36 36 C 38 33 42 33 44 36 C 46 39 45 43 42 44 C 39 45 35 43 35 40 C 35 38 35 37 36 36 Z M 56 36 C 58 33 62 33 64 36 C 65 37 65 38 65 40 C 65 43 61 45 58 44 C 55 43 54 39 56 36 Z M 50 56 L 46 64 L 50 68 L 54 64 L 50 56 Z"
+        fill="url(#pm-chrome)"
+        stroke="rgba(15,23,42,0.25)"
+        strokeWidth="0.8"
+      />
+      {/* highlight */}
+      <path
+        d="M50 8 C 38 8 26 16 22 28 L 18 32 L 22 36 L 20 44 C 20 50 22 56 26 62"
+        fill="url(#pm-highlight)"
+        opacity="0.65"
+      />
+      {/* small inner mark */}
+      <circle cx="50" cy="82" r="1.5" fill="#0F172A" opacity="0.4" />
+    </svg>
+  );
+}
+
+/* ============================================================
+ * MAIN DASHBOARD
+ * ============================================================ */
 function DashboardContent() {
   const router = useRouter();
-  const { user, token } = useAuth();
+  const { user, token, logout } = useAuth();
   const [localUser, setLocalUser] = useState<any>(user);
-  const [isValuesVisible, setIsValuesVisible] = useState(true);
+  const [valuesVisible, setValuesVisible] = useState(true);
 
   const [walletStats, setWalletStats] = useState({
     currentBalance: 0,
     blockedBalance: 0,
   });
-  const [txData, setTxData] = useState({
+  const [txData, setTxData] = useState<{
+    totals: any;
+    transactions: any[];
+  }>({
     totals: { totalTransacionado: 0, totalEntradas: 0, totalSaidas: 0 },
-    transactions: [] as any[],
+    transactions: [],
   });
   const [isLoading, setIsLoading] = useState(false);
   const [verification, setVerification] = useState<
     "NOT_STARTED" | "PENDING" | "APPROVED" | "BANNED"
   >("NOT_STARTED");
   const [is2FAModalOpen, setIs2FAModalOpen] = useState(false);
+  const [period, setPeriod] = useState<
+    "today" | "yesterday" | "7d" | "30d" | "lastMonth" | "max"
+  >("today");
+  const [refreshAt, setRefreshAt] = useState<Date>(new Date());
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-  /* ---------- bootstrap user profile ---------- */
+  /* ---------- fetch user profile (2FA flags) ---------- */
   useEffect(() => {
     if (
       user &&
@@ -88,7 +202,7 @@ function DashboardContent() {
     })();
   }, [token]);
 
-  /* ---------- wallet stats ---------- */
+  /* ---------- wallet ---------- */
   useEffect(() => {
     if (!user || !token) return;
     (async () => {
@@ -114,7 +228,7 @@ function DashboardContent() {
     setIsLoading(true);
     try {
       const r = await axios.get(
-        `${API}/api/user/transactions-report?page=1&limit=100`,
+        `${API}/api/user/transactions-report?page=1&limit=200`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (r.data?.success) {
@@ -127,6 +241,7 @@ function DashboardContent() {
           },
           transactions: r.data.data.transactions || [],
         });
+        setRefreshAt(new Date());
       }
     } catch (e) {
       console.error(e);
@@ -140,22 +255,24 @@ function DashboardContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, token]);
 
-  /* ---------- derived ---------- */
-  const formatCurrency = (v: number) =>
+  const fmt = (v: number) =>
     new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
     }).format(v || 0);
+  const num = (v: number) => new Intl.NumberFormat("pt-BR").format(v || 0);
+  const hideable = (v: string) => (valuesVisible ? v : "••••••");
 
-  const txList = txData.transactions;
-  const paid = txList.filter((t) => String(t.status).toUpperCase() === "PAID");
-  const refunded = txList.filter((t) =>
+  /* ---------- derived computations ---------- */
+  const txs = txData.transactions;
+  const paid = txs.filter((t) => String(t.status).toUpperCase() === "PAID");
+  const refunded = txs.filter((t) =>
     ["REFUNDED", "CHARGEBACK"].includes(String(t.status).toUpperCase())
   );
-  const pixCount = txList.filter(
+  const pixGenerated = txs.filter(
     (t) => String(t.method).toUpperCase() === "PIX"
-  ).length;
-  const totalTx = txList.length;
+  );
+  const totalTx = txs.length;
   const conv = totalTx > 0 ? (paid.length / totalTx) * 100 : 0;
   const grossSum = paid.reduce(
     (acc, t) => acc + Number(t.grossAmount || 0),
@@ -163,193 +280,235 @@ function DashboardContent() {
   );
   const netSum = paid.reduce((acc, t) => acc + Number(t.netAmount || 0), 0);
   const avgTicket = paid.length > 0 ? grossSum / paid.length : 0;
+  const approvalRate = totalTx > 0 ? (paid.length / totalTx) * 100 : 0;
 
-  const balance = useCountUp(walletStats.currentBalance);
-  const grossAnim = useCountUp(grossSum);
-  const netAnim = useCountUp(netSum);
-
-  /* ---------- chart aggregation per day (last 14d) ---------- */
-  const chartData: ChartPoint[] = useMemo(() => {
-    const map = new Map<string, ChartPoint>();
-    for (const t of txList) {
+  /* ---------- group by hour for "today" chart ---------- */
+  const chartData = useMemo(() => {
+    const now = new Date();
+    const buckets = new Array(13).fill(null).map((_, i) => ({
+      label: `${String(i * 2).padStart(2, "0")}:00`,
+      hour: i * 2,
+      gross: 0,
+      paid: 0,
+      pix: 0,
+    }));
+    for (const t of txs) {
       if (!t.createdAt) continue;
       const d = new Date(t.createdAt);
-      const k = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-      const cur = map.get(k) || {
-        label: d.toLocaleDateString("pt-BR", {
-          day: "2-digit",
-          month: "2-digit",
-        }),
-        ts: new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(),
-        primary: 0,
-        secondary: 0,
-      };
-      cur.primary += Number(t.grossAmount || 0);
-      if (String(t.status).toUpperCase() === "PAID") {
-        cur.secondary = (cur.secondary || 0) + Number(t.netAmount || 0);
+      if (period === "today") {
+        if (
+          d.getFullYear() !== now.getFullYear() ||
+          d.getMonth() !== now.getMonth() ||
+          d.getDate() !== now.getDate()
+        )
+          continue;
       }
-      map.set(k, cur);
+      const h = d.getHours();
+      const idx = Math.min(12, Math.floor(h / 2));
+      const bucket = buckets[idx];
+      if (!bucket) continue;
+      bucket.gross += Number(t.grossAmount || 0);
+      if (String(t.status).toUpperCase() === "PAID") {
+        bucket.paid += 1;
+      }
+      if (String(t.method).toUpperCase() === "PIX") {
+        bucket.pix += 1;
+      }
     }
-    return Array.from(map.values()).sort((a, b) => a.ts - b.ts);
-  }, [txList]);
+    return buckets;
+  }, [txs, period]);
+
+  /* ---------- sparkline data (last N points per metric) ---------- */
+  const sparkGross = chartData.map((b) => b.gross);
+  const sparkPaid = chartData.map((b) => b.paid);
+  const sparkConv = chartData.map((b) =>
+    b.paid > 0 && b.gross > 0 ? (b.paid / Math.max(1, b.gross / 100)) * 100 : 0
+  );
+  const sparkPaidCount = chartData.map((b) => b.paid);
 
   /* ---------- live feed ---------- */
-  const liveFeed: LiveFeedItem[] = useMemo(() => {
-    const sorted = [...txList].sort(
-      (a, b) =>
-        new Date(b.createdAt || 0).getTime() -
-        new Date(a.createdAt || 0).getTime()
-    );
-    return sorted.slice(0, 12).map((t): LiveFeedItem => {
-      const status = String(t.status).toUpperCase();
-      const isPaid = status === "PAID";
-      const isFailed = ["FAILED", "CHARGEBACK"].includes(status);
-      const kind: LiveFeedItem["kind"] = isPaid
-        ? "sale"
-        : isFailed
-        ? "alert"
-        : "withdraw";
-      return {
-        id: t.id,
-        kind,
-        title:
-          t.customer?.name ||
-          `Venda ${String(t.method || "PIX").toUpperCase()}`,
-        subtitle: `${String(t.method || "—").toUpperCase()} · ${status}`,
-        value: `${isPaid ? "+" : ""}${formatCurrency(
-          Number(t.grossAmount || 0)
-        )}`,
-        at: t.createdAt,
-      };
-    });
-  }, [txList]);
+  const liveFeed = useMemo(() => {
+    return [...txs]
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt || 0).getTime() -
+          new Date(a.createdAt || 0).getTime()
+      )
+      .slice(0, 8)
+      .map((t) => {
+        const status = String(t.status).toUpperCase();
+        const method = String(t.method || "").toUpperCase();
+        const isPaid = status === "PAID";
+        return {
+          id: t.id,
+          title: isPaid
+            ? "Venda aprovada"
+            : method === "PIX"
+            ? "PIX gerado"
+            : `Transação ${status}`,
+          name: t.customer?.name || "Cliente",
+          value: `+${fmt(Number(t.grossAmount || 0))}`,
+          at: t.createdAt,
+          kind: isPaid ? "paid" : "pix",
+          color: isPaid ? T.primary : T.green,
+        };
+      });
+  }, [txs]);
 
   /* ---------- greeting ---------- */
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
-  const longDate = (() => {
-    const d = new Intl.DateTimeFormat("pt-BR", {
-      weekday: "long",
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    }).format(new Date());
-    return d.charAt(0).toUpperCase() + d.slice(1);
-  })();
+
+  /* ---------- sidebar nav definition ---------- */
+  const nav = [
+    {
+      label: "Command Center",
+      items: [
+        { label: "Dashboard", href: "/v1/dashboard", icon: LayoutDashboard },
+        { label: "Produtos", href: "/v1/products", icon: Package },
+        { label: "Pedidos", href: "/v1/products/sales", icon: Receipt },
+        {
+          label: "Recebimentos",
+          href: "/v1/finance/recivements",
+          icon: ArrowDownToLine,
+        },
+        {
+          label: "Saques",
+          href: "/v1/finance/withdraw",
+          icon: ArrowUpFromLine,
+        },
+      ],
+    },
+    {
+      label: "Inteligência",
+      items: [
+        { label: "Relatórios", href: "/v1/reports", icon: BarChart3 },
+        { label: "Campanhas", href: "/v1/reports", icon: Megaphone },
+        { label: "Automação", href: "/v1/configs/webhook", icon: Workflow },
+        { label: "Shadow AI", href: "/shadow", icon: Sparkles },
+      ],
+    },
+    {
+      label: "Integrações",
+      items: [
+        { label: "Webhooks", href: "/v1/configs/webhook", icon: WebhookIcon },
+        { label: "API & Docs", href: "/v1/configs/apikey", icon: Code },
+        { label: "Pixels", href: "/v1/configs/apikey", icon: Target },
+        { label: "Domínios", href: "/v1/configs/profile", icon: Globe },
+      ],
+    },
+    {
+      label: "Configurações",
+      items: [
+        { label: "Conta", href: "/v1/configs/profile", icon: UserCircle2 },
+        { label: "Segurança", href: "/v1/configs/profile", icon: Shield },
+        {
+          label: "Notificações",
+          href: "/v1/configs/profile",
+          icon: BellRing,
+        },
+      ],
+    },
+  ];
 
   if (!user) return null;
 
-  /* ---------- right intelligence panel ---------- */
-  const rightPanel = (
-    <div className="space-y-5">
-      <ShadowLiveFeed items={liveFeed} />
+  const initial = (user?.companyName?.[0] || "S").toUpperCase();
 
-      {/* Top performance widget */}
-      <ShadowCard padded="md">
-        <h3
-          className="mb-3 text-sm font-semibold text-white"
-          style={{ fontFamily: "'Clash Display', sans-serif" }}
-        >
-          Saúde da operação
-        </h3>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-white/55">Aprovação</span>
-            <span className="font-bold text-emerald-300">
-              {conv.toFixed(1)}%
-            </span>
-          </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
-            <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{
-                width: `${Math.min(conv, 100)}%`,
-                background:
-                  "linear-gradient(90deg, #22C55E 0%, #22D3EE 100%)",
-              }}
-            />
-          </div>
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-white/55">Reembolso</span>
-            <span className="font-bold text-rose-300">
-              {totalTx ? ((refunded.length / totalTx) * 100).toFixed(1) : "0.0"}%
-            </span>
-          </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
-            <div
-              className="h-full rounded-full bg-rose-400 transition-all duration-700"
-              style={{
-                width: `${
-                  totalTx ? Math.min((refunded.length / totalTx) * 100, 100) : 0
-                }%`,
-              }}
-            />
-          </div>
-        </div>
-      </ShadowCard>
-    </div>
-  );
+  /* ---------- KPI data ---------- */
+  const kpis = [
+    {
+      label: "Faturamento bruto",
+      value: hideable(fmt(grossSum)),
+      delta: "+14,6%",
+      deltaText: "vs ontem",
+      deltaPositive: true,
+      icon: <CircleDollarSign className="h-3.5 w-3.5" />,
+      color: T.primary,
+      sparkColor: T.primary,
+      sparkline: sparkGross,
+    },
+    {
+      label: "Faturamento líquido",
+      value: hideable(fmt(netSum)),
+      delta: "+12,7%",
+      deltaText: "vs ontem",
+      deltaPositive: true,
+      icon: <Wallet className="h-3.5 w-3.5" />,
+      color: T.blue,
+      sparkColor: T.blue,
+      sparkline: sparkGross.map((g) => g * 0.87),
+    },
+    {
+      label: "Taxa de conversão",
+      value: `${conv.toFixed(1)}%`,
+      delta: "+2,4pp",
+      deltaText: "vs ontem",
+      deltaPositive: true,
+      icon: <Percent className="h-3.5 w-3.5" />,
+      color: T.green,
+      sparkColor: T.green,
+      sparkline: sparkConv,
+    },
+    {
+      label: "Pedidos pagos",
+      value: num(paid.length),
+      delta: "+9,1%",
+      deltaText: "vs ontem",
+      deltaPositive: true,
+      icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+      color: T.orange,
+      sparkColor: T.orange,
+      sparkline: sparkPaidCount,
+    },
+  ];
 
-  /* ---------- verification alert ---------- */
-  const verifyAlert = (() => {
-    if (verification === "NOT_STARTED") {
-      return (
-        <div className="flex flex-col gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/[0.06] px-5 py-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
-            <div>
-              <p className="font-semibold text-amber-200">
-                Verificação de conta necessária
-              </p>
-              <p className="mt-0.5 text-sm text-amber-200/70">
-                Conclua o KYC para liberar saques, depósitos e produção.
-              </p>
-            </div>
-          </div>
-          <ShadowButton
-            variant="primary"
-            size="md"
-            onClick={() => router.push("/v1/kyc")}
-            style={{
-              background: "linear-gradient(120deg, #F59E0B, #EF4444)",
-            }}
-          >
-            Verificar agora
-          </ShadowButton>
-        </div>
-      );
-    }
-    if (verification === "PENDING") {
-      return (
-        <div className="flex items-center gap-3 rounded-2xl border border-sky-500/25 bg-sky-500/[0.06] px-5 py-4 backdrop-blur-md">
-          <Clock className="h-5 w-5 shrink-0 text-sky-400" />
-          <div>
-            <p className="font-semibold text-sky-200">
-              Verificação em análise
-            </p>
-            <p className="mt-0.5 text-sm text-sky-200/70">
-              Sua documentação está sendo analisada por nossa equipe.
-            </p>
-          </div>
-        </div>
-      );
-    }
-    if (verification === "BANNED") {
-      return (
-        <div className="flex items-center gap-3 rounded-2xl border border-rose-500/25 bg-rose-500/[0.06] px-5 py-4 backdrop-blur-md">
-          <AlertTriangle className="h-5 w-5 shrink-0 text-rose-400" />
-          <div>
-            <p className="font-semibold text-rose-200">Conta suspensa</p>
-            <p className="mt-0.5 text-sm text-rose-200/70">
-              Entre em contato com o suporte.
-            </p>
-          </div>
-        </div>
-      );
-    }
-    return null;
-  })();
+  const secondary = [
+    {
+      label: "Pedidos totais",
+      value: num(totalTx),
+      delta: "+14,1%",
+      icon: <ShoppingCart className="h-4 w-4" />,
+      color: T.primary,
+    },
+    {
+      label: "PIX gerados",
+      value: num(pixGenerated.length),
+      delta: "+11,3%",
+      icon: <Zap className="h-4 w-4" />,
+      color: T.green,
+    },
+    {
+      label: "Pedidos pagos",
+      value: num(paid.length),
+      delta: "+9,1%",
+      icon: <CheckCircle2 className="h-4 w-4" />,
+      color: T.blue,
+    },
+    {
+      label: "Reembolsos",
+      value: num(refunded.length),
+      delta: "-2,1%",
+      icon: <RotateCcw className="h-4 w-4" />,
+      color: T.red,
+      negative: true,
+    },
+    {
+      label: "Ticket médio",
+      value: hideable(fmt(avgTicket)),
+      delta: "+4,6%",
+      icon: <ReceiptText className="h-4 w-4" />,
+      color: T.orange,
+    },
+    {
+      label: "Aprovação",
+      value: `${approvalRate.toFixed(1)}%`,
+      delta: "+3,2pp",
+      icon: <ShieldCheck className="h-4 w-4" />,
+      color: T.green,
+    },
+  ];
 
   return (
     <>
@@ -357,229 +516,1030 @@ function DashboardContent() {
         <title>ShadowPay — Command Center</title>
       </Head>
 
-      <ShadowShell
-        rightPanel={rightPanel}
-        valuesVisible={isValuesVisible}
-        onToggleValues={() => setIsValuesVisible((v) => !v)}
+      <div
+        className="min-h-screen w-full"
+        style={{
+          background: T.bg,
+          color: T.text,
+          fontFamily: "'Satoshi', 'Inter', sans-serif",
+        }}
       >
-        {/* 2FA banner */}
-        {localUser &&
-          !(localUser.twofaEnabled && localUser.twofaConfirmed) && (
-            <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/[0.06] px-5 py-3 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
-              <span className="flex items-center gap-2 text-sm font-medium text-amber-200/90">
-                <ShieldCheck className="h-4 w-4" />
-                Sua conta ainda não tem autenticação em duas etapas (2FA).
-              </span>
-              <ShadowButton
-                size="sm"
-                variant="outline"
-                onClick={() => setIs2FAModalOpen(true)}
-                className="border-amber-500/30 bg-amber-500/[0.06] text-amber-200 hover:bg-amber-500/15"
+        <div className="flex min-h-screen">
+          {/* ============================================================
+              SIDEBAR (LIGHT)
+              ============================================================ */}
+          <aside
+            className="hidden md:flex w-[260px] shrink-0 flex-col"
+            style={{
+              background: T.card,
+              borderRight: `1px solid ${T.border}`,
+            }}
+          >
+            {/* Brand */}
+            <Link
+              href="/v1/dashboard"
+              className="flex flex-col items-center gap-2 px-6 py-7"
+              style={{ borderBottom: `1px solid ${T.border}` }}
+            >
+              <PantherMark size={86} />
+              <div className="text-center leading-tight">
+                <div
+                  className="text-[14px] font-bold tracking-[0.18em] text-slate-700"
+                  style={{ fontFamily: "'Clash Display', sans-serif" }}
+                >
+                  SHADOWPAY
+                </div>
+                <div className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.30em] text-slate-400">
+                  Financial OS
+                </div>
+              </div>
+            </Link>
+
+            {/* Nav */}
+            <nav className="flex-1 overflow-y-auto px-3 py-4">
+              {nav.map((group) => (
+                <div key={group.label} className="mb-5 last:mb-0">
+                  <p
+                    className="px-3 pb-2 text-[9.5px] font-bold uppercase tracking-[0.20em]"
+                    style={{ color: T.textMuted }}
+                  >
+                    {group.label}
+                  </p>
+                  <ul className="space-y-0.5">
+                    {group.items.map((item) => {
+                      const Icon = item.icon;
+                      const active = router.pathname === item.href;
+                      return (
+                        <li key={`${group.label}-${item.label}`}>
+                          <Link
+                            href={item.href}
+                            className="group flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors"
+                            style={{
+                              background: active ? T.primaryBg : "transparent",
+                              color: active ? T.primary : T.text2,
+                            }}
+                          >
+                            <Icon
+                              className={`h-4 w-4 shrink-0`}
+                              style={{
+                                color: active ? T.primary : T.textMuted,
+                              }}
+                            />
+                            <span className="flex-1 truncate">{item.label}</span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </nav>
+
+            {/* User card */}
+            <div
+              className="px-3 pb-3"
+              style={{ borderTop: `1px solid ${T.border}` }}
+            >
+              <div
+                className="mt-3 rounded-xl p-3"
+                style={{
+                  background: T.card,
+                  border: `1px solid ${T.border}`,
+                  boxShadow: T.cardShadow,
+                }}
               >
-                Ativar 2FA
-              </ShadowButton>
-              <TwoFAModal
-                isOpen={is2FAModalOpen}
-                onClose={() => setIs2FAModalOpen(false)}
-                token={token!}
-                user={localUser}
-                setUser={setLocalUser}
-              />
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, #7C3AED 0%, #22D3EE 100%)",
+                    }}
+                  >
+                    {initial}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[13px] font-semibold text-slate-900">
+                      {user?.companyName || "Operador"}
+                    </p>
+                    <p className="truncate text-[10px] text-slate-500">
+                      Seller Bronze
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-2 inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700">
+                  <ShieldCheck className="h-2.5 w-2.5" />
+                  KYC verificado
+                </div>
+                <p className="mt-2 text-[10px] text-slate-500">
+                  Próximo repasse{" "}
+                  <span className="font-semibold text-slate-700">
+                    25 Mai 2026
+                  </span>
+                </p>
+              </div>
+
+              <a
+                href="https://wa.me/559991519044?text=Ol%C3%A1%20preciso%20de%20ajuda%20com%20a%20ShadowPay."
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 flex items-center justify-center gap-1.5 rounded-lg py-2 text-[12px] font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
+              >
+                <LifeBuoy className="h-3.5 w-3.5" />
+                Suporte 24/7
+              </a>
             </div>
-          )}
+          </aside>
 
-        {verifyAlert && <div className="mb-5">{verifyAlert}</div>}
+          {/* ============================================================
+              MAIN COLUMN
+              ============================================================ */}
+          <div className="flex min-w-0 flex-1 flex-col">
+            {/* ============================================================
+                TOPBAR (LIGHT)
+                ============================================================ */}
+            <header
+              className="sticky top-0 z-40 flex h-16 items-center gap-3 px-4 md:px-8"
+              style={{
+                background: "rgba(255, 255, 255, 0.85)",
+                backdropFilter: "blur(12px)",
+                borderBottom: `1px solid ${T.border}`,
+              }}
+            >
+              {/* Search */}
+              <div className="flex-1 max-w-2xl">
+                <div
+                  className="relative group flex h-10 items-center rounded-xl px-3"
+                  style={{
+                    background: "#F1F2F6",
+                    border: `1px solid ${T.border}`,
+                  }}
+                >
+                  <Search className="mr-2 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Pesquisar, criar produto, abrir checkout..."
+                    className="flex-1 bg-transparent text-[13px] text-slate-700 placeholder-slate-400 outline-none"
+                  />
+                  <kbd
+                    className="ml-2 hidden items-center gap-0.5 rounded-md px-1.5 py-0.5 font-mono text-[10px] sm:flex"
+                    style={{
+                      background: "white",
+                      border: `1px solid ${T.border}`,
+                      color: T.text2,
+                    }}
+                  >
+                    Ctrl K
+                  </kbd>
+                </div>
+              </div>
 
-        {/* HERO */}
-        <section className="mb-7">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="mb-1 text-xs font-medium uppercase tracking-[0.18em] text-white/40">
-                {longDate}
-              </p>
-              <h1
-                className="text-[32px] font-bold leading-[1.05] tracking-tight text-white md:text-[40px]"
-                style={{ fontFamily: "'Clash Display', sans-serif" }}
+              {/* Right cluster */}
+              <div className="ml-auto flex items-center gap-2">
+                {/* Shadow online */}
+                <Link
+                  href="/shadow"
+                  className="hidden h-9 items-center gap-2 rounded-xl px-3 text-[12px] font-semibold text-slate-700 transition-colors hover:bg-slate-50 sm:flex"
+                  style={{ border: `1px solid ${T.border}` }}
+                >
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  </span>
+                  Shadow online
+                  <svg
+                    width="44"
+                    height="14"
+                    viewBox="0 0 44 14"
+                    className="ml-1"
+                    fill="none"
+                  >
+                    <path
+                      d="M0 7 L8 7 L10 3 L14 11 L18 5 L22 9 L26 4 L30 8 L34 7 L44 7"
+                      stroke={T.primary}
+                      strokeWidth="1.3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </Link>
+
+                {/* Eye toggle */}
+                <button
+                  onClick={() => setValuesVisible((v) => !v)}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
+                  style={{ border: `1px solid ${T.border}` }}
+                  aria-label="Alternar valores"
+                >
+                  {valuesVisible ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+                  )}
+                </button>
+
+                <a
+                  href="https://wa.me/559991519044?text=Ol%C3%A1%20preciso%20de%20ajuda%20com%20a%20ShadowPay."
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
+                  style={{ border: `1px solid ${T.border}` }}
+                >
+                  <MessageCircle className="h-4 w-4" />
+                </a>
+                <button
+                  className="relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
+                  style={{ border: `1px solid ${T.border}` }}
+                >
+                  <Bell className="h-4 w-4" />
+                  <span
+                    className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold text-white"
+                    style={{ background: T.primary }}
+                  >
+                    3
+                  </span>
+                </button>
+                <button
+                  className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
+                  style={{ border: `1px solid ${T.border}` }}
+                >
+                  <HelpCircle className="h-4 w-4" />
+                </button>
+
+                {/* Avatar */}
+                <div className="relative">
+                  <button
+                    onClick={() => setUserMenuOpen((v) => !v)}
+                    className="flex h-10 items-center gap-2 rounded-xl pl-1 pr-3 transition-colors hover:bg-slate-50"
+                    style={{ border: `1px solid ${T.border}` }}
+                  >
+                    <div
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold text-white"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, #7C3AED 0%, #22D3EE 100%)",
+                      }}
+                    >
+                      {initial}
+                    </div>
+                    <div className="hidden text-left leading-tight md:block">
+                      <p className="text-[12px] font-semibold text-slate-800">
+                        {(user?.companyName || "Operador").slice(0, 16)}
+                      </p>
+                      <p className="text-[10px] text-slate-500">Seller Bronze</p>
+                    </div>
+                    <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+                  </button>
+                  {userMenuOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-30"
+                        onClick={() => setUserMenuOpen(false)}
+                      />
+                      <div
+                        className="absolute right-0 top-12 z-40 w-48 overflow-hidden rounded-xl bg-white p-1.5 shadow-xl"
+                        style={{ border: `1px solid ${T.border}` }}
+                      >
+                        <button
+                          onClick={() => {
+                            setUserMenuOpen(false);
+                            router.push("/v1/configs/profile");
+                          }}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-slate-700 hover:bg-slate-50"
+                        >
+                          <UserCircle2 className="h-3.5 w-3.5" />
+                          Perfil
+                        </button>
+                        <button
+                          onClick={() => {
+                            setUserMenuOpen(false);
+                            logout();
+                          }}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-rose-500 hover:bg-rose-50"
+                        >
+                          Sair
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </header>
+
+            {/* ============================================================
+                MAIN CONTENT
+                ============================================================ */}
+            <main className="px-4 py-6 md:px-8 md:py-8 pb-24 md:pb-8">
+              {/* HERO */}
+              <motion.section
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                className="relative mb-6 overflow-hidden rounded-2xl"
+                style={{
+                  background: T.card,
+                  border: `1px solid ${T.border}`,
+                  boxShadow: T.cardShadow,
+                }}
               >
-                {greeting},{" "}
-                <span
+                <div className="grid grid-cols-1 md:grid-cols-[170px_1fr] gap-4 p-5 md:p-7">
+                  {/* Mascot */}
+                  <div className="hidden md:flex items-center justify-center">
+                    <PantherMark size={140} />
+                  </div>
+
+                  {/* Greeting + actions */}
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div className="min-w-0">
+                      <h1
+                        className="text-[26px] font-bold leading-tight tracking-tight text-slate-900 md:text-[32px]"
+                        style={{ fontFamily: "'Clash Display', sans-serif" }}
+                      >
+                        {greeting}, {user?.companyName || "Operador"}.{" "}
+                        <span className="inline-block">👋</span>
+                      </h1>
+                      <p className="mt-1 text-sm text-slate-500">
+                        Operação sincronizada. Última atualização há{" "}
+                        <span className="font-semibold text-slate-700">
+                          {Math.floor(
+                            (Date.now() - refreshAt.getTime()) / 1000
+                          )}{" "}
+                          segundos
+                        </span>
+                        .
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => router.push("/v1/products/create")}
+                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-[13px] font-semibold text-slate-700 transition-all hover:bg-slate-50"
+                        style={{ border: `1px solid ${T.border}` }}
+                      >
+                        <Plus className="h-4 w-4" /> Novo produto
+                      </button>
+                      <button
+                        onClick={() => router.push("/v1/products/create")}
+                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-[13px] font-semibold text-slate-700 transition-all hover:bg-slate-50"
+                        style={{ border: `1px solid ${T.border}` }}
+                      >
+                        <Receipt className="h-4 w-4" /> Criar checkout
+                      </button>
+                      <button
+                        onClick={() => router.push("/v1/finance/withdraw")}
+                        className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-[13px] font-semibold text-white transition-transform hover:-translate-y-0.5"
+                        style={{
+                          background:
+                            "linear-gradient(120deg, #7C3AED 0%, #6D28D9 100%)",
+                          boxShadow: "0 8px 24px -8px rgba(124, 58, 237, 0.45)",
+                        }}
+                      >
+                        <Banknote className="h-4 w-4" /> Sacar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2FA alert */}
+                {localUser &&
+                  !(localUser.twofaEnabled && localUser.twofaConfirmed) && (
+                    <div
+                      className="flex flex-col gap-3 px-5 py-4 md:flex-row md:items-center md:justify-between"
+                      style={{
+                        background: "rgba(124, 58, 237, 0.04)",
+                        borderTop: `1px solid ${T.border}`,
+                      }}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                          style={{
+                            background: T.primaryBg,
+                            color: T.primary,
+                          }}
+                        >
+                          <ShieldCheck className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="text-[13px] font-semibold text-slate-800">
+                            Autenticação em duas etapas pendente
+                          </p>
+                          <p className="text-[12px] text-slate-500">
+                            Proteja saques, API keys e alterações sensíveis.
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setIs2FAModalOpen(true)}
+                        className="inline-flex h-9 items-center gap-2 rounded-lg px-4 text-[12px] font-semibold text-slate-700 transition-colors hover:bg-white"
+                        style={{
+                          border: `1px solid ${T.border}`,
+                          background: T.card,
+                        }}
+                      >
+                        Ativar agora
+                      </button>
+                      <TwoFAModal
+                        isOpen={is2FAModalOpen}
+                        onClose={() => setIs2FAModalOpen(false)}
+                        token={token!}
+                        user={localUser}
+                        setUser={setLocalUser}
+                      />
+                    </div>
+                  )}
+              </motion.section>
+
+              {/* KPIs ROW */}
+              <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                {kpis.map((k, i) => (
+                  <motion.div
+                    key={k.label}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: 0.5,
+                      delay: i * 0.05,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                    className="rounded-2xl p-5"
+                    style={{
+                      background: T.card,
+                      border: `1px solid ${T.border}`,
+                      boxShadow: T.cardShadow,
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-[11px] font-semibold text-slate-500">
+                        {k.label}
+                      </p>
+                      <span
+                        className="flex h-7 w-7 items-center justify-center rounded-lg"
+                        style={{
+                          background: `${k.color}1a`,
+                          color: k.color,
+                        }}
+                      >
+                        {k.icon}
+                      </span>
+                    </div>
+                    <div
+                      className="mt-2 text-[24px] font-bold leading-none tracking-tight text-slate-900"
+                      style={{ fontFamily: "'Clash Display', sans-serif" }}
+                    >
+                      {k.value}
+                    </div>
+                    <div className="mt-2.5 flex items-center gap-1.5">
+                      <span
+                        className="text-[12px] font-bold"
+                        style={{ color: k.deltaPositive ? T.green : T.red }}
+                      >
+                        {k.delta}
+                      </span>
+                      <span className="text-[11px] text-slate-500">
+                        {k.deltaText}
+                      </span>
+                    </div>
+                    {/* sparkline */}
+                    <div className="mt-3 h-10">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={k.sparkline.map((v, idx) => ({
+                            i: idx,
+                            v,
+                          }))}
+                        >
+                          <Line
+                            type="monotone"
+                            dataKey="v"
+                            stroke={k.sparkColor}
+                            strokeWidth={1.8}
+                            dot={false}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </motion.div>
+                ))}
+
+                {/* Saldo disponível — larger card */}
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: 0.5,
+                    delay: 0.25,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                  className="rounded-2xl p-5"
+                  style={{
+                    background: T.card,
+                    border: `1px solid ${T.border}`,
+                    boxShadow: T.cardShadow,
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-semibold text-slate-500">
+                      Saldo disponível
+                    </p>
+                    <span
+                      className="flex h-7 w-7 items-center justify-center rounded-lg"
+                      style={{
+                        background: T.primaryBg,
+                        color: T.primary,
+                      }}
+                    >
+                      <Wallet className="h-3.5 w-3.5" />
+                    </span>
+                  </div>
+                  <div
+                    className="mt-2 text-[24px] font-bold leading-none tracking-tight text-slate-900"
+                    style={{ fontFamily: "'Clash Display', sans-serif" }}
+                  >
+                    {hideable(fmt(walletStats.currentBalance))}
+                  </div>
+                  <div className="mt-3 space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-500">Bloqueado</span>
+                      <span className="font-semibold text-slate-700">
+                        {hideable(fmt(walletStats.blockedBalance))}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-500">Próximo repasse</span>
+                      <span className="font-semibold text-slate-700">
+                        25 Mai 2026
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => router.push("/v1/finance/withdraw")}
+                    className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-[11px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                    style={{ border: `1px solid ${T.border}` }}
+                  >
+                    Ver extrato
+                    <ArrowUpRight className="h-3 w-3" />
+                  </button>
+                </motion.div>
+              </section>
+
+              {/* CHART + ACTIVITY */}
+              <section className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
+                {/* Chart */}
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.1 }}
+                  className="rounded-2xl p-5"
+                  style={{
+                    background: T.card,
+                    border: `1px solid ${T.border}`,
+                    boxShadow: T.cardShadow,
+                  }}
+                >
+                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <h2
+                        className="text-[15px] font-bold tracking-tight text-slate-900"
+                        style={{ fontFamily: "'Clash Display', sans-serif" }}
+                      >
+                        Volume processado
+                      </h2>
+                      <p className="text-[12px] text-slate-500">
+                        Receita, pedidos pagos e PIX gerados
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white px-3 text-[11px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                        style={{ border: `1px solid ${T.border}` }}
+                      >
+                        Todos os checkouts
+                        <ChevronDown className="h-3 w-3" />
+                      </button>
+                      <button
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-50"
+                        style={{ border: `1px solid ${T.border}` }}
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Period pills */}
+                  <div className="mb-4 flex flex-wrap items-center gap-1.5">
+                    {(
+                      [
+                        ["today", "Hoje"],
+                        ["yesterday", "Ontem"],
+                        ["7d", "7 dias"],
+                        ["30d", "Este mês"],
+                        ["lastMonth", "Mês passado"],
+                        ["max", "Máximo"],
+                      ] as const
+                    ).map(([key, label]) => {
+                      const active = period === key;
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => setPeriod(key as any)}
+                          className="rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors"
+                          style={{
+                            background: active ? T.primaryBg : "transparent",
+                            color: active ? T.primary : T.text2,
+                          }}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                    <button
+                      className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+                      style={{ border: `1px solid ${T.border}` }}
+                    >
+                      Personalizado
+                      <Calendar className="h-3 w-3" />
+                    </button>
+                  </div>
+
+                  {/* Legend */}
+                  <div className="mb-3 flex flex-wrap items-center gap-4">
+                    <span className="flex items-center gap-1.5 text-[11px] text-slate-600">
+                      <span
+                        className="h-2 w-2 rounded-full"
+                        style={{ background: T.primary }}
+                      />
+                      Faturamento bruto
+                    </span>
+                    <span className="flex items-center gap-1.5 text-[11px] text-slate-600">
+                      <span
+                        className="h-2 w-2 rounded-full"
+                        style={{ background: T.blue }}
+                      />
+                      Pedidos pagos
+                    </span>
+                    <span className="flex items-center gap-1.5 text-[11px] text-slate-600">
+                      <span
+                        className="h-2 w-2 rounded-full"
+                        style={{ background: T.green }}
+                      />
+                      PIX gerados
+                    </span>
+                  </div>
+
+                  {/* Chart */}
+                  <div className="h-[280px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={chartData}
+                        margin={{ top: 8, right: 16, left: -10, bottom: 0 }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke="rgba(15, 23, 42, 0.05)"
+                          vertical={false}
+                        />
+                        <XAxis
+                          dataKey="label"
+                          stroke="#94A3B8"
+                          fontSize={10}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          stroke="#94A3B8"
+                          fontSize={10}
+                          tickLine={false}
+                          axisLine={false}
+                          width={50}
+                          tickFormatter={(v: number) =>
+                            v >= 1000
+                              ? `R$ ${(v / 1000).toFixed(0)}K`
+                              : `R$ ${v}`
+                          }
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            background: "white",
+                            border: `1px solid ${T.border}`,
+                            borderRadius: 12,
+                            boxShadow:
+                              "0 12px 32px rgba(15, 23, 42, 0.08)",
+                            fontSize: 12,
+                            color: T.text,
+                          }}
+                          labelStyle={{
+                            color: T.text2,
+                            fontWeight: 600,
+                          }}
+                          formatter={(v: any, name: any) => {
+                            if (name === "gross")
+                              return [fmt(Number(v)), "Faturamento"];
+                            if (name === "paid")
+                              return [num(Number(v)), "Pedidos pagos"];
+                            return [num(Number(v)), "PIX gerados"];
+                          }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="gross"
+                          stroke={T.primary}
+                          strokeWidth={2.2}
+                          dot={{
+                            fill: T.primary,
+                            stroke: "white",
+                            strokeWidth: 2,
+                            r: 3,
+                          }}
+                          activeDot={{ r: 5 }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="paid"
+                          stroke={T.blue}
+                          strokeWidth={2.2}
+                          dot={{
+                            fill: T.blue,
+                            stroke: "white",
+                            strokeWidth: 2,
+                            r: 3,
+                          }}
+                          activeDot={{ r: 5 }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="pix"
+                          stroke={T.green}
+                          strokeWidth={2.2}
+                          dot={{
+                            fill: T.green,
+                            stroke: "white",
+                            strokeWidth: 2,
+                            r: 3,
+                          }}
+                          activeDot={{ r: 5 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </motion.div>
+
+                {/* Activity */}
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.15 }}
+                  className="rounded-2xl p-5"
+                  style={{
+                    background: T.card,
+                    border: `1px solid ${T.border}`,
+                    boxShadow: T.cardShadow,
+                  }}
+                >
+                  <div className="mb-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <h3
+                        className="text-[14px] font-bold tracking-tight text-slate-900"
+                        style={{ fontFamily: "'Clash Display', sans-serif" }}
+                      >
+                        Atividade ao vivo
+                      </h3>
+                      <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700">
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        </span>
+                        Live
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => router.push("/v1/products/sales")}
+                      className="text-[11px] font-semibold text-slate-500 hover:text-slate-700"
+                    >
+                      Ver todas
+                    </button>
+                  </div>
+
+                  {liveFeed.length === 0 ? (
+                    <div className="py-10 text-center">
+                      <Inbox className="mx-auto mb-2 h-6 w-6 text-slate-300" />
+                      <p className="text-xs text-slate-500">
+                        Nenhuma atividade ainda
+                      </p>
+                    </div>
+                  ) : (
+                    <ul className="space-y-3">
+                      {liveFeed.map((item, idx) => {
+                        const initial =
+                          item.name?.charAt(0).toUpperCase() || "?";
+                        const gradients = [
+                          "linear-gradient(135deg,#7C3AED,#22D3EE)",
+                          "linear-gradient(135deg,#F59E0B,#EF4444)",
+                          "linear-gradient(135deg,#22C55E,#3B82F6)",
+                          "linear-gradient(135deg,#3B82F6,#7C3AED)",
+                          "linear-gradient(135deg,#EC4899,#F59E0B)",
+                          "linear-gradient(135deg,#06B6D4,#22C55E)",
+                        ];
+                        return (
+                          <li
+                            key={item.id}
+                            className="flex items-center gap-3"
+                          >
+                            <div
+                              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[12px] font-bold text-white"
+                              style={{
+                                background: gradients[idx % gradients.length],
+                              }}
+                            >
+                              {initial}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[12px] font-semibold text-slate-800">
+                                {item.title}
+                              </p>
+                              <p className="truncate text-[11px] text-slate-500">
+                                {item.name}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p
+                                className="text-[12px] font-bold"
+                                style={{
+                                  color:
+                                    item.kind === "paid"
+                                      ? T.primary
+                                      : T.green,
+                                  fontFamily: "'Clash Display', sans-serif",
+                                }}
+                              >
+                                {valuesVisible ? item.value : "•••••"}
+                              </p>
+                              <p className="text-[10px] text-slate-400">
+                                {timeAgo(item.at)}
+                              </p>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </motion.div>
+              </section>
+
+              {/* SECONDARY METRICS + SHADOW AI */}
+              <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                  className="rounded-2xl p-5"
+                  style={{
+                    background: T.card,
+                    border: `1px solid ${T.border}`,
+                    boxShadow: T.cardShadow,
+                  }}
+                >
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3 lg:grid-cols-6">
+                    {secondary.map((m) => (
+                      <div key={m.label}>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="flex h-6 w-6 items-center justify-center rounded-md"
+                            style={{
+                              background: `${m.color}14`,
+                              color: m.color,
+                            }}
+                          >
+                            {m.icon}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-[11px] font-semibold text-slate-500">
+                          {m.label}
+                        </p>
+                        <div className="mt-1.5 flex items-baseline gap-1.5">
+                          <span
+                            className="text-[18px] font-bold tracking-tight text-slate-900"
+                            style={{
+                              fontFamily: "'Clash Display', sans-serif",
+                            }}
+                          >
+                            {m.value}
+                          </span>
+                          <span
+                            className="text-[11px] font-bold"
+                            style={{
+                              color: m.negative ? T.red : T.green,
+                            }}
+                          >
+                            {m.delta}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+
+                {/* Shadow AI promo card */}
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.25 }}
+                  className="relative overflow-hidden rounded-2xl p-5"
                   style={{
                     background:
-                      "linear-gradient(90deg, #A855F7 0%, #22D3EE 100%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
+                      "linear-gradient(135deg, #1A1430 0%, #2D1B69 50%, #1A1430 100%)",
+                    border: `1px solid rgba(124, 58, 237, 0.3)`,
+                    boxShadow:
+                      "0 8px 24px -8px rgba(124, 58, 237, 0.4)",
                   }}
                 >
-                  {user.companyName || "Operador"}
-                </span>
-              </h1>
-              <p className="mt-2 max-w-xl text-sm text-white/55">
-                Seu cockpit financeiro está sincronizado. Tudo que acontece na
-                operação aparece aqui em tempo real.
+                  {/* Glow orb */}
+                  <div
+                    className="pointer-events-none absolute -right-6 -bottom-6 h-40 w-40 rounded-full"
+                    style={{
+                      background:
+                        "radial-gradient(circle, rgba(168,85,247,0.45) 0%, rgba(124,58,237,0.15) 50%, transparent 70%)",
+                    }}
+                  />
+                  <div
+                    className="pointer-events-none absolute right-4 bottom-4 h-28 w-28 rounded-full"
+                    style={{
+                      background:
+                        "radial-gradient(circle, rgba(255,255,255,0.18) 0%, rgba(124,58,237,0.05) 60%, transparent 100%)",
+                      border: "1px solid rgba(255,255,255,0.06)",
+                    }}
+                  >
+                    <div className="flex h-full items-center justify-center">
+                      <div
+                        className="flex h-16 w-16 items-center justify-center rounded-full text-white"
+                        style={{
+                          background:
+                            "radial-gradient(circle, rgba(168,85,247,0.8) 0%, rgba(124,58,237,0.4) 70%)",
+                          boxShadow: "0 0 32px rgba(168,85,247,0.5)",
+                        }}
+                      >
+                        <Sparkles className="h-7 w-7" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <div className="mb-1 flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-violet-300" />
+                      <h3
+                        className="text-[16px] font-bold tracking-tight text-white"
+                        style={{ fontFamily: "'Clash Display', sans-serif" }}
+                      >
+                        Shadow AI
+                      </h3>
+                    </div>
+                    <p className="text-[12px] text-violet-200/80">
+                      Monitorando sua operação
+                    </p>
+                    <button
+                      onClick={() => router.push("/shadow")}
+                      className="mt-4 inline-flex h-9 items-center gap-2 rounded-lg px-4 text-[12px] font-semibold text-white transition-transform hover:-translate-y-0.5"
+                      style={{
+                        background:
+                          "linear-gradient(120deg, #7C3AED 0%, #6D28D9 100%)",
+                      }}
+                    >
+                      Abrir Shadow
+                      <ArrowUpRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </motion.div>
+              </section>
+
+              {/* Footer */}
+              <p
+                className="mt-8 text-center text-[11px]"
+                style={{ color: T.textMuted }}
+              >
+                ShadowPay Financial OS © 2026 · Todos os direitos reservados.
               </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <ShadowButton
-                variant="outline"
-                size="md"
-                onClick={() => router.push("/v1/products/create")}
-              >
-                <Plus className="h-4 w-4" /> Novo produto
-              </ShadowButton>
-              <ShadowButton
-                variant="outline"
-                size="md"
-                onClick={fetchTransactions}
-                loading={isLoading}
-              >
-                <RefreshCcw className="h-4 w-4" /> Atualizar
-              </ShadowButton>
-              <ShadowButton
-                variant="primary"
-                size="md"
-                onClick={() => router.push("/v1/finance/withdraw")}
-              >
-                <ArrowUpRight className="h-4 w-4" /> Sacar
-              </ShadowButton>
-            </div>
+            </main>
           </div>
-        </section>
-
-        {/* REVENUE INTELLIGENCE ROW */}
-        <section className="mb-7 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <ShadowMetricCard
-            label="Faturamento bruto"
-            value={formatCurrency(grossAnim)}
-            icon={<CircleDollarSign className="h-4 w-4" />}
-            accent="#7C3AED"
-            comparison={`${paid.length} pedidos pagos`}
-            sparkline={chartData.map((c) => c.primary)}
-            hidden={!isValuesVisible}
-            delay={0}
-          />
-          <ShadowMetricCard
-            label="Faturamento líquido"
-            value={formatCurrency(netAnim)}
-            icon={<Wallet className="h-4 w-4" />}
-            accent="#22D3EE"
-            comparison="descontadas taxas"
-            sparkline={chartData.map((c) => c.secondary || 0)}
-            hidden={!isValuesVisible}
-            delay={0.05}
-          />
-          <ShadowMetricCard
-            label="Taxa de conversão"
-            value={`${conv.toFixed(1)}%`}
-            icon={<Target className="h-4 w-4" />}
-            accent="#22C55E"
-            delta={{
-              text: paid.length ? "ativo" : "—",
-              direction: paid.length ? "up" : "flat",
-            }}
-            comparison={`${paid.length} / ${totalTx} transações`}
-            delay={0.1}
-          />
-          <ShadowMetricCard
-            label="Pedidos pagos"
-            value={String(paid.length)}
-            icon={<CheckCircle2 className="h-4 w-4" />}
-            accent="#F59E0B"
-            comparison="período carregado"
-            delay={0.15}
-          />
-        </section>
-
-        {/* MAIN ANALYTICS */}
-        <section className="mb-7">
-          <ShadowChartPanel
-            title="Receita"
-            data={chartData}
-            loading={isLoading}
-            primaryLabel="Geradas"
-            secondaryLabel="Pagas"
-          />
-        </section>
-
-        {/* SECONDARY METRICS */}
-        <section className="mb-7 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {[
-            {
-              label: "Pedidos totais",
-              value: String(totalTx),
-              icon: <ReceiptText className="h-3.5 w-3.5" />,
-              accent: "#A78BFA",
-            },
-            {
-              label: "PIX gerados",
-              value: String(pixCount),
-              icon: (
-                <Image
-                  src="/pix-icon.svg"
-                  width={14}
-                  height={14}
-                  className="opacity-90 brightness-0 invert"
-                  alt="Pix"
-                />
-              ),
-              accent: "#22D3EE",
-            },
-            {
-              label: "Reembolsos",
-              value: String(refunded.length),
-              icon: <RefreshCcw className="h-3.5 w-3.5" />,
-              accent: "#EF4444",
-            },
-            {
-              label: "Ticket médio",
-              value: formatCurrency(avgTicket),
-              icon: <Activity className="h-3.5 w-3.5" />,
-              accent: "#6366F1",
-            },
-            {
-              label: "Saldo disponível",
-              value: formatCurrency(balance),
-              icon: <Wallet className="h-3.5 w-3.5" />,
-              accent: "#22C55E",
-            },
-          ].map((m) => (
-            <ShadowCard
-              key={m.label}
-              padded="md"
-              haloColor={`${m.accent}1f`}
-              haloPosition="br"
-              hover
-            >
-              <div className="flex items-center gap-2.5">
-                <span
-                  className="flex h-7 w-7 items-center justify-center rounded-lg"
-                  style={{
-                    background: `${m.accent}1f`,
-                    color: m.accent,
-                    border: `1px solid ${m.accent}33`,
-                  }}
-                >
-                  {m.icon}
-                </span>
-                <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/45">
-                  {m.label}
-                </span>
-              </div>
-              <div
-                className="mt-3 text-xl font-bold tracking-tight text-white"
-                style={{ fontFamily: "'Clash Display', sans-serif" }}
-              >
-                {isValuesVisible ? m.value : "••••••"}
-              </div>
-            </ShadowCard>
-          ))}
-        </section>
-      </ShadowShell>
+        </div>
+      </div>
 
       <ShadowPanel />
     </>
   );
+}
+
+/* helpers */
+function timeAgo(iso?: string) {
+  if (!iso) return "—";
+  const t = new Date(iso).getTime();
+  const diff = Date.now() - t;
+  if (diff < 60_000) return "agora";
+  const m = Math.floor(diff / 60_000);
+  if (m < 60) return `${m} min atrás`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h atrás`;
+  const d = Math.floor(h / 24);
+  return `${d}d atrás`;
 }
 
 export default function DashboardPage() {
