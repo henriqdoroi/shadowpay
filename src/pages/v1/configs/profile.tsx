@@ -2,19 +2,6 @@
 
 import { AppSidebar } from "@/components/app-sidebar";
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
@@ -32,6 +19,9 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import Head from "next/head";
+import { motion } from "framer-motion";
+import ShadowPanel from "@/components/ShadowPanel";
 
 interface UserProfile {
   companyName: string;
@@ -42,6 +32,9 @@ interface UserProfile {
   companyModality: string | null;
   companyActivity: string | null;
 }
+
+const SHADOW_BG =
+  "radial-gradient(1100px 700px at 85% -10%, #0B1020 0%, #060A14 55%, #03060F 100%)";
 
 export default function Profile() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -98,15 +91,12 @@ export default function Profile() {
     }));
   };
 
-  // Envia a requisição para alterar a senha
   const handlePasswordSubmit = async () => {
-    // Valida se as senhas coincidem
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast.error("As senhas não coincidem!");
       return;
     }
 
-    // Valida tamanho mínimo da nova senha
     if (passwordData.newPassword.length < 6) {
       toast.error("A nova senha deve ter pelo menos 6 caracteres!");
       return;
@@ -114,11 +104,9 @@ export default function Profile() {
 
     setIsChangingPassword(true);
     try {
-      // Busca o token JWT no localStorage
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Token não encontrado");
 
-      // Chama a API para alterar a senha
       const response = await fetch(
         "https://shadowpay-api-production.up.railway.app/api/auth/password",
         {
@@ -134,13 +122,11 @@ export default function Profile() {
         }
       );
 
-      // Se a resposta não for OK, extrai a mensagem de erro e lança
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || "Erro ao alterar senha");
       }
 
-      // Reseta os campos após sucesso
       setPasswordData({
         currentPassword: "",
         newPassword: "",
@@ -155,235 +141,275 @@ export default function Profile() {
     }
   };
 
-  if (loading) return <div className="p-4">Carregando...</div>;
-  if (error) return <div className="p-4 text-red-500">Erro: {error}</div>;
+  const fieldRow = (label: string, value: string) => (
+    <div className="space-y-1.5">
+      <label className="block text-[11px] uppercase tracking-[0.16em] text-white/40">
+        {label}
+      </label>
+      <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 text-sm text-white/85">
+        {value || "—"}
+      </div>
+    </div>
+  );
+
+  const passwordInputCls =
+    "h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 pr-10 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-violet-500/50 focus:bg-white/[0.05]";
 
   return (
-    <div className="min-h-screen bg-background">
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          <header className="flex h-16 items-center gap-2 border-b px-4">
-            <SidebarTrigger />
-            <Separator orientation="vertical" className="h-6" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbLink href="#">Safira Cash</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Perfil</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </header>
+    <>
+      <Head>
+        <title>ShadowPay — Perfil</title>
+      </Head>
 
-          <main className="flex flex-col gap-8 p-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h1 className="text-3xl font-bold">Seu Perfil</h1>
-                <p className="text-muted-foreground">
-                  Visualize suas informações e altere sua senha
-                </p>
+      <div className="min-h-screen">
+        <SidebarProvider>
+          <AppSidebar />
+          <SidebarInset className="text-white" style={{ background: SHADOW_BG }}>
+            <header className="flex flex-col gap-4 px-4 pt-6 sm:flex-row sm:items-center sm:justify-between lg:px-8">
+              <div className="flex items-center gap-3">
+                <SidebarTrigger className="text-white/60 hover:text-white" />
+                <div>
+                  <h1
+                    className="text-2xl font-bold tracking-tight text-white md:text-[28px]"
+                    style={{ fontFamily: "'Clash Display', sans-serif" }}
+                  >
+                    Seu perfil
+                  </h1>
+                  <p className="mt-1 text-xs text-white/40">
+                    Visualize suas informações e altere sua senha
+                  </p>
+                </div>
               </div>
-              <Button
-                variant="outline"
-                className="cursor-pointer"
-                onClick={() => window.open("https://wa.me/5531975610055?text=Ol%C3%A1%20gostaria%20de%20saber%20mais%20sobre%20solu%C3%A7%C3%B5es%20escal%C3%A1veis%20para%20processar%20pagamento", "_blank")}
+              <button
+                onClick={() =>
+                  window.open(
+                    "https://wa.me/5531975610055?text=Ol%C3%A1%20gostaria%20de%20saber%20mais%20sobre%20solu%C3%A7%C3%B5es%20escal%C3%A1veis%20para%20processar%20pagamento",
+                    "_blank"
+                  )
+                }
+                className="flex h-9 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 text-sm text-white/80 transition-colors hover:bg-white/[0.07] hover:text-white"
               >
-                <MessageSquare className="w-4 h-4 mr-2" />
+                <MessageSquare className="h-4 w-4" />
                 Suporte
-              </Button>
-            </div>
+              </button>
+            </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Empresa */}
-              <Card className="w-full">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Building className="w-5 h-5" /> Informações da Empresa
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label>Razão Social</Label>
-                    <div className="bg-muted p-3 rounded-md">
-                      {userProfile?.companyName || "—"}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>CNPJ</Label>
-                      <div className="bg-muted p-3 rounded-md">
-                        {userProfile?.cpf_cnpj || "—"}
+            <main className="flex flex-col gap-5 p-4 lg:p-8">
+              {loading ? (
+                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-10 text-center text-sm text-white/60">
+                  Carregando…
+                </div>
+              ) : error ? (
+                <div className="rounded-2xl border border-rose-500/30 bg-rose-500/[0.06] p-5 text-sm text-rose-300">
+                  Erro: {error}
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {/* Empresa */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
+                      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                      className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl"
+                    >
+                      <div
+                        className="pointer-events-none absolute -left-8 -top-10 h-28 w-28 rounded-full opacity-50 blur-2xl"
+                        style={{ background: "#8B5CF622" }}
+                      />
+                      <div className="relative mb-4 flex items-center gap-2.5">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300">
+                          <Building className="h-4 w-4" />
+                        </span>
+                        <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
+                          Informações da empresa
+                        </span>
                       </div>
-                    </div>
-                    <div>
-                      <Label>CEP</Label>
-                      <div className="bg-muted p-3 rounded-md">
-                        {userProfile?.zipCode || "—"}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Tipo de Empresa</Label>
-                      <div className="bg-muted p-3 rounded-md">
-                        {userProfile?.companyModality || "—"}
-                      </div>
-                    </div>
-                    <div>
-                      <Label>Ramo de Atuação</Label>
-                      <div className="bg-muted p-3 rounded-md">
-                        {userProfile?.companyActivity || "—"}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Contato */}
-              <Card className="w-full">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="w-5 h-5" /> Informações de Contato
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label className="flex items-center gap-2">
-                      <Mail className="h-4 w-4" /> E-mail
-                    </Label>
-                    <div className="bg-muted p-3 rounded-md">
-                      {userProfile?.email || "—"}
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="flex items-center gap-2">
-                      <Phone className="h-4 w-4" /> WhatsApp
-                    </Label>
-                    <div className="bg-muted p-3 rounded-md">
-                      {userProfile?.number || "—"}
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-                    <FileText className="h-5 w-5 text-blue-500 mb-2" />
-                    <p className="text-sm text-blue-700">
-                      Para alterar os dados, entre em contato com o suporte.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Senha */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Lock className="h-5 w-5" /> Alterar Senha
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {["currentPassword", "newPassword", "confirmPassword"].map(
-                    (field, i) => (
-                      <div key={field}>
-                        <Label htmlFor={field}>
-                          {field === "currentPassword"
-                            ? "Senha Atual"
-                            : field === "newPassword"
-                            ? "Nova Senha"
-                            : "Confirmar Senha"}
-                        </Label>
-                        <div className="relative">
-                          <Input
-                            id={field}
-                            type={
-                              field === "currentPassword"
-                                ? showCurrentPassword
-                                  ? "text"
-                                  : "password"
-                                : field === "newPassword"
-                                ? showNewPassword
-                                  ? "text"
-                                  : "password"
-                                : showConfirmPassword
-                                ? "text"
-                                : "password"
-                            }
-                            value={
-                              passwordData[field as keyof typeof passwordData]
-                            }
-                            onChange={(e) =>
-                              handlePasswordChange(field, e.target.value)
-                            }
-                            className="pr-10"
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3"
-                            onClick={() => {
-                              if (field === "currentPassword")
-                                setShowCurrentPassword((v) => !v);
-                              if (field === "newPassword")
-                                setShowNewPassword((v) => !v);
-                              if (field === "confirmPassword")
-                                setShowConfirmPassword((v) => !v);
-                            }}
-                          >
-                            {(field === "currentPassword" &&
-                              showCurrentPassword) ||
-                            (field === "newPassword" && showNewPassword) ||
-                            (field === "confirmPassword" &&
-                              showConfirmPassword) ? (
-                              <EyeOff className="w-4 h-4" />
-                            ) : (
-                              <Eye className="w-4 h-4" />
-                            )}
-                          </Button>
+                      <div className="relative space-y-4">
+                        {fieldRow("Razão Social", userProfile?.companyName || "")}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          {fieldRow("CNPJ", userProfile?.cpf_cnpj || "")}
+                          {fieldRow("CEP", userProfile?.zipCode || "")}
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          {fieldRow(
+                            "Tipo de Empresa",
+                            userProfile?.companyModality || ""
+                          )}
+                          {fieldRow(
+                            "Ramo de Atuação",
+                            userProfile?.companyActivity || ""
+                          )}
                         </div>
                       </div>
-                    )
-                  )}
-                </div>
-                <div className="flex justify-end">
-                  <Button
-                    onClick={handlePasswordSubmit}
-                    disabled={
-                      isChangingPassword ||
-                      !passwordData.currentPassword ||
-                      !passwordData.newPassword ||
-                      !passwordData.confirmPassword
-                    }
-                    className="min-w-[120px] cursor-pointer"
-                  >
-                    {isChangingPassword ? "Alterando..." : "Alterar Senha"}
-                  </Button>
-                </div>
+                    </motion.div>
 
-                <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-md">
-                  <h4 className="text-sm font-medium text-amber-900 mb-2">
-                    Dicas de Segurança
-                  </h4>
-                  <ul className="text-xs text-amber-800 list-disc ml-5 space-y-1">
-                    <li>Use pelo menos 8 caracteres</li>
-                    <li>Combine letras, números e símbolos</li>
-                    <li>Evite informações pessoais</li>
-                    <li>Não reutilize senhas antigas</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-          </main>
-        </SidebarInset>
-      </SidebarProvider>
-    </div>
+                    {/* Contato */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
+                      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                      transition={{
+                        duration: 0.7,
+                        delay: 0.08,
+                        ease: [0.22, 1, 0.36, 1],
+                      }}
+                      className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl"
+                    >
+                      <div
+                        className="pointer-events-none absolute -left-8 -top-10 h-28 w-28 rounded-full opacity-50 blur-2xl"
+                        style={{ background: "#22D3EE22" }}
+                      />
+                      <div className="relative mb-4 flex items-center gap-2.5">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-300">
+                          <User className="h-4 w-4" />
+                        </span>
+                        <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
+                          Informações de contato
+                        </span>
+                      </div>
+                      <div className="relative space-y-4">
+                        <div className="space-y-1.5">
+                          <label className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.16em] text-white/40">
+                            <Mail className="h-3.5 w-3.5" /> E-mail
+                          </label>
+                          <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 text-sm text-white/85">
+                            {userProfile?.email || "—"}
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.16em] text-white/40">
+                            <Phone className="h-3.5 w-3.5" /> WhatsApp
+                          </label>
+                          <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 text-sm text-white/85">
+                            {userProfile?.number || "—"}
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.05] p-4">
+                          <FileText className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
+                          <p className="text-xs text-cyan-200/80">
+                            Para alterar os dados cadastrais, entre em contato com
+                            o suporte.
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </div>
+
+                  {/* Senha */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 18 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: 0.7,
+                      delay: 0.16,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                    className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl"
+                  >
+                    <div className="mb-4 flex items-center gap-2.5">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/15 text-amber-300">
+                        <Lock className="h-4 w-4" />
+                      </span>
+                      <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
+                        Alterar senha
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      {(
+                        ["currentPassword", "newPassword", "confirmPassword"] as const
+                      ).map((field) => {
+                        const label =
+                          field === "currentPassword"
+                            ? "Senha atual"
+                            : field === "newPassword"
+                            ? "Nova senha"
+                            : "Confirmar senha";
+                        const visible =
+                          field === "currentPassword"
+                            ? showCurrentPassword
+                            : field === "newPassword"
+                            ? showNewPassword
+                            : showConfirmPassword;
+                        const toggle = () => {
+                          if (field === "currentPassword")
+                            setShowCurrentPassword((v) => !v);
+                          else if (field === "newPassword")
+                            setShowNewPassword((v) => !v);
+                          else setShowConfirmPassword((v) => !v);
+                        };
+                        return (
+                          <div key={field} className="space-y-1.5">
+                            <label
+                              htmlFor={field}
+                              className="block text-[11px] uppercase tracking-[0.16em] text-white/40"
+                            >
+                              {label}
+                            </label>
+                            <div className="relative">
+                              <input
+                                id={field}
+                                type={visible ? "text" : "password"}
+                                value={passwordData[field]}
+                                onChange={(e) =>
+                                  handlePasswordChange(field, e.target.value)
+                                }
+                                className={passwordInputCls}
+                              />
+                              <button
+                                type="button"
+                                onClick={toggle}
+                                className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-white/55 hover:bg-white/[0.06] hover:text-white"
+                              >
+                                {visible ? (
+                                  <EyeOff className="h-4 w-4" />
+                                ) : (
+                                  <Eye className="h-4 w-4" />
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="mt-4 flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-center">
+                      <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.06] p-3 text-xs text-amber-200/80 sm:max-w-md">
+                        <p className="mb-1 font-semibold text-amber-200">
+                          Dicas de segurança
+                        </p>
+                        <ul className="ml-5 list-disc space-y-0.5">
+                          <li>Use pelo menos 8 caracteres</li>
+                          <li>Combine letras, números e símbolos</li>
+                          <li>Evite informações pessoais</li>
+                          <li>Não reutilize senhas antigas</li>
+                        </ul>
+                      </div>
+                      <button
+                        onClick={handlePasswordSubmit}
+                        disabled={
+                          isChangingPassword ||
+                          !passwordData.currentPassword ||
+                          !passwordData.newPassword ||
+                          !passwordData.confirmPassword
+                        }
+                        className="inline-flex h-11 min-w-[160px] items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+                        style={{
+                          background: "linear-gradient(120deg, #7C3AED, #6366F1)",
+                          boxShadow: "0 14px 36px -14px rgba(124,58,237,0.7)",
+                        }}
+                      >
+                        {isChangingPassword ? "Alterando…" : "Alterar senha"}
+                      </button>
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </main>
+          </SidebarInset>
+        </SidebarProvider>
+        <ShadowPanel />
+      </div>
+    </>
   );
 }

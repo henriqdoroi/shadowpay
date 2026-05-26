@@ -1,26 +1,19 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { CreditCard, Receipt, Bitcoin } from "lucide-react";
+import { CreditCard, Receipt, Bitcoin, Percent } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import { toast } from "sonner";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import Head from "next/head";
+import { motion } from "framer-motion";
+import ShadowPanel from "@/components/ShadowPanel";
 
 interface FeeStructure {
   id: string;
@@ -29,7 +22,7 @@ interface FeeStructure {
   fixedFee: number;
   percentageFee: number;
   description: string;
-  color: string;
+  accent: string;
 }
 
 interface ApiFeeData {
@@ -55,9 +48,12 @@ interface FeesResponse {
       boleto: ApiFeeData;
       crypto: ApiFeeData;
     };
-    adquerer?: AdquirerData; // Added the missing property
+    adquerer?: AdquirerData;
   };
 }
+
+const SHADOW_BG =
+  "radial-gradient(1100px 700px at 85% -10%, #0B1020 0%, #060A14 55%, #03060F 100%)";
 
 const getFeeStructureTemplate = (): Omit<
   FeeStructure,
@@ -69,35 +65,35 @@ const getFeeStructureTemplate = (): Omit<
     icon: (
       <Image
         src="/pix-icon.svg"
-        width={24}
-        height={24}
+        width={18}
+        height={18}
         className="brightness-0 invert"
         alt="Pix"
       />
     ),
     description: "Transferências instantâneas via PIX",
-    color: "text-blue-600",
+    accent: "#22D3EE",
   },
   {
     id: "card",
     name: "Cartão de Crédito",
-    icon: <CreditCard className="h-6 w-6" />,
+    icon: <CreditCard className="h-4 w-4" />,
     description: "Pagamentos com cartão de crédito",
-    color: "text-green-600",
+    accent: "#34D399",
   },
   {
     id: "boleto",
     name: "Boleto Bancário",
-    icon: <Receipt className="h-6 w-6" />,
+    icon: <Receipt className="h-4 w-4" />,
     description: "Pagamentos via boleto bancário",
-    color: "text-orange-600",
+    accent: "#F59E0B",
   },
   {
     id: "crypto",
     name: "Criptomoedas",
-    icon: <Bitcoin className="h-6 w-6" />,
-    description: "Pagamentos com Bitcoin e outras criptos",
-    color: "text-purple-600",
+    icon: <Bitcoin className="h-4 w-4" />,
+    description: "Bitcoin e outras criptos",
+    accent: "#A78BFA",
   },
 ];
 
@@ -111,7 +107,7 @@ function FeeContent() {
     new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
-    }).format(value);
+    }).format(value || 0);
 
   const formatPercentage = (value: number) => `${value.toFixed(2)}%`;
 
@@ -119,7 +115,6 @@ function FeeContent() {
     try {
       setIsLoading(true);
 
-      // 1) Buscar dados do usuário (fees + sellerId + adquirente)
       const feesResponse = await axios.get<FeesResponse>(
         "https://shadowpay-api-production.up.railway.app/api/user/fees",
         { headers: { Authorization: `Bearer ${token}` } }
@@ -140,10 +135,9 @@ function FeeContent() {
       }
 
       // Taxas do adquirente
-      const txCashOutFixoRaw = Number(adquerer?.txCashOut) || 0; // fixo PIX (PIX CASH OUT)
-      const txCashOutPercentualRaw = Number(adquerer?.txPercentCashOut) || 0; // percentual PIX CASH OUT
+      const txCashOutFixoRaw = Number(adquerer?.txCashOut) || 0;
+      const txCashOutPercentualRaw = Number(adquerer?.txPercentCashOut) || 0;
 
-      // Taxas gerais da API (do seller)
       const feesPix = fees.pix || {
         fixo: 0,
         percentual: 0,
@@ -160,51 +154,53 @@ function FeeContent() {
       const template = getFeeStructureTemplate();
       const updatedFees: FeeStructure[] = [];
 
-      // Card PIX CASH OUT (saída) usando taxas do adquirente
+      // PIX CASH OUT (saída)
       updatedFees.push({
         id: "pix",
-        name: "PIX CASH OUT",
+        name: "PIX Cash Out",
         icon: (
           <Image
             src="/pix-icon.svg"
-            width={24}
-            height={24}
+            width={18}
+            height={18}
             className="brightness-0 invert"
             alt="Pix"
           />
         ),
-        description: "Transferências instantâneas via PIX",
-        color: "text-blue-600",
+        description: "Saques instantâneos via PIX",
+        accent: "#22D3EE",
         fixedFee: txCashOutFixo,
         percentageFee: txCashOutPercentual,
-      }); 
+      });
 
-      // Card PIX CASH IN (entrada) usando taxas do seller
+      // PIX CASH IN (entrada)
       updatedFees.push({
         id: "pix-cashin",
-        name: "PIX CASH IN",
+        name: "PIX Cash In",
         icon: (
           <Image
             src="/pix-icon.svg"
-            width={24}
-            height={24}
+            width={18}
+            height={18}
             className="brightness-0 invert"
             alt="Pix Cash In"
           />
         ),
-        description: "Transferências recebidas via PIX",
-        color: "text-blue-600",
+        description: "Recebimentos via PIX",
+        accent: "#8B5CF6",
         fixedFee: feesPix.fixoin || 0,
         percentageFee: feesPix.percentualin || 0,
       });
 
-      // Demais cards (cartão, boleto, crypto) usando taxas do seller
+      // Demais
       template
-        .filter((item) => item.id !== "pix") // PIX já inserido manualmente
+        .filter((item) => item.id !== "pix")
         .forEach((item) => {
           const baseFee = fees[item.id as keyof typeof fees] || {
             fixo: 0,
             percentual: 0,
+            fixoin: 0,
+            percentualin: 0,
           };
           updatedFees.push({
             ...item,
@@ -213,7 +209,6 @@ function FeeContent() {
           });
         });
 
-      // Atualiza o estado com as taxas montadas
       setFeeStructures(updatedFees);
     } catch (error) {
       console.error("[fetchFees] Erro ao buscar taxas:", error);
@@ -227,189 +222,192 @@ function FeeContent() {
     if (token) {
       fetchFees();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
+  const infoCards = [
+    {
+      title: "Como são calculadas as taxas?",
+      body:
+        "As taxas são compostas por uma parte fixa (em reais) mais uma parte percentual sobre o valor da transação. O valor final é a soma das duas partes.",
+    },
+    {
+      title: "Quando as taxas são cobradas?",
+      body:
+        "São descontadas automaticamente no momento da confirmação do pagamento, deduzidas do valor que você recebe.",
+    },
+    {
+      title: "Taxas competitivas",
+      body:
+        "Nossas taxas estão entre as mais competitivas do mercado, para você manter mais do seu faturamento.",
+    },
+    {
+      title: "Transparência total",
+      body:
+        "Todas as taxas são apresentadas de forma clara antes da confirmação. Sem surpresas, sem custos ocultos.",
+    },
+  ];
+
   return (
-    <div className="min-h-screen">
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2">
-            <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Separator
-                orientation="vertical"
-                className="mr-2 data-[orientation=vertical]:h-4"
-              />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink href="#">Safira Cash</BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden md:block" />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>Taxas</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-            </div>
-          </header>
+    <>
+      <Head>
+        <title>ShadowPay — Taxas</title>
+      </Head>
 
-          <div className="flex flex-1 flex-col gap-6 p-4 pt-0 min-h-screen">
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold tracking-tight">
-                Estrutura de Taxas
-              </h1>
-              {companyName && (
-                <p className="text-lg font-medium text-muted-foreground">
-                  {companyName}
-                </p>
-              )}
-              <p className="text-muted-foreground">
-                Confira as taxas aplicadas para cada método de pagamento
-                disponível em nossa plataforma.
-              </p>
-            </div>
-
-            {isLoading ? (
-              <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-                {[1, 2, 3, 4].map((i) => (
-                  <Card key={i} className="relative overflow-hidden">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 bg-muted rounded animate-pulse" />
-                          <div className="w-24 h-5 bg-muted rounded animate-pulse" />
-                        </div>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-1">
-                        <div className="w-16 h-4 bg-muted rounded animate-pulse" />
-                        <div className="w-20 h-8 bg-muted rounded animate-pulse" />
-                      </div>
-                      <div className="space-y-1">
-                        <div className="w-20 h-4 bg-muted rounded animate-pulse" />
-                        <div className="w-16 h-6 bg-muted rounded animate-pulse" />
-                      </div>
-                      <div className="pt-2 border-t">
-                        <div className="w-full h-4 bg-muted rounded animate-pulse" />
-                      </div>
-                      <div className="bg-muted/50 p-3 rounded-lg">
-                        <div className="w-32 h-3 bg-muted rounded animate-pulse mb-1" />
-                        <div className="w-16 h-4 bg-muted rounded animate-pulse" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+      <div className="min-h-screen">
+        <SidebarProvider>
+          <AppSidebar />
+          <SidebarInset className="text-white" style={{ background: SHADOW_BG }}>
+            <header className="flex items-center gap-3 px-4 pt-6 lg:px-8">
+              <SidebarTrigger className="text-white/60 hover:text-white" />
+              <div>
+                <h1
+                  className="text-2xl font-bold tracking-tight text-white md:text-[28px]"
+                  style={{ fontFamily: "'Clash Display', sans-serif" }}
+                >
+                  Estrutura de Taxas
+                </h1>
+                {companyName ? (
+                  <p className="mt-1 text-xs text-white/40">
+                    {companyName} · taxas vigentes da sua conta
+                  </p>
+                ) : (
+                  <p className="mt-1 text-xs text-white/40">
+                    Taxas aplicadas em cada método de pagamento
+                  </p>
+                )}
               </div>
-            ) : feeStructures.length === 0 ? (
-              <p className="text-center text-muted-foreground">
-                Nenhuma taxa encontrada.
-              </p>
-            ) : (
-              <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-                {feeStructures.map((fee) => (
-                  <Card key={fee.id} className="relative overflow-hidden">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className={`${fee.color}`}>{fee.icon}</div>
-                          <span className="text-lg">{fee.name}</span>
-                        </div>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">
-                          Taxa Fixa
-                        </p>
-                        <p className="text-2xl font-bold">
-                          {formatCurrency(fee.fixedFee)}
-                        </p>
-                      </div>
+            </header>
 
-                      <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">
-                          Taxa Percentual
-                        </p>
-                        <p className="text-xl font-semibold text-muted-foreground">
-                          + {formatPercentage(fee.percentageFee)}
-                        </p>
-                      </div>
-
-                      <div className="pt-2 border-t">
-                        <p className="text-sm text-muted-foreground">
-                          {fee.description}
-                        </p>
-                      </div>
-
-                      <div className="bg-muted/50 p-3 rounded-lg">
-                        <p className="text-xs text-muted-foreground mb-1">
-                          Exemplo para R$ 100,00:
-                        </p>
-                        <p className="text-sm font-medium">
-                          {formatCurrency(
-                            fee.fixedFee + (100 * fee.percentageFee) / 100
-                          )}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Informações Importantes</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <h3 className="font-semibold">
-                      Como são calculadas as taxas?
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      As taxas são compostas por uma parte fixa (valor em reais)
-                      mais uma parte percentual calculada sobre o valor da
-                      transação. O valor final é a soma dessas duas partes.
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h3 className="font-semibold">
-                      Quando as taxas são cobradas?
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      As taxas são descontadas automaticamente no momento da
-                      confirmação do pagamento, sendo deduzidas do valor que
-                      você recebe.
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h3 className="font-semibold">Taxas competitivas</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Nossas taxas estão entre as mais competitivas do mercado,
-                      garantindo que você mantenha mais do seu faturamento.
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h3 className="font-semibold">Transparência total</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Todas as taxas são apresentadas de forma clara antes da
-                      confirmação da transação, sem surpresas ou custos ocultos.
-                    </p>
-                  </div>
+            <main className="flex flex-col gap-5 p-4 lg:p-8">
+              {isLoading ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div
+                      key={i}
+                      className="animate-pulse rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5"
+                    >
+                      <div className="mb-4 h-8 w-32 rounded bg-white/10" />
+                      <div className="mb-2 h-7 w-24 rounded bg-white/10" />
+                      <div className="mb-4 h-5 w-20 rounded bg-white/10" />
+                      <div className="h-10 w-full rounded bg-white/10" />
+                    </div>
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
-    </div>
+              ) : feeStructures.length === 0 ? (
+                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-10 text-center backdrop-blur-xl">
+                  <Percent className="mx-auto mb-3 h-7 w-7 text-violet-400/40" />
+                  <p className="text-sm font-medium text-white/60">
+                    Nenhuma taxa encontrada
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  {feeStructures.map((fee, i) => (
+                    <motion.div
+                      key={fee.id}
+                      initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
+                      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                      transition={{
+                        duration: 0.7,
+                        delay: i * 0.06,
+                        ease: [0.22, 1, 0.36, 1],
+                      }}
+                      className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl"
+                    >
+                      <div
+                        className="pointer-events-none absolute -left-8 -top-10 h-28 w-28 rounded-full opacity-50 blur-2xl transition-opacity duration-500 group-hover:opacity-80"
+                        style={{ background: `${fee.accent}22` }}
+                      />
+                      <div className="relative mb-4 flex items-center gap-2.5">
+                        <span
+                          className="flex h-8 w-8 items-center justify-center rounded-lg"
+                          style={{
+                            background: `${fee.accent}1f`,
+                            color: fee.accent,
+                          }}
+                        >
+                          {fee.icon}
+                        </span>
+                        <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
+                          {fee.name}
+                        </span>
+                      </div>
+
+                      <div className="relative space-y-3">
+                        <div>
+                          <p className="text-[10px] uppercase tracking-[0.15em] text-white/35">
+                            Taxa fixa
+                          </p>
+                          <p
+                            className="mt-1 text-2xl font-semibold tracking-tight text-white"
+                            style={{ fontFamily: "'Clash Display', sans-serif" }}
+                          >
+                            {formatCurrency(fee.fixedFee)}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-[10px] uppercase tracking-[0.15em] text-white/35">
+                            Taxa percentual
+                          </p>
+                          <p className="mt-1 text-lg font-semibold text-white/80">
+                            + {formatPercentage(fee.percentageFee)}
+                          </p>
+                        </div>
+
+                        <div className="border-t border-white/[0.06] pt-3">
+                          <p className="text-xs text-white/45">
+                            {fee.description}
+                          </p>
+                        </div>
+
+                        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                          <p className="text-[10px] uppercase tracking-[0.15em] text-white/35">
+                            Exemplo R$ 100,00
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-emerald-400">
+                            {formatCurrency(
+                              fee.fixedFee + (100 * fee.percentageFee) / 100
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+
+              {/* Informações Importantes */}
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5 backdrop-blur-xl"
+              >
+                <h2
+                  className="mb-4 text-sm font-semibold text-white"
+                  style={{ fontFamily: "'Clash Display', sans-serif" }}
+                >
+                  Informações importantes
+                </h2>
+                <div className="grid gap-5 md:grid-cols-2">
+                  {infoCards.map((card) => (
+                    <div key={card.title} className="space-y-1.5">
+                      <h3 className="text-sm font-semibold text-white/85">
+                        {card.title}
+                      </h3>
+                      <p className="text-sm text-white/45">{card.body}</p>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </main>
+          </SidebarInset>
+        </SidebarProvider>
+        <ShadowPanel />
+      </div>
+    </>
   );
 }
 

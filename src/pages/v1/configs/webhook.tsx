@@ -1,31 +1,12 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -39,12 +20,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plug, Plus, Trash2, CheckCircle, XCircle } from "lucide-react";
+import {
+  Plug,
+  Plus,
+  Trash2,
+  CheckCircle,
+  XCircle,
+  Webhook as WebhookIcon,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { toast } from "sonner";
+import Head from "next/head";
+import { motion } from "framer-motion";
+import ShadowPanel from "@/components/ShadowPanel";
 
 interface WebhookConnection {
   id: string;
@@ -73,6 +64,9 @@ const webhookTypes = [
   { value: "PRODUCTS", label: "Produtos" },
 ];
 
+const SHADOW_BG =
+  "radial-gradient(1100px 700px at 85% -10%, #0B1020 0%, #060A14 55%, #03060F 100%)";
+
 function WebhookContent() {
   const { user, token } = useAuth();
   const [webhooks, setWebhooks] = useState<WebhookConnection[]>([]);
@@ -83,7 +77,6 @@ function WebhookContent() {
   const [newWebhookDescription, setNewWebhookDescription] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
-  // Função para buscar webhooks
   const fetchWebhooks = async () => {
     if (!token) return;
 
@@ -112,7 +105,6 @@ function WebhookContent() {
     }
   };
 
-  // Função para criar webhook
   const createWebhook = async () => {
     if (!token || !newWebhookUrl.trim() || !newWebhookType) return;
 
@@ -139,7 +131,7 @@ function WebhookContent() {
       );
 
       if (response.data.success) {
-        await fetchWebhooks(); // Recarregar lista
+        await fetchWebhooks();
         closeModal();
         toast.success("Webhook criado com sucesso!");
       } else {
@@ -155,7 +147,6 @@ function WebhookContent() {
     }
   };
 
-  // Função para deletar webhook
   const deleteWebhook = async (id: string) => {
     if (!token) return;
 
@@ -171,7 +162,7 @@ function WebhookContent() {
       );
 
       if (response.data.success) {
-        await fetchWebhooks(); // Recarregar lista
+        await fetchWebhooks();
         toast.success("Webhook deletado com sucesso!");
       } else {
         toast.error(response.data.message || "Erro ao deletar webhook");
@@ -188,6 +179,7 @@ function WebhookContent() {
     if (user && token) {
       fetchWebhooks();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, token]);
 
   const formatDate = (dateString: string) => {
@@ -200,39 +192,35 @@ function WebhookContent() {
     }).format(new Date(dateString));
   };
 
-  const getStatusBadge = (isActive: boolean) => {
-    const config = isActive
-      ? { variant: "default" as const, label: "Ativo", icon: CheckCircle }
-      : { variant: "secondary" as const, label: "Inativo", icon: XCircle };
-
-    const Icon = config.icon;
-
-    return (
-      <Badge variant={config.variant} className="flex items-center gap-1">
-        <Icon className="h-3 w-3" />
-        {config.label}
-      </Badge>
+  const getStatusBadge = (isActive: boolean) =>
+    isActive ? (
+      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-emerald-300">
+        <CheckCircle className="h-3 w-3" /> Ativo
+      </span>
+    ) : (
+      <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-white/60">
+        <XCircle className="h-3 w-3" /> Inativo
+      </span>
     );
-  };
 
   const getTypeBadge = (eventType: string) => {
-    const typeConfig = {
+    const map: Record<string, { color: string; label: string }> = {
       TRANSACTIONS: {
+        color: "bg-violet-500/15 text-violet-300 border-violet-500/30",
         label: "Transações",
-        color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
       },
       PRODUCTS: {
+        color: "bg-amber-500/15 text-amber-300 border-amber-500/30",
         label: "Produtos",
-        color:
-          "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
       },
     };
-
-    const config = typeConfig[eventType as keyof typeof typeConfig];
-
+    const config = map[eventType] ?? {
+      color: "bg-white/10 text-white/60 border-white/15",
+      label: eventType,
+    };
     return (
       <span
-        className={`px-2 py-1 rounded-full text-xs font-medium ${config.color}`}
+        className={`inline-block rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide ${config.color}`}
       >
         {config.label}
       </span>
@@ -258,305 +246,346 @@ function WebhookContent() {
   const activeWebhooks = webhooks?.filter((w) => w.isActive).length || 0;
   const totalWebhooks = webhooks?.length || 0;
 
+  const kpis = [
+    {
+      label: "Total de webhooks",
+      value: String(totalWebhooks),
+      sub: "Webhooks configurados",
+      icon: <Plug className="h-4 w-4" />,
+      accent: "#8B5CF6",
+    },
+    {
+      label: "Webhooks ativos",
+      value: String(activeWebhooks),
+      sub: "Funcionando corretamente",
+      icon: <CheckCircle className="h-4 w-4" />,
+      accent: "#34D399",
+    },
+  ];
+
   return (
-    <div className="min-h-screen">
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2">
-            <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Separator
-                orientation="vertical"
-                className="mr-2 data-[orientation=vertical]:h-4"
-              />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink href="#">Safira Cash</BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden md:block" />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>Webhooks</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-            </div>
-          </header>
+    <>
+      <Head>
+        <title>ShadowPay — Webhooks</title>
+      </Head>
 
-          <main className="flex flex-1 flex-col gap-6 p-4 pt-0 min-h-screen">
-            {/* Cards resumo */}
-            <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
-              {/* Total Webhooks */}
-              <Card
-                className="
-              p-6
-              min-w-[280px] max-w-[360px] w-full
-              md:min-w-auto md:max-w-none
-              flex flex-col justify-between
-            "
-              >
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    Total de Webhooks
-                    <Plug className="h-5 w-5 text-muted-foreground" />
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <h3 className="text-3xl font-bold">{totalWebhooks}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Webhooks configurados
+      <div className="min-h-screen">
+        <SidebarProvider>
+          <AppSidebar />
+          <SidebarInset className="text-white" style={{ background: SHADOW_BG }}>
+            <header className="flex flex-col gap-4 px-4 pt-6 sm:flex-row sm:items-center sm:justify-between lg:px-8">
+              <div className="flex items-center gap-3">
+                <SidebarTrigger className="text-white/60 hover:text-white" />
+                <div>
+                  <h1
+                    className="text-2xl font-bold tracking-tight text-white md:text-[28px]"
+                    style={{ fontFamily: "'Clash Display', sans-serif" }}
+                  >
+                    Webhooks
+                  </h1>
+                  <p className="mt-1 text-xs text-white/40">
+                    Receba notificações em tempo real dos eventos da sua conta
                   </p>
-                </CardContent>
-              </Card>
-
-              {/* Webhooks ativos */}
-              <Card
-                className="
-              p-6
-              min-w-[280px] max-w-[360px] w-full
-              md:min-w-auto md:max-w-none
-              flex flex-col justify-between
-            "
+                </div>
+              </div>
+              <button
+                onClick={openModal}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
+                style={{
+                  background: "linear-gradient(120deg, #7C3AED, #6366F1)",
+                  boxShadow: "0 14px 36px -14px rgba(124,58,237,0.7)",
+                }}
               >
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    Webhooks Ativos
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <h3 className="text-3xl font-bold text-green-600">
-                    {activeWebhooks}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Funcionando corretamente
-                  </p>
-                </CardContent>
-              </Card>
+                <Plus className="h-4 w-4" />
+                Conectar webhook
+              </button>
+            </header>
 
-              {/* Botão adicionar webhook */}
-              <Card
-                className="
-              p-6
-              min-w-[280px] max-w-[360px] w-full
-              md:min-w-auto md:max-w-none
-              flex flex-col justify-between
-            "
-              >
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    Conectar Webhook
-                    <Plus className="h-5 w-5 text-muted-foreground" />
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
+            <main className="flex flex-col gap-5 p-4 lg:p-8">
+              {/* KPIs */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {kpis.map((k, i) => (
+                  <motion.div
+                    key={k.label}
+                    initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
+                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    transition={{
+                      duration: 0.7,
+                      delay: i * 0.06,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                    className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl"
+                  >
+                    <div
+                      className="pointer-events-none absolute -left-8 -top-10 h-28 w-28 rounded-full opacity-50 blur-2xl transition-opacity duration-500 group-hover:opacity-80"
+                      style={{ background: `${k.accent}22` }}
+                    />
+                    <div className="relative mb-4 flex items-center gap-2.5">
+                      <span
+                        className="flex h-8 w-8 items-center justify-center rounded-lg"
+                        style={{ background: `${k.accent}1f`, color: k.accent }}
+                      >
+                        {k.icon}
+                      </span>
+                      <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
+                        {k.label}
+                      </span>
+                    </div>
+                    <div
+                      className="relative text-3xl font-semibold tracking-tight text-white"
+                      style={{ fontFamily: "'Clash Display', sans-serif" }}
+                    >
+                      {k.value}
+                    </div>
+                    <p className="relative mt-1.5 text-xs text-white/35">
+                      {k.sub}
+                    </p>
+                  </motion.div>
+                ))}
+
+                <motion.div
+                  initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  transition={{ duration: 0.7, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+                  className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl"
+                >
+                  <div
+                    className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full blur-3xl"
+                    style={{ background: "rgba(99,102,241,0.2)" }}
+                  />
+                  <div className="relative mb-4 flex items-center gap-2.5">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/15 text-indigo-300">
+                      <Plus className="h-4 w-4" />
+                    </span>
+                    <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
+                      Conectar webhook
+                    </span>
+                  </div>
+                  <p className="relative mb-4 text-xs text-white/40">
                     Configure novos webhooks para receber notificações em tempo
                     real
                   </p>
-                  <Button className="w-full cursor-pointer" onClick={openModal}>
-                    <Plus className="h-5 w-5 mr-2" />
-                    Conectar Webhook
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
+                  <button
+                    onClick={openModal}
+                    className="relative inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
+                    style={{
+                      background: "linear-gradient(120deg, #7C3AED, #6366F1)",
+                      boxShadow: "0 14px 36px -14px rgba(124,58,237,0.7)",
+                    }}
+                  >
+                    <Plus className="h-4 w-4" /> Conectar webhook
+                  </button>
+                </motion.div>
+              </div>
 
-            {/* Lista webhooks */}
-            <Card
-              className="
-            overflow-x-auto
-            p-4
-            min-w-[280px] max-w-[360px] w-full
-            md:min-w-auto md:max-w-none md:p-6
-            flex flex-col justify-between
-          "
-            >
-              <CardHeader>
-                <CardTitle>Webhooks Conectados</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">
-                      Carregando webhooks...
-                    </p>
-                  </div>
-                ) : !webhooks || webhooks.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Plug className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">
-                      Nenhum webhook configurado
-                    </h3>
-                    <p className="text-muted-foreground mb-4">
-                      Configure seu primeiro webhook para começar a receber
-                      notificações
-                    </p>
-                    <Button
-                      onClick={openModal}
-                      className="inline-flex items-center justify-center gap-2"
-                    >
-                      <Plus className="h-4 w-4" />
-                      Conectar Primeiro Webhook
-                    </Button>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>URL do Webhook</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Criado em</TableHead>
-                        <TableHead>Último Disparo</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {webhooks.map((webhook) => (
-                        <TableRow
-                          key={webhook.id}
-                          className="hover:bg-muted/50 dark:hover:bg-gray-800"
-                        >
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div className="w-2 h-2 rounded-full bg-foreground" />
-                              <div>
-                                <p className="font-medium">
-                                  {truncateUrl(webhook.url)}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  {
-                                    webhook.url
-                                      .replace("https://", "")
-                                      .replace("http://", "")
-                                      .split("/")[0]
-                                  }
-                                </p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {getTypeBadge(webhook.eventType)}
-                          </TableCell>
-                          <TableCell>
-                            {getStatusBadge(webhook.isActive)}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {formatDate(webhook.createdAt)}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {webhook.lastSentAt
-                              ? formatDate(webhook.lastSentAt)
-                              : "Nunca"}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => deleteWebhook(webhook.id)}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
+              {/* Lista de webhooks */}
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] backdrop-blur-xl"
+              >
+                <div className="border-b border-white/[0.06] px-5 py-4">
+                  <h2
+                    className="text-sm font-semibold text-white"
+                    style={{ fontFamily: "'Clash Display', sans-serif" }}
+                  >
+                    Webhooks conectados
+                  </h2>
+                </div>
+                <div className="p-2 sm:p-4">
+                  {isLoading ? (
+                    <div className="space-y-3">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="h-14 animate-pulse rounded-xl bg-white/10"
+                        />
                       ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </main>
-        </SidebarInset>
-      </SidebarProvider>
+                    </div>
+                  ) : !webhooks || webhooks.length === 0 ? (
+                    <div className="py-14 text-center">
+                      <WebhookIcon className="mx-auto mb-3 h-8 w-8 text-violet-400/40" />
+                      <h3 className="text-base font-semibold text-white/80">
+                        Nenhum webhook configurado
+                      </h3>
+                      <p className="mx-auto mt-1 max-w-md text-sm text-white/40">
+                        Configure seu primeiro webhook para começar a receber
+                        notificações dos eventos da sua conta.
+                      </p>
+                      <button
+                        onClick={openModal}
+                        className="mx-auto mt-5 inline-flex items-center gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-xs font-semibold text-violet-200 transition-colors hover:bg-violet-500/20"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        Conectar primeiro webhook
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead>
+                          <tr className="text-[11px] uppercase tracking-wider text-white/40">
+                            <th className="px-3 py-2 font-medium">URL</th>
+                            <th className="px-3 py-2 font-medium">Tipo</th>
+                            <th className="px-3 py-2 font-medium">Status</th>
+                            <th className="px-3 py-2 font-medium">Criado em</th>
+                            <th className="px-3 py-2 font-medium">
+                              Último disparo
+                            </th>
+                            <th className="px-3 py-2 text-right font-medium">
+                              Ações
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {webhooks.map((webhook) => (
+                            <tr
+                              key={webhook.id}
+                              className="border-t border-white/[0.05] transition-colors hover:bg-white/[0.03]"
+                            >
+                              <td className="px-3 py-3">
+                                <div className="flex items-center gap-3">
+                                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300">
+                                    <WebhookIcon className="h-3.5 w-3.5" />
+                                  </span>
+                                  <div className="min-w-0">
+                                    <p className="truncate font-medium text-white/90">
+                                      {truncateUrl(webhook.url)}
+                                    </p>
+                                    <p className="truncate text-xs text-white/40">
+                                      {
+                                        webhook.url
+                                          .replace("https://", "")
+                                          .replace("http://", "")
+                                          .split("/")[0]
+                                      }
+                                    </p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-3 py-3">
+                                {getTypeBadge(webhook.eventType)}
+                              </td>
+                              <td className="px-3 py-3">
+                                {getStatusBadge(webhook.isActive)}
+                              </td>
+                              <td className="px-3 py-3 text-white/50">
+                                {formatDate(webhook.createdAt)}
+                              </td>
+                              <td className="px-3 py-3 text-white/50">
+                                {webhook.lastSentAt
+                                  ? formatDate(webhook.lastSentAt)
+                                  : "Nunca"}
+                              </td>
+                              <td className="px-3 py-3 text-right">
+                                <button
+                                  onClick={() => deleteWebhook(webhook.id)}
+                                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-rose-500/25 bg-rose-500/10 px-2.5 text-xs text-rose-300 transition-colors hover:bg-rose-500/20"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  <span className="hidden sm:inline">
+                                    Excluir
+                                  </span>
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </main>
+          </SidebarInset>
+        </SidebarProvider>
 
-      {/* Modal de adicionar webhook */}
-      <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-center">
-              Conectar Novo Webhook
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-6">
-            {/* Info */}
-            <div className="text-center space-y-2 p-4 bg-muted/50 rounded-lg">
-              <p className="text-sm font-medium">Configure um webhook</p>
-              <p className="text-xs text-muted-foreground">
-                Receba notificações em tempo real sobre eventos em sua conta
-              </p>
-            </div>
+        {/* Modal de adicionar webhook */}
+        <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-center">
+                Conectar novo webhook
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6">
+              <div className="space-y-1 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 text-center">
+                <p className="text-sm font-medium text-white/80">
+                  Configure um webhook
+                </p>
+                <p className="text-xs text-white/45">
+                  Receba notificações em tempo real sobre eventos da sua conta
+                </p>
+              </div>
 
-            {/* URL */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <Plug className="h-4 w-4" />
-                URL do Webhook
-              </Label>
-              <Input
-                value={newWebhookUrl}
-                onChange={(e) => setNewWebhookUrl(e.target.value)}
-                placeholder="https://api.exemplo.com/webhook"
-                className="text-sm"
-              />
-              <p className="text-xs text-muted-foreground">
-                Insira a URL completa onde deseja receber as notificações
-              </p>
-            </div>
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2 text-sm font-medium">
+                  <Plug className="h-4 w-4" />
+                  URL do webhook
+                </Label>
+                <Input
+                  value={newWebhookUrl}
+                  onChange={(e) => setNewWebhookUrl(e.target.value)}
+                  placeholder="https://api.exemplo.com/webhook"
+                  className="text-sm"
+                />
+                <p className="text-xs text-white/40">
+                  Insira a URL completa onde deseja receber as notificações
+                </p>
+              </div>
 
-            {/* Tipo */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Tipo de Evento</Label>
-              <Select value={newWebhookType} onValueChange={setNewWebhookType}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione o tipo de evento" />
-                </SelectTrigger>
-                <SelectContent>
-                  {webhookTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Escolha que tipo de eventos você deseja receber
-              </p>
-            </div>
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Tipo de evento</Label>
+                <Select value={newWebhookType} onValueChange={setNewWebhookType}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione o tipo de evento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {webhookTypes.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-white/40">
+                  Escolha que tipo de eventos você deseja receber
+                </p>
+              </div>
 
-            {/* Info importante */}
-            <div className="text-center space-y-3 p-4 bg-muted/50 rounded-lg">
-              <p className="text-sm font-medium">Informações Importantes</p>
-              <div className="text-xs text-muted-foreground space-y-1">
-                <p>• O webhook será testado após a configuração</p>
-                <p>• Certifique-se de que a URL está acessível</p>
-                <p>• Você pode configurar múltiplos webhooks</p>
-                <p>• Os dados serão enviados via POST em JSON</p>
+              <div className="space-y-1 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 text-center">
+                <p className="text-sm font-medium text-white/80">
+                  Informações importantes
+                </p>
+                <div className="space-y-0.5 text-xs text-white/45">
+                  <p>• O webhook será testado após a configuração</p>
+                  <p>• Certifique-se de que a URL está acessível</p>
+                  <p>• Você pode configurar múltiplos webhooks</p>
+                  <p>• Os dados serão enviados via POST em JSON</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={closeModal} className="flex-1">
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={createWebhook}
+                  className="flex-1 cursor-pointer"
+                  disabled={
+                    !newWebhookUrl.trim() || !newWebhookType || isCreating
+                  }
+                >
+                  {isCreating ? "Conectando…" : "Conectar webhook"}
+                </Button>
               </div>
             </div>
-
-            {/* Botões */}
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={closeModal} className="flex-1">
-                Cancelar
-              </Button>
-              <Button
-                onClick={createWebhook}
-                className="flex-1 cursor-pointer"
-                disabled={
-                  !newWebhookUrl.trim() || !newWebhookType || isCreating
-                }
-              >
-                {isCreating ? "Conectando..." : "Conectar Webhook"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+          </DialogContent>
+        </Dialog>
+        <ShadowPanel />
+      </div>
+    </>
   );
 }
 

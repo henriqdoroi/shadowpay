@@ -1,251 +1,329 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, ArrowRight, ArrowLeft, CheckCircle, Upload, FileText } from "lucide-react";
+import {
+  User,
+  ArrowRight,
+  ArrowLeft,
+  CheckCircle,
+  Upload,
+  FileText,
+  ShieldCheck,
+} from "lucide-react";
 import { useRouter } from "next/router";
+import Head from "next/head";
+import { motion } from "framer-motion";
+
+const SHADOW_BG =
+  "radial-gradient(1100px 700px at 50% -10%, rgba(124,58,237,0.18) 0%, transparent 50%), linear-gradient(180deg,#040712,#070b17 50%,#090f1f)";
 
 export default function Selfie() {
-    const router = useRouter();
-    const [selfieImage, setSelfieImage] = useState<string | null>(null);
-    const [cnpjDocument, setcnpjDocument] = useState<File | null>(null);
+  const router = useRouter();
+  const [selfieImage, setSelfieImage] = useState<string | null>(null);
+  const [cnpjDocument, setcnpjDocument] = useState<File | null>(null);
 
-    const handleSelfieUpload = (file: File) => {
-        if (file && file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                setSelfieImage(e.target?.result as string);
-            };
-            reader.readAsDataURL(file);
-        } else {
-            alert('Por favor, selecione apenas arquivos de imagem.');
-        }
-    };
+  const handleSelfieUpload = (file: File) => {
+    if (file && file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setSelfieImage(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      alert("Por favor, selecione apenas arquivos de imagem.");
+    }
+  };
 
-    const removeSelfie = () => {
-        setSelfieImage(null);
-    };
+  const removeSelfie = () => {
+    setSelfieImage(null);
+  };
 
-    const handlecnpjUpload = (file: File) => {
-        if (file && file.type === 'application/pdf') {
-            setcnpjDocument(file);
-        } else {
-            alert('Por favor, selecione apenas arquivos PDF.');
-        }
-    };
+  const handlecnpjUpload = (file: File) => {
+    if (file && file.type === "application/pdf") {
+      setcnpjDocument(file);
+    } else {
+      alert("Por favor, selecione apenas arquivos PDF.");
+    }
+  };
 
-    const handleNext = () => {
-        if (selfieImage && cnpjDocument) {
-            // Navegar para página de conclusão ou dashboard
-            router.push('/v1/dashboard');
-        }
-    };
+  const handleNext = () => {
+    if (selfieImage && cnpjDocument) {
+      router.push("/v1/dashboard");
+    }
+  };
 
-    const handleBack = () => {
-        router.push('/v1/kyc/document-upload');
-    };
+  const handleBack = () => {
+    router.push("/v1/kyc/document-upload");
+  };
 
-    return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-neutral-900 to-neutral-800 p-4">
-            <div className="max-w-4xl w-full space-y-8">
-                {/* Header */}
-                <div className="text-center space-y-4">
-                    <h1 className="text-4xl font-bold text-white">
-                        Selfie e Documento cnpj
-                    </h1>
-                    <p className="text-neutral-400 text-lg max-w-md mx-auto">
-                        Tire uma selfie e faça upload do seu documento cnpj em PDF.
-                    </p>
-                </div>
+  const ready = !!(selfieImage && cnpjDocument);
 
-                {/* Progress */}
-                <div className="flex justify-center">
-                    <div className="flex items-center space-x-4">
-                        <div className="flex items-center">
-                            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                                ✓
-                            </div>
-                            <span className="ml-2 text-neutral-300">Introdução</span>
-                        </div>
-                        <div className="w-8 h-0.5 bg-blue-600"></div>
-                        <div className="flex items-center">
-                            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                                ✓
-                            </div>
-                            <span className="ml-2 text-neutral-300">Documento</span>
-                        </div>
-                        <div className="w-8 h-0.5 bg-blue-600"></div>
-                        <div className="flex items-center">
-                            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                                3
-                            </div>
-                            <span className="ml-2 text-white font-semibold">Selfie & cnpj</span>
-                        </div>
-                    </div>
-                </div>
+  return (
+    <>
+      <Head>
+        <title>ShadowPay — Selfie & CNPJ</title>
+      </Head>
 
-                {/* Content Grid */}
-                <div className="grid md:grid-cols-2 gap-6">
-                    {/* Selfie Capture */}
-                    <Card className="bg-neutral-800/50 border-neutral-700">
-                        <CardHeader className="text-center pb-4">
-                            <CardTitle className="text-white text-xl flex items-center justify-center gap-2">
-                                <User className="w-5 h-5" />
-                                Selfie
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {selfieImage ? (
-                                <div className="relative">
-                                    <img 
-                                        src={selfieImage} 
-                                        alt="Selfie enviada" 
-                                        className="w-full h-64 object-cover rounded-lg border-2 border-green-500"
-                                    />
-                                    <div className="absolute top-2 right-2 bg-green-500 rounded-full p-1">
-                                        <CheckCircle className="w-4 h-4 text-white" />
-                                    </div>
-                                    <Button 
-                                        variant="outline" 
-                                        className="w-full mt-2 border-neutral-600 text-neutral-300 hover:bg-neutral-700"
-                                        onClick={removeSelfie}
-                                    >
-                                        Trocar Foto
-                                    </Button>
-                                </div>
-                            ) : (
-                                <div className="border-2 border-dashed border-neutral-600 rounded-lg p-8 text-center hover:border-blue-500 transition-colors">
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        className="hidden"
-                                        id="selfie-upload"
-                                        onChange={(e) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) handleSelfieUpload(file);
-                                        }}
-                                    />
-                                    <label htmlFor="selfie-upload" className="cursor-pointer">
-                                        <User className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
-                                        <p className="text-neutral-300 font-semibold mb-2">Envie sua selfie</p>
-                                        <p className="text-neutral-500 text-sm mb-2">Formatos: JPG, PNG, JPEG</p>
-                                        <p className="text-blue-400 text-sm underline">Clique para selecionar</p>
-                                    </label>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* cnpj Document Upload */}
-                    <Card className="bg-neutral-800/50 border-neutral-700">
-                        <CardHeader className="text-center pb-4">
-                            <CardTitle className="text-white text-xl flex items-center justify-center gap-2">
-                                <FileText className="w-5 h-5" />
-                                Documento cnpj
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {cnpjDocument ? (
-                                <div className="relative">
-                                    <div className="w-full h-64 bg-neutral-700 rounded-lg border-2 border-green-500 flex flex-col items-center justify-center">
-                                        <FileText className="w-16 h-16 text-green-500 mb-4" />
-                                        <p className="text-white font-semibold">{cnpjDocument.name}</p>
-                                        <p className="text-neutral-400 text-sm">
-                                            {(cnpjDocument.size / 1024 / 1024).toFixed(2)} MB
-                                        </p>
-                                    </div>
-                                    <div className="absolute top-2 right-2 bg-green-500 rounded-full p-1">
-                                        <CheckCircle className="w-4 h-4 text-white" />
-                                    </div>
-                                    <Button 
-                                        variant="outline" 
-                                        className="w-full mt-2 border-neutral-600 text-neutral-300 hover:bg-neutral-700"
-                                        onClick={() => setcnpjDocument(null)}
-                                    >
-                                        Trocar Arquivo
-                                    </Button>
-                                </div>
-                            ) : (
-                                <div className="border-2 border-dashed border-neutral-600 rounded-lg p-8 text-center hover:border-blue-500 transition-colors">
-                                    <input
-                                        type="file"
-                                        accept=".pdf"
-                                        className="hidden"
-                                        id="cnpj-upload"
-                                        onChange={(e) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) handlecnpjUpload(file);
-                                        }}
-                                    />
-                                    <label htmlFor="cnpj-upload" className="cursor-pointer">
-                                        <Upload className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
-                                        <p className="text-neutral-300 font-semibold mb-2">Upload do cnpj</p>
-                                        <p className="text-neutral-500 text-sm mb-2">Apenas arquivos PDF</p>
-                                        <p className="text-blue-400 text-sm underline">Clique para selecionar</p>
-                                    </label>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Tips */}
-                <Card className="bg-neutral-800/30 border-neutral-700">
-                    <CardContent className="pt-6">
-                        <h3 className="text-white font-semibold mb-4 text-center">Dicas importantes:</h3>
-                        <div className="grid md:grid-cols-2 gap-6 text-sm text-neutral-300">
-                            <div>
-                                <h4 className="text-white font-semibold mb-2">Para a selfie:</h4>
-                                <ul className="space-y-1">
-                                    <li>• Remova óculos escuros e chapéus</li>
-                                    <li>• Mantenha boa iluminação no rosto</li>
-                                    <li>• Rosto deve estar claramente visível</li>
-                                    <li>• Imagem nítida e de boa qualidade</li>
-                                </ul>
-                            </div>
-                            <div>
-                                <h4 className="text-white font-semibold mb-2">Para o cnpj:</h4>
-                                <ul className="space-y-1">
-                                    <li>• Documento deve estar atualizado</li>
-                                    <li>• Arquivo em formato PDF</li>
-                                    <li>• Tamanho máximo de 10MB</li>
-                                    <li>• Texto deve estar legível</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Navigation Buttons */}
-                <div className="flex gap-4">
-                    <Button 
-                        variant="outline" 
-                        className="flex-1 border-neutral-600 text-neutral-300 hover:bg-neutral-700"
-                        onClick={handleBack}
-                    >
-                        <ArrowLeft className="mr-2 w-4 h-4" />
-                        Voltar
-                    </Button>
-                    <Button 
-                        className={`flex-1 font-semibold py-3 text-lg ${
-                            selfieImage && cnpjDocument 
-                                ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                                : 'bg-neutral-600 text-neutral-400 cursor-not-allowed'
-                        }`}
-                        onClick={handleNext}
-                        disabled={!selfieImage || !cnpjDocument}
-                    >
-                        Finalizar Verificação
-                        <ArrowRight className="ml-2 w-5 h-5" />
-                    </Button>
-                </div>
-
-                {/* Security Note */}
-                <div className="text-center text-sm text-neutral-400">
-                    <p>
-                        🔒 Todos os dados são processados com segurança e protegidos por criptografia
-                    </p>
-                </div>
+      <div
+        className="relative min-h-screen overflow-hidden p-4 text-white md:p-8"
+        style={{ background: SHADOW_BG }}
+      >
+        <div className="relative z-10 mx-auto w-full max-w-4xl space-y-8 py-6">
+          {/* Brand */}
+          <div className="flex items-center justify-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 shadow-[0_8px_24px_-12px_rgba(124,58,237,0.7)]">
+              <ShieldCheck className="h-4 w-4 text-white" />
             </div>
+            <span
+              className="text-xs font-semibold tracking-[0.16em] text-white/60"
+              style={{ fontFamily: "'Clash Display', sans-serif" }}
+            >
+              SHADOWPAY · KYC
+            </span>
+          </div>
+
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="space-y-3 text-center"
+          >
+            <h1
+              className="text-3xl font-bold text-white md:text-[36px]"
+              style={{ fontFamily: "'Clash Display', sans-serif" }}
+            >
+              Selfie & CNPJ
+            </h1>
+            <p className="mx-auto max-w-md text-sm text-white/55">
+              Tire uma selfie e faça upload do seu documento CNPJ em PDF.
+            </p>
+          </motion.div>
+
+          {/* Progress */}
+          <div className="flex justify-center">
+            <div className="flex items-center gap-3">
+              {[
+                { label: "Introdução", done: true },
+                { label: "Documento", done: true },
+                { label: "Selfie & CNPJ", current: true },
+              ].map((step, i, arr) => (
+                <div key={step.label} className="flex items-center gap-2">
+                  <div
+                    className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-white ${
+                      step.current
+                        ? "bg-gradient-to-br from-violet-500 to-indigo-500"
+                        : step.done
+                        ? "bg-gradient-to-br from-violet-500 to-indigo-500"
+                        : "bg-white/10"
+                    }`}
+                  >
+                    {step.done && !step.current ? "✓" : i + 1}
+                  </div>
+                  <span
+                    className={`hidden text-xs sm:inline ${
+                      step.current
+                        ? "font-semibold text-white"
+                        : "text-white/45"
+                    }`}
+                    style={{ fontFamily: "'Clash Display', sans-serif" }}
+                  >
+                    {step.label}
+                  </span>
+                  {i < arr.length - 1 && (
+                    <div className="h-px w-8 bg-violet-500/40" />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Cards */}
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Selfie */}
+            <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl">
+              <div className="mb-4 flex items-center gap-2.5">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300">
+                  <User className="h-4 w-4" />
+                </span>
+                <span
+                  className="text-sm font-semibold text-white/85"
+                  style={{ fontFamily: "'Clash Display', sans-serif" }}
+                >
+                  Selfie
+                </span>
+              </div>
+              {selfieImage ? (
+                <div className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={selfieImage}
+                    alt="Selfie enviada"
+                    className="h-64 w-full rounded-xl border-2 border-emerald-500/60 object-cover"
+                  />
+                  <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500">
+                    <CheckCircle className="h-4 w-4 text-white" />
+                  </span>
+                  <button
+                    type="button"
+                    onClick={removeSelfie}
+                    className="mt-2 inline-flex h-9 w-full items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-xs font-medium text-white/70 hover:bg-white/[0.07] hover:text-white"
+                  >
+                    Trocar foto
+                  </button>
+                </div>
+              ) : (
+                <label
+                  htmlFor="selfie-upload"
+                  className="group flex h-64 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/[0.1] bg-white/[0.02] p-6 text-center hover:border-violet-500/40 hover:bg-white/[0.04]"
+                >
+                  <User className="mb-3 h-10 w-10 text-white/40" />
+                  <p className="text-sm font-semibold text-white/80">
+                    Envie sua selfie
+                  </p>
+                  <p className="mt-1 text-xs text-white/40">JPG, PNG, JPEG</p>
+                  <p className="mt-2 text-xs font-medium text-violet-300 underline-offset-2 group-hover:underline">
+                    Clique para selecionar
+                  </p>
+                  <input
+                    id="selfie-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleSelfieUpload(file);
+                    }}
+                  />
+                </label>
+              )}
+            </div>
+
+            {/* CNPJ */}
+            <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl">
+              <div className="mb-4 flex items-center gap-2.5">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300">
+                  <FileText className="h-4 w-4" />
+                </span>
+                <span
+                  className="text-sm font-semibold text-white/85"
+                  style={{ fontFamily: "'Clash Display', sans-serif" }}
+                >
+                  Documento CNPJ
+                </span>
+              </div>
+              {cnpjDocument ? (
+                <div className="relative">
+                  <div className="flex h-64 flex-col items-center justify-center rounded-xl border-2 border-emerald-500/60 bg-white/[0.03]">
+                    <FileText className="mb-3 h-14 w-14 text-emerald-400" />
+                    <p className="px-3 text-center text-sm font-medium text-white/85">
+                      {cnpjDocument.name}
+                    </p>
+                    <p className="text-xs text-white/45">
+                      {(cnpjDocument.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                  <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500">
+                    <CheckCircle className="h-4 w-4 text-white" />
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setcnpjDocument(null)}
+                    className="mt-2 inline-flex h-9 w-full items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-xs font-medium text-white/70 hover:bg-white/[0.07] hover:text-white"
+                  >
+                    Trocar arquivo
+                  </button>
+                </div>
+              ) : (
+                <label
+                  htmlFor="cnpj-upload"
+                  className="group flex h-64 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/[0.1] bg-white/[0.02] p-6 text-center hover:border-violet-500/40 hover:bg-white/[0.04]"
+                >
+                  <Upload className="mb-3 h-10 w-10 text-white/40" />
+                  <p className="text-sm font-semibold text-white/80">
+                    Upload do CNPJ
+                  </p>
+                  <p className="mt-1 text-xs text-white/40">Apenas PDF</p>
+                  <p className="mt-2 text-xs font-medium text-violet-300 underline-offset-2 group-hover:underline">
+                    Clique para selecionar
+                  </p>
+                  <input
+                    id="cnpj-upload"
+                    type="file"
+                    accept=".pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handlecnpjUpload(file);
+                    }}
+                  />
+                </label>
+              )}
+            </div>
+          </div>
+
+          {/* Dicas */}
+          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 backdrop-blur-xl">
+            <h3 className="mb-3 text-center text-xs font-semibold uppercase tracking-[0.16em] text-white/55">
+              Dicas importantes
+            </h3>
+            <div className="grid gap-5 text-sm text-white/65 md:grid-cols-2">
+              <div>
+                <h4 className="mb-1.5 text-sm font-semibold text-white/80">
+                  Para a selfie
+                </h4>
+                <ul className="space-y-1 text-xs text-white/55">
+                  <li>• Remova óculos escuros e chapéus</li>
+                  <li>• Mantenha boa iluminação no rosto</li>
+                  <li>• Rosto claramente visível</li>
+                  <li>• Imagem nítida e de boa qualidade</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="mb-1.5 text-sm font-semibold text-white/80">
+                  Para o CNPJ
+                </h4>
+                <ul className="space-y-1 text-xs text-white/55">
+                  <li>• Documento deve estar atualizado</li>
+                  <li>• Arquivo em formato PDF</li>
+                  <li>• Tamanho máximo de 10 MB</li>
+                  <li>• Texto legível</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              onClick={handleBack}
+              className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm font-semibold text-white/80 transition-colors hover:bg-white/[0.07] hover:text-white"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Voltar
+            </button>
+            <button
+              onClick={handleNext}
+              disabled={!ready}
+              className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl text-base font-semibold text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+              style={{
+                background: ready
+                  ? "linear-gradient(120deg, #7C3AED, #6366F1)"
+                  : "rgba(255,255,255,0.05)",
+                boxShadow: ready
+                  ? "0 20px 48px -18px rgba(124,58,237,0.7)"
+                  : "none",
+              }}
+            >
+              Finalizar verificação
+              <ArrowRight className="h-5 w-5" />
+            </button>
+          </div>
+
+          <p className="text-center text-xs text-white/40">
+            🔒 Todos os dados são processados com segurança e protegidos por
+            criptografia
+          </p>
         </div>
-    );
+      </div>
+    </>
+  );
 }
