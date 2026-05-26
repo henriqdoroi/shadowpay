@@ -64,6 +64,8 @@ import {
   RotateCcw,
   DollarSign,
   Zap,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 
 const API = "https://shadowpay-api-production.up.railway.app";
@@ -121,6 +123,8 @@ function DashboardContent() {
   >("today");
   const [refreshAt, setRefreshAt] = useState<Date>(new Date());
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const sidebarWidth = sidebarCollapsed ? 76 : 260;
 
   /* ---------- fetch user profile (2FA flags) ---------- */
   useEffect(() => {
@@ -468,37 +472,35 @@ function DashboardContent() {
       </Head>
 
       <div
-        className="relative min-h-screen w-full"
+        className="relative flex min-h-screen w-full"
         style={{
-          background: T.bg,
+          background: "#F1F3F8",
           color: T.text,
           fontFamily: "'Satoshi', 'Inter', sans-serif",
-          backgroundImage:
-            "radial-gradient(rgba(15, 23, 42, 0.04) 1px, transparent 1px)",
-          backgroundSize: "20px 20px",
         }}
       >
-        <div className="flex min-h-screen">
-          {/* ============================================================
-              SIDEBAR (LIGHT)
-              ============================================================ */}
-          <aside
-            className="hidden md:flex w-[260px] shrink-0 flex-col"
-            style={{
-              background: T.card,
-              borderRight: `1px solid ${T.border}`,
-            }}
+        {/* ============================================================
+            SIDEBAR (LIGHT GRAY, STICKY, COLLAPSIBLE)
+            ============================================================ */}
+        <aside
+          className="sticky top-0 z-30 hidden h-screen shrink-0 flex-col md:flex"
+          style={{
+            width: sidebarWidth,
+            background: "#F1F3F8",
+            transition: "width 0.22s cubic-bezier(0.22, 1, 0.36, 1)",
+          }}
+        >
+          {/* Brand */}
+          <Link
+            href="/v1/dashboard"
+            className="relative flex flex-col items-center gap-2 px-4 py-5"
+            style={{ minHeight: 120 }}
           >
-            {/* Brand */}
-            <Link
-              href="/v1/dashboard"
-              className="flex flex-col items-center gap-2 px-6 py-7"
-              style={{ borderBottom: `1px solid ${T.border}` }}
-            >
-              <ShadowLogo size={120} />
+            <ShadowLogo size={sidebarCollapsed ? 56 : 110} />
+            {!sidebarCollapsed && (
               <div className="text-center leading-tight">
                 <div
-                  className="text-[14px] font-bold tracking-[0.18em] text-slate-700"
+                  className="text-[13px] font-bold tracking-[0.18em] text-slate-700"
                   style={{ fontFamily: "'Clash Display', sans-serif" }}
                 >
                   SHADOWPAY
@@ -507,107 +509,165 @@ function DashboardContent() {
                   Financial OS
                 </div>
               </div>
-            </Link>
+            )}
+          </Link>
 
-            {/* Nav */}
-            <nav className="flex-1 overflow-y-auto px-3 py-4">
-              {nav.map((group) => (
-                <div key={group.label} className="mb-5 last:mb-0">
+          {/* Nav */}
+          <nav className="flex-1 overflow-y-auto px-3 py-2">
+            {nav.map((group) => (
+              <div key={group.label} className="mb-5 last:mb-0">
+                {!sidebarCollapsed && (
                   <p
                     className="px-3 pb-2 text-[9.5px] font-bold uppercase tracking-[0.20em]"
                     style={{ color: T.textMuted }}
                   >
                     {group.label}
                   </p>
-                  <ul className="space-y-0.5">
-                    {group.items.map((item) => {
-                      const Icon = item.icon;
-                      const active = router.pathname === item.href;
-                      return (
-                        <li key={`${group.label}-${item.label}`}>
-                          <Link
-                            href={item.href}
-                            className="group flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors"
+                )}
+                <ul className="space-y-0.5">
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const active = router.pathname === item.href;
+                    return (
+                      <li key={`${group.label}-${item.label}`}>
+                        <Link
+                          href={item.href}
+                          title={sidebarCollapsed ? item.label : undefined}
+                          className="group flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-colors"
+                          style={{
+                            padding: sidebarCollapsed
+                              ? "10px"
+                              : "8px 12px",
+                            justifyContent: sidebarCollapsed
+                              ? "center"
+                              : "flex-start",
+                            background: active
+                              ? T.primaryBg
+                              : "transparent",
+                            color: active ? T.primary : T.text2,
+                          }}
+                        >
+                          <Icon
+                            className="h-4 w-4 shrink-0"
                             style={{
-                              background: active ? T.primaryBg : "transparent",
-                              color: active ? T.primary : T.text2,
+                              color: active ? T.primary : T.textMuted,
                             }}
-                          >
-                            <Icon
-                              className={`h-4 w-4 shrink-0`}
-                              style={{
-                                color: active ? T.primary : T.textMuted,
-                              }}
-                            />
-                            <span className="flex-1 truncate">{item.label}</span>
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              ))}
-            </nav>
-
-            {/* User card */}
-            <div
-              className="px-3 pb-3"
-              style={{ borderTop: `1px solid ${T.border}` }}
-            >
-              <div
-                className="mt-3 rounded-xl p-3"
-                style={{
-                  background: T.card,
-                  border: `1px solid ${T.border}`,
-                  boxShadow: T.cardShadow,
-                }}
-              >
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-                    style={{
-                      background:
-                        "linear-gradient(135deg, #7C3AED 0%, #22D3EE 100%)",
-                    }}
-                  >
-                    {initial}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-semibold text-slate-900">
-                      {user?.companyName || "Operador"}
-                    </p>
-                    <p className="truncate text-[10px] text-slate-500">
-                      Seller Bronze
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-2 inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700">
-                  <ShieldCheck className="h-2.5 w-2.5" />
-                  KYC verificado
-                </div>
-                <p className="mt-2 text-[10px] text-slate-500">
-                  Próximo repasse{" "}
-                  <span className="font-semibold text-slate-700">
-                    25 Mai 2026
-                  </span>
-                </p>
+                          />
+                          {!sidebarCollapsed && (
+                            <span className="flex-1 truncate">
+                              {item.label}
+                            </span>
+                          )}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
+            ))}
+          </nav>
 
-              <a
-                href="https://wa.me/559991519044?text=Ol%C3%A1%20preciso%20de%20ajuda%20com%20a%20ShadowPay."
-                target="_blank"
-                rel="noreferrer"
-                className="mt-2 flex items-center justify-center gap-1.5 rounded-lg py-2 text-[12px] font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
+          {/* User card */}
+          <div className="px-3 pb-3">
+            {!sidebarCollapsed ? (
+              <>
+                <div
+                  className="rounded-xl p-3"
+                  style={{
+                    background: "#FFFFFF",
+                    border: "1px solid rgba(15,23,42,0.06)",
+                    boxShadow: "0 1px 2px rgba(15,23,42,0.04)",
+                  }}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, #7C3AED 0%, #22D3EE 100%)",
+                      }}
+                    >
+                      {initial}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-semibold text-slate-900">
+                        {user?.companyName || "Operador"}
+                      </p>
+                      <p className="truncate text-[10px] text-slate-500">
+                        Seller Bronze
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-2 inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700">
+                    <ShieldCheck className="h-2.5 w-2.5" />
+                    KYC verificado
+                  </div>
+                  <p className="mt-2 text-[10px] text-slate-500">
+                    Próximo repasse{" "}
+                    <span className="font-semibold text-slate-700">
+                      25 Mai 2026
+                    </span>
+                  </p>
+                </div>
+
+                <a
+                  href="https://wa.me/559991519044?text=Ol%C3%A1%20preciso%20de%20ajuda%20com%20a%20ShadowPay."
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 flex items-center justify-center gap-1.5 rounded-lg py-2 text-[12px] font-medium text-slate-500 transition-colors hover:bg-white hover:text-slate-700"
+                >
+                  <LifeBuoy className="h-3.5 w-3.5" />
+                  Suporte 24/7
+                </a>
+              </>
+            ) : (
+              <div
+                className="flex h-10 w-10 mx-auto items-center justify-center rounded-full text-xs font-bold text-white"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #7C3AED 0%, #22D3EE 100%)",
+                }}
+                title={user?.companyName || "Operador"}
               >
-                <LifeBuoy className="h-3.5 w-3.5" />
-                Suporte 24/7
-              </a>
-            </div>
-          </aside>
+                {initial}
+              </div>
+            )}
+          </div>
+        </aside>
 
-          {/* ============================================================
-              MAIN COLUMN
-              ============================================================ */}
+        {/* ============================================================
+            MAIN COLUMN (white, sticks next to sidebar with shadow)
+            ============================================================ */}
+        <div
+          className="relative flex min-h-screen min-w-0 flex-1 flex-col"
+          style={{
+            background: "#FFFFFF",
+            boxShadow:
+              "-12px 0 28px -16px rgba(15, 23, 42, 0.10), -2px 0 8px rgba(15, 23, 42, 0.05)",
+          }}
+        >
+          {/* Toggle button — sits on the divider between sidebar and main */}
+          <button
+            onClick={() => setSidebarCollapsed((v) => !v)}
+            className="absolute top-7 z-40 hidden h-7 w-7 items-center justify-center rounded-full transition-all hover:scale-110 md:flex"
+            style={{
+              left: -14,
+              background: "#FFFFFF",
+              border: "1px solid rgba(15,23,42,0.08)",
+              boxShadow: "0 2px 6px rgba(15,23,42,0.10)",
+              color: "#475569",
+            }}
+            aria-label={
+              sidebarCollapsed ? "Expandir menu" : "Recolher menu"
+            }
+          >
+            {sidebarCollapsed ? (
+              <PanelLeftOpen className="h-3.5 w-3.5" />
+            ) : (
+              <PanelLeftClose className="h-3.5 w-3.5" />
+            )}
+          </button>
+
           <div className="flex min-w-0 flex-1 flex-col">
             {/* ============================================================
                 TOPBAR (LIGHT)
@@ -933,8 +993,8 @@ function DashboardContent() {
                           marginTop: 28,
                           height: 64,
                           borderRadius: 16,
-                          background: "#FFFFFF",
-                          border: "1px solid #E5E7EB",
+                          background: "transparent",
+                          border: "1px solid rgba(15, 23, 42, 0.06)",
                           padding: "0 18px",
                         }}
                       >
@@ -945,8 +1005,10 @@ function DashboardContent() {
                               width: 36,
                               height: 36,
                               borderRadius: 10,
-                              background: "#EEF0F5",
+                              background: "rgba(255, 255, 255, 0.55)",
+                              border: "1px solid rgba(15, 23, 42, 0.05)",
                               color: "#475569",
+                              backdropFilter: "blur(4px)",
                               flexShrink: 0,
                             }}
                           >
