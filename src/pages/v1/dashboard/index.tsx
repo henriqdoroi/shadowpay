@@ -784,60 +784,27 @@ function DashboardContent() {
                 MAIN CONTENT
                 ============================================================ */}
             <main className="px-4 py-6 md:px-8 md:py-8 pb-24 md:pb-8">
-              {/* HERO — spec-driven */}
+              {/* HERO — banner art como background-image (sem <img>) */}
               <motion.section
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
                 className="relative mb-6 overflow-hidden"
                 style={{
-                  background: "#FFFFFF",
+                  // Banner art "embutido" no card — aparece no DevTools como
+                  // background-image num div, não como <img>.
+                  backgroundColor: "#FFFFFF",
+                  backgroundImage: "url('/shadow-hero-bg.png')",
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "left center",
+                  backgroundSize: "auto 100%",
                   border: "1px solid rgba(15, 23, 42, 0.08)",
                   borderRadius: 24,
                   boxShadow: "0 18px 45px rgba(15, 23, 42, 0.06)",
                   padding: "32px 36px",
                 }}
               >
-                {/* halo violet behind logo */}
-                <div
-                  className="pointer-events-none absolute hidden md:block"
-                  style={{
-                    left: 10,
-                    bottom: -20,
-                    width: 220,
-                    height: 220,
-                    background:
-                      "radial-gradient(circle, rgba(139, 92, 246, 0.16) 0%, transparent 65%)",
-                  }}
-                  aria-hidden="true"
-                />
-
-                {/* Logo — fixed size, anchored bottom-left */}
-                <div
-                  className="pointer-events-none absolute hidden md:block"
-                  style={{
-                    left: 28,
-                    bottom: 0,
-                    width: 170,
-                    height: 170,
-                    opacity: 0.95,
-                  }}
-                  aria-hidden="true"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/shadow-panther.png"
-                    alt=""
-                    style={{
-                      width: 170,
-                      height: 170,
-                      objectFit: "contain",
-                      display: "block",
-                    }}
-                  />
-                </div>
-
-                {/* Content area — offset right of logo */}
+                {/* Content area — offset right da arte */}
                 <div className="relative md:pl-[210px]">
                   {/* top row: greeting + buttons */}
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
