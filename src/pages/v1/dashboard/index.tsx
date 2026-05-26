@@ -796,27 +796,60 @@ function DashboardContent() {
                   boxShadow: T.cardShadow,
                 }}
               >
-                <div className="grid grid-cols-1 md:grid-cols-[170px_1fr] gap-4 p-5 md:p-7">
-                  {/* Mascot */}
-                  <div className="hidden md:flex items-center justify-center">
-                    <ShadowLogo size={140} glow />
+                {/* mascot — bleeds off the left edge */}
+                <div
+                  className="pointer-events-none absolute left-0 top-0 hidden h-full w-[220px] md:block"
+                  aria-hidden="true"
+                >
+                  {/* violet halo behind */}
+                  <div
+                    className="absolute left-2 top-1/2 h-[180px] w-[180px] -translate-y-1/2 rounded-full"
+                    style={{
+                      background:
+                        "radial-gradient(circle, rgba(168, 85, 247, 0.22) 0%, rgba(124, 58, 237, 0.10) 35%, transparent 65%)",
+                      filter: "blur(8px)",
+                    }}
+                  />
+                  <div
+                    className="relative -ml-6 flex h-full items-center justify-start"
+                    style={{ paddingLeft: 0 }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/shadow-panther.png"
+                      alt=""
+                      className="h-[200px] w-auto object-contain"
+                      style={{
+                        filter:
+                          "drop-shadow(0 8px 20px rgba(124, 58, 237, 0.15))",
+                      }}
+                    />
                   </div>
+                </div>
 
-                  {/* Greeting + actions */}
+                {/* top row: greeting + actions */}
+                <div className="relative grid grid-cols-1 gap-4 p-5 md:grid-cols-[200px_1fr] md:p-7">
+                  <div className="md:block" />
+
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div className="min-w-0">
                       <h1
-                        className="text-[26px] font-bold leading-tight tracking-tight text-slate-900 md:text-[32px]"
+                        className="flex flex-wrap items-baseline gap-2 text-[26px] font-bold leading-tight tracking-tight text-slate-900 md:text-[30px]"
                         style={{ fontFamily: "'Clash Display', sans-serif" }}
                       >
-                        {greeting}, {user?.companyName || "Operador"}.{" "}
-                        <span className="inline-block">👋</span>
+                        <span>
+                          {greeting}, {user?.companyName || "Operador"}.
+                        </span>
+                        <span className="text-[24px] md:text-[28px]">👋</span>
                       </h1>
-                      <p className="mt-1 text-sm text-slate-500">
+                      <p className="mt-1.5 text-[13px] text-slate-500">
                         Operação sincronizada. Última atualização há{" "}
                         <span className="font-semibold text-slate-700">
-                          {Math.floor(
-                            (Date.now() - refreshAt.getTime()) / 1000
+                          {Math.max(
+                            1,
+                            Math.floor(
+                              (Date.now() - refreshAt.getTime()) / 1000
+                            )
                           )}{" "}
                           segundos
                         </span>
@@ -830,22 +863,23 @@ function DashboardContent() {
                         className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-[13px] font-semibold text-slate-700 transition-all hover:bg-slate-50"
                         style={{ border: `1px solid ${T.border}` }}
                       >
-                        <Plus className="h-4 w-4" /> Novo produto
+                        <Plus className="h-4 w-4 text-slate-500" /> Novo produto
                       </button>
                       <button
                         onClick={() => router.push("/v1/products/create")}
                         className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-[13px] font-semibold text-slate-700 transition-all hover:bg-slate-50"
                         style={{ border: `1px solid ${T.border}` }}
                       >
-                        <MessageSquare className="h-4 w-4" /> Criar checkout
+                        <MessageSquare className="h-4 w-4 text-slate-500" />{" "}
+                        Criar checkout
                       </button>
                       <button
                         onClick={() => router.push("/v1/finance/withdraw")}
                         className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-[13px] font-semibold text-white transition-transform hover:-translate-y-0.5"
                         style={{
-                          background:
-                            "linear-gradient(120deg, #7C3AED 0%, #6D28D9 100%)",
-                          boxShadow: "0 8px 24px -8px rgba(124, 58, 237, 0.45)",
+                          background: "#7C3AED",
+                          boxShadow:
+                            "0 8px 20px -8px rgba(124, 58, 237, 0.55)",
                         }}
                       >
                         <DollarSign className="h-4 w-4" /> Sacar
@@ -854,45 +888,47 @@ function DashboardContent() {
                   </div>
                 </div>
 
-                {/* 2FA alert */}
+                {/* 2FA alert — inner card */}
                 {localUser &&
                   !(localUser.twofaEnabled && localUser.twofaConfirmed) && (
-                    <div
-                      className="flex flex-col gap-3 px-5 py-4 md:flex-row md:items-center md:justify-between"
-                      style={{
-                        background: "rgba(124, 58, 237, 0.04)",
-                        borderTop: `1px solid ${T.border}`,
-                      }}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div
-                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-                          style={{
-                            background: T.primaryBg,
-                            color: T.primary,
-                          }}
-                        >
-                          <ShieldCheck className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <p className="text-[13px] font-semibold text-slate-800">
-                            Autenticação em duas etapas pendente
-                          </p>
-                          <p className="text-[12px] text-slate-500">
-                            Proteja saques, API keys e alterações sensíveis.
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => setIs2FAModalOpen(true)}
-                        className="inline-flex h-9 items-center gap-2 rounded-lg px-4 text-[12px] font-semibold text-slate-700 transition-colors hover:bg-white"
+                    <div className="relative px-5 pb-5 md:pl-[220px] md:pr-7 md:pb-7">
+                      <div
+                        className="flex flex-col gap-3 rounded-xl px-4 py-3.5 md:flex-row md:items-center md:justify-between"
                         style={{
+                          background: "#F8F9FC",
                           border: `1px solid ${T.border}`,
-                          background: T.card,
                         }}
                       >
-                        Ativar agora
-                      </button>
+                        <div className="flex items-start gap-3">
+                          <div
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                            style={{
+                              background: "#EEF0F5",
+                              color: "#475569",
+                            }}
+                          >
+                            <ShieldCheck className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-[13px] font-semibold text-slate-800">
+                              Autenticação em duas etapas pendente
+                            </p>
+                            <p className="text-[12px] text-slate-500">
+                              Proteja saques, API keys e alterações sensíveis.
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setIs2FAModalOpen(true)}
+                          className="inline-flex h-9 items-center gap-2 rounded-lg px-4 text-[12px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                          style={{
+                            border: `1px solid ${T.border}`,
+                            background: T.card,
+                          }}
+                        >
+                          Ativar agora
+                        </button>
+                      </div>
                       <TwoFAModal
                         isOpen={is2FAModalOpen}
                         onClose={() => setIs2FAModalOpen(false)}
