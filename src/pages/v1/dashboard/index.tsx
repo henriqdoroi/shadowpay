@@ -796,53 +796,58 @@ function DashboardContent() {
                   boxShadow: T.cardShadow,
                 }}
               >
-                {/* mascot — bleeds off the left edge */}
+                {/* mascot — left rail, fully visible */}
                 <div
-                  className="pointer-events-none absolute left-0 top-0 hidden h-full w-[220px] md:block"
+                  className="pointer-events-none absolute left-0 top-0 hidden h-full w-[230px] items-center justify-center md:flex"
                   aria-hidden="true"
                 >
                   {/* violet halo behind */}
                   <div
-                    className="absolute left-2 top-1/2 h-[180px] w-[180px] -translate-y-1/2 rounded-full"
+                    className="absolute left-1/2 top-1/2 h-[210px] w-[210px] -translate-x-1/2 -translate-y-1/2 rounded-full"
                     style={{
                       background:
-                        "radial-gradient(circle, rgba(168, 85, 247, 0.22) 0%, rgba(124, 58, 237, 0.10) 35%, transparent 65%)",
-                      filter: "blur(8px)",
+                        "radial-gradient(circle, rgba(168, 85, 247, 0.28) 0%, rgba(124, 58, 237, 0.12) 35%, transparent 65%)",
+                      filter: "blur(10px)",
                     }}
                   />
-                  <div
-                    className="relative -ml-6 flex h-full items-center justify-start"
-                    style={{ paddingLeft: 0 }}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/shadow-panther.png"
-                      alt=""
-                      className="h-[200px] w-auto object-contain"
-                      style={{
-                        filter:
-                          "drop-shadow(0 8px 20px rgba(124, 58, 237, 0.15))",
-                      }}
-                    />
-                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/shadow-panther.png"
+                    alt=""
+                    className="relative h-[88%] max-h-[210px] w-auto object-contain"
+                    style={{
+                      filter:
+                        "drop-shadow(0 10px 24px rgba(124, 58, 237, 0.20))",
+                    }}
+                  />
                 </div>
 
                 {/* top row: greeting + actions */}
-                <div className="relative grid grid-cols-1 gap-4 p-5 md:grid-cols-[200px_1fr] md:p-7">
-                  <div className="md:block" />
+                <div className="relative grid grid-cols-1 gap-4 p-5 md:grid-cols-[230px_1fr] md:min-h-[220px] md:p-7">
+                  <div className="hidden md:block" />
 
-                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                    <div className="min-w-0">
+                  <div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div className="min-w-0 flex-1">
                       <h1
-                        className="flex flex-wrap items-baseline gap-2 text-[26px] font-bold leading-tight tracking-tight text-slate-900 md:text-[30px]"
-                        style={{ fontFamily: "'Clash Display', sans-serif" }}
+                        className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[24px] font-bold leading-[1.15] text-slate-900 md:text-[28px]"
+                        style={{
+                          fontFamily: "'Clash Display', sans-serif",
+                          letterSpacing: "-0.005em",
+                          fontFeatureSettings: '"calt" 1, "kern" 1',
+                          wordSpacing: "0.05em",
+                        }}
                       >
-                        <span>
+                        <span className="break-words">
                           {greeting}, {user?.companyName || "Operador"}.
                         </span>
-                        <span className="text-[24px] md:text-[28px]">👋</span>
+                        <span
+                          className="inline-block text-[22px] md:text-[24px]"
+                          style={{ fontFamily: "system-ui, sans-serif" }}
+                        >
+                          👋
+                        </span>
                       </h1>
-                      <p className="mt-1.5 text-[13px] text-slate-500">
+                      <p className="mt-2 text-[13px] text-slate-500">
                         Operação sincronizada. Última atualização há{" "}
                         <span className="font-semibold text-slate-700">
                           {Math.max(
@@ -891,7 +896,7 @@ function DashboardContent() {
                 {/* 2FA alert — inner card */}
                 {localUser &&
                   !(localUser.twofaEnabled && localUser.twofaConfirmed) && (
-                    <div className="relative px-5 pb-5 md:pl-[220px] md:pr-7 md:pb-7">
+                    <div className="relative px-5 pb-5 md:pl-[230px] md:pr-7 md:pb-7">
                       <div
                         className="flex flex-col gap-3 rounded-xl px-4 py-3.5 md:flex-row md:items-center md:justify-between"
                         style={{
