@@ -1,202 +1,313 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import { motion } from "framer-motion";
 import {
-  AppWindowMac,
-  BookHeart,
-  LifeBuoy,
-  PiggyBank,
-  Settings2,
-  ShoppingCart,
+  LayoutDashboard,
+  Package,
+  Receipt,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  BarChart3,
   Shield,
+  KeyRound,
+  Webhook,
+  Percent,
+  UserCircle2,
+  IdCard,
+  Sparkles,
+  ShieldCheck,
+  Users,
+  Activity,
+  Building2,
+  Settings,
+  LifeBuoy,
+  ChevronRight,
 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
 
-import { NavMain } from "@/components/nav-main";
-import { NavSecondary } from "@/components/nav-secondary";
-import { NavUser } from "@/components/nav-user";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuItem,
 } from "@/components/ui/sidebar";
-function ShadowMark({ size = 26 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
-      <defs>
-        <linearGradient id="sg-sidebar" x1="0" y1="0" x2="48" y2="48">
-          <stop offset="0" stopColor="#A855F7" />
-          <stop offset="1" stopColor="#3B82F6" />
-        </linearGradient>
-      </defs>
-      <circle cx="24" cy="24" r="21" stroke="url(#sg-sidebar)" strokeWidth="2" opacity="0.6" />
-      <circle cx="24" cy="24" r="8" fill="url(#sg-sidebar)" />
-      <circle cx="24" cy="24" r="13" stroke="url(#sg-sidebar)" strokeWidth="1.5" opacity="0.35" />
-    </svg>
-  );
-}
+import { ShadowMark } from "@/components/shadow/ShadowMark";
 
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  navSecondary: [
-    {
-      title: "Suporte",
-      url: "https://wa.me/559991519044?text=Ol%C3%A1%20Preciso%20de%20ajuda%20com%20minha%20conta%20safira%20cash.",
-      icon: LifeBuoy,
-    },
-    {
-      title: "Documentação",
-      url: "https://safira-cash.readme.io/reference",
-      icon: BookHeart,
-    },
-  ],
+type NavItem = {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: string;
 };
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { user } = useAuth();
+type NavGroup = {
+  label: string;
+  items: NavItem[];
+};
 
-  const needsKyc = !user?.isAdministrator;
-  const blockedForKyc =
-    !user?.isAdministrator &&
-    (user?.kycStatus === "NOT_STARTED" || user?.kycStatus === "PENDING");
-
-  // Configuração dinâmica do menu baseada no tipo de usuário
-  const navMainItems = [
+function buildNav(isAdmin: boolean): NavGroup[] {
+  const base: NavGroup[] = [
     {
-      title: "Dashboard",
-      url: " ",
-      icon: AppWindowMac,
+      label: "Command Center",
       items: [
+        { label: "Dashboard", href: "/v1/dashboard", icon: LayoutDashboard },
+        { label: "Shadow AI", href: "/shadow", icon: Sparkles, badge: "AI" },
+      ],
+    },
+    {
+      label: "Vendas",
+      items: [
+        { label: "Produtos", href: "/v1/products", icon: Package },
+        { label: "Pedidos", href: "/v1/products/sales", icon: Receipt },
         {
-          title: "Performance",
-          url: "/v2/manager",
+          label: "Recebimentos",
+          href: "/v1/finance/recivements",
+          icon: ArrowDownToLine,
         },
         {
-          title: "Relatórios",
-          url: "/v1/reports",
+          label: "Saques",
+          href: "/v1/finance/withdraw",
+          icon: ArrowUpFromLine,
         },
       ],
     },
     {
-      title: "Produtos",
-      url: " ",
-      icon: ShoppingCart,
-      disabled: false, //COLOQUE TRUE
-      // badge: "Em breve",
+      label: "Inteligência",
       items: [
-        {
-          title: "Produtos",
-          url: "/v1/products",
-        },
-        {
-          title: "Vendas",
-          url: "/v1/products/sales",
-        }
-      ]
-    },
-    {
-      title: "Financeiro",
-      url: " ",
-      icon: PiggyBank,
-      items: [
-        {
-          title: "Entradas",
-          url: "/v1/finance/recivements",
-        },
-        {
-          title: "Saídas",
-          url: "/v1/finance/withdraw",
-        },
-        {
-          title: "Extornos",
-          url: "/v1/finance/compliance",
-        },
+        { label: "Relatórios", href: "/v1/reports", icon: BarChart3 },
+        { label: "Compliance", href: "/v1/finance/compliance", icon: Shield },
       ],
     },
     {
-      title: "Configurações",
-      url: " ",
-      icon: Settings2,
-      requiresKycApproved: needsKyc,
+      label: "Integrações",
       items: [
-        {
-          title: "Webhook",
-          url: "/v1/configs/webhook",
-        },
-        {
-          title: "Credênciais API",
-          url: "/v1/configs/apikey",
-        },
-        {
-          title: "Taxas",
-          url: "/v1/configs/fee",
-        },
+        { label: "API Keys", href: "/v1/configs/apikey", icon: KeyRound },
+        { label: "Webhooks", href: "/v1/configs/webhook", icon: Webhook },
+        { label: "Taxas", href: "/v1/configs/fee", icon: Percent },
       ],
-      ...(blockedForKyc
-        ? {
-            badge: "KYC pendente",
-            title: "Configurações",
-          }
-        : {}),
     },
-    ...(user?.isAdministrator
-      ? [
-          {
-            title: "Administração",
-            url: " ",
-            icon: Shield,
-            badge: "Admin",
-            items: [
-              {
-                title: "Carteira Admin",
-                url: "/v1/dashboard/",
-              },
-              {
-                title: "Sellers",
-                url: "/v2/manager/users",
-              },
-              {
-                title: "Transações",
-                url: "/v2/manager/transactions",
-              },
-              {
-                title: "Adquirentes",
-                url: "/v2/manager/adquerers",
-              },
-            ],
-          },
-        ]
-      : []),
+    {
+      label: "Conta",
+      items: [
+        { label: "Perfil", href: "/v1/configs/profile", icon: UserCircle2 },
+        { label: "KYC", href: "/v1/kyc", icon: IdCard },
+      ],
+    },
   ];
 
+  if (isAdmin) {
+    base.push({
+      label: "Admin",
+      items: [
+        { label: "Painel", href: "/v2/manager", icon: ShieldCheck },
+        { label: "Sellers", href: "/v2/manager/users", icon: Users },
+        {
+          label: "Transações",
+          href: "/v2/manager/transactions",
+          icon: Activity,
+        },
+        {
+          label: "Adquirentes",
+          href: "/v2/manager/adquerers",
+          icon: Building2,
+        },
+        {
+          label: "Saques admin",
+          href: "/v2/manager/withdraw",
+          icon: ArrowUpFromLine,
+        },
+        { label: "PSP Keys", href: "/v2/manager/psp-key", icon: Settings },
+      ],
+    });
+  }
+
+  return base;
+}
+
+export function AppSidebar({
+  ...props
+}: React.ComponentProps<typeof Sidebar>) {
+  const router = useRouter();
+  const { user } = useAuth();
+  const groups = buildNav(!!user?.isAdministrator);
+  const kycStatus = (user as any)?.kycStatus as
+    | "NOT_STARTED"
+    | "PENDING"
+    | "APPROVED"
+    | "BANNED"
+    | undefined;
+
+  const kycPill = (() => {
+    switch (kycStatus) {
+      case "APPROVED":
+        return {
+          text: "KYC verificado",
+          color: "text-emerald-300 bg-emerald-500/10 border-emerald-500/20",
+          dot: "bg-emerald-400",
+        };
+      case "PENDING":
+        return {
+          text: "KYC em análise",
+          color: "text-sky-300 bg-sky-500/10 border-sky-500/20",
+          dot: "bg-sky-400",
+        };
+      case "BANNED":
+        return {
+          text: "Conta suspensa",
+          color: "text-rose-300 bg-rose-500/10 border-rose-500/20",
+          dot: "bg-rose-400",
+        };
+      default:
+        return {
+          text: "KYC pendente",
+          color: "text-amber-300 bg-amber-500/10 border-amber-500/20",
+          dot: "bg-amber-400",
+        };
+    }
+  })();
+
+  const initial = (user?.companyName?.[0] || "S").toUpperCase();
+
   return (
-    <Sidebar variant="inset" {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem className="flex items-center justify-center gap-2.5 py-2">
-            <ShadowMark size={26} />
-            <span className="text-display text-base font-bold tracking-tight text-white">
+    <Sidebar
+      variant="inset"
+      {...props}
+      style={{ ["--sidebar-width" as any]: "280px" }}
+    >
+      <SidebarHeader className="border-b border-white/[0.05] px-5 py-4">
+        <Link
+          href="/v1/dashboard"
+          className="flex items-center gap-3"
+        >
+          <ShadowMark size={26} />
+          <div className="flex flex-col leading-tight">
+            <span
+              className="text-[15px] font-bold tracking-tight text-white"
+              style={{ fontFamily: "'Clash Display', sans-serif" }}
+            >
               ShadowPay
             </span>
-          </SidebarMenuItem>
-        </SidebarMenu>
+            <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+              Financial OS
+            </span>
+          </div>
+        </Link>
       </SidebarHeader>
-      <SidebarContent>
-        <NavMain
-          items={navMainItems}
-          userKycStatus={user?.kycStatus || "NOT_STARTED"}
-        />
-        <NavSecondary items={data.navSecondary} />
+
+      <SidebarContent className="px-3 py-4">
+        {groups.map((group) => (
+          <div key={group.label} className="mb-5 last:mb-0">
+            <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/35">
+              {group.label}
+            </p>
+            <ul className="space-y-0.5">
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const active =
+                  router.pathname === item.href ||
+                  router.asPath === item.href ||
+                  (item.href !== "/v1/dashboard" &&
+                    router.pathname.startsWith(item.href));
+
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      className="group relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors"
+                      style={{
+                        color: active ? "#F8FAFC" : "#A4ACBE",
+                        background: active
+                          ? "linear-gradient(90deg, rgba(124, 58, 237, 0.12), rgba(124, 58, 237, 0) 80%)"
+                          : "transparent",
+                      }}
+                    >
+                      {active && (
+                        <motion.span
+                          layoutId="appsb-active-indicator"
+                          className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full"
+                          style={{
+                            background:
+                              "linear-gradient(180deg, #A855F7 0%, #7C3AED 100%)",
+                            boxShadow: "0 0 12px rgba(124, 58, 237, 0.6)",
+                          }}
+                        />
+                      )}
+                      <Icon
+                        className={`h-4 w-4 shrink-0 transition-colors ${
+                          active
+                            ? "text-violet-300"
+                            : "text-white/45 group-hover:text-white/70"
+                        }`}
+                      />
+                      <span className="flex-1 truncate group-hover:text-white">
+                        {item.label}
+                      </span>
+                      {item.badge && (
+                        <span
+                          className={`ml-auto rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                            item.badge === "AI"
+                              ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-300"
+                              : "border-amber-500/30 bg-amber-500/10 text-amber-300"
+                          }`}
+                        >
+                          {item.badge}
+                        </span>
+                      )}
+                      {active && (
+                        <ChevronRight className="h-3.5 w-3.5 text-violet-300/50" />
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser />
+
+      <SidebarFooter className="border-t border-white/[0.05] p-3">
+        <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
+          <div className="flex items-center gap-2.5">
+            <div
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+              style={{
+                background:
+                  "linear-gradient(135deg, #7C3AED 0%, #22D3EE 100%)",
+              }}
+            >
+              {initial}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-semibold text-white">
+                {user?.companyName || "Operador"}
+              </p>
+              <p className="truncate text-[10px] text-white/45">
+                {user?.email || "—"}
+              </p>
+            </div>
+          </div>
+          <div
+            className={`mt-3 inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${kycPill.color}`}
+          >
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${kycPill.dot} shadow-pulse-dot`}
+            />
+            {kycPill.text}
+          </div>
+        </div>
+
+        <a
+          href="https://wa.me/559991519044?text=Ol%C3%A1%20preciso%20de%20ajuda%20com%20a%20ShadowPay."
+          target="_blank"
+          rel="noreferrer"
+          className="mt-2 flex items-center justify-center gap-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] py-1.5 text-[11px] font-medium text-white/55 transition-colors hover:bg-white/[0.05] hover:text-white"
+        >
+          <LifeBuoy className="h-3.5 w-3.5" />
+          Suporte rápido
+        </a>
       </SidebarFooter>
     </Sidebar>
   );
