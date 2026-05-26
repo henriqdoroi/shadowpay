@@ -1,22 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AppSidebar } from "@/components/app-sidebar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import Head from "next/head";
+import { toast } from "sonner";
 import {
   Edit,
   Eye,
@@ -25,10 +11,20 @@ import {
   Plus,
   Building2,
 } from "lucide-react";
-import { toast } from "sonner";
-import Head from "next/head";
-import { motion } from "framer-motion";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
+import ProtectedRoute from "@/components/ProtectedRoute";
+import { LightShell } from "@/components/LightShell";
 import ShadowPanel from "@/components/ShadowPanel";
+
+const API_BASE =
+  "https://shadowpay-api-production.up.railway.app/api/admin";
 
 interface Adquirer {
   id?: string;
@@ -49,84 +45,68 @@ interface Adquirer {
   company_id?: string;
 }
 
-const SHADOW_BG =
-  "radial-gradient(1100px 700px at 85% -10%, #0B1020 0%, #060A14 55%, #03060F 100%)";
+const empty: Adquirer = {
+  reference: "",
+  url: "",
+  passwordfreep: "",
+  txCashIn: 0,
+  txPercentCashIn: 0,
+  txPercentCashOut: 0,
+  txCashOut: 0,
+  publicKey: "",
+  privateKey: "",
+  company_id: "",
+  isActive: true,
+  xgate_user: "",
+  xgate_password: "",
+  xgate_id: "",
+};
 
-export default function AdquerersPage() {
-  const [adquirentes, setAdquirentes] = useState<Adquirer[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isViewMode, setIsViewMode] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [form, setForm] = useState<Adquirer>({
-    reference: "",
-    url: "",
-    passwordfreep: "",
-    txCashIn: 0,
-    txPercentCashIn: 0,
-    txPercentCashOut: 0,
-    txCashOut: 0,
-    publicKey: "",
-    privateKey: "",
-    company_id: "",
-    isActive: true,
-    xgate_user: "",
-    xgate_password: "",
-    xgate_id: "",
-  });
-
-  const API_BASE = "https://shadowpay-api-production.up.railway.app/api/admin";
+function AdquerersContent() {
+  const [list, setList] = useState<Adquirer[]>([]);
+  const [open, setOpen] = useState(false);
+  const [viewMode, setViewMode] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<Adquirer>(empty);
 
   useEffect(() => {
-    fetchAdquirentes();
+    fetchAll();
   }, []);
 
-  const fetchAdquirentes = async () => {
+  const fetchAll = async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Token não encontrado");
-
       const res = await fetch(`${API_BASE}/adquerers`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (!res.ok) throw new Error(`Erro ${res.status}: ${res.statusText}`);
-
-      const response = await res.json();
-      if (!response.success) throw new Error("Falha ao obter adquirentes");
-      setAdquirentes(response.data);
-    } catch (error) {
-      console.error("Erro ao buscar adquirentes:", error);
+      if (!res.ok) throw new Error(`${res.status}`);
+      const j = await res.json();
+      if (!j.success) throw new Error("Falha ao obter adquirentes");
+      setList(j.data);
+    } catch (e) {
+      console.error(e);
       toast.error("Erro ao buscar adquirentes");
     }
   };
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const change = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    const numericFields = [
-      "txCashIn",
-      "txPercentCashIn",
-      "txPercentCashOut",
-      "txCashOut",
-    ];
-
-    setForm((prev) => ({
-      ...prev,
-      [name]: numericFields.includes(name) ? Number(value) : value,
+    const nums = ["txCashIn", "txPercentCashIn", "txPercentCashOut", "txCashOut"];
+    setForm((p) => ({
+      ...p,
+      [name]: nums.includes(name) ? Number(value) : value,
     }));
   };
 
-  const handleSave = async () => {
-    setIsSaving(true);
-
+  const save = async () => {
+    setSaving(true);
     const token = localStorage.getItem("token");
     if (!token) {
       toast.error("Token não encontrado");
-      setIsSaving(false);
+      setSaving(false);
       return;
     }
-
     let payload: Partial<Adquirer> = {
       reference: form.reference,
       url: form.url,
@@ -138,27 +118,17 @@ export default function AdquerersPage() {
       publicKey: form.publicKey,
       privateKey: form.privateKey,
     };
-    const refLower = form.reference?.trim().toLowerCase() || "";
-
-    if (refLower.includes("medusa")) {
-      payload.publicKey = form.publicKey;
-      payload.privateKey = form.privateKey;
-    }
-    if (refLower.includes("pagone")) {
-      payload.publicKey = form.publicKey;
-      payload.privateKey = form.privateKey;
-    }
-    if (refLower.includes("xgate")) {
+    const ref = form.reference?.trim().toLowerCase() || "";
+    if (ref.includes("xgate")) {
       payload.xgate_id = form.xgate_id;
       payload.xgate_user = form.xgate_user;
       payload.xgate_password = form.xgate_password;
     }
-    if (refLower.includes("freepay")) {
+    if (ref.includes("freepay")) {
       payload.company_id = form.company_id;
       payload.privateKey = form.privateKey;
       payload.passwordfreep = form.passwordfreep;
     }
-
     try {
       const res = await fetch(
         form.id ? `${API_BASE}/adquerers/${form.id}` : `${API_BASE}/adquerers`,
@@ -171,55 +141,25 @@ export default function AdquerersPage() {
           body: JSON.stringify(payload),
         }
       );
-
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "Erro ao salvar adquirente");
-      }
-
-      toast.success(
-        form.id
-          ? "Adquirente editado com sucesso"
-          : "Adquirente criado com sucesso"
-      );
-
-      fetchAdquirentes();
-      setIsModalOpen(false);
-      setIsViewMode(false);
-      resetForm();
-    } catch (error: any) {
-      console.error("Erro ao salvar adquirente:", error);
-      toast.error("Erro ao salvar adquirente: " + error.message);
+      const d = await res.json();
+      if (!res.ok || !d.success)
+        throw new Error(d.message || "Erro ao salvar");
+      toast.success(form.id ? "Editado" : "Criado");
+      fetchAll();
+      setOpen(false);
+      setViewMode(false);
+      setForm(empty);
+    } catch (e: any) {
+      toast.error("Erro: " + e.message);
     } finally {
-      setIsSaving(false);
+      setSaving(false);
     }
   };
 
-  const resetForm = () => {
-    setForm({
-      reference: "",
-      url: "",
-      passwordfreep: "",
-      txCashIn: 0,
-      txPercentCashIn: 0,
-      txPercentCashOut: 0,
-      txCashOut: 0,
-      publicKey: "",
-      privateKey: "",
-      company_id: "",
-      isActive: true,
-      xgate_user: "",
-      xgate_password: "",
-      xgate_id: "",
-    });
-  };
-
-  const toggleStatus = async (id: string, current: boolean) => {
+  const toggle = async (id: string, current: boolean) => {
     try {
       const token = localStorage.getItem("token");
-      if (!token) throw new Error("Token não encontrado");
-
+      if (!token) return;
       const res = await fetch(`${API_BASE}/adquerers/${id}`, {
         method: "PATCH",
         headers: {
@@ -228,207 +168,154 @@ export default function AdquerersPage() {
         },
         body: JSON.stringify({ isActive: !current }),
       });
-
-      if (!res.ok) throw new Error(`Erro ${res.status}: ${res.statusText}`);
-
-      fetchAdquirentes();
-    } catch (error) {
-      console.error("Erro ao atualizar status:", error);
+      if (!res.ok) return;
+      fetchAll();
+    } catch (e) {
+      console.error(e);
     }
   };
 
-  const openEditModal = (item: Adquirer, viewOnly = false) => {
+  const edit = (item: Adquirer, viewOnly = false) => {
     setForm({ ...item });
-    setIsViewMode(viewOnly);
-    setIsModalOpen(true);
+    setViewMode(viewOnly);
+    setOpen(true);
   };
 
-  const getStatusBadge = (active: boolean) =>
-    active ? (
-      <span className="inline-block rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-emerald-300">
+  const statusBadge = (a: boolean) =>
+    a ? (
+      <span className="inline-block rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
         Ativo
       </span>
     ) : (
-      <span className="inline-block rounded-full border border-rose-500/30 bg-rose-500/15 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-rose-300">
+      <span className="inline-block rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-semibold text-rose-700">
         Inativo
       </span>
     );
 
-  const renderConditionalFields = () => {
-    const ref = form.reference?.toLowerCase() ?? "";
+  const inputCls =
+    "h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100";
 
-    if (ref.includes("medusa")) {
+  const condFields = () => {
+    const ref = form.reference?.toLowerCase() ?? "";
+    if (ref.includes("medusa") || ref.includes("pagone")) {
       return (
-        <div className="space-y-4">
+        <>
           <div>
-            <Label htmlFor="privateKey">Chave Privada</Label>
-            <Input
-              id="privateKey"
+            <label className="mb-1.5 block text-xs text-slate-500">
+              Chave privada
+            </label>
+            <input
+              type="password"
               name="privateKey"
-              type="password"
-              value={form.privateKey}
-              onChange={handleInputChange}
-              disabled={isViewMode}
+              value={form.privateKey || ""}
+              onChange={change}
+              disabled={viewMode}
+              className={inputCls}
             />
           </div>
           <div>
-            <Label htmlFor="license">License</Label>
-            <Input
-              id="license"
-              name="license"
+            <label className="mb-1.5 block text-xs text-slate-500">
+              Chave pública
+            </label>
+            <input
               type="password"
-              value={form.license || ""}
-              onChange={handleInputChange}
-              disabled={isViewMode}
+              name="publicKey"
+              value={form.publicKey || ""}
+              onChange={change}
+              disabled={viewMode}
+              className={inputCls}
             />
           </div>
-        </div>
+        </>
       );
     }
-
     if (ref.includes("xgate")) {
       return (
-        <div className="space-y-4">
+        <>
           <div>
-            <Label htmlFor="xgate_user">Usuário XGate</Label>
-            <Input
-              id="xgate_user"
+            <label className="mb-1.5 block text-xs text-slate-500">
+              Usuário XGate
+            </label>
+            <input
               name="xgate_user"
               value={form.xgate_user || ""}
-              onChange={handleInputChange}
-              disabled={isViewMode}
+              onChange={change}
+              disabled={viewMode}
+              className={inputCls}
             />
           </div>
           <div>
-            <Label htmlFor="xgate_password">Senha XGate</Label>
-            <Input
-              id="xgate_password"
+            <label className="mb-1.5 block text-xs text-slate-500">
+              Senha XGate
+            </label>
+            <input
               name="xgate_password"
               value={form.xgate_password || ""}
-              onChange={handleInputChange}
-              disabled={isViewMode}
+              onChange={change}
+              disabled={viewMode}
+              className={inputCls}
             />
           </div>
           <div>
-            <Label htmlFor="xgate_id">ID XGate</Label>
-            <Input
-              id="xgate_id"
+            <label className="mb-1.5 block text-xs text-slate-500">
+              ID XGate
+            </label>
+            <input
               name="xgate_id"
               value={form.xgate_id || ""}
-              onChange={handleInputChange}
-              disabled={isViewMode}
+              onChange={change}
+              disabled={viewMode}
+              className={inputCls}
             />
           </div>
-        </div>
-      );
-    }
-    if (ref.includes("medius")) {
-      return (
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="privateKey">Chave Privada</Label>
-            <Input
-              id="privateKey"
-              name="privateKey"
-              type="password"
-              value={form.privateKey || ""}
-              onChange={handleInputChange}
-              disabled={isViewMode}
-            />
-          </div>
-          <div>
-            <Label htmlFor="company_id">Company Id</Label>
-            <Input
-              id="company_id"
-              name="company_id"
-              type="password"
-              value={form.company_id || ""}
-              onChange={handleInputChange}
-              disabled={isViewMode}
-            />
-          </div>
-          <div>
-            <Label htmlFor="passwordfreep">Senha Freepay</Label>
-            <Input
-              id="passwordfreep"
-              name="passwordfreep"
-              type="password"
-              value={form.passwordfreep || ""}
-              onChange={handleInputChange}
-              disabled={isViewMode}
-            />
-          </div>
-        </div>
-      );
-    }
-    if (ref.includes("pagone")) {
-      return (
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="privateKey">Chave Privada</Label>
-            <Input
-              id="privateKey"
-              name="privateKey"
-              type="password"
-              value={form.privateKey || ""}
-              onChange={handleInputChange}
-              disabled={isViewMode}
-            />
-          </div>
-          <div>
-            <Label htmlFor="publicKey">Chave Publica</Label>
-            <Input
-              id="publicKey"
-              name="publicKey"
-              type="password"
-              value={form.publicKey || ""}
-              onChange={handleInputChange}
-              disabled={isViewMode}
-            />
-          </div>
-        </div>
+        </>
       );
     }
     if (ref.includes("freepay")) {
       return (
-        <div className="space-y-4">
+        <>
           <div>
-            <Label htmlFor="privateKey">Chave Privada</Label>
-            <Input
-              id="privateKey"
+            <label className="mb-1.5 block text-xs text-slate-500">
+              Chave privada
+            </label>
+            <input
+              type="password"
               name="privateKey"
-              type="password"
               value={form.privateKey || ""}
-              onChange={handleInputChange}
-              disabled={isViewMode}
+              onChange={change}
+              disabled={viewMode}
+              className={inputCls}
             />
           </div>
           <div>
-            <Label htmlFor="company_id">Company Id</Label>
-            <Input
-              id="company_id"
+            <label className="mb-1.5 block text-xs text-slate-500">
+              Company ID
+            </label>
+            <input
+              type="password"
               name="company_id"
-              type="password"
               value={form.company_id || ""}
-              onChange={handleInputChange}
-              disabled={isViewMode}
+              onChange={change}
+              disabled={viewMode}
+              className={inputCls}
             />
           </div>
           <div>
-            <Label htmlFor="passwordfreep">Senha Freepay</Label>
-            <Input
-              id="passwordfreep"
-              name="passwordfreep"
+            <label className="mb-1.5 block text-xs text-slate-500">
+              Senha Freepay
+            </label>
+            <input
               type="password"
+              name="passwordfreep"
               value={form.passwordfreep || ""}
-              onChange={handleInputChange}
-              disabled={isViewMode}
+              onChange={change}
+              disabled={viewMode}
+              className={inputCls}
             />
           </div>
-        </div>
+        </>
       );
     }
-
     return null;
   };
 
@@ -437,294 +324,287 @@ export default function AdquerersPage() {
       <Head>
         <title>ShadowPay — Adquirentes (Admin)</title>
       </Head>
-
-      <div className="min-h-screen">
-        <SidebarProvider>
-          <AppSidebar />
-          <SidebarInset className="text-white" style={{ background: SHADOW_BG }}>
-            <header className="flex flex-col gap-4 px-4 pt-6 sm:flex-row sm:items-center sm:justify-between lg:px-8">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger className="text-white/60 hover:text-white" />
-                <div>
-                  <h1
-                    className="text-2xl font-bold tracking-tight text-white md:text-[28px]"
-                    style={{ fontFamily: "'Clash Display', sans-serif" }}
-                  >
-                    Adquirentes
-                  </h1>
-                  <p className="mt-1 text-xs text-white/40">
-                    Gerencie integrações com adquirentes (XGate, Medusa,
-                    Pagone, Freepay…)
-                  </p>
-                </div>
-              </div>
-
-              <Dialog
-                open={isModalOpen}
-                onOpenChange={(open) => {
-                  if (!open) setIsViewMode(false);
-                  setIsModalOpen(open);
+      <LightShell>
+        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
+              Admin
+            </p>
+            <h1
+              className="text-[28px] font-bold tracking-tight text-slate-900"
+              style={{
+                fontFamily: "'Clash Display', sans-serif",
+                letterSpacing: "-0.005em",
+              }}
+            >
+              Adquirentes
+            </h1>
+            <p className="mt-1 text-[14px] text-slate-500">
+              Gerencie integrações com adquirentes (XGate, Medusa, Pagone,
+              Freepay…).
+            </p>
+          </div>
+          <Dialog
+            open={open}
+            onOpenChange={(o) => {
+              if (!o) setViewMode(false);
+              setOpen(o);
+            }}
+          >
+            <DialogTrigger asChild>
+              <button
+                onClick={() => {
+                  setForm(empty);
+                  setViewMode(false);
+                  setOpen(true);
+                }}
+                className="inline-flex h-10 items-center gap-2 rounded-xl px-5 text-[13px] font-semibold text-white transition-transform hover:-translate-y-0.5"
+                style={{
+                  background: "#7C3AED",
+                  boxShadow: "0 8px 20px -8px rgba(124,58,237,0.55)",
                 }}
               >
-                <DialogTrigger asChild>
+                <Plus className="h-4 w-4" />
+                Cadastrar novo
+              </button>
+            </DialogTrigger>
+            <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>
+                  {viewMode
+                    ? "Visualizar Adquirente"
+                    : form.id
+                    ? "Editar Adquirente"
+                    : "Novo Adquirente"}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <label className="mb-1.5 block text-xs text-slate-500">
+                    Nome
+                  </label>
+                  <input
+                    name="reference"
+                    value={form.reference}
+                    onChange={change}
+                    disabled={viewMode}
+                    className={inputCls}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs text-slate-500">
+                    URL
+                  </label>
+                  <input
+                    name="url"
+                    value={form.url}
+                    onChange={change}
+                    disabled={viewMode}
+                    className={inputCls}
+                  />
+                </div>
+                {condFields()}
+                <div>
+                  <label className="mb-1.5 block text-xs text-slate-500">
+                    Taxa fixa Cash-In (R$)
+                  </label>
+                  <input
+                    name="txCashIn"
+                    type="number"
+                    step="0.01"
+                    value={form.txCashIn}
+                    onChange={change}
+                    disabled={viewMode}
+                    className={inputCls}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs text-slate-500">
+                    Taxa % Cash-In
+                  </label>
+                  <input
+                    name="txPercentCashIn"
+                    type="number"
+                    step="0.01"
+                    value={form.txPercentCashIn}
+                    onChange={change}
+                    disabled={viewMode}
+                    className={inputCls}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs text-slate-500">
+                    Taxa fixa Cash-Out (R$)
+                  </label>
+                  <input
+                    name="txCashOut"
+                    type="number"
+                    step="0.01"
+                    value={form.txCashOut}
+                    onChange={change}
+                    disabled={viewMode}
+                    className={inputCls}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs text-slate-500">
+                    Taxa % Cash-Out
+                  </label>
+                  <input
+                    name="txPercentCashOut"
+                    type="number"
+                    step="0.01"
+                    value={form.txPercentCashOut}
+                    onChange={change}
+                    disabled={viewMode}
+                    className={inputCls}
+                  />
+                </div>
+
+                {!viewMode && (
                   <button
-                    onClick={() => {
-                      resetForm();
-                      setIsViewMode(false);
-                      setIsModalOpen(true);
-                    }}
-                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
-                    style={{
-                      background: "linear-gradient(120deg, #7C3AED, #6366F1)",
-                      boxShadow: "0 14px 36px -14px rgba(124,58,237,0.7)",
-                    }}
+                    onClick={save}
+                    disabled={saving}
+                    className="w-full rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+                    style={{ background: "#7C3AED" }}
                   >
-                    <Plus className="h-4 w-4" />
-                    Cadastrar novo
+                    {saving ? "Salvando…" : form.id ? "Atualizar" : "Salvar"}
                   </button>
-                </DialogTrigger>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </header>
 
-                <DialogContent className="max-h-[88vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>
-                      {isViewMode
-                        ? "Visualizar Adquirente"
-                        : form.id
-                        ? "Editar Adquirente"
-                        : "Novo Adquirente"}
-                    </DialogTitle>
-                  </DialogHeader>
-
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="reference">Nome</Label>
-                      <Input
-                        id="reference"
-                        name="reference"
-                        value={form.reference}
-                        onChange={handleInputChange}
-                        disabled={isViewMode}
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="url">URL</Label>
-                      <Input
-                        id="url"
-                        name="url"
-                        value={form.url}
-                        onChange={handleInputChange}
-                        disabled={isViewMode}
-                      />
-                    </div>
-
-                    {renderConditionalFields()}
-
-                    <div>
-                      <Label htmlFor="txCashIn">Taxa Fixa Cash-In (R$)</Label>
-                      <Input
-                        id="txCashIn"
-                        name="txCashIn"
-                        type="number"
-                        step="0.01"
-                        value={form.txCashIn}
-                        onChange={handleInputChange}
-                        disabled={isViewMode}
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="txPercentCashIn">
-                        Taxa Percentual Cash-In (%)
-                      </Label>
-                      <Input
-                        id="txPercentCashIn"
-                        name="txPercentCashIn"
-                        type="number"
-                        step="0.01"
-                        value={form.txPercentCashIn}
-                        onChange={handleInputChange}
-                        disabled={isViewMode}
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="txCashOut">Taxa Fixa Cash-Out (R$)</Label>
-                      <Input
-                        id="txCashOut"
-                        name="txCashOut"
-                        type="number"
-                        step="0.01"
-                        value={form.txCashOut}
-                        onChange={handleInputChange}
-                        disabled={isViewMode}
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="txPercentCashOut">
-                        Taxa Percentual Cash-Out (%)
-                      </Label>
-                      <Input
-                        id="txPercentCashOut"
-                        name="txPercentCashOut"
-                        type="number"
-                        step="0.01"
-                        value={form.txPercentCashOut}
-                        onChange={handleInputChange}
-                        disabled={isViewMode}
-                      />
-                    </div>
-
-                    {!isViewMode && (
-                      <Button
-                        className="cursor-pointer"
-                        onClick={handleSave}
-                        disabled={isSaving}
-                      >
-                        {isSaving
-                          ? "Salvando…"
-                          : form.id
-                          ? "Atualizar"
-                          : "Salvar"}
-                      </Button>
-                    )}
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </header>
-
-            <main className="flex flex-col gap-5 p-4 lg:p-8">
-              <motion.div
-                initial={{ opacity: 0, y: 18 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] backdrop-blur-xl"
-              >
-                <div className="border-b border-white/[0.06] px-5 py-4">
-                  <h2
-                    className="flex items-center gap-2 text-sm font-semibold text-white"
-                    style={{ fontFamily: "'Clash Display', sans-serif" }}
-                  >
-                    <Building2 className="h-4 w-4 text-violet-300" />
-                    Adquirentes cadastrados
-                  </h2>
+        <div
+          className="overflow-hidden rounded-2xl"
+          style={{
+            background: "#FFFFFF",
+            border: "1px solid rgba(15,23,42,0.06)",
+            boxShadow:
+              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+          }}
+        >
+          <div
+            className="px-5 py-4"
+            style={{ borderBottom: "1px solid rgba(15,23,42,0.06)" }}
+          >
+            <h2
+              className="flex items-center gap-2 text-[14px] font-semibold text-slate-900"
+              style={{ fontFamily: "'Clash Display', sans-serif" }}
+            >
+              <Building2 className="h-4 w-4 text-violet-500" />
+              Adquirentes cadastrados
+            </h2>
+          </div>
+          <div className="p-4">
+            {list.length === 0 ? (
+              <div className="py-14 text-center">
+                <Building2 className="mx-auto mb-3 h-7 w-7 text-violet-300" />
+                <p className="text-sm font-medium text-slate-600">
+                  Nenhum adquirente cadastrado
+                </p>
+                <p className="mt-1 text-xs text-slate-400">
+                  Cadastre o primeiro PSP para começar.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="hidden grid-cols-12 gap-2 px-4 pb-2 text-[10px] uppercase tracking-[0.16em] text-slate-400 md:grid">
+                  <div className="col-span-3">Nome</div>
+                  <div className="col-span-4">URL</div>
+                  <div className="col-span-3">Chave APK</div>
+                  <div className="col-span-1">Status</div>
+                  <div className="col-span-1 text-right">Ações</div>
                 </div>
-
-                <div className="p-4">
-                  {adquirentes.length === 0 ? (
-                    <div className="py-14 text-center">
-                      <Building2 className="mx-auto mb-3 h-7 w-7 text-violet-400/40" />
-                      <p className="text-sm font-medium text-white/60">
-                        Nenhum adquirente cadastrado
-                      </p>
-                      <p className="mt-1 text-xs text-white/35">
-                        Cadastre o primeiro PSP para começar.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {/* Cabeçalho desktop */}
-                      <div className="hidden grid-cols-12 gap-2 border-b border-white/[0.06] px-4 pb-2 text-[11px] uppercase tracking-wider text-white/40 md:grid">
-                        <div className="col-span-3">Nome</div>
-                        <div className="col-span-4">URL</div>
-                        <div className="col-span-3">Chave APK</div>
-                        <div className="col-span-1">Status</div>
-                        <div className="col-span-1 text-right">Ações</div>
+                {list.map((item) => {
+                  const apk =
+                    item.reference === "FREEPAY"
+                      ? item.passwordfreep
+                        ? item.passwordfreep.slice(0, 4) + "••••••••"
+                        : ""
+                      : item.privateKey
+                      ? item.privateKey.slice(0, 4) + "••••••••"
+                      : item.xgate_user
+                      ? item.xgate_user.slice(0, 4) + "••••••••"
+                      : "";
+                  return (
+                    <div
+                      key={item.id}
+                      className="rounded-xl border border-slate-200 bg-white p-4 transition-colors hover:bg-slate-50 md:grid md:grid-cols-12 md:items-center md:gap-2"
+                    >
+                      <div className="space-y-1.5 text-sm md:hidden">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-slate-900">
+                            {item.reference}
+                          </span>
+                          {statusBadge(item.isActive)}
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          <strong className="text-slate-700">URL:</strong>{" "}
+                          {item.url}
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          <strong className="text-slate-700">APK:</strong>{" "}
+                          <span className="font-mono">{apk}</span>
+                        </div>
                       </div>
-
-                      {adquirentes.map((item) => {
-                        const apk =
-                          item.reference === "FREEPAY"
-                            ? item.passwordfreep
-                              ? item.passwordfreep.slice(0, 4) + "••••••••"
-                              : ""
-                            : item.privateKey
-                            ? item.privateKey.slice(0, 4) + "••••••••"
-                            : item.xgate_user
-                            ? item.xgate_user.slice(0, 4) + "••••••••"
-                            : "";
-
-                        return (
-                          <div
-                            key={item.id}
-                            className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 transition-colors hover:bg-white/[0.04] md:grid md:grid-cols-12 md:items-center md:gap-2"
-                          >
-                            {/* Mobile */}
-                            <div className="space-y-1.5 text-sm md:hidden">
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium text-white/90">
-                                  {item.reference}
-                                </span>
-                                {getStatusBadge(item.isActive)}
-                              </div>
-                              <div className="text-xs text-white/55">
-                                <strong className="text-white/65">URL:</strong>{" "}
-                                {item.url}
-                              </div>
-                              <div className="text-xs text-white/55">
-                                <strong className="text-white/65">
-                                  Chave APK:
-                                </strong>{" "}
-                                <span className="font-mono">{apk}</span>
-                              </div>
-                            </div>
-
-                            {/* Desktop */}
-                            <div className="hidden font-medium text-white/90 md:col-span-3 md:block">
-                              {item.reference}
-                            </div>
-                            <div className="hidden truncate text-xs text-white/55 md:col-span-4 md:block">
-                              {item.url}
-                            </div>
-                            <div className="hidden font-mono text-xs text-white/55 md:col-span-3 md:block">
-                              {apk}
-                            </div>
-                            <div className="hidden md:col-span-1 md:block">
-                              {getStatusBadge(item.isActive)}
-                            </div>
-
-                            <div className="flex items-center justify-end gap-1.5 md:col-span-1">
-                              <button
-                                onClick={() => openEditModal(item, true)}
-                                title="Visualizar"
-                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/70 transition-colors hover:bg-white/[0.07] hover:text-white"
-                              >
-                                <Eye className="h-3.5 w-3.5" />
-                              </button>
-                              <button
-                                onClick={() => openEditModal(item, false)}
-                                title="Editar"
-                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/70 transition-colors hover:bg-white/[0.07] hover:text-white"
-                              >
-                                <Edit className="h-3.5 w-3.5" />
-                              </button>
-                              <button
-                                onClick={() =>
-                                  toggleStatus(item.id!, item.isActive)
-                                }
-                                title={item.isActive ? "Inativar" : "Ativar"}
-                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/70 transition-colors hover:bg-white/[0.07] hover:text-white"
-                              >
-                                {item.isActive ? (
-                                  <ToggleLeft className="h-4 w-4 text-emerald-400" />
-                                ) : (
-                                  <ToggleRight className="h-4 w-4 text-rose-400" />
-                                )}
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
+                      <div className="hidden font-medium text-slate-900 md:col-span-3 md:block">
+                        {item.reference}
+                      </div>
+                      <div className="hidden truncate text-xs text-slate-500 md:col-span-4 md:block">
+                        {item.url}
+                      </div>
+                      <div className="hidden font-mono text-xs text-slate-500 md:col-span-3 md:block">
+                        {apk}
+                      </div>
+                      <div className="hidden md:col-span-1 md:block">
+                        {statusBadge(item.isActive)}
+                      </div>
+                      <div className="flex items-center justify-end gap-1.5 md:col-span-1">
+                        <button
+                          onClick={() => edit(item, true)}
+                          title="Visualizar"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => edit(item, false)}
+                          title="Editar"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => toggle(item.id!, item.isActive)}
+                          title={item.isActive ? "Inativar" : "Ativar"}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                        >
+                          {item.isActive ? (
+                            <ToggleLeft className="h-4 w-4 text-emerald-600" />
+                          ) : (
+                            <ToggleRight className="h-4 w-4 text-rose-600" />
+                          )}
+                        </button>
+                      </div>
                     </div>
-                  )}
-                </div>
-              </motion.div>
-            </main>
-          </SidebarInset>
-        </SidebarProvider>
-        <ShadowPanel />
-      </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </LightShell>
+      <ShadowPanel />
     </>
+  );
+}
+
+export default function AdquerersPage() {
+  return (
+    <ProtectedRoute>
+      <AdquerersContent />
+    </ProtectedRoute>
   );
 }
