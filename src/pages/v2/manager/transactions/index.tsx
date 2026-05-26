@@ -1,38 +1,9 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   CheckCircle,
   Clock,
@@ -40,10 +11,15 @@ import {
   XCircle,
   ChevronLeft,
   ChevronRight,
+  Filter,
+  Activity,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import Head from "next/head";
+import { motion } from "framer-motion";
+import ShadowPanel from "@/components/ShadowPanel";
 
 interface Transaction {
   id: string;
@@ -104,80 +80,84 @@ interface Filters {
   transactionType?: string;
 }
 
+const SHADOW_BG =
+  "radial-gradient(1100px 700px at 85% -10%, #0B1020 0%, #060A14 55%, #03060F 100%)";
+
 const formatCurrency = (value: string | number) => {
   const numValue = typeof value === "string" ? parseFloat(value) : value;
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
-  }).format(numValue);
+  }).format(numValue || 0);
 };
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString("pt-BR", {
+const formatDate = (dateString: string) =>
+  new Date(dateString).toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
   });
-};
 
 const getStatusBadge = (status: string) => {
-  const statusConfig = {
+  const map: Record<
+    string,
+    { color: string; label: string; Icon: any }
+  > = {
     APPROVED: {
+      color: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
       label: "Aprovada",
-      variant: "default" as const,
-      icon: CheckCircle,
-      color: "text-green-600",
+      Icon: CheckCircle,
     },
     PENDING: {
+      color: "bg-amber-500/15 text-amber-300 border-amber-500/30",
       label: "Pendente",
-      variant: "secondary" as const,
-      icon: Clock,
-      color: "text-yellow-600",
+      Icon: Clock,
     },
     REJECTED: {
+      color: "bg-rose-500/15 text-rose-300 border-rose-500/30",
       label: "Rejeitada",
-      variant: "destructive" as const,
-      icon: XCircle,
-      color: "text-red-600",
+      Icon: XCircle,
     },
     CANCELLED: {
+      color: "bg-white/10 text-white/55 border-white/15",
       label: "Cancelada",
-      variant: "outline" as const,
-      icon: AlertCircle,
-      color: "text-gray-600",
+      Icon: AlertCircle,
     },
   };
-
-  const config = statusConfig[status as keyof typeof statusConfig];
-  if (!config) return null;
-
-  const Icon = config.icon;
-
+  const cfg = map[status] ?? {
+    color: "bg-white/10 text-white/60 border-white/15",
+    label: status,
+    Icon: AlertCircle,
+  };
+  const Icon = cfg.Icon;
   return (
-    <Badge variant={config.variant} className="flex items-center gap-1">
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide ${cfg.color}`}
+    >
       <Icon className="h-3 w-3" />
-      {config.label}
-    </Badge>
+      {cfg.label}
+    </span>
   );
 };
+
 const getTransactionTypeText = (type: string) => {
-  const types = {
+  const types: Record<string, string> = {
     DEPOSIT: "Depósito",
-    WITHDRAW: "Saque", // Alterado para WITHDRAW
+    WITHDRAW: "Saque",
   };
-  return types[type.toUpperCase() as keyof typeof types] || type;
+  return types[type?.toUpperCase()] || type || "—";
 };
 
 const getPaymentMethodText = (method: string) => {
-  const methods = {
+  const methods: Record<string, string> = {
     PIX: "PIX",
     CARD: "Cartão",
     BOLETO: "Boleto",
     CRYPTO: "Cripto",
   };
-  return methods[method as keyof typeof methods] || method;
+  return methods[method] || method;
 };
 
 export default function TransactionsPage() {
@@ -196,7 +176,6 @@ export default function TransactionsPage() {
     limit: 20,
   });
 
-  // Função para buscar as transações com base nos filtros e token
   const fetchTransactions = async () => {
     try {
       setLoading(true);
@@ -211,7 +190,7 @@ export default function TransactionsPage() {
       const queryParams = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
         if (value && value !== "all") {
-          const paramKey = key === "transactionType" ? "transaction_type" : key; // <-- ajuste aqui
+          const paramKey = key === "transactionType" ? "transaction_type" : key;
           queryParams.append(paramKey, value.toString());
         }
       });
@@ -240,14 +219,13 @@ export default function TransactionsPage() {
     }
   };
 
-  // Atualiza a lista sempre que filtros ou token mudam
   useEffect(() => {
     if (token) {
       fetchTransactions();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, token]);
 
-  // Atualiza filtros e reseta página para 1 se filtro diferente de página for alterado
   const handleFilterChange = (key: keyof Filters, value: string | number) => {
     const filterValue = value === "all" ? undefined : value;
     setFilters((prev) => ({
@@ -257,324 +235,324 @@ export default function TransactionsPage() {
     }));
   };
 
+  const inputCls =
+    "h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-violet-500/50 focus:bg-white/[0.05] [color-scheme:dark]";
+  const selectCls =
+    "h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 text-sm text-white outline-none transition-colors focus:border-violet-500/50 [color-scheme:dark]";
+
   return (
     <ProtectedRoute>
+      <Head>
+        <title>ShadowPay — Transações (Admin)</title>
+      </Head>
       <div className="min-h-screen">
         <SidebarProvider>
           <AppSidebar />
-          <SidebarInset>
-            <header className="flex h-16 shrink-0 items-center gap-2">
-              <div className="flex items-center gap-2 px-4">
-                <SidebarTrigger className="-ml-1" />
-                <Separator
-                  orientation="vertical"
-                  className="mr-2 data-[orientation=vertical]:h-4"
-                />
-                <Breadcrumb>
-                  <BreadcrumbList>
-                    <BreadcrumbItem className="hidden md:block">
-                      <BreadcrumbLink href="#">Safira Cash</BreadcrumbLink>
-                    </BreadcrumbItem>
-                    <BreadcrumbSeparator className="hidden md:block" />
-                    <BreadcrumbItem className="hidden md:block">
-                      <BreadcrumbLink href="/v2/manager">
-                        Administrativo
-                      </BreadcrumbLink>
-                    </BreadcrumbItem>
-                    <BreadcrumbSeparator className="hidden md:block" />
-                    <BreadcrumbItem>
-                      <BreadcrumbPage>Transações</BreadcrumbPage>
-                    </BreadcrumbItem>
-                  </BreadcrumbList>
-                </Breadcrumb>
+          <SidebarInset className="text-white" style={{ background: SHADOW_BG }}>
+            <header className="flex items-center gap-3 px-4 pt-6 lg:px-8">
+              <SidebarTrigger className="text-white/60 hover:text-white" />
+              <div>
+                <h1
+                  className="text-2xl font-bold tracking-tight text-white md:text-[28px]"
+                  style={{ fontFamily: "'Clash Display', sans-serif" }}
+                >
+                  Gerenciamento de Transações
+                </h1>
+                <p className="mt-1 text-xs text-white/40">
+                  Monitore todas as transações da plataforma em tempo real
+                </p>
               </div>
             </header>
 
-            <div className="flex flex-1 flex-col gap-6 p-4 pt-0 min-h-screen">
-              {/* Título */}
-              <div className="space-y-2">
-                <h1 className="text-3xl font-bold tracking-tight">
-                  Gerenciamento de Transações
-                </h1>
-                <p className="text-muted-foreground">
-                  Monitore e gerencie todas as transações da plataforma em tempo
-                  real.
-                </p>
-              </div>
-
+            <main className="flex flex-col gap-5 p-4 lg:p-8">
               {/* Filtros */}
-              <Card className="p-6 min-w-[280px] max-w-[360px] w-full md:min-w-auto md:max-w-none flex flex-col justify-between">
-                <CardHeader>
-                  <CardTitle>Filtros</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    {/* Status */}
-                    <div className="space-y-2">
-                      <Label htmlFor="status">Status</Label>
-                      <Select
-                        value={filters.status || "all"}
-                        onValueChange={(value) =>
-                          handleFilterChange("status", value)
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl"
+              >
+                <div className="mb-4 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
+                  <Filter className="h-3.5 w-3.5" /> Filtros
+                </div>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-5">
+                  <div>
+                    <label className="mb-1.5 block text-xs text-white/50">
+                      Status
+                    </label>
+                    <select
+                      className={selectCls}
+                      value={filters.status || "all"}
+                      onChange={(e) =>
+                        handleFilterChange("status", e.target.value)
+                      }
+                    >
+                      {[
+                        { v: "all", l: "Todos os status" },
+                        { v: "PENDING", l: "Pendente" },
+                        { v: "APPROVED", l: "Aprovada" },
+                        { v: "REJECTED", l: "Rejeitada" },
+                        { v: "CANCELLED", l: "Cancelada" },
+                      ].map((o) => (
+                        <option key={o.v} value={o.v} className="bg-[#0B1020]">
+                          {o.l}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-xs text-white/50">
+                      Método de pagamento
+                    </label>
+                    <select
+                      className={selectCls}
+                      value={filters.paymentMethod || "all"}
+                      onChange={(e) =>
+                        handleFilterChange("paymentMethod", e.target.value)
+                      }
+                    >
+                      {[
+                        { v: "all", l: "Todos os métodos" },
+                        { v: "PIX", l: "PIX" },
+                        { v: "CARD", l: "Cartão" },
+                        { v: "BOLETO", l: "Boleto" },
+                        { v: "CRYPTO", l: "Cripto" },
+                      ].map((o) => (
+                        <option key={o.v} value={o.v} className="bg-[#0B1020]">
+                          {o.l}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-xs text-white/50">
+                      Tipo de transação
+                    </label>
+                    <select
+                      className={selectCls}
+                      value={filters.transactionType || "all"}
+                      onChange={(e) =>
+                        handleFilterChange("transactionType", e.target.value)
+                      }
+                    >
+                      {[
+                        { v: "all", l: "Todos os tipos" },
+                        { v: "DEPOSIT", l: "Depósitos" },
+                        { v: "WITHDRAW", l: "Saques" },
+                      ].map((o) => (
+                        <option key={o.v} value={o.v} className="bg-[#0B1020]">
+                          {o.l}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-xs text-white/50">
+                      Data inicial
+                    </label>
+                    <input
+                      type="date"
+                      value={filters.startDate || ""}
+                      onChange={(e) =>
+                        handleFilterChange("startDate", e.target.value)
+                      }
+                      className={inputCls}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-xs text-white/50">
+                      Data final
+                    </label>
+                    <input
+                      type="date"
+                      value={filters.endDate || ""}
+                      onChange={(e) =>
+                        handleFilterChange("endDate", e.target.value)
+                      }
+                      className={inputCls}
+                    />
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Tabela */}
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] backdrop-blur-xl"
+              >
+                <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
+                  <h2
+                    className="text-sm font-semibold text-white"
+                    style={{ fontFamily: "'Clash Display', sans-serif" }}
+                  >
+                    Lista de transações
+                  </h2>
+                  <span className="text-xs text-white/40">
+                    {pagination.total}{" "}
+                    {pagination.total === 1 ? "transação" : "transações"}
+                  </span>
+                </div>
+
+                {error && (
+                  <div className="m-4 rounded-xl border border-rose-500/30 bg-rose-500/[0.07] p-3 text-sm text-rose-300">
+                    {error}
+                  </div>
+                )}
+
+                <div className="overflow-x-auto p-2 sm:p-4">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="text-[11px] uppercase tracking-wider text-white/40">
+                        <th className="px-3 py-2 font-medium">ID</th>
+                        <th className="px-3 py-2 font-medium">Vendedor</th>
+                        <th className="px-3 py-2 font-medium">Cliente</th>
+                        <th className="px-3 py-2 font-medium">Produto</th>
+                        <th className="px-3 py-2 font-medium">Tipo</th>
+                        <th className="px-3 py-2 font-medium">Valor</th>
+                        <th className="px-3 py-2 font-medium">Método</th>
+                        <th className="px-3 py-2 font-medium">Status</th>
+                        <th className="px-3 py-2 font-medium">Data</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loading ? (
+                        Array.from({ length: 6 }).map((_, i) => (
+                          <tr
+                            key={i}
+                            className="animate-pulse border-t border-white/[0.05]"
+                          >
+                            {Array.from({ length: 9 }).map((__, j) => (
+                              <td key={j} className="px-3 py-3">
+                                <div className="h-4 w-full max-w-[120px] rounded bg-white/10" />
+                              </td>
+                            ))}
+                          </tr>
+                        ))
+                      ) : transactions.length === 0 ? (
+                        <tr>
+                          <td colSpan={9} className="py-14 text-center">
+                            <Activity className="mx-auto mb-3 h-7 w-7 text-violet-400/40" />
+                            <p className="text-sm font-medium text-white/60">
+                              Nenhuma transação encontrada
+                            </p>
+                          </td>
+                        </tr>
+                      ) : (
+                        transactions.map((transaction) => (
+                          <tr
+                            key={transaction.id}
+                            className="border-t border-white/[0.05] transition-colors hover:bg-white/[0.03]"
+                          >
+                            <td className="px-3 py-3 font-mono text-xs text-white/70">
+                              {transaction.transactionId}
+                            </td>
+                            <td className="px-3 py-3">
+                              <p className="font-medium text-white/90">
+                                {transaction.seller.companyName}
+                              </p>
+                              <p className="text-xs text-white/40">
+                                {transaction.seller.email}
+                              </p>
+                            </td>
+                            <td className="px-3 py-3">
+                              {transaction.customer ? (
+                                <>
+                                  <p className="text-white/85">
+                                    {transaction.customer.name}
+                                  </p>
+                                  <p className="text-xs text-white/40">
+                                    {transaction.customer.email}
+                                  </p>
+                                </>
+                              ) : (
+                                <span className="text-white/35">N/A</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-3">
+                              {transaction.product ? (
+                                <>
+                                  <p className="text-white/85">
+                                    {transaction.product.name}
+                                  </p>
+                                  <p className="text-xs text-white/40">
+                                    {formatCurrency(transaction.product.price)}
+                                  </p>
+                                </>
+                              ) : (
+                                <span className="text-white/35">N/A</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-3 text-xs text-white/70">
+                              {getTransactionTypeText(
+                                transaction.transactionType
+                              )}
+                            </td>
+                            <td className="px-3 py-3 font-medium text-white/90">
+                              {formatCurrency(transaction.amount)}
+                            </td>
+                            <td className="px-3 py-3 text-xs text-white/65">
+                              {getPaymentMethodText(transaction.paymentMethod)}
+                            </td>
+                            <td className="px-3 py-3">
+                              {getStatusBadge(transaction.status)}
+                            </td>
+                            <td className="px-3 py-3 text-xs text-white/50">
+                              {formatDate(transaction.createdAt)}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {pagination.pages > 1 && (
+                  <div className="flex flex-col gap-3 border-t border-white/[0.06] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="text-center text-xs text-white/40 sm:text-left">
+                      Mostrando{" "}
+                      {(pagination.page - 1) * pagination.limit + 1} a{" "}
+                      {Math.min(
+                        pagination.page * pagination.limit,
+                        pagination.total
+                      )}{" "}
+                      de {pagination.total} transações
+                    </div>
+                    <div className="flex items-center justify-center gap-1.5">
+                      <button
+                        onClick={() =>
+                          handleFilterChange("page", pagination.page - 1)
                         }
+                        disabled={pagination.page <= 1}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/70 transition-colors hover:bg-white/[0.07] disabled:opacity-40"
                       >
-                        <SelectTrigger className="cursor-pointer">
-                          <SelectValue placeholder="Todos os status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todos os status</SelectItem>
-                          <SelectItem value="PENDING">Pendente</SelectItem>
-                          <SelectItem value="APPROVED">Aprovada</SelectItem>
-                          <SelectItem value="REJECTED">Rejeitada</SelectItem>
-                          <SelectItem value="CANCELLED">Cancelada</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Método de Pagamento */}
-                    <div className="space-y-2">
-                      <Label htmlFor="paymentMethod">Método de Pagamento</Label>
-                      <Select
-                        value={filters.paymentMethod || "all"}
-                        onValueChange={(value) =>
-                          handleFilterChange("paymentMethod", value)
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <span className="px-2 text-xs text-white/55">
+                        {pagination.page} / {pagination.pages}
+                      </span>
+                      <button
+                        onClick={() =>
+                          handleFilterChange("page", pagination.page + 1)
                         }
+                        disabled={pagination.page >= pagination.pages}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/70 transition-colors hover:bg-white/[0.07] disabled:opacity-40"
                       >
-                        <SelectTrigger className="cursor-pointer">
-                          <SelectValue placeholder="Todos os métodos" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todos os métodos</SelectItem>
-                          <SelectItem value="PIX">PIX</SelectItem>
-                          <SelectItem value="CARD">Cartão</SelectItem>
-                          <SelectItem value="BOLETO">Boleto</SelectItem>
-                          <SelectItem value="CRYPTO">Cripto</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Tipo de Transação */}
-                    <div className="space-y-2">
-                      <Label htmlFor="transactionType">Tipo de Transação</Label>
-                      <Select
-                        value={filters.transactionType || "all"}
-                        onValueChange={(value) =>
-                          handleFilterChange("transactionType", value)
-                        }
-                      >
-                        <SelectTrigger className="cursor-pointer">
-                          <SelectValue placeholder="Todos os tipos" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todos os tipos</SelectItem>
-                          <SelectItem value="DEPOSIT">Depósitos</SelectItem>
-                          <SelectItem value="WITHDRAW">Saques</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Data Inicial */}
-                    <div className="space-y-2">
-                      <Label htmlFor="startDate">Data Inicial</Label>
-                      <Input
-                        className="cursor-pointer"
-                        id="startDate"
-                        type="date"
-                        value={filters.startDate || ""}
-                        onChange={(e) =>
-                          handleFilterChange("startDate", e.target.value)
-                        }
-                      />
-                    </div>
-
-                    {/* Data Final */}
-                    <div className="space-y-2">
-                      <Label htmlFor="endDate">Data Final</Label>
-                      <Input
-                        className="cursor-pointer"
-                        id="endDate"
-                        type="date"
-                        value={filters.endDate || ""}
-                        onChange={(e) =>
-                          handleFilterChange("endDate", e.target.value)
-                        }
-                      />
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Tabela de Transações */}
-              <Card className="w-full p-6 flex flex-col min-w-[280px] max-w-[360px] md:min-w-auto md:max-w-none md:p-6">
-                <CardHeader>
-                  <CardTitle>Lista de Transações</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0 mt-2 flex flex-col gap-4 w-full">
-                  {error && (
-                    <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-                      <p className="text-red-600">{error}</p>
-                    </div>
-                  )}
-
-                  {loading ? (
-                    <div className="flex justify-center items-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="rounded-md border w-full overflow-x-auto">
-                        <Table className="w-full">
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>ID</TableHead>
-                              <TableHead>Vendedor</TableHead>
-                              <TableHead>Cliente</TableHead>
-                              <TableHead>Produto</TableHead>
-                              <TableHead>Tipo</TableHead>
-                              <TableHead>Valor</TableHead>
-                              <TableHead>Método</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead>Data</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {transactions.length === 0 ? (
-                              <TableRow>
-                                <TableCell
-                                  colSpan={9}
-                                  className="text-center py-8"
-                                >
-                                  Nenhuma transação encontrada
-                                </TableCell>
-                              </TableRow>
-                            ) : (
-                              transactions.map((transaction) => (
-                                <TableRow key={transaction.id}>
-                                  <TableCell className="font-mono text-xs">
-                                    {transaction.transactionId}
-                                  </TableCell>
-                                  <TableCell>
-                                    <div>
-                                      <div className="font-medium">
-                                        {transaction.seller.companyName}
-                                      </div>
-                                      <div className="text-xs text-muted-foreground">
-                                        {transaction.seller.email}
-                                      </div>
-                                    </div>
-                                  </TableCell>
-                                  <TableCell>
-                                    {transaction.customer ? (
-                                      <div>
-                                        <div className="font-medium">
-                                          {transaction.customer.name}
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                          {transaction.customer.email}
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <span className="text-muted-foreground">
-                                        N/A
-                                      </span>
-                                    )}
-                                  </TableCell>
-                                  <TableCell>
-                                    {transaction.product ? (
-                                      <div>
-                                        <div className="font-medium">
-                                          {transaction.product.name}
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                          {formatCurrency(
-                                            transaction.product.price
-                                          )}
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <span className="text-muted-foreground">
-                                        N/A
-                                      </span>
-                                    )}
-                                  </TableCell>
-
-                                  <TableCell>
-                                    {getTransactionTypeText(
-                                      transaction.transactionType
-                                    )}
-                                  </TableCell>
-
-                                  <TableCell className="font-medium">
-                                    {formatCurrency(transaction.amount)}
-                                  </TableCell>
-                                  <TableCell>
-                                    {getPaymentMethodText(
-                                      transaction.paymentMethod
-                                    )}
-                                  </TableCell>
-                                  <TableCell>
-                                    {getStatusBadge(transaction.status)}
-                                  </TableCell>
-                                  <TableCell>
-                                    {formatDate(transaction.createdAt)}
-                                  </TableCell>
-                                </TableRow>
-                              ))
-                            )}
-                          </TableBody>
-                        </Table>
-                      </div>
-
-                      {/* Paginação */}
-                      {pagination.pages > 1 && (
-                        <div className="flex flex-col gap-3 mt-4 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="text-sm text-muted-foreground text-center sm:text-left">
-                            Mostrando{" "}
-                            {(pagination.page - 1) * pagination.limit + 1} a{" "}
-                            {Math.min(
-                              pagination.page * pagination.limit,
-                              pagination.total
-                            )}{" "}
-                            de {pagination.total} transações
-                          </div>
-                          <div className="flex items-center justify-center space-x-1 sm:space-x-2">
-                            <Button
-                              className="cursor-pointer"
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleFilterChange("page", pagination.page - 1)
-                              }
-                              disabled={pagination.page <= 1}
-                            >
-                              <ChevronLeft className="h-4 w-4" />
-                              Anterior
-                            </Button>
-                            <span className="text-sm">
-                              Página {pagination.page} de {pagination.pages}
-                            </span>
-                            <Button
-                              className="cursor-pointer"
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleFilterChange("page", pagination.page + 1)
-                              }
-                              disabled={pagination.page >= pagination.pages}
-                            >
-                              Próxima
-                              <ChevronRight className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+                )}
+              </motion.div>
+            </main>
           </SidebarInset>
         </SidebarProvider>
+        <ShadowPanel />
       </div>
     </ProtectedRoute>
   );

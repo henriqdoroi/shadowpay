@@ -1,23 +1,19 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { Eye, EyeOff, Save, Settings, CreditCard } from 'lucide-react';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/app-sidebar';
+import React, { useState } from "react";
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
-import { SidebarTrigger } from '@/components/ui/sidebar';
+  Eye,
+  EyeOff,
+  Save,
+  Settings,
+  CreditCard,
+  Key,
+  ArrowDown,
+  ArrowUp,
+} from "lucide-react";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
+import Head from "next/head";
+import { motion } from "framer-motion";
+import ShadowPanel from "@/components/ShadowPanel";
 
 interface PSPConfig {
   isActive: boolean;
@@ -28,313 +24,348 @@ interface PSPConfig {
   secretKey: string;
 }
 
+const SHADOW_BG =
+  "radial-gradient(1100px 700px at 85% -10%, #0B1020 0%, #060A14 55%, #03060F 100%)";
+
 export default function PSPKeyPage() {
   const [config, setConfig] = useState<PSPConfig>({
     isActive: true,
-    cashinFixedFee: '0.50',
-    cashinPercentageFee: '2.99',
-    cashoutFixedFee: '1.00',
-    cashoutPercentageFee: '1.50',
-    secretKey: 'sk_test_4eC39HqLyjWDarjtT1zdp7dc'
+    cashinFixedFee: "0.50",
+    cashinPercentageFee: "2.99",
+    cashoutFixedFee: "1.00",
+    cashoutPercentageFee: "1.50",
+    secretKey: "sk_test_4eC39HqLyjWDarjtT1zdp7dc",
   });
 
   const [showSecretKey, setShowSecretKey] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleConfigChange = (field: keyof PSPConfig, value: string | boolean) => {
-    setConfig(prev => ({
+  const handleConfigChange = (
+    field: keyof PSPConfig,
+    value: string | boolean
+  ) => {
+    setConfig((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
   const handleSave = async () => {
     setIsLoading(true);
-    // Simular chamada da API
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise((resolve) => setTimeout(resolve, 1500));
     setIsLoading(false);
-    alert('Configurações salvas com sucesso!');
+    alert("Configurações salvas com sucesso!");
   };
 
   const formatCurrency = (value: string) => {
-    const numValue = parseFloat(value || '0');
+    const numValue = parseFloat(value || "0");
     return `R$ ${numValue.toFixed(2)}`;
   };
 
   const formatPercentage = (value: string) => {
-    const numValue = parseFloat(value || '0');
+    const numValue = parseFloat(value || "0");
     return `${numValue.toFixed(2)}%`;
   };
 
-  return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2">
-            <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Separator
-                orientation="vertical"
-                className="mr-2 data-[orientation=vertical]:h-4"
-              />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink href="#">
-                      Safira Cash
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden md:block" />
-                  <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink href="/v2/manager">
-                      Administrativo
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden md:block" />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>PSP Keys</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-            </div>
-          </header>
+  const inputCls =
+    "h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-violet-500/50 focus:bg-white/[0.05] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
 
-        <div className="flex flex-1 flex-col gap-4 p-4">
-          <div className="flex items-center justify-between">
+  return (
+    <>
+      <Head>
+        <title>ShadowPay — PSP Keys</title>
+      </Head>
+
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset className="text-white" style={{ background: SHADOW_BG }}>
+          <header className="flex items-center gap-3 px-4 pt-6 lg:px-8">
+            <SidebarTrigger className="text-white/60 hover:text-white" />
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Configuração PSP</h1>
-              <p className="text-muted-foreground">
+              <h1
+                className="text-2xl font-bold tracking-tight text-white md:text-[28px]"
+                style={{ fontFamily: "'Clash Display', sans-serif" }}
+              >
+                Configuração PSP
+              </h1>
+              <p className="mt-1 text-xs text-white/40">
                 Configure as integrações com provedores de serviços de pagamento
               </p>
             </div>
-          </div>
+          </header>
 
-          <div className="grid gap-6">
-            {/* Cashtime PSP Card */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900">
-                      <CreditCard className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl">Cashtime</CardTitle>
-                      <CardDescription>
-                        Provedor de serviços de pagamento
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Badge variant={config.isActive ? "default" : "secondary"}>
-                      {config.isActive ? "Ativo" : "Inativo"}
-                    </Badge>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="cashtime-active"
-                        checked={config.isActive}
-                        onCheckedChange={(checked) => handleConfigChange('isActive', checked)}
-                      />
-                      <Label htmlFor="cashtime-active" className="text-sm font-medium">
-                        {config.isActive ? "Ativo" : "Inativo"}
-                      </Label>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
+          <main className="flex flex-col gap-5 p-4 lg:p-8">
+            <motion.div
+              initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6 backdrop-blur-xl"
+            >
+              <div
+                className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full blur-3xl"
+                style={{ background: "rgba(139,92,246,0.2)" }}
+              />
 
-              <CardContent className="space-y-6">
-                {/* Secret Key */}
-                <div className="space-y-2">
-                  <Label htmlFor="secret-key" className="text-sm font-medium">
-                    Secret Key
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="secret-key"
-                      type={showSecretKey ? "text" : "password"}
-                      value={config.secretKey}
-                      onChange={(e) => handleConfigChange('secretKey', e.target.value)}
-                      className="pr-10"
-                      placeholder="Insira a secret key da Cashtime"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowSecretKey(!showSecretKey)}
+              {/* Header card */}
+              <div className="relative mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-500/15 text-violet-300">
+                    <CreditCard className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2
+                      className="text-lg font-semibold text-white"
+                      style={{ fontFamily: "'Clash Display', sans-serif" }}
                     >
-                      {showSecretKey ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Cash In Fees */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Settings className="h-4 w-4 text-green-600" />
-                    <h3 className="text-lg font-semibold text-green-600">Taxas de Cash In</h3>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="cashin-fixed" className="text-sm font-medium">
-                        Taxa Fixa
-                      </Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                          R$
-                        </span>
-                        <Input
-                          id="cashin-fixed"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={config.cashinFixedFee}
-                          onChange={(e) => handleConfigChange('cashinFixedFee', e.target.value)}
-                          className="pl-8"
-                          placeholder="0.00"
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Valor: {formatCurrency(config.cashinFixedFee)}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="cashin-percentage" className="text-sm font-medium">
-                        Taxa Percentual
-                      </Label>
-                      <div className="relative">
-                        <Input
-                          id="cashin-percentage"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          max="100"
-                          value={config.cashinPercentageFee}
-                          onChange={(e) => handleConfigChange('cashinPercentageFee', e.target.value)}
-                          className="pr-8"
-                          placeholder="0.00"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                          %
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Percentual: {formatPercentage(config.cashinPercentageFee)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="rounded-lg bg-green-50 dark:bg-green-900/20 p-3">
-                    <p className="text-sm text-green-700 dark:text-green-300">
-                      <strong>Exemplo para R$ 100,00:</strong> Taxa total = {formatCurrency(config.cashinFixedFee)} + {formatPercentage(config.cashinPercentageFee)} = {formatCurrency((parseFloat(config.cashinFixedFee) + (100 * parseFloat(config.cashinPercentageFee) / 100)).toString())}
+                      Cashtime
+                    </h2>
+                    <p className="text-xs text-white/45">
+                      Provedor de serviços de pagamento
                     </p>
                   </div>
                 </div>
-
-                <Separator />
-
-                {/* Cash Out Fees */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Settings className="h-4 w-4 text-red-600" />
-                    <h3 className="text-lg font-semibold text-red-600">Taxas de Cash Out</h3>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="cashout-fixed" className="text-sm font-medium">
-                        Taxa Fixa
-                      </Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                          R$
-                        </span>
-                        <Input
-                          id="cashout-fixed"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={config.cashoutFixedFee}
-                          onChange={(e) => handleConfigChange('cashoutFixedFee', e.target.value)}
-                          className="pl-8"
-                          placeholder="0.00"
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Valor: {formatCurrency(config.cashoutFixedFee)}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="cashout-percentage" className="text-sm font-medium">
-                        Taxa Percentual
-                      </Label>
-                      <div className="relative">
-                        <Input
-                          id="cashout-percentage"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          max="100"
-                          value={config.cashoutPercentageFee}
-                          onChange={(e) => handleConfigChange('cashoutPercentageFee', e.target.value)}
-                          className="pr-8"
-                          placeholder="0.00"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                          %
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Percentual: {formatPercentage(config.cashoutPercentageFee)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="rounded-lg bg-red-50 dark:bg-red-900/20 p-3">
-                    <p className="text-sm text-red-700 dark:text-red-300">
-                      <strong>Exemplo para R$ 100,00:</strong> Taxa total = {formatCurrency(config.cashoutFixedFee)} + {formatPercentage(config.cashoutPercentageFee)} = {formatCurrency((parseFloat(config.cashoutFixedFee) + (100 * parseFloat(config.cashoutPercentageFee) / 100)).toString())}
-                    </p>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Save Button */}
-                <div className="flex justify-end">
-                  <Button 
-                    onClick={handleSave} 
-                    disabled={isLoading}
-                    className="min-w-[120px]"
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`inline-block rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide ${
+                      config.isActive
+                        ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-300"
+                        : "border-white/15 bg-white/10 text-white/60"
+                    }`}
                   >
-                    {isLoading ? (
-                      <div className="flex items-center gap-2">
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                        Salvando...
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <Save className="h-4 w-4" />
-                        Salvar Configurações
-                      </div>
-                    )}
-                  </Button>
+                    {config.isActive ? "Ativo" : "Inativo"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleConfigChange("isActive", !config.isActive)
+                    }
+                    role="switch"
+                    aria-checked={config.isActive}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      config.isActive ? "bg-violet-500" : "bg-white/15"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                        config.isActive ? "translate-x-5" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+              </div>
+
+              {/* Secret Key */}
+              <div className="relative space-y-2">
+                <label className="flex items-center gap-1.5 text-xs text-white/55">
+                  <Key className="h-3.5 w-3.5" /> Secret Key
+                </label>
+                <div className="relative">
+                  <input
+                    type={showSecretKey ? "text" : "password"}
+                    value={config.secretKey}
+                    onChange={(e) =>
+                      handleConfigChange("secretKey", e.target.value)
+                    }
+                    className={`${inputCls} pr-10 font-mono`}
+                    placeholder="Insira a secret key da Cashtime"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSecretKey((v) => !v)}
+                    className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-white/55 hover:bg-white/[0.06] hover:text-white"
+                  >
+                    {showSecretKey ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Cash In */}
+              <div className="relative mt-6 space-y-4 border-t border-white/[0.06] pt-5">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300/85">
+                  <ArrowDown className="h-3.5 w-3.5" /> Taxas de Cash In
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="block text-xs text-white/55">
+                      Taxa fixa
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-white/40">
+                        R$
+                      </span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={config.cashinFixedFee}
+                        onChange={(e) =>
+                          handleConfigChange("cashinFixedFee", e.target.value)
+                        }
+                        className={`${inputCls} pl-9`}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <p className="text-xs text-white/40">
+                      Valor: {formatCurrency(config.cashinFixedFee)}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-xs text-white/55">
+                      Taxa percentual
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={config.cashinPercentageFee}
+                        onChange={(e) =>
+                          handleConfigChange(
+                            "cashinPercentageFee",
+                            e.target.value
+                          )
+                        }
+                        className={`${inputCls} pr-9`}
+                        placeholder="0.00"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-white/40">
+                        %
+                      </span>
+                    </div>
+                    <p className="text-xs text-white/40">
+                      Percentual: {formatPercentage(config.cashinPercentageFee)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] p-3 text-xs text-emerald-200/85">
+                  <strong className="text-emerald-200">
+                    Exemplo R$ 100,00:
+                  </strong>{" "}
+                  {formatCurrency(config.cashinFixedFee)} +{" "}
+                  {formatPercentage(config.cashinPercentageFee)} ={" "}
+                  {formatCurrency(
+                    (
+                      parseFloat(config.cashinFixedFee) +
+                      (100 * parseFloat(config.cashinPercentageFee)) / 100
+                    ).toString()
+                  )}
+                </div>
+              </div>
+
+              {/* Cash Out */}
+              <div className="relative mt-6 space-y-4 border-t border-white/[0.06] pt-5">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-rose-300/85">
+                  <ArrowUp className="h-3.5 w-3.5" /> Taxas de Cash Out
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="block text-xs text-white/55">
+                      Taxa fixa
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-white/40">
+                        R$
+                      </span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={config.cashoutFixedFee}
+                        onChange={(e) =>
+                          handleConfigChange("cashoutFixedFee", e.target.value)
+                        }
+                        className={`${inputCls} pl-9`}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <p className="text-xs text-white/40">
+                      Valor: {formatCurrency(config.cashoutFixedFee)}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-xs text-white/55">
+                      Taxa percentual
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={config.cashoutPercentageFee}
+                        onChange={(e) =>
+                          handleConfigChange(
+                            "cashoutPercentageFee",
+                            e.target.value
+                          )
+                        }
+                        className={`${inputCls} pr-9`}
+                        placeholder="0.00"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-white/40">
+                        %
+                      </span>
+                    </div>
+                    <p className="text-xs text-white/40">
+                      Percentual:{" "}
+                      {formatPercentage(config.cashoutPercentageFee)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-rose-500/20 bg-rose-500/[0.06] p-3 text-xs text-rose-200/85">
+                  <strong className="text-rose-200">Exemplo R$ 100,00:</strong>{" "}
+                  {formatCurrency(config.cashoutFixedFee)} +{" "}
+                  {formatPercentage(config.cashoutPercentageFee)} ={" "}
+                  {formatCurrency(
+                    (
+                      parseFloat(config.cashoutFixedFee) +
+                      (100 * parseFloat(config.cashoutPercentageFee)) / 100
+                    ).toString()
+                  )}
+                </div>
+              </div>
+
+              {/* Save */}
+              <div className="relative mt-6 flex justify-end border-t border-white/[0.06] pt-5">
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={isLoading}
+                  className="inline-flex h-11 min-w-[160px] items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 disabled:opacity-60"
+                  style={{
+                    background: "linear-gradient(120deg, #7C3AED, #6366F1)",
+                    boxShadow: "0 14px 36px -14px rgba(124,58,237,0.7)",
+                  }}
+                >
+                  {isLoading ? (
+                    <>
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      Salvando…
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      Salvar configurações
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+      <ShadowPanel />
+    </>
   );
 }

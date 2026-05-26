@@ -1,21 +1,10 @@
-// AdquerersPage.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
   SidebarProvider,
@@ -28,15 +17,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Edit, Eye, ToggleLeft, ToggleRight } from "lucide-react";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  Edit,
+  Eye,
+  ToggleLeft,
+  ToggleRight,
+  Plus,
+  Building2,
+} from "lucide-react";
 import { toast } from "sonner";
+import Head from "next/head";
+import { motion } from "framer-motion";
+import ShadowPanel from "@/components/ShadowPanel";
 
 interface Adquirer {
   id?: string;
@@ -54,8 +46,11 @@ interface Adquirer {
   xgate_id?: string;
   xgate_user?: string;
   xgate_password?: string;
-  company_id?: string; // <-- aqui
+  company_id?: string;
 }
+
+const SHADOW_BG =
+  "radial-gradient(1100px 700px at 85% -10%, #0B1020 0%, #060A14 55%, #03060F 100%)";
 
 export default function AdquerersPage() {
   const [adquirentes, setAdquirentes] = useState<Adquirer[]>([]);
@@ -128,6 +123,7 @@ export default function AdquerersPage() {
     const token = localStorage.getItem("token");
     if (!token) {
       toast.error("Token não encontrado");
+      setIsSaving(false);
       return;
     }
 
@@ -139,7 +135,7 @@ export default function AdquerersPage() {
       txPercentCashOut: form.txPercentCashOut,
       txCashOut: form.txCashOut,
       isActive: form.isActive,
-      publicKey: form.publicKey, // <--- garante envio
+      publicKey: form.publicKey,
       privateKey: form.privateKey,
     };
     const refLower = form.reference?.trim().toLowerCase() || "";
@@ -247,11 +243,16 @@ export default function AdquerersPage() {
     setIsModalOpen(true);
   };
 
-  const getStatusBadge = (active: boolean) => (
-    <Badge variant={active ? "default" : "destructive"}>
-      {active ? "Ativo" : "Inativo"}
-    </Badge>
-  );
+  const getStatusBadge = (active: boolean) =>
+    active ? (
+      <span className="inline-block rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-emerald-300">
+        Ativo
+      </span>
+    ) : (
+      <span className="inline-block rounded-full border border-rose-500/30 bg-rose-500/15 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-rose-300">
+        Inativo
+      </span>
+    );
 
   const renderConditionalFields = () => {
     const ref = form.reference?.toLowerCase() ?? "";
@@ -432,29 +433,32 @@ export default function AdquerersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          <header className="flex h-16 items-center gap-2 px-4">
-            <SidebarTrigger />
-            <Separator orientation="vertical" className="mx-2 h-6" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="#">Safira Cash</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Adquirentes</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </header>
+    <>
+      <Head>
+        <title>ShadowPay — Adquirentes (Admin)</title>
+      </Head>
 
-          <div className="p-4 space-y-4">
-            <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-bold">Adquirentes</h1>
+      <div className="min-h-screen">
+        <SidebarProvider>
+          <AppSidebar />
+          <SidebarInset className="text-white" style={{ background: SHADOW_BG }}>
+            <header className="flex flex-col gap-4 px-4 pt-6 sm:flex-row sm:items-center sm:justify-between lg:px-8">
+              <div className="flex items-center gap-3">
+                <SidebarTrigger className="text-white/60 hover:text-white" />
+                <div>
+                  <h1
+                    className="text-2xl font-bold tracking-tight text-white md:text-[28px]"
+                    style={{ fontFamily: "'Clash Display', sans-serif" }}
+                  >
+                    Adquirentes
+                  </h1>
+                  <p className="mt-1 text-xs text-white/40">
+                    Gerencie integrações com adquirentes (XGate, Medusa,
+                    Pagone, Freepay…)
+                  </p>
+                </div>
+              </div>
+
               <Dialog
                 open={isModalOpen}
                 onOpenChange={(open) => {
@@ -463,19 +467,24 @@ export default function AdquerersPage() {
                 }}
               >
                 <DialogTrigger asChild>
-                  <Button
-                    className="cursor-pointer"
+                  <button
                     onClick={() => {
                       resetForm();
                       setIsViewMode(false);
                       setIsModalOpen(true);
                     }}
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
+                    style={{
+                      background: "linear-gradient(120deg, #7C3AED, #6366F1)",
+                      boxShadow: "0 14px 36px -14px rgba(124,58,237,0.7)",
+                    }}
                   >
-                    Cadastrar Novo
-                  </Button>
+                    <Plus className="h-4 w-4" />
+                    Cadastrar novo
+                  </button>
                 </DialogTrigger>
 
-                <DialogContent>
+                <DialogContent className="max-h-[88vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>
                       {isViewMode
@@ -487,7 +496,6 @@ export default function AdquerersPage() {
                   </DialogHeader>
 
                   <div className="space-y-4">
-                    {/* Nome */}
                     <div>
                       <Label htmlFor="reference">Nome</Label>
                       <Input
@@ -499,7 +507,6 @@ export default function AdquerersPage() {
                       />
                     </div>
 
-                    {/* Campos padrão */}
                     <div>
                       <Label htmlFor="url">URL</Label>
                       <Input
@@ -513,7 +520,6 @@ export default function AdquerersPage() {
 
                     {renderConditionalFields()}
 
-                    {/* Taxas */}
                     <div>
                       <Label htmlFor="txCashIn">Taxa Fixa Cash-In (R$)</Label>
                       <Input
@@ -576,147 +582,149 @@ export default function AdquerersPage() {
                         onClick={handleSave}
                         disabled={isSaving}
                       >
-                        {form.id ? "Atualizar" : "Salvar"}
+                        {isSaving
+                          ? "Salvando…"
+                          : form.id
+                          ? "Atualizar"
+                          : "Salvar"}
                       </Button>
                     )}
                   </div>
                 </DialogContent>
               </Dialog>
-            </div>
+            </header>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Adquirentes Cadastrados</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {adquirentes.length === 0 && (
-                  <p>Nenhum adquirente cadastrado.</p>
-                )}
-
-                <div className="hidden md:grid grid-cols-12 gap-2 border-b font-semibold text-sm text-muted-foreground pb-2 px-4">
-                  <div className="col-span-3">Nome</div>
-                  <div className="col-span-4">URL</div>
-                  <div className="col-span-3">Chave APK</div>
-                  <div className="col-span-1">Status</div>
-                  <div className="col-span-1 text-right">Ações</div>
+            <main className="flex flex-col gap-5 p-4 lg:p-8">
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] backdrop-blur-xl"
+              >
+                <div className="border-b border-white/[0.06] px-5 py-4">
+                  <h2
+                    className="flex items-center gap-2 text-sm font-semibold text-white"
+                    style={{ fontFamily: "'Clash Display', sans-serif" }}
+                  >
+                    <Building2 className="h-4 w-4 text-violet-300" />
+                    Adquirentes cadastrados
+                  </h2>
                 </div>
 
-                {adquirentes.map((item) => (
-                  <div
-                    key={item.id}
-                    className="border rounded-md p-4 space-y-2 md:space-y-0 md:grid md:grid-cols-12 md:gap-2 md:items-center"
-                  >
-                    {/* Mobile */}
-                    <div className="md:hidden text-sm space-y-1">
-                      <div>
-                        <strong>Nome:</strong> {item.reference}
+                <div className="p-4">
+                  {adquirentes.length === 0 ? (
+                    <div className="py-14 text-center">
+                      <Building2 className="mx-auto mb-3 h-7 w-7 text-violet-400/40" />
+                      <p className="text-sm font-medium text-white/60">
+                        Nenhum adquirente cadastrado
+                      </p>
+                      <p className="mt-1 text-xs text-white/35">
+                        Cadastre o primeiro PSP para começar.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {/* Cabeçalho desktop */}
+                      <div className="hidden grid-cols-12 gap-2 border-b border-white/[0.06] px-4 pb-2 text-[11px] uppercase tracking-wider text-white/40 md:grid">
+                        <div className="col-span-3">Nome</div>
+                        <div className="col-span-4">URL</div>
+                        <div className="col-span-3">Chave APK</div>
+                        <div className="col-span-1">Status</div>
+                        <div className="col-span-1 text-right">Ações</div>
                       </div>
-                      <div>
-                        <strong>URL:</strong> {item.url}
-                      </div>
-                      <div>
-                        <strong>Chave APK:</strong>{" "}
-                        {item.reference === "FREEPAY"
-                          ? item.passwordfreep
-                            ? item.passwordfreep.slice(0, 4) + "••••••••"
-                            : ""
-                          : item.privateKey
-                          ? item.privateKey.slice(0, 4) + "••••••••"
-                          : item.xgate_user
-                          ? item.xgate_user.slice(0, 4) + "••••••••"
-                          : ""}
-                      </div>
-                      <div>
-                        <strong>Status:</strong> {getStatusBadge(item.isActive)}
-                      </div>
-                    </div>
 
-                    {/* Desktop */}
-                    <div className="hidden md:block col-span-3">
-                      {item.reference}
-                    </div>
-                    <div className="hidden md:block col-span-4 truncate">
-                      {item.url}
-                    </div>
-                    <div className="hidden md:block col-span-3 text-muted-foreground">
-                      {item.reference === "FREEPAY"
-                        ? item.passwordfreep
-                          ? item.passwordfreep.slice(0, 4) + "••••••••"
-                          : ""
-                        : item.privateKey
-                        ? item.privateKey.slice(0, 4) + "••••••••"
-                        : item.xgate_user
-                        ? item.xgate_user.slice(0, 4) + "••••••••"
-                        : ""}
-                    </div>
-                    <div className="hidden md:block col-span-1">
-                      {getStatusBadge(item.isActive)}
-                    </div>
+                      {adquirentes.map((item) => {
+                        const apk =
+                          item.reference === "FREEPAY"
+                            ? item.passwordfreep
+                              ? item.passwordfreep.slice(0, 4) + "••••••••"
+                              : ""
+                            : item.privateKey
+                            ? item.privateKey.slice(0, 4) + "••••••••"
+                            : item.xgate_user
+                            ? item.xgate_user.slice(0, 4) + "••••••••"
+                            : "";
 
-                    <div className="flex justify-end items-center gap-2 col-span-12 md:col-span-1">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              className="cursor-pointer"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEditModal(item, true)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Visualizar</p>
-                          </TooltipContent>
-                        </Tooltip>
+                        return (
+                          <div
+                            key={item.id}
+                            className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 transition-colors hover:bg-white/[0.04] md:grid md:grid-cols-12 md:items-center md:gap-2"
+                          >
+                            {/* Mobile */}
+                            <div className="space-y-1.5 text-sm md:hidden">
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium text-white/90">
+                                  {item.reference}
+                                </span>
+                                {getStatusBadge(item.isActive)}
+                              </div>
+                              <div className="text-xs text-white/55">
+                                <strong className="text-white/65">URL:</strong>{" "}
+                                {item.url}
+                              </div>
+                              <div className="text-xs text-white/55">
+                                <strong className="text-white/65">
+                                  Chave APK:
+                                </strong>{" "}
+                                <span className="font-mono">{apk}</span>
+                              </div>
+                            </div>
 
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              className="cursor-pointer"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEditModal(item, false)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Editar</p>
-                          </TooltipContent>
-                        </Tooltip>
+                            {/* Desktop */}
+                            <div className="hidden font-medium text-white/90 md:col-span-3 md:block">
+                              {item.reference}
+                            </div>
+                            <div className="hidden truncate text-xs text-white/55 md:col-span-4 md:block">
+                              {item.url}
+                            </div>
+                            <div className="hidden font-mono text-xs text-white/55 md:col-span-3 md:block">
+                              {apk}
+                            </div>
+                            <div className="hidden md:col-span-1 md:block">
+                              {getStatusBadge(item.isActive)}
+                            </div>
 
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              className="cursor-pointer"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() =>
-                                toggleStatus(item.id!, item.isActive)
-                              }
-                            >
-                              {item.isActive ? (
-                                <ToggleLeft className="h-4 w-4 text-green-500" />
-                              ) : (
-                                <ToggleRight className="h-4 w-4 text-red-500" />
-                              )}
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{item.isActive ? "Inativar" : "Ativar"}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                            <div className="flex items-center justify-end gap-1.5 md:col-span-1">
+                              <button
+                                onClick={() => openEditModal(item, true)}
+                                title="Visualizar"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/70 transition-colors hover:bg-white/[0.07] hover:text-white"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() => openEditModal(item, false)}
+                                title="Editar"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/70 transition-colors hover:bg-white/[0.07] hover:text-white"
+                              >
+                                <Edit className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  toggleStatus(item.id!, item.isActive)
+                                }
+                                title={item.isActive ? "Inativar" : "Ativar"}
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/70 transition-colors hover:bg-white/[0.07] hover:text-white"
+                              >
+                                {item.isActive ? (
+                                  <ToggleLeft className="h-4 w-4 text-emerald-400" />
+                                ) : (
+                                  <ToggleRight className="h-4 w-4 text-rose-400" />
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
-    </div>
+                  )}
+                </div>
+              </motion.div>
+            </main>
+          </SidebarInset>
+        </SidebarProvider>
+        <ShadowPanel />
+      </div>
+    </>
   );
 }

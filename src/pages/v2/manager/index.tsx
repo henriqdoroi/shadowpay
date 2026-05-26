@@ -1,15 +1,5 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
@@ -29,22 +19,17 @@ import {
   Activity,
   Eye,
   EyeOff,
+  RefreshCw,
+  Filter,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import axios from "axios";
+import Head from "next/head";
+import { motion } from "framer-motion";
+import ShadowPanel from "@/components/ShadowPanel";
 
 interface MetricCard {
   id: string;
@@ -56,7 +41,7 @@ interface MetricCard {
     value: string;
     isPositive: boolean;
   };
-  color: string;
+  accent: string;
 }
 interface PositiveAccount {
   saldo: number;
@@ -84,7 +69,7 @@ interface Transaction {
   status?: string;
   paymentMethod?: string;
   paymentData?: { name?: string };
-  transactionType?: string; // <-- adiciona aqui
+  transactionType?: string;
 }
 
 interface DashboardData {
@@ -96,35 +81,14 @@ interface DashboardData {
     taxa?: number;
     status: string;
   }[];
-  totalEmCarteiras: {
-    valor: string;
-    crescimento: number;
-  };
-  lucroLiquido: {
-    valor: string;
-    crescimento: number;
-  };
-  transacoesAprovadas: {
-    valor: number;
-    crescimento: number;
-  };
-  transacoesPendentes: {
-    valor: number;
-  };
-  usuariosCadastrados: {
-    valor: number;
-    crescimento: number;
-  };
-  kycPendentes: {
-    valor: number;
-  };
-  totalEmRetiradas: {
-    valor: number;
-    crescimento: number;
-  };
-  retiradasPendentes: {
-    valor: string;
-  };
+  totalEmCarteiras: { valor: string; crescimento: number };
+  lucroLiquido: { valor: string; crescimento: number };
+  transacoesAprovadas: { valor: number; crescimento: number };
+  transacoesPendentes: { valor: number };
+  usuariosCadastrados: { valor: number; crescimento: number };
+  kycPendentes: { valor: number };
+  totalEmRetiradas: { valor: number; crescimento: number };
+  retiradasPendentes: { valor: string };
   resumoFinanceiro: {
     totalEmCarteiras: string;
     lucroLiquido: string;
@@ -171,7 +135,7 @@ function formatCurrency(value: any): string {
 }
 
 const formatNumber = (value: number) =>
-  new Intl.NumberFormat("pt-BR").format(value);
+  new Intl.NumberFormat("pt-BR").format(value || 0);
 
 const calculateAvailableProfit = (
   transactions: Transaction[] = [],
@@ -179,14 +143,12 @@ const calculateAvailableProfit = (
 ): number => {
   if (!transactions.length) return 0;
 
-  // Função para extrair valor e taxa da transação
   const extractValues = (tx: Transaction) => {
     const valor = Number(tx.amount ?? 0);
     const fee = Number(tx.amountFee ?? 0);
     return { valor, fee };
   };
 
-  // Apenas transações aprovadas e do tipo depósito
   const approvedTx = transactions.filter(
     (tx) => tx.status === "APPROVED" && tx.transactionType !== "WITHDRAW"
   );
@@ -199,17 +161,14 @@ const calculateAvailableProfit = (
     return totalProfit;
   }
 
-  // Mapeia gateways positivos e seus saldos
   const saldoMap: Record<string, number> = {};
   saldoData.positivos.forEach((g) => {
     if (g.name) saldoMap[g.name.toLowerCase().trim()] = g.saldo;
   });
 
-  // Map de paymentMethod para nomes de gateways
   const gatewayMap: Record<string, string> = {
     PIX: "xgate",
     CARD: "medusawhite",
-    // adicione outros mapeamentos conforme necessário
   };
 
   let totalProfit = 0;
@@ -224,17 +183,15 @@ const calculateAvailableProfit = (
 
     const { valor, fee } = extractValues(tx);
 
-    const saldoDisponivel = saldoMap[txGatewayKey] ?? 0; // <-- valor padrão
+    const saldoDisponivel = saldoMap[txGatewayKey] ?? 0;
 
     if (saldoDisponivel <= 0) return;
 
-    // Lucro proporcional ao saldo disponível
     const valorConsiderado = Math.min(valor, saldoDisponivel);
     const taxaProporcional = fee * (valorConsiderado / valor);
     const lucroTx = valorConsiderado - taxaProporcional;
     totalProfit += lucroTx;
 
-    // Atualiza saldo restante do gateway
     saldoMap[txGatewayKey] = saldoDisponivel - valorConsiderado;
   });
 
@@ -257,24 +214,23 @@ const createMetricsFromData = (
       id: "lucro-disponivel",
       title: "Lucro Líquido",
       value: formatCurrency(lucroDisponivel),
-      icon: <TrendingUp className="h-6 w-6" />,
-      description:
-        "Lucro líquido das transações aprovadas com saldo positivo nos gateways",
-      color: "text-orange-600",
+      icon: <TrendingUp className="h-4 w-4" />,
+      description: "Lucro líquido das transações aprovadas",
+      accent: "#F59E0B",
     },
     {
       id: "saldo-gateways",
       title: "Saldo Gateways",
       value: formatCurrency(saldoGatewaysNumber),
-      icon: <DollarSign className="h-6 w-6" />,
-      description: "Saldo total combinado das contas gateways (saldo positivo)",
-      color: "text-teal-600",
+      icon: <DollarSign className="h-4 w-4" />,
+      description: "Saldo combinado das contas gateways",
+      accent: "#22D3EE",
     },
     {
       id: "total-carteiras",
       title: "Total em Carteiras",
       value: formatCurrency(Number(data.totalEmCarteiras.valor)),
-      icon: <Wallet className="h-6 w-6" />,
+      icon: <Wallet className="h-4 w-4" />,
       description: "Valor total em todas as carteiras",
       trend: {
         value: `${data.totalEmCarteiras.crescimento > 0 ? "+" : ""}${
@@ -282,14 +238,13 @@ const createMetricsFromData = (
         }%`,
         isPositive: data.totalEmCarteiras.crescimento > 0,
       },
-      color: "text-blue-600",
+      accent: "#8B5CF6",
     },
-
     {
       id: "transacoes-aprovadas",
       title: "Transações Aprovadas",
       value: formatNumber(data.transacoesAprovadas.valor),
-      icon: <CheckCircle className="h-6 w-6" />,
+      icon: <CheckCircle className="h-4 w-4" />,
       description: "Transações aprovadas hoje",
       trend: {
         value: `${data.transacoesAprovadas.crescimento > 0 ? "+" : ""}${
@@ -297,21 +252,21 @@ const createMetricsFromData = (
         }%`,
         isPositive: data.transacoesAprovadas.crescimento > 0,
       },
-      color: "text-green-600",
+      accent: "#34D399",
     },
     {
       id: "transacoes-pendentes",
       title: "Transações Pendentes",
       value: formatNumber(data.transacoesPendentes.valor),
-      icon: <Clock className="h-6 w-6" />,
+      icon: <Clock className="h-4 w-4" />,
       description: "Aguardando processamento",
-      color: "text-yellow-600",
+      accent: "#FBBF24",
     },
     {
       id: "usuarios-cadastrados",
       title: "Usuários Cadastrados",
       value: formatNumber(data.usuariosCadastrados.valor),
-      icon: <Users className="h-6 w-6" />,
+      icon: <Users className="h-4 w-4" />,
       description: "Total de usuários ativos",
       trend: {
         value: `${data.usuariosCadastrados.crescimento > 0 ? "+" : ""}${
@@ -319,21 +274,21 @@ const createMetricsFromData = (
         }%`,
         isPositive: data.usuariosCadastrados.crescimento > 0,
       },
-      color: "text-blue-600",
+      accent: "#6366F1",
     },
     {
       id: "kyc-pendentes",
       title: "KYC Pendentes",
       value: formatNumber(data.kycPendentes.valor),
-      icon: <FileText className="h-6 w-6" />,
+      icon: <FileText className="h-4 w-4" />,
       description: "Verificações KYC aguardando análise",
-      color: "text-purple-600",
+      accent: "#A78BFA",
     },
     {
       id: "total-retiradas",
       title: "Total em Retiradas",
       value: formatNumber(data.totalEmRetiradas.valor),
-      icon: <ArrowDown className="h-6 w-6" />,
+      icon: <ArrowDown className="h-4 w-4" />,
       description: "Valor total retirado hoje",
       trend: {
         value: `${data.totalEmRetiradas.crescimento > 0 ? "+" : ""}${
@@ -341,18 +296,21 @@ const createMetricsFromData = (
         }%`,
         isPositive: data.totalEmRetiradas.crescimento > 0,
       },
-      color: "text-indigo-600",
+      accent: "#818CF8",
     },
     {
       id: "retiradas-pendentes",
       title: "Retiradas Pendentes",
       value: formatCurrency(Number(data.retiradasPendentes.valor)),
-      icon: <Hourglass className="h-6 w-6" />,
+      icon: <Hourglass className="h-4 w-4" />,
       description: "Retiradas aguardando processamento",
-      color: "text-amber-600",
+      accent: "#F59E0B",
     },
   ];
 };
+
+const SHADOW_BG =
+  "radial-gradient(1100px 700px at 85% -10%, #0B1020 0%, #060A14 55%, #03060F 100%)";
 
 export function ManagerDashboardContent() {
   const { user } = useAuth();
@@ -362,7 +320,6 @@ export function ManagerDashboardContent() {
     null
   );
 
-  // Filtros
   const [filterStartDate, setFilterStartDate] = useState<string | null>(null);
   const [filterEndDate, setFilterEndDate] = useState<string | null>(null);
   const [filterAdquirente, setFilterAdquirente] = useState("");
@@ -373,21 +330,16 @@ export function ManagerDashboardContent() {
     name: string;
   }
   const [sellers, setSellers] = useState<Seller[]>([]);
-
-  // Dados para selects dinâmicos
   const [adquirentes, setAdquirentes] = useState<string[]>([]);
 
-  // UI e erros
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isValuesVisible, setIsValuesVisible] = useState(true);
 
-  // Filtro para saldo gateways (todos, positivos, negativos)
   const [saldoFilter, setSaldoFilter] = useState<
     "all" | "positivos" | "negativos"
   >("all");
 
-  // Converte saldoGateways em objeto estruturado se possível
   const saldoData: SaldoGatewaysData =
     typeof dashboardData?.saldoGateways === "object"
       ? (dashboardData.saldoGateways as SaldoGatewaysData)
@@ -410,7 +362,6 @@ export function ManagerDashboardContent() {
     saldoExibido = saldoData.negativos.reduce((acc, cur) => acc + cur.saldo, 0);
   }
 
-  // Buscar sellers do backend para popular o select
   useEffect(() => {
     async function fetchAllSellers() {
       try {
@@ -430,11 +381,9 @@ export function ManagerDashboardContent() {
           );
 
           const json = await res.json();
-
           if (!json.success) break;
 
           const { pagination, sellers } = json.data;
-
           totalPages = pagination.pages || 1;
 
           allSellers = allSellers.concat(
@@ -457,16 +406,18 @@ export function ManagerDashboardContent() {
     fetchAllSellers();
   }, []);
 
-  // Buscar adquirentes do backend para popular o select
   useEffect(() => {
     async function fetchAdquirentes() {
       try {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const res = await fetch("https://shadowpay-api-production.up.railway.app/api/admin/adquerers", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch(
+          "https://shadowpay-api-production.up.railway.app/api/admin/adquerers",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         const json = await res.json();
         if (json.success && Array.isArray(json.data)) {
           const list = json.data.map((item: any) =>
@@ -484,12 +435,10 @@ export function ManagerDashboardContent() {
   }, []);
 
   const toggleValuesVisibility = () => setIsValuesVisible((prev) => !prev);
-  const [dashboardCards, setDashboardCards] = useState<any[]>([]);
   const [transacoesDetalhadas, setTransacoesDetalhadas] = useState<
     Transaction[]
   >([]);
 
-  // Buscar dados do dashboard com filtros
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
@@ -498,7 +447,6 @@ export function ManagerDashboardContent() {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Token de acesso não encontrado");
 
-      // Monta os parâmetros de filtro
       const params = new URLSearchParams();
       if (filterSeller && filterSeller !== "Todos")
         params.append("seller", filterSeller);
@@ -511,7 +459,6 @@ export function ManagerDashboardContent() {
         params.toString() ? `?${params.toString()}` : ""
       }`;
 
-      // Busca os dados do dashboard
       const response = await fetch(url, {
         method: "GET",
         headers: {
@@ -529,15 +476,6 @@ export function ManagerDashboardContent() {
 
       setDashboardData(result.data);
 
-      // ----------------------------
-      // Saldo dos gateways
-      // ----------------------------
-      const saldoData: SaldoGatewaysData = result.data
-        .saldoGateways as SaldoGatewaysData;
-
-      // ----------------------------
-      // Buscar transações reais
-      // ----------------------------
       const fetchTransactions = async (): Promise<Transaction[]> => {
         try {
           const token = localStorage.getItem("token");
@@ -564,33 +502,7 @@ export function ManagerDashboardContent() {
       };
 
       const transacoesDetalhadas = await fetchTransactions();
-      setTransacoesDetalhadas(transacoesDetalhadas); // ← atualiza o esta
-
-      // ----------------------------
-      // Calcula lucro disponível respeitando saldo
-      // ----------------------------
-      const lucroDisponivel = calculateAvailableProfit(
-        transacoesDetalhadas,
-        saldoData
-      );
-
-      // ----------------------------
-      // Atualiza cards do dashboard
-      // ----------------------------
-      const cardsData = [
-        {
-          id: "lucro-disponivel",
-          title: "Lucro Líquido",
-          value: formatCurrency(lucroDisponivel),
-          icon: <TrendingUp className="h-6 w-6" />,
-          description:
-            "Lucro líquido das transações aprovadas com saldo positivo nos gateways",
-          color: "text-orange-600",
-        },
-        // ... outros cards
-      ];
-
-      setDashboardCards(cardsData);
+      setTransacoesDetalhadas(transacoesDetalhadas);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro desconhecido");
     } finally {
@@ -603,563 +515,552 @@ export function ManagerDashboardContent() {
     fetchDashboardData();
   };
 
-  // Redirecionar se não for admin
   useEffect(() => {
     if (user && !user.isAdministrator) {
       router.push("/v1/dashboard");
     }
   }, [user, router]);
 
-  // Carregar dados ao montar e quando filtros mudarem
   useEffect(() => {
     if (user?.isAdministrator) {
       fetchDashboardData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  if (!user?.isAdministrator) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
-              <ShieldX className="h-6 w-6 text-red-600" />
-            </div>
-            <CardTitle className="text-xl font-semibold text-red-600">
-              Acesso Negado
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="text-muted-foreground mb-4">
-              Você não tem permissão para acessar o painel administrativo.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Esta área é restrita apenas para administradores do sistema.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // Estilos compartilhados
+  const inputCls =
+    "h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-violet-500/50 focus:bg-white/[0.05] [color-scheme:dark]";
+  const selectCls =
+    "h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 text-sm text-white outline-none transition-colors focus:border-violet-500/50 [color-scheme:dark]";
 
-  if (loading) {
+  // Estados de erro/sem dados/loading
+  if (user && !user.isAdministrator) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-muted-foreground">
-            Carregando dados do dashboard...
+      <div
+        className="flex min-h-screen items-center justify-center p-4 text-white"
+        style={{ background: SHADOW_BG }}
+      >
+        <div className="w-full max-w-md rounded-2xl border border-white/[0.08] bg-white/[0.025] p-8 text-center backdrop-blur-xl">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose-500/15">
+            <ShieldX className="h-6 w-6 text-rose-300" />
+          </div>
+          <h2
+            className="text-xl font-semibold text-rose-300"
+            style={{ fontFamily: "'Clash Display', sans-serif" }}
+          >
+            Acesso Negado
+          </h2>
+          <p className="mt-2 text-sm text-white/55">
+            Você não tem permissão para acessar o painel administrativo.
           </p>
         </div>
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
-              <AlertCircle className="h-6 w-6 text-red-600" />
-            </div>
-            <CardTitle className="text-xl font-semibold text-red-600">
-              Erro ao Carregar Dashboard
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="text-muted-foreground mb-4">{error}</p>
-            <button
-              onClick={fetchDashboardData}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Tentar Novamente
-            </button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!dashboardData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle>Nenhum dado disponível</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="text-muted-foreground mb-4">
-              Não foi possível carregar os dados do dashboard.
-            </p>
-            <button
-              onClick={fetchDashboardData}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Recarregar
-            </button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const lucroDisponivel = calculateAvailableProfit(
-    transacoesDetalhadas,
-    saldoData
-  );
-  const metrics = createMetricsFromData(
-    dashboardData,
-    saldoData,
-    lucroDisponivel
-  );
-
   return (
-    <div className="min-h-screen">
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2">
-            <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Separator
-                orientation="vertical"
-                className="mr-2 data-[orientation=vertical]:h-4"
-              />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink href="#">Safira Cash</BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden md:block" />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>Painel Administrativo</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-            </div>
-          </header>
+    <>
+      <Head>
+        <title>ShadowPay — Painel Admin</title>
+      </Head>
 
-          <div className="flex flex-1 flex-col gap-6 p-4 pt-0 min-h-screen">
-            {/* Título e descrição */}
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold tracking-tight">
-                Painel Administrativo
-              </h1>
-              <div className="flex items-center gap-4">
-                <p className="text-lg font-semibold">
-                  Bem-vindo, {user?.companyName || "Usuário"}
-                </p>
-                <Button
-                  variant="ghost"
-                  size="icon"
+      <div className="min-h-screen">
+        <SidebarProvider>
+          <AppSidebar />
+          <SidebarInset
+            className="text-white"
+            style={{ background: SHADOW_BG }}
+          >
+            <header className="flex flex-col gap-4 px-4 pt-6 sm:flex-row sm:items-center sm:justify-between lg:px-8">
+              <div className="flex items-center gap-3">
+                <SidebarTrigger className="text-white/60 hover:text-white" />
+                <div>
+                  <h1
+                    className="text-2xl font-bold tracking-tight text-white md:text-[28px]"
+                    style={{ fontFamily: "'Clash Display', sans-serif" }}
+                  >
+                    Painel Administrativo
+                  </h1>
+                  <p className="mt-1 text-xs text-white/40">
+                    Bem-vindo, {user?.companyName || "Operador"} · métricas em
+                    tempo real
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
                   onClick={toggleValuesVisibility}
-                  className="cursor-pointer"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/55 hover:bg-white/[0.07] hover:text-white"
+                  aria-label="Alternar valores"
                 >
                   {isValuesVisible ? (
-                    <Eye className="h-5 w-5" />
+                    <Eye className="h-4 w-4" />
                   ) : (
-                    <EyeOff className="h-5 w-5" />
+                    <EyeOff className="h-4 w-4" />
                   )}
-                </Button>
+                </button>
+                <button
+                  onClick={fetchDashboardData}
+                  disabled={loading}
+                  className="flex h-9 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 text-sm text-white/80 transition-colors hover:bg-white/[0.07] hover:text-white"
+                >
+                  <RefreshCw
+                    className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+                  />
+                  {loading ? "Atualizando…" : "Atualizar"}
+                </button>
               </div>
-              <p className="text-muted-foreground">
-                Visão geral das métricas e indicadores da plataforma Safira
-                Cash.
-              </p>
-            </div>
+            </header>
 
-            {/* Formulário de filtros */}
-            <form
-              onSubmit={handleSearch}
-              className="p-6 rounded-md shadow-md border border-gray-200"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
-                {/* Select Sellers */}
-                <div className="flex flex-col">
-                  <Label
-                    htmlFor="filter-seller"
-                    className="mb-1 text-sm font-semibold text-gray-700"
-                  >
-                    Seller
-                  </Label>
-                  <Select onValueChange={setFilterSeller} value={filterSeller}>
-                    <SelectTrigger className="w-full cursor-pointer">
-                      <SelectValue placeholder="Selecione o Seller" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60 overflow-y-auto">
-                      <SelectItem value="Todos">Todos</SelectItem>
+            <main className="flex flex-col gap-5 p-4 lg:p-8">
+              {/* Filtros */}
+              <motion.form
+                onSubmit={handleSearch}
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl"
+              >
+                <div className="mb-4 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
+                  <Filter className="h-3.5 w-3.5" /> Filtrar dados
+                </div>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
+                  <div>
+                    <label className="mb-1.5 block text-xs text-white/50">
+                      Seller
+                    </label>
+                    <select
+                      className={selectCls}
+                      value={filterSeller}
+                      onChange={(e) => setFilterSeller(e.target.value)}
+                    >
+                      <option value="Todos" className="bg-[#0B1020]">
+                        Todos
+                      </option>
                       {sellers.map((seller) => (
-                        <SelectItem
+                        <option
                           key={seller.id}
                           value={seller.id || seller.name}
+                          className="bg-[#0B1020]"
                         >
                           {seller.name || seller.id}
-                        </SelectItem>
+                        </option>
                       ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                    </select>
+                  </div>
 
-                {/* Data Início */}
-                <div className="flex flex-col">
-                  <Label
-                    htmlFor="filter-start-date"
-                    className="mb-1 text-sm font-semibold text-gray-700"
-                  >
-                    Data Início
-                  </Label>
-                  <Input
-                    id="filter-start-date"
-                    type="date"
-                    value={filterStartDate ?? ""}
-                    onChange={(e) => setFilterStartDate(e.target.value || null)}
-                    className="w-full cursor-pointer"
-                  />
-                </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs text-white/50">
+                      Data Início
+                    </label>
+                    <input
+                      type="date"
+                      value={filterStartDate ?? ""}
+                      onChange={(e) =>
+                        setFilterStartDate(e.target.value || null)
+                      }
+                      className={inputCls}
+                    />
+                  </div>
 
-                {/* Data Fim */}
-                <div className="flex flex-col">
-                  <Label
-                    htmlFor="filter-end-date"
-                    className="mb-1 text-sm font-semibold text-gray-700"
-                  >
-                    Data Fim
-                  </Label>
-                  <Input
-                    id="filter-end-date"
-                    type="date"
-                    value={filterEndDate ?? ""}
-                    onChange={(e) => setFilterEndDate(e.target.value || null)}
-                    className="w-full cursor-pointer"
-                  />
-                </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs text-white/50">
+                      Data Fim
+                    </label>
+                    <input
+                      type="date"
+                      value={filterEndDate ?? ""}
+                      onChange={(e) => setFilterEndDate(e.target.value || null)}
+                      className={inputCls}
+                    />
+                  </div>
 
-                {/* Select Adquirentes (Carteiras) */}
-                <div className="flex flex-col">
-                  <Label
-                    htmlFor="filter-adquirente"
-                    className="mb-1 text-sm font-semibold text-gray-700"
-                  >
-                    Adquirente
-                  </Label>
-                  <Select
-                    onValueChange={setFilterAdquirente}
-                    value={filterAdquirente}
-                  >
-                    <SelectTrigger className="w-full cursor-pointer">
-                      <SelectValue placeholder="Selecione o Adquirente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Todos">Todos</SelectItem>
+                  <div>
+                    <label className="mb-1.5 block text-xs text-white/50">
+                      Adquirente
+                    </label>
+                    <select
+                      className={selectCls}
+                      value={filterAdquirente}
+                      onChange={(e) => setFilterAdquirente(e.target.value)}
+                    >
+                      <option value="" className="bg-[#0B1020]">
+                        Todos
+                      </option>
                       {adquirentes.map((item, idx) => (
-                        <SelectItem key={idx} value={item}>
+                        <option key={idx} value={item} className="bg-[#0B1020]">
                           {item}
-                        </SelectItem>
+                        </option>
                       ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                    </select>
+                  </div>
 
-                {/* Botão Buscar */}
-                <div className="flex justify-start md:justify-end">
-                  <Button
-                    type="submit"
-                    className="h-10 cursor-pointer px-6"
-                    variant="default"
+                  <div className="flex items-end">
+                    <button
+                      type="submit"
+                      className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
+                      style={{
+                        background: "linear-gradient(120deg, #7C3AED, #6366F1)",
+                        boxShadow: "0 14px 36px -14px rgba(124,58,237,0.7)",
+                      }}
+                    >
+                      Buscar
+                    </button>
+                  </div>
+                </div>
+              </motion.form>
+
+              {loading && !dashboardData ? (
+                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-10 text-center backdrop-blur-xl">
+                  <RefreshCw className="mx-auto mb-3 h-6 w-6 animate-spin text-violet-300" />
+                  <p className="text-sm text-white/60">
+                    Carregando dados do dashboard…
+                  </p>
+                </div>
+              ) : error ? (
+                <div className="rounded-2xl border border-rose-500/30 bg-rose-500/[0.07] p-5">
+                  <div className="mb-2 flex items-center gap-2 text-rose-300">
+                    <AlertCircle className="h-5 w-5" />
+                    <span className="font-semibold">Erro ao carregar</span>
+                  </div>
+                  <p className="text-sm text-rose-200/80">{error}</p>
+                  <button
+                    onClick={fetchDashboardData}
+                    className="mt-3 inline-flex items-center gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-200 hover:bg-rose-500/20"
                   >
-                    Buscar
-                  </Button>
+                    Tentar novamente
+                  </button>
                 </div>
-              </div>
-            </form>
-
-            {/* Botão Atualizar */}
-            <div className="flex justify-end mt-4 mb-4">
-              <button
-                onClick={fetchDashboardData}
-                disabled={loading}
-                className="px-4 py-2 cursor-pointer bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                <Activity className="h-4 w-4" />
-                {loading ? "Atualizando..." : "Atualizar Dados"}
-              </button>
-            </div>
-
-            {/* Cards de métricas */}
-            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {metrics.map((metric) => (
-                <Card key={metric.id} className="relative overflow-hidden">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`${metric.color}`}>{metric.icon}</div>
-                        <span className="text-sm font-medium text-muted-foreground">
-                          {metric.title}
-                        </span>
-                      </div>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="space-y-1">
-                      <p className="text-2xl font-bold">
-                        {isValuesVisible ? metric.value : "••••••"}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {metric.description}
-                      </p>
-                    </div>
-
-                    {metric.trend && (
-                      <div className="flex items-center gap-2 pt-2">
+              ) : !dashboardData ? (
+                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-10 text-center backdrop-blur-xl">
+                  <p className="text-sm text-white/60">Nenhum dado disponível</p>
+                </div>
+              ) : (
+                <>
+                  {/* Metrics grid */}
+                  <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {createMetricsFromData(
+                      dashboardData,
+                      saldoData,
+                      calculateAvailableProfit(transacoesDetalhadas, saldoData)
+                    ).map((metric, i) => (
+                      <motion.div
+                        key={metric.id}
+                        initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
+                        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                        transition={{
+                          duration: 0.7,
+                          delay: i * 0.04,
+                          ease: [0.22, 1, 0.36, 1],
+                        }}
+                        className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl"
+                      >
                         <div
-                          className={`flex items-center gap-1 text-sm font-medium ${
-                            metric.trend.isPositive
-                              ? "text-green-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          <Activity className="h-3 w-3" />
-                          {metric.trend.value}
+                          className="pointer-events-none absolute -left-8 -top-10 h-28 w-28 rounded-full opacity-50 blur-2xl transition-opacity duration-500 group-hover:opacity-80"
+                          style={{ background: `${metric.accent}22` }}
+                        />
+                        <div className="relative mb-4 flex items-center gap-2.5">
+                          <span
+                            className="flex h-8 w-8 items-center justify-center rounded-lg"
+                            style={{
+                              background: `${metric.accent}1f`,
+                              color: metric.accent,
+                            }}
+                          >
+                            {metric.icon}
+                          </span>
+                          <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
+                            {metric.title}
+                          </span>
                         </div>
-                        <span className="text-xs text-muted-foreground">
-                          vs. período anterior
+                        <div
+                          className="relative text-2xl font-semibold tracking-tight text-white"
+                          style={{ fontFamily: "'Clash Display', sans-serif" }}
+                        >
+                          {isValuesVisible ? metric.value : "••••••"}
+                        </div>
+                        <p className="relative mt-1.5 text-xs text-white/35">
+                          {metric.description}
+                        </p>
+                        {metric.trend && (
+                          <div className="relative mt-2 flex items-center gap-2">
+                            <span
+                              className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                metric.trend.isPositive
+                                  ? "bg-emerald-500/15 text-emerald-300"
+                                  : "bg-rose-500/15 text-rose-300"
+                              }`}
+                            >
+                              <Activity className="h-3 w-3" />
+                              {metric.trend.value}
+                            </span>
+                            <span className="text-[10px] text-white/35">
+                              vs. período anterior
+                            </span>
+                          </div>
+                        )}
+                      </motion.div>
+                    ))}
+
+                    {/* Card de saldo com filtro */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
+                      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                      transition={{
+                        duration: 0.7,
+                        delay: 0.4,
+                        ease: [0.22, 1, 0.36, 1],
+                      }}
+                      className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl"
+                    >
+                      <div
+                        className="pointer-events-none absolute -left-8 -top-10 h-28 w-28 rounded-full opacity-50 blur-2xl"
+                        style={{ background: "#A78BFA22" }}
+                      />
+                      <div className="relative mb-4 flex items-center gap-2.5">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300">
+                          <Wallet className="h-4 w-4" />
+                        </span>
+                        <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
+                          Saldo{" "}
+                          {saldoFilter === "all"
+                            ? "Total"
+                            : saldoFilter === "positivos"
+                            ? "Positivo"
+                            : "Negativo"}
                         </span>
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-              {/* Card do saldo com filtro */}
-              <Card className="relative overflow-hidden">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="text-purple-600">
-                        <Wallet className="h-6 w-6" />
+                      <div
+                        className={`relative text-2xl font-semibold tracking-tight ${
+                          saldoExibido < 0 ? "text-rose-300" : "text-emerald-300"
+                        }`}
+                        style={{ fontFamily: "'Clash Display', sans-serif" }}
+                      >
+                        {isValuesVisible
+                          ? saldoExibido < 0
+                            ? `-${formatCurrency(Math.abs(saldoExibido))}`
+                            : formatCurrency(saldoExibido)
+                          : "••••••"}
                       </div>
-                      <span className="text-sm font-medium text-muted-foreground">
+                      <p className="relative mt-1.5 text-xs text-white/35">
                         Saldo{" "}
                         {saldoFilter === "all"
-                          ? "Total"
+                          ? "total combinado"
                           : saldoFilter === "positivos"
-                          ? "Positivo"
-                          : "Negativo"}
-                      </span>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="space-y-1">
-                    <p
-                      className={`text-2xl font-bold ${
-                        saldoExibido < 0 ? "text-red-600" : "text-green-600"
-                      }`}
+                          ? "somente contas positivas"
+                          : "somente contas negativas"}
+                      </p>
+                      <div className="relative mt-3 flex gap-1.5">
+                        {(["all", "positivos", "negativos"] as const).map((f) => (
+                          <button
+                            key={f}
+                            type="button"
+                            onClick={() => setSaldoFilter(f)}
+                            className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                              saldoFilter === f
+                                ? "bg-violet-500/20 text-violet-200"
+                                : "border border-white/[0.08] bg-white/[0.03] text-white/60 hover:bg-white/[0.07]"
+                            }`}
+                          >
+                            {f === "all"
+                              ? "Todos"
+                              : f === "positivos"
+                              ? "Positivos"
+                              : "Negativos"}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  </div>
+
+                  {/* Summary grid */}
+                  <div className="grid gap-4 lg:grid-cols-3">
+                    {/* Resumo Financeiro */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 18 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{
+                        duration: 0.7,
+                        delay: 0.5,
+                        ease: [0.22, 1, 0.36, 1],
+                      }}
+                      className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl"
                     >
-                      {saldoExibido < 0
-                        ? `-${formatCurrency(Math.abs(saldoExibido))}`
-                        : formatCurrency(saldoExibido)}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Saldo{" "}
-                      {saldoFilter === "all"
-                        ? "total combinado"
-                        : saldoFilter === "positivos"
-                        ? "somente contas positivas"
-                        : "somente contas negativas"}
-                    </p>
+                      <div className="mb-4 flex items-center gap-2.5">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-300">
+                          <DollarSign className="h-4 w-4" />
+                        </span>
+                        <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
+                          Resumo financeiro
+                        </span>
+                      </div>
+                      <div className="space-y-2.5">
+                        {[
+                          {
+                            l: "Total em Carteiras",
+                            v: formatCurrency(
+                              Number(
+                                dashboardData.resumoFinanceiro.totalEmCarteiras
+                              )
+                            ),
+                            c: "text-white/85",
+                          },
+                          {
+                            l: "Lucro Líquido",
+                            v: formatCurrency(
+                              Number(dashboardData.resumoFinanceiro.lucroLiquido)
+                            ),
+                            c: "text-emerald-400",
+                          },
+                          {
+                            l: "Total Retiradas",
+                            v: formatNumber(
+                              dashboardData.resumoFinanceiro.totalRetiradas
+                            ),
+                            c: "text-white/85",
+                          },
+                          {
+                            l: "Pendentes",
+                            v: formatCurrency(
+                              Number(dashboardData.resumoFinanceiro.pendentes)
+                            ),
+                            c: "text-amber-300",
+                          },
+                        ].map((row) => (
+                          <div
+                            key={row.l}
+                            className="flex items-center justify-between border-b border-white/[0.04] pb-2 last:border-none last:pb-0"
+                          >
+                            <span className="text-xs text-white/50">{row.l}</span>
+                            <span className={`text-sm font-semibold ${row.c}`}>
+                              {isValuesVisible ? row.v : "••••"}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
 
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        className="cursor-pointer"
-                        size="sm"
-                        variant={saldoFilter === "all" ? "default" : "outline"}
-                        onClick={() => setSaldoFilter("all")}
-                      >
-                        Todos
-                      </Button>
-                      <Button
-                        className="cursor-pointer"
-                        size="sm"
-                        variant={
-                          saldoFilter === "positivos" ? "default" : "outline"
-                        }
-                        onClick={() => setSaldoFilter("positivos")}
-                      >
-                        Positivos
-                      </Button>
-                      <Button
-                        className="cursor-pointer"
-                        size="sm"
-                        variant={
-                          saldoFilter === "negativos" ? "default" : "outline"
-                        }
-                        onClick={() => setSaldoFilter("negativos")}
-                      >
-                        Negativos
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                    {/* Transações */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 18 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{
+                        duration: 0.7,
+                        delay: 0.56,
+                        ease: [0.22, 1, 0.36, 1],
+                      }}
+                      className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl"
+                    >
+                      <div className="mb-4 flex items-center gap-2.5">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/15 text-sky-300">
+                          <Activity className="h-4 w-4" />
+                        </span>
+                        <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
+                          Transações
+                        </span>
+                      </div>
+                      <div className="space-y-2.5">
+                        {[
+                          {
+                            l: "Aprovadas",
+                            v: formatNumber(dashboardData.transacoes.aprovadas),
+                            c: "text-emerald-400",
+                          },
+                          {
+                            l: "Pendentes",
+                            v: formatNumber(dashboardData.transacoes.pendentes),
+                            c: "text-amber-300",
+                          },
+                          {
+                            l: "Em Análise",
+                            v: formatNumber(dashboardData.transacoes.emAnalise),
+                            c: "text-orange-300",
+                          },
+                          {
+                            l: "Total Processadas",
+                            v: formatNumber(
+                              dashboardData.transacoes.totalProcessadas
+                            ),
+                            c: "text-white/85",
+                          },
+                        ].map((row) => (
+                          <div
+                            key={row.l}
+                            className="flex items-center justify-between border-b border-white/[0.04] pb-2 last:border-none last:pb-0"
+                          >
+                            <span className="text-xs text-white/50">{row.l}</span>
+                            <span className={`text-sm font-semibold ${row.c}`}>
+                              {row.v}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
 
-            {/* Resumo Financeiro, Transações e Usuários */}
-            <div className="grid gap-6 lg:grid-cols-3">
-              {/* Resumo Financeiro */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <DollarSign className="h-5 w-5 text-green-600" />
-                    Resumo Financeiro
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">
-                        Total em Carteiras
-                      </span>
-                      <span className="font-medium">
-                        {formatCurrency(
-                          Number(
-                            dashboardData.resumoFinanceiro.totalEmCarteiras
-                          )
-                        )}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">
-                        Lucro Líquido
-                      </span>
-                      <span className="font-medium text-green-600">
-                        {formatCurrency(
-                          Number(dashboardData.resumoFinanceiro.lucroLiquido)
-                        )}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">
-                        Total Retiradas
-                      </span>
-                      <span className="font-medium">
-                        {formatNumber(
-                          dashboardData.resumoFinanceiro.totalRetiradas
-                        )}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">
-                        Pendentes
-                      </span>
-                      <span className="font-medium text-amber-600">
-                        {formatCurrency(
-                          Number(dashboardData.resumoFinanceiro.pendentes)
-                        )}
-                      </span>
-                    </div>
+                    {/* Usuários */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 18 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{
+                        duration: 0.7,
+                        delay: 0.62,
+                        ease: [0.22, 1, 0.36, 1],
+                      }}
+                      className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl"
+                    >
+                      <div className="mb-4 flex items-center gap-2.5">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300">
+                          <Users className="h-4 w-4" />
+                        </span>
+                        <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
+                          Usuários
+                        </span>
+                      </div>
+                      <div className="space-y-2.5">
+                        {[
+                          {
+                            l: "Cadastrados",
+                            v: formatNumber(dashboardData.usuarios.cadastrados),
+                            c: "text-sky-300",
+                          },
+                          {
+                            l: "Bloqueados",
+                            v: formatNumber(dashboardData.usuarios.bloqueados),
+                            c: "text-rose-300",
+                          },
+                          {
+                            l: "KYC Pendentes",
+                            v: formatNumber(dashboardData.usuarios.kycPendentes),
+                            c: "text-violet-300",
+                          },
+                          {
+                            l: "Taxa de Aprovação",
+                            v: `${dashboardData.usuarios.taxaAprovacao}%`,
+                            c: "text-emerald-400",
+                          },
+                        ].map((row) => (
+                          <div
+                            key={row.l}
+                            className="flex items-center justify-between border-b border-white/[0.04] pb-2 last:border-none last:pb-0"
+                          >
+                            <span className="text-xs text-white/50">{row.l}</span>
+                            <span className={`text-sm font-semibold ${row.c}`}>
+                              {row.v}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Resumo de Transações */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-5 w-5 text-blue-600" />
-                    Transações
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">
-                        Aprovadas
-                      </span>
-                      <span className="font-medium text-green-600">
-                        {formatNumber(dashboardData.transacoes.aprovadas)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">
-                        Pendentes
-                      </span>
-                      <span className="font-medium text-yellow-600">
-                        {formatNumber(dashboardData.transacoes.pendentes)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">
-                        Em Análise
-                      </span>
-                      <span className="font-medium text-orange-600">
-                        {formatNumber(dashboardData.transacoes.emAnalise)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">
-                        Total Processadas
-                      </span>
-                      <span className="font-medium">
-                        {formatNumber(
-                          dashboardData.transacoes.totalProcessadas
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Resumo de Usuários */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5 text-purple-600" />
-                    Usuários
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">
-                        Cadastrados
-                      </span>
-                      <span className="font-medium text-blue-600">
-                        {formatNumber(dashboardData.usuarios.cadastrados)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">
-                        Bloqueados
-                      </span>
-                      <span className="font-medium text-red-600">
-                        {formatNumber(dashboardData.usuarios.bloqueados)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">
-                        KYC Pendentes
-                      </span>
-                      <span className="font-medium text-purple-600">
-                        {formatNumber(dashboardData.usuarios.kycPendentes)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">
-                        Taxa de Aprovação
-                      </span>
-                      <span className="font-medium text-green-600">
-                        {dashboardData.usuarios.taxaAprovacao}%
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
-    </div>
+                </>
+              )}
+            </main>
+          </SidebarInset>
+        </SidebarProvider>
+        <ShadowPanel />
+      </div>
+    </>
   );
 }
 
