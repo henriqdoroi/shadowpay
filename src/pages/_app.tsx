@@ -8,13 +8,9 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import Head from "next/head";
 
-import { NavBottom, KycStatus, NavItem } from "@/components/NavBottom";
-import { BarChart2, User, Settings2 } from "lucide-react";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
 import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarMobile } from "@/components/SidebarMobile";
 
 const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
@@ -38,42 +34,6 @@ function AppContent({ Component, pageProps }: AppProps) {
     handleResize();
     return () => window.removeEventListener("resize", handleResize);
   }, [setOpenMobile]);
-
-  const navItems: NavItem[] = [
-    { title: "Dashboard", url: "/dashboard", icon: BarChart2 },
-    { title: "Perfil", url: "/perfil", icon: User },
-    {
-      title: "Configurações",
-      url: "/configuracoes",
-      icon: Settings2,
-      requiresKycApproved: true,
-    },
-  ];
-
-  const navMainItems = [
-    {
-      title: "Dashboard",
-      url: " ",
-      icon: BarChart2,
-      items: [
-        {
-          title: "Performance",
-          url: "/v1/dashboard",
-        },
-        {
-          title: "Relatórios",
-          url: "/v1/reports",
-        },
-      ],
-    },
-    {
-      title: "Configurações",
-      url: "/configuracoes",
-      icon: Settings2,
-    },
-  ];
-
-  const userKycStatus: KycStatus = user?.kycStatus || "APPROVED";
 
   useEffect(() => {
     if (isLoading || !user) return;
@@ -99,20 +59,12 @@ function AppContent({ Component, pageProps }: AppProps) {
     <div
       className={`${bricolage.variable} flex min-h-screen w-full overflow-x-hidden`}
     >
-      {/* Sidebar desktop (md em diante) */}
-      <div className="hidden md:block" style={{ display: "none" }}>
-        <AppSidebar />
-      </div>
-
-      {/* Sidebar mobile (abaixo de md) */}
-      <div className="md:hidden">
-        <SidebarMobile items={navMainItems} userKycStatus={userKycStatus} />
-      </div>
-
-      {/* Conteúdo principal */}
+      {/* Cada página renderiza seu próprio AppSidebar (desktop) e
+          shadcn Sidebar Sheet (mobile drawer) via SidebarProvider.
+          Nada de NavBottom/SidebarMobile antigos — substituídos pelos
+          ShadowMobileNav e ShadowTopbar dentro do ShadowShell. */}
       <main className="flex-grow">
         <Component {...pageProps} />
-        <NavBottom items={navItems} userKycStatus={userKycStatus} />
       </main>
       <Toaster />
     </div>
