@@ -1,153 +1,233 @@
-import { AppSidebar } from "@/components/app-sidebar";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import {
-  Eye,
-  EyeOff,
-  User,
-  RefreshCw,
-  ChevronLeft,
-  ChevronRight,
-  AlertTriangle,
-  Clock,
-  Radio,
-  Wallet,
-  Activity,
-  ArrowDownLeft,
-  ArrowUpRight,
-} from "lucide-react";
-import TwoFAModal from "./2faAuthentication";
+"use client";
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import Image from "next/image";
 import Head from "next/head";
-import { motion } from "framer-motion";
-import ShadowPanel from "@/components/ShadowPanel";
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 
-/* Count-up suave (Shadow Design Language) */
-function useCountUp(target: number, duration = 1300) {
-  const [value, setValue] = useState(0);
-  useEffect(() => {
-    let raf = 0;
-    const t0 = performance.now();
-    const tick = (now: number) => {
-      const p = Math.min(1, (now - t0) / duration);
-      const eased = p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
-      setValue(target * eased);
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, duration]);
-  return value;
-}
+import ProtectedRoute from "@/components/ProtectedRoute";
+import ShadowPanel from "@/components/ShadowPanel";
+
+import { ShadowShell } from "@/components/shadow/ShadowShell";
+import { ShadowCard } from "@/components/shadow/ShadowCard";
+import { ShadowButton } from "@/components/shadow/ShadowButton";
+import { ShadowMetricCard } from "@/components/shadow/ShadowMetricCard";
+import { ShadowChartPanel, ChartPoint } from "@/components/shadow/ShadowChartPanel";
+import { ShadowLiveFeed, LiveFeedItem } from "@/components/shadow/ShadowLiveFeed";
+import { useCountUp } from "@/components/shadow/useCountUp";
+
+import {
+  Wallet,
+  Activity,
+  ArrowUpRight,
+  Target,
+  CheckCircle2,
+  ReceiptText,
+  RefreshCcw,
+  CircleDollarSign,
+  Plus,
+  AlertTriangle,
+  Clock,
+  ShieldCheck,
+} from "lucide-react";
+
+import TwoFAModal from "./2faAuthentication";
+import Image from "next/image";
+
+const API = "https://shadowpay-api-production.up.railway.app";
 
 function DashboardContent() {
   const router = useRouter();
   const { user, token } = useAuth();
-  const [localUser, setLocalUser] = useState(user);
-  const [, setIsLoadingProfile] = useState(true);
-  const [mounted, setMounted] = useState(false);
+  const [localUser, setLocalUser] = useState<any>(user);
+  const [isValuesVisible, setIsValuesVisible] = useState(true);
 
-  const [dashboardStats, setDashboardStats] = useState({
+  const [walletStats, setWalletStats] = useState({
     currentBalance: 0,
     blockedBalance: 0,
   });
-  const [isLoadingStats, setIsLoadingStats] = useState(false);
-  const [isValuesVisible, setIsValuesVisible] = useState(true);
-  const [transactionsData, setTransactionsData] = useState({
+  const [txData, setTxData] = useState({
     totals: { totalTransacionado: 0, totalEntradas: 0, totalSaidas: 0 },
     transactions: [] as any[],
-    pagination: {
-      currentPage: 1,
-      totalPages: 1,
-      totalItems: 0,
-      itemsPerPage: 20,
-      hasNextPage: false,
-      hasPrevPage: false,
-    },
   });
-  const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [verificationStatus, setVerificationStatus] = useState<
+  const [isLoading, setIsLoading] = useState(false);
+  const [verification, setVerification] = useState<
     "NOT_STARTED" | "PENDING" | "APPROVED" | "BANNED"
   >("NOT_STARTED");
-  const withdrawUrl = "/v1/finance/withdraw";
   const [is2FAModalOpen, setIs2FAModalOpen] = useState(false);
 
-  useEffect(() => setMounted(true), []);
-
+  /* ---------- bootstrap user profile ---------- */
   useEffect(() => {
     if (
       user &&
       (user as any).kycStatus &&
-      verificationStatus !== (user as any).kycStatus
+      verification !== (user as any).kycStatus
     ) {
-      setVerificationStatus((user as any).kycStatus);
+      setVerification((user as any).kycStatus);
     }
-  }, [user, verificationStatus]);
+  }, [user, verification]);
 
-  // Fetch seller profile (2FA info)
   useEffect(() => {
-    if (token) {
-      (async () => {
-        try {
-          const res = await axios.get(
-            "https://shadowpay-api-production.up.railway.app/api/user/profile",
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          if (res.data.success && res.data.data) {
-            const profile = res.data.data;
-            setLocalUser({
-              ...profile,
-              twofaEnabled: Boolean(profile.twofaEnabled),
-              twofaConfirmed: Boolean(profile.twofaConfirmed),
-            });
-          }
-        } catch (err) {
-          console.error("Erro ao buscar seller logado:", err);
-        } finally {
-          setIsLoadingProfile(false);
+    if (!token) return;
+    (async () => {
+      try {
+        const r = await axios.get(`${API}/api/user/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (r.data?.success && r.data.data) {
+          setLocalUser({
+            ...r.data.data,
+            twofaEnabled: Boolean(r.data.data.twofaEnabled),
+            twofaConfirmed: Boolean(r.data.data.twofaConfirmed),
+          });
         }
-      })();
-    }
+      } catch (e) {
+        console.error("profile error", e);
+      }
+    })();
   }, [token]);
 
-  // Utils
-  const toggleValuesVisibility = () => setIsValuesVisible((v) => !v);
-  const formatCurrency = (value: number) =>
+  /* ---------- wallet stats ---------- */
+  useEffect(() => {
+    if (!user || !token) return;
+    (async () => {
+      try {
+        const r = await axios.get(`${API}/api/user/dashboard-stats`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (r.data?.success) {
+          setWalletStats({
+            currentBalance: Number(r.data.data.currentBalance) || 0,
+            blockedBalance: Number(r.data.data.blockedBalance) || 0,
+          });
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, [user, token]);
+
+  /* ---------- transactions ---------- */
+  const fetchTransactions = async () => {
+    if (!token) return;
+    setIsLoading(true);
+    try {
+      const r = await axios.get(
+        `${API}/api/user/transactions-report?page=1&limit=100`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (r.data?.success) {
+        setTxData({
+          totals: {
+            totalTransacionado:
+              Number(r.data.data.summary?.totalTransactionado) || 0,
+            totalEntradas: Number(r.data.data.summary?.totalEntradas) || 0,
+            totalSaidas: Number(r.data.data.summary?.totalSaidas) || 0,
+          },
+          transactions: r.data.data.transactions || [],
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user && token) fetchTransactions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, token]);
+
+  /* ---------- derived ---------- */
+  const formatCurrency = (v: number) =>
     new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
-    }).format(value || 0);
-  const formatDate = (s: string) =>
-    new Intl.DateTimeFormat("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(s));
+    }).format(v || 0);
 
+  const txList = txData.transactions;
+  const paid = txList.filter((t) => String(t.status).toUpperCase() === "PAID");
+  const refunded = txList.filter((t) =>
+    ["REFUNDED", "CHARGEBACK"].includes(String(t.status).toUpperCase())
+  );
+  const pixCount = txList.filter(
+    (t) => String(t.method).toUpperCase() === "PIX"
+  ).length;
+  const totalTx = txList.length;
+  const conv = totalTx > 0 ? (paid.length / totalTx) * 100 : 0;
+  const grossSum = paid.reduce(
+    (acc, t) => acc + Number(t.grossAmount || 0),
+    0
+  );
+  const netSum = paid.reduce((acc, t) => acc + Number(t.netAmount || 0), 0);
+  const avgTicket = paid.length > 0 ? grossSum / paid.length : 0;
+
+  const balance = useCountUp(walletStats.currentBalance);
+  const grossAnim = useCountUp(grossSum);
+  const netAnim = useCountUp(netSum);
+
+  /* ---------- chart aggregation per day (last 14d) ---------- */
+  const chartData: ChartPoint[] = useMemo(() => {
+    const map = new Map<string, ChartPoint>();
+    for (const t of txList) {
+      if (!t.createdAt) continue;
+      const d = new Date(t.createdAt);
+      const k = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      const cur = map.get(k) || {
+        label: d.toLocaleDateString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+        }),
+        ts: new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(),
+        primary: 0,
+        secondary: 0,
+      };
+      cur.primary += Number(t.grossAmount || 0);
+      if (String(t.status).toUpperCase() === "PAID") {
+        cur.secondary = (cur.secondary || 0) + Number(t.netAmount || 0);
+      }
+      map.set(k, cur);
+    }
+    return Array.from(map.values()).sort((a, b) => a.ts - b.ts);
+  }, [txList]);
+
+  /* ---------- live feed ---------- */
+  const liveFeed: LiveFeedItem[] = useMemo(() => {
+    const sorted = [...txList].sort(
+      (a, b) =>
+        new Date(b.createdAt || 0).getTime() -
+        new Date(a.createdAt || 0).getTime()
+    );
+    return sorted.slice(0, 12).map((t): LiveFeedItem => {
+      const status = String(t.status).toUpperCase();
+      const isPaid = status === "PAID";
+      const isFailed = ["FAILED", "CHARGEBACK"].includes(status);
+      const kind: LiveFeedItem["kind"] = isPaid
+        ? "sale"
+        : isFailed
+        ? "alert"
+        : "withdraw";
+      return {
+        id: t.id,
+        kind,
+        title:
+          t.customer?.name ||
+          `Venda ${String(t.method || "PIX").toUpperCase()}`,
+        subtitle: `${String(t.method || "—").toUpperCase()} · ${status}`,
+        value: `${isPaid ? "+" : ""}${formatCurrency(
+          Number(t.grossAmount || 0)
+        )}`,
+        at: t.createdAt,
+      };
+    });
+  }, [txList]);
+
+  /* ---------- greeting ---------- */
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+  const greeting =
+    hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
   const longDate = (() => {
     const d = new Intl.DateTimeFormat("pt-BR", {
       weekday: "long",
@@ -158,583 +238,346 @@ function DashboardContent() {
     return d.charAt(0).toUpperCase() + d.slice(1);
   })();
 
-  const getStatusBadge = (status: string) => {
-    const s = String(status || "").toUpperCase();
-    const map: Record<string, { color: string; text: string }> = {
-      PAID: { color: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30", text: "PAGO" },
-      PENDING: { color: "bg-amber-500/15 text-amber-300 border-amber-500/30", text: "PENDENTE" },
-      PROCESSING: { color: "bg-sky-500/15 text-sky-300 border-sky-500/30", text: "PROCESSANDO" },
-      FAILED: { color: "bg-rose-500/15 text-rose-300 border-rose-500/30", text: "FALHOU" },
-      REFUNDED: { color: "bg-white/10 text-white/60 border-white/15", text: "EXTORNADO" },
-      CHARGEBACK: { color: "bg-rose-500/15 text-rose-300 border-rose-500/30", text: "CHARGEBACK" },
-      EXPIRED: { color: "bg-white/10 text-white/50 border-white/15", text: "EXPIRADO" },
-    };
-    const cfg = map[s] || { color: "bg-white/10 text-white/60 border-white/15", text: s };
-    return (
-      <span className={`inline-block rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide ${cfg.color}`}>
-        {cfg.text}
-      </span>
-    );
-  };
+  if (!user) return null;
 
-  const getMethodLabel = (method: string) => {
-    const m = String(method || "").toLowerCase();
-    const labels: Record<string, string> = { pix: "PIX", card: "Cartão", boleto: "Boleto", crypto: "Cripto" };
-    return labels[m] || (method || "—");
-  };
-  const getMethodIcon = (method: string) => {
-    if (String(method).toLowerCase() === "pix") {
-      return <Image src="/pix-icon.svg" width={14} height={14} className="brightness-0 invert opacity-70" alt="Pix" />;
-    }
-    return null;
-  };
+  /* ---------- right intelligence panel ---------- */
+  const rightPanel = (
+    <div className="space-y-5">
+      <ShadowLiveFeed items={liveFeed} />
 
-  // Fetch stats
-  useEffect(() => {
-    if (user && token) {
-      (async () => {
-        setIsLoadingStats(true);
-        try {
-          const res = await axios.get(
-            "https://shadowpay-api-production.up.railway.app/api/user/dashboard-stats",
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          if (res.data.success) {
-            const stats = res.data.data;
-            setDashboardStats({
-              currentBalance: Number(stats.currentBalance) || 0,
-              blockedBalance: Number(stats.blockedBalance) || 0,
-            });
-          }
-        } catch (error) {
-          console.error(error);
-        } finally {
-          setIsLoadingStats(false);
-        }
-      })();
-    }
-  }, [user, token]);
+      {/* Top performance widget */}
+      <ShadowCard padded="md">
+        <h3
+          className="mb-3 text-sm font-semibold text-white"
+          style={{ fontFamily: "'Clash Display', sans-serif" }}
+        >
+          Saúde da operação
+        </h3>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-white/55">Aprovação</span>
+            <span className="font-bold text-emerald-300">
+              {conv.toFixed(1)}%
+            </span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{
+                width: `${Math.min(conv, 100)}%`,
+                background:
+                  "linear-gradient(90deg, #22C55E 0%, #22D3EE 100%)",
+              }}
+            />
+          </div>
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-white/55">Reembolso</span>
+            <span className="font-bold text-rose-300">
+              {totalTx ? ((refunded.length / totalTx) * 100).toFixed(1) : "0.0"}%
+            </span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+            <div
+              className="h-full rounded-full bg-rose-400 transition-all duration-700"
+              style={{
+                width: `${
+                  totalTx ? Math.min((refunded.length / totalTx) * 100, 100) : 0
+                }%`,
+              }}
+            />
+          </div>
+        </div>
+      </ShadowCard>
+    </div>
+  );
 
-  // Fetch transactions
-  const fetchTransactions = async (page = 1) => {
-    if (!token) return;
-    setIsLoadingTransactions(true);
-    try {
-      const params = new URLSearchParams({ page: page.toString(), limit: "20" });
-      const res = await axios.get(
-        `https://shadowpay-api-production.up.railway.app/api/user/transactions-report?${params.toString()}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (res.data.success) {
-        const apiData = res.data.data;
-        setTransactionsData({
-          totals: {
-            totalTransacionado: Number(apiData.summary?.totalTransactionado) || 0,
-            totalEntradas: Number(apiData.summary?.totalEntradas) || 0,
-            totalSaidas: Number(apiData.summary?.totalSaidas) || 0,
-          },
-          transactions: apiData.transactions || [],
-          pagination: {
-            currentPage: apiData.pagination.currentPage,
-            totalPages: apiData.pagination.totalPages,
-            totalItems: apiData.pagination.totalCount,
-            itemsPerPage: apiData.pagination.limit,
-            hasNextPage: apiData.pagination.hasNext,
-            hasPrevPage: apiData.pagination.hasPrev,
-          },
-        });
-        setCurrentPage(page);
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoadingTransactions(false);
-    }
-  };
-
-  useEffect(() => {
-    if (user && token) fetchTransactions(1);
-  }, [user, token]);
-
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= transactionsData.pagination.totalPages && page !== currentPage)
-      fetchTransactions(page);
-  };
-  const handleRefreshTransactions = () => fetchTransactions(currentPage);
-  const handleStartVerification = () => router.push("/v1/kyc");
-
-  const animatedBalance = useCountUp(dashboardStats.currentBalance);
-  const animatedEntradas = useCountUp(transactionsData.totals.totalEntradas);
-  const animatedSaidas = useCountUp(transactionsData.totals.totalSaidas);
-  const animatedTotal = useCountUp(transactionsData.totals.totalTransacionado);
-
-  // Agrega transações por dia para o gráfico
-  const chartData = useMemo(() => {
-    const byDay = new Map<string, any>();
-    for (const t of transactionsData.transactions) {
-      if (!t?.createdAt) continue;
-      const d = new Date(t.createdAt);
-      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-      const cur =
-        byDay.get(key) || {
-          label: d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
-          ts: new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(),
-          geradas: 0,
-          pagas: 0,
-        };
-      cur.geradas += Number(t.grossAmount ?? 0);
-      if (String(t.status).toUpperCase() === "PAID") cur.pagas += Number(t.netAmount ?? 0);
-      byDay.set(key, cur);
-    }
-    return Array.from(byDay.values()).sort((a, b) => a.ts - b.ts);
-  }, [transactionsData.transactions]);
-
-  const renderVerificationAlert = () => {
-    const base =
-      "flex flex-col gap-3 rounded-2xl border px-5 py-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between";
-    if (verificationStatus === "NOT_STARTED") {
+  /* ---------- verification alert ---------- */
+  const verifyAlert = (() => {
+    if (verification === "NOT_STARTED") {
       return (
-        <div className={`${base} border-amber-500/30 bg-amber-500/[0.07]`}>
+        <div className="flex flex-col gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/[0.06] px-5 py-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
             <div>
-              <p className="font-semibold text-amber-200">Verificação de conta necessária</p>
+              <p className="font-semibold text-amber-200">
+                Verificação de conta necessária
+              </p>
               <p className="mt-0.5 text-sm text-amber-200/70">
-                Conclua o KYC pra liberar toda a operação.
+                Conclua o KYC para liberar saques, depósitos e produção.
               </p>
             </div>
           </div>
-          <Button onClick={handleStartVerification} className="border-0 bg-amber-500 font-semibold text-black hover:bg-amber-400">
+          <ShadowButton
+            variant="primary"
+            size="md"
+            onClick={() => router.push("/v1/kyc")}
+            style={{
+              background: "linear-gradient(120deg, #F59E0B, #EF4444)",
+            }}
+          >
             Verificar agora
-          </Button>
+          </ShadowButton>
         </div>
       );
     }
-    if (verificationStatus === "PENDING") {
+    if (verification === "PENDING") {
       return (
-        <div className={`${base} border-sky-500/30 bg-sky-500/[0.07]`}>
-          <div className="flex items-start gap-3">
-            <Clock className="mt-0.5 h-5 w-5 shrink-0 text-sky-400" />
-            <div>
-              <p className="font-semibold text-sky-200">Verificação em análise</p>
-              <p className="mt-0.5 text-sm text-sky-200/70">Sua documentação está sendo analisada.</p>
-            </div>
+        <div className="flex items-center gap-3 rounded-2xl border border-sky-500/25 bg-sky-500/[0.06] px-5 py-4 backdrop-blur-md">
+          <Clock className="h-5 w-5 shrink-0 text-sky-400" />
+          <div>
+            <p className="font-semibold text-sky-200">
+              Verificação em análise
+            </p>
+            <p className="mt-0.5 text-sm text-sky-200/70">
+              Sua documentação está sendo analisada por nossa equipe.
+            </p>
           </div>
         </div>
       );
     }
-    if (verificationStatus === "BANNED") {
+    if (verification === "BANNED") {
       return (
-        <div className={`${base} border-rose-500/30 bg-rose-500/[0.07]`}>
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-rose-400" />
-            <div>
-              <p className="font-semibold text-rose-200">Conta suspensa</p>
-              <p className="mt-0.5 text-sm text-rose-200/70">Entre em contato com o suporte.</p>
-            </div>
+        <div className="flex items-center gap-3 rounded-2xl border border-rose-500/25 bg-rose-500/[0.06] px-5 py-4 backdrop-blur-md">
+          <AlertTriangle className="h-5 w-5 shrink-0 text-rose-400" />
+          <div>
+            <p className="font-semibold text-rose-200">Conta suspensa</p>
+            <p className="mt-0.5 text-sm text-rose-200/70">
+              Entre em contato com o suporte.
+            </p>
           </div>
         </div>
       );
     }
     return null;
-  };
-
-  if (!user) return <p className="p-6 text-white/60">Carregando…</p>;
-
-  const SHADOW_BG =
-    "radial-gradient(1100px 700px at 85% -10%, #0B1020 0%, #060A14 55%, #03060F 100%)";
-
-  const kpis = [
-    {
-      label: "Saldo disponível",
-      value: animatedBalance,
-      sub: `Bloqueado: ${isValuesVisible ? formatCurrency(dashboardStats.blockedBalance) : "••••"}`,
-      icon: <Wallet className="h-4 w-4" />,
-      accent: "#8B5CF6",
-    },
-    {
-      label: "Total transacionado",
-      value: animatedTotal,
-      sub: "no período",
-      icon: <Activity className="h-4 w-4" />,
-      accent: "#6366F1",
-    },
-    {
-      label: "Entradas",
-      value: animatedEntradas,
-      sub: "vendas líquidas",
-      icon: <ArrowDownLeft className="h-4 w-4" />,
-      accent: "#34D399",
-    },
-    {
-      label: "Saídas",
-      value: animatedSaidas,
-      sub: "saques pagos",
-      icon: <ArrowUpRight className="h-4 w-4" />,
-      accent: "#F59E0B",
-    },
-  ];
+  })();
 
   return (
     <>
       <Head>
-        <title>ShadowPay — Cockpit</title>
+        <title>ShadowPay — Command Center</title>
       </Head>
 
-      <div className="min-h-screen">
-        <SidebarProvider>
-          <AppSidebar />
-          <SidebarInset className="text-white" style={{ background: SHADOW_BG }}>
-            {/* 2FA banner */}
-            {localUser &&
-              !(localUser.twofaEnabled && (localUser as any).twofaConfirmed) && (
-                <div className="mx-4 mt-4 flex items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/[0.06] px-4 py-3 backdrop-blur-md lg:mx-8">
-                  <span className="text-sm font-medium text-amber-200/90">
-                    Sua conta ainda não tem autenticação em duas etapas (2FA).
-                  </span>
-                  <Button
-                    size="sm"
-                    className="shrink-0 border border-amber-500/40 bg-transparent text-amber-300 hover:bg-amber-500/10"
-                    onClick={() => setIs2FAModalOpen(true)}
-                  >
-                    Ativar 2FA
-                  </Button>
-                  <TwoFAModal
-                    isOpen={is2FAModalOpen}
-                    onClose={() => setIs2FAModalOpen(false)}
-                    token={token!}
-                    user={localUser}
-                    setUser={setLocalUser}
-                  />
-                </div>
-              )}
-
-            {/* Header */}
-            <header className="flex items-center justify-between gap-3 px-4 pt-6 lg:px-8">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger className="text-white/60 hover:text-white" />
-                <div>
-                  <h1
-                    className="text-2xl font-bold tracking-tight text-white md:text-[28px]"
-                    style={{ fontFamily: "'Clash Display', sans-serif" }}
-                  >
-                    {greeting}, {user?.companyName || "Operador"} <span className="align-middle">👋</span>
-                  </h1>
-                  <p className="mt-1 text-xs text-white/40">{longDate}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={toggleValuesVisibility}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/55 transition-colors hover:bg-white/[0.07] hover:text-white"
-                  aria-label="Alternar valores"
-                >
-                  {isValuesVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                </button>
-                <button
-                  onClick={handleRefreshTransactions}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/55 transition-colors hover:bg-white/[0.07] hover:text-white"
-                  aria-label="Atualizar"
-                >
-                  <RefreshCw className={`h-4 w-4 ${isLoadingTransactions ? "animate-spin" : ""}`} />
-                </button>
-                <button
-                  onClick={() => router.push("/v1/configs/profile")}
-                  className="flex h-9 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 text-sm text-white/80 transition-colors hover:bg-white/[0.07] hover:text-white"
-                >
-                  <User className="h-4 w-4" /> Perfil
-                </button>
-              </div>
-            </header>
-
-            <main className="flex flex-col gap-5 p-4 lg:p-8">
-              {renderVerificationAlert()}
-
-              {/* KPIs */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                {kpis.map((k, i) => (
-                  <motion.div
-                    key={k.label}
-                    initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
-                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                    transition={{ duration: 0.7, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
-                    className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl"
-                  >
-                    <div
-                      className="pointer-events-none absolute -left-8 -top-10 h-28 w-28 rounded-full opacity-50 blur-2xl transition-opacity duration-500 group-hover:opacity-80"
-                      style={{ background: `${k.accent}22` }}
-                    />
-                    <div className="relative mb-4 flex items-center gap-2.5">
-                      <span
-                        className="flex h-8 w-8 items-center justify-center rounded-lg"
-                        style={{ background: `${k.accent}1f`, color: k.accent }}
-                      >
-                        {k.icon}
-                      </span>
-                      <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
-                        {k.label}
-                      </span>
-                    </div>
-                    <div
-                      className="relative text-2xl font-semibold tracking-tight text-white"
-                      style={{ fontFamily: "'Clash Display', sans-serif" }}
-                    >
-                      {isValuesVisible ? formatCurrency(k.value) : "••••••"}
-                    </div>
-                    <p className="relative mt-1.5 text-xs text-white/35">{k.sub}</p>
-                  </motion.div>
-                ))}
-              </div>
-
-              {/* Chart + side */}
-              <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-                <motion.div
-                  initial={{ opacity: 0, y: 18 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-                  className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl xl:col-span-2"
-                >
-                  <div className="mb-1 flex items-center justify-between">
-                    <h2 className="text-base font-semibold text-white" style={{ fontFamily: "'Clash Display', sans-serif" }}>
-                      Seu desempenho
-                    </h2>
-                    <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-400/80">
-                      <span className="relative flex h-1.5 w-1.5">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                      </span>
-                      ao vivo
-                    </span>
-                  </div>
-
-                  <div className="mt-4 h-[280px] w-full">
-                    {mounted && chartData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
-                          <defs>
-                            <linearGradient id="gGeradas" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.4} />
-                              <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0} />
-                            </linearGradient>
-                            <linearGradient id="gPagas" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#22D3EE" stopOpacity={0.35} />
-                              <stop offset="100%" stopColor="#22D3EE" stopOpacity={0} />
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                          <XAxis dataKey="label" stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
-                          <YAxis
-                            stroke="#6B7280"
-                            fontSize={11}
-                            tickLine={false}
-                            axisLine={false}
-                            width={46}
-                            tickFormatter={(v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v))}
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              background: "#0B1020",
-                              border: "1px solid rgba(255,255,255,0.1)",
-                              borderRadius: 12,
-                              color: "#fff",
-                              fontSize: 12,
-                            }}
-                            labelStyle={{ color: "#A4ACBE" }}
-                            formatter={(v: any, name: any) => [formatCurrency(Number(v)), name === "geradas" ? "Geradas" : "Pagas"]}
-                          />
-                          <Area type="monotone" dataKey="geradas" stroke="#8B5CF6" strokeWidth={2} fill="url(#gGeradas)" />
-                          <Area type="monotone" dataKey="pagas" stroke="#22D3EE" strokeWidth={2} fill="url(#gPagas)" />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="flex h-full flex-col items-center justify-center text-center">
-                        <Radio className="mb-3 h-7 w-7 text-violet-400/50" />
-                        <p className="text-sm font-medium text-white/70">Nenhuma atividade detectada</p>
-                        <p className="mt-1 text-xs text-white/35">Sua infraestrutura está pronta. As vendas aparecem aqui em tempo real.</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* mini-stats */}
-                  <div className="mt-4 grid grid-cols-3 gap-3 border-t border-white/[0.06] pt-4">
-                    {[
-                      { l: "Transacionado", v: transactionsData.totals.totalTransacionado, c: "#fff" },
-                      { l: "Geradas", v: transactionsData.totals.totalEntradas, c: "#A78BFA" },
-                      { l: "Pagas", v: transactionsData.totals.totalEntradas, c: "#22D3EE" },
-                    ].map((m) => (
-                      <div key={m.l} className="text-center">
-                        <p className="text-[10px] uppercase tracking-[0.15em] text-white/35">{m.l}</p>
-                        <p className="mt-1 text-sm font-semibold" style={{ color: m.c, fontFamily: "'Clash Display', sans-serif" }}>
-                          {isValuesVisible ? formatCurrency(m.v) : "••••"}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-
-                {/* Side: ação rápida */}
-                <motion.div
-                  initial={{ opacity: 0, y: 18 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.7, delay: 0.16, ease: [0.22, 1, 0.36, 1] }}
-                  className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl"
-                >
-                  <div
-                    className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full blur-3xl"
-                    style={{ background: "rgba(139,92,246,0.18)" }}
-                  />
-                  <div className="relative">
-                    <span className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-white/40">
-                      <Wallet className="h-3.5 w-3.5" /> Carteira
-                    </span>
-                    <div
-                      className="mt-3 text-3xl font-semibold tracking-tight text-white"
-                      style={{ fontFamily: "'Clash Display', sans-serif" }}
-                    >
-                      {isValuesVisible ? formatCurrency(animatedBalance) : "••••••"}
-                    </div>
-                    <p className="mt-1 text-xs text-white/40">
-                      Bloqueado:{" "}
-                      <span className="text-white/65">
-                        {isValuesVisible ? formatCurrency(dashboardStats.blockedBalance) : "••••"}
-                      </span>
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => router.push(withdrawUrl)}
-                    className="group relative mt-6 inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
-                    style={{
-                      background: "linear-gradient(120deg, #7C3AED, #6366F1)",
-                      boxShadow: "0 14px 36px -14px rgba(124,58,237,0.7)",
-                    }}
-                  >
-                    Sacar
-                    <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                  </button>
-                </motion.div>
-              </div>
-
-              {/* Transações */}
-              <motion.div
-                initial={{ opacity: 0, y: 18 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] backdrop-blur-xl"
+      <ShadowShell
+        rightPanel={rightPanel}
+        valuesVisible={isValuesVisible}
+        onToggleValues={() => setIsValuesVisible((v) => !v)}
+      >
+        {/* 2FA banner */}
+        {localUser &&
+          !(localUser.twofaEnabled && localUser.twofaConfirmed) && (
+            <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/[0.06] px-5 py-3 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
+              <span className="flex items-center gap-2 text-sm font-medium text-amber-200/90">
+                <ShieldCheck className="h-4 w-4" />
+                Sua conta ainda não tem autenticação em duas etapas (2FA).
+              </span>
+              <ShadowButton
+                size="sm"
+                variant="outline"
+                onClick={() => setIs2FAModalOpen(true)}
+                className="border-amber-500/30 bg-amber-500/[0.06] text-amber-200 hover:bg-amber-500/15"
               >
-                <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
-                  <h2 className="text-sm font-semibold text-white" style={{ fontFamily: "'Clash Display', sans-serif" }}>
-                    Histórico de transações
-                  </h2>
-                  <button
-                    onClick={handleRefreshTransactions}
-                    disabled={isLoadingTransactions}
-                    className="flex items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs text-white/70 transition-colors hover:bg-white/[0.07] hover:text-white"
-                  >
-                    <RefreshCw className={`h-3.5 w-3.5 ${isLoadingTransactions ? "animate-spin" : ""}`} />
-                    {isLoadingTransactions ? "Atualizando…" : "Atualizar"}
-                  </button>
-                </div>
+                Ativar 2FA
+              </ShadowButton>
+              <TwoFAModal
+                isOpen={is2FAModalOpen}
+                onClose={() => setIs2FAModalOpen(false)}
+                token={token!}
+                user={localUser}
+                setUser={setLocalUser}
+              />
+            </div>
+          )}
 
-                <div className="overflow-x-auto p-2 sm:p-4">
-                  <table className="w-full text-left text-sm">
-                    <thead>
-                      <tr className="text-[11px] uppercase tracking-wider text-white/40">
-                        <th className="px-3 py-2 font-medium">Transação</th>
-                        <th className="px-3 py-2 font-medium">Data</th>
-                        <th className="px-3 py-2 font-medium">Status</th>
-                        <th className="px-3 py-2 text-right font-medium">Valor</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {isLoadingTransactions ? (
-                        Array.from({ length: 4 }).map((_, i) => (
-                          <tr key={i} className="animate-pulse border-t border-white/[0.05]">
-                            <td className="px-3 py-3"><div className="h-4 w-40 rounded bg-white/10" /></td>
-                            <td className="px-3 py-3"><div className="h-4 w-24 rounded bg-white/10" /></td>
-                            <td className="px-3 py-3"><div className="h-6 w-20 rounded-full bg-white/10" /></td>
-                            <td className="px-3 py-3 text-right"><div className="ml-auto h-4 w-20 rounded bg-white/10" /></td>
-                          </tr>
-                        ))
-                      ) : transactionsData.transactions.length === 0 ? (
-                        <tr>
-                          <td colSpan={4} className="py-12 text-center">
-                            <Radio className="mx-auto mb-3 h-6 w-6 text-violet-400/40" />
-                            <p className="text-sm font-medium text-white/60">Nenhuma atividade detectada</p>
-                            <p className="mt-1 text-xs text-white/35">Sua infraestrutura está pronta.</p>
-                          </td>
-                        </tr>
-                      ) : (
-                        transactionsData.transactions.map((t: any) => {
-                          const gross = Number(t.grossAmount ?? 0);
-                          const net = Number(t.netAmount ?? 0);
-                          return (
-                            <tr key={t.id} className="border-t border-white/[0.05] transition-colors hover:bg-white/[0.03]">
-                              <td className="px-3 py-3">
-                                <div className="flex items-center gap-3">
-                                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-300">
-                                    <ArrowDownLeft className="h-3.5 w-3.5" />
-                                  </span>
-                                  <div>
-                                    <p className="font-medium text-white/90">
-                                      {t.customer?.name || `Venda ${getMethodLabel(t.method)}`}
-                                    </p>
-                                    <div className="mt-0.5 flex items-center gap-1.5 text-xs text-white/40">
-                                      {getMethodIcon(t.method)} {getMethodLabel(t.method)}
-                                    </div>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-3 py-3 text-white/50">{t.createdAt ? formatDate(t.createdAt) : "—"}</td>
-                              <td className="px-3 py-3">{getStatusBadge(t.status)}</td>
-                              <td className="px-3 py-3 text-right">
-                                <div className="flex flex-col items-end">
-                                  <span className="font-semibold text-white">
-                                    {isValuesVisible ? formatCurrency(gross) : "••••••"}
-                                  </span>
-                                  {net !== gross && (
-                                    <span className="text-xs text-white/40">
-                                      Líq. {isValuesVisible ? formatCurrency(net) : "••••"}
-                                    </span>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+        {verifyAlert && <div className="mb-5">{verifyAlert}</div>}
 
-                {transactionsData.pagination.totalPages > 1 && (
-                  <div className="flex flex-col gap-3 border-t border-white/[0.06] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="text-center text-xs text-white/40 sm:text-left">
-                      Página {currentPage} de {transactionsData.pagination.totalPages} · {transactionsData.pagination.totalItems} transações
-                    </div>
-                    <div className="flex items-center justify-center gap-1.5">
-                      <button
-                        disabled={currentPage === 1 || isLoadingTransactions}
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/70 transition-colors hover:bg-white/[0.07] disabled:opacity-40"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </button>
-                      <button
-                        disabled={currentPage === transactionsData.pagination.totalPages || isLoadingTransactions}
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/70 transition-colors hover:bg-white/[0.07] disabled:opacity-40"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-            </main>
-          </SidebarInset>
-        </SidebarProvider>
-        <ShadowPanel />
-      </div>
+        {/* HERO */}
+        <section className="mb-7">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="mb-1 text-xs font-medium uppercase tracking-[0.18em] text-white/40">
+                {longDate}
+              </p>
+              <h1
+                className="text-[32px] font-bold leading-[1.05] tracking-tight text-white md:text-[40px]"
+                style={{ fontFamily: "'Clash Display', sans-serif" }}
+              >
+                {greeting},{" "}
+                <span
+                  style={{
+                    background:
+                      "linear-gradient(90deg, #A855F7 0%, #22D3EE 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
+                  {user.companyName || "Operador"}
+                </span>
+              </h1>
+              <p className="mt-2 max-w-xl text-sm text-white/55">
+                Seu cockpit financeiro está sincronizado. Tudo que acontece na
+                operação aparece aqui em tempo real.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <ShadowButton
+                variant="outline"
+                size="md"
+                onClick={() => router.push("/v1/products/create")}
+              >
+                <Plus className="h-4 w-4" /> Novo produto
+              </ShadowButton>
+              <ShadowButton
+                variant="outline"
+                size="md"
+                onClick={fetchTransactions}
+                loading={isLoading}
+              >
+                <RefreshCcw className="h-4 w-4" /> Atualizar
+              </ShadowButton>
+              <ShadowButton
+                variant="primary"
+                size="md"
+                onClick={() => router.push("/v1/finance/withdraw")}
+              >
+                <ArrowUpRight className="h-4 w-4" /> Sacar
+              </ShadowButton>
+            </div>
+          </div>
+        </section>
+
+        {/* REVENUE INTELLIGENCE ROW */}
+        <section className="mb-7 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <ShadowMetricCard
+            label="Faturamento bruto"
+            value={formatCurrency(grossAnim)}
+            icon={<CircleDollarSign className="h-4 w-4" />}
+            accent="#7C3AED"
+            comparison={`${paid.length} pedidos pagos`}
+            sparkline={chartData.map((c) => c.primary)}
+            hidden={!isValuesVisible}
+            delay={0}
+          />
+          <ShadowMetricCard
+            label="Faturamento líquido"
+            value={formatCurrency(netAnim)}
+            icon={<Wallet className="h-4 w-4" />}
+            accent="#22D3EE"
+            comparison="descontadas taxas"
+            sparkline={chartData.map((c) => c.secondary || 0)}
+            hidden={!isValuesVisible}
+            delay={0.05}
+          />
+          <ShadowMetricCard
+            label="Taxa de conversão"
+            value={`${conv.toFixed(1)}%`}
+            icon={<Target className="h-4 w-4" />}
+            accent="#22C55E"
+            delta={{
+              text: paid.length ? "ativo" : "—",
+              direction: paid.length ? "up" : "flat",
+            }}
+            comparison={`${paid.length} / ${totalTx} transações`}
+            delay={0.1}
+          />
+          <ShadowMetricCard
+            label="Pedidos pagos"
+            value={String(paid.length)}
+            icon={<CheckCircle2 className="h-4 w-4" />}
+            accent="#F59E0B"
+            comparison="período carregado"
+            delay={0.15}
+          />
+        </section>
+
+        {/* MAIN ANALYTICS */}
+        <section className="mb-7">
+          <ShadowChartPanel
+            title="Receita"
+            data={chartData}
+            loading={isLoading}
+            primaryLabel="Geradas"
+            secondaryLabel="Pagas"
+          />
+        </section>
+
+        {/* SECONDARY METRICS */}
+        <section className="mb-7 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {[
+            {
+              label: "Pedidos totais",
+              value: String(totalTx),
+              icon: <ReceiptText className="h-3.5 w-3.5" />,
+              accent: "#A78BFA",
+            },
+            {
+              label: "PIX gerados",
+              value: String(pixCount),
+              icon: (
+                <Image
+                  src="/pix-icon.svg"
+                  width={14}
+                  height={14}
+                  className="opacity-90 brightness-0 invert"
+                  alt="Pix"
+                />
+              ),
+              accent: "#22D3EE",
+            },
+            {
+              label: "Reembolsos",
+              value: String(refunded.length),
+              icon: <RefreshCcw className="h-3.5 w-3.5" />,
+              accent: "#EF4444",
+            },
+            {
+              label: "Ticket médio",
+              value: formatCurrency(avgTicket),
+              icon: <Activity className="h-3.5 w-3.5" />,
+              accent: "#6366F1",
+            },
+            {
+              label: "Saldo disponível",
+              value: formatCurrency(balance),
+              icon: <Wallet className="h-3.5 w-3.5" />,
+              accent: "#22C55E",
+            },
+          ].map((m) => (
+            <ShadowCard
+              key={m.label}
+              padded="md"
+              haloColor={`${m.accent}1f`}
+              haloPosition="br"
+              hover
+            >
+              <div className="flex items-center gap-2.5">
+                <span
+                  className="flex h-7 w-7 items-center justify-center rounded-lg"
+                  style={{
+                    background: `${m.accent}1f`,
+                    color: m.accent,
+                    border: `1px solid ${m.accent}33`,
+                  }}
+                >
+                  {m.icon}
+                </span>
+                <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/45">
+                  {m.label}
+                </span>
+              </div>
+              <div
+                className="mt-3 text-xl font-bold tracking-tight text-white"
+                style={{ fontFamily: "'Clash Display', sans-serif" }}
+              >
+                {isValuesVisible ? m.value : "••••••"}
+              </div>
+            </ShadowCard>
+          ))}
+        </section>
+      </ShadowShell>
+
+      <ShadowPanel />
     </>
   );
 }
