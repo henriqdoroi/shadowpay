@@ -784,72 +784,105 @@ function DashboardContent() {
                 MAIN CONTENT
                 ============================================================ */}
             <main className="px-4 py-6 md:px-8 md:py-8 pb-24 md:pb-8">
-              {/* HERO */}
+              {/* HERO — spec-driven */}
               <motion.section
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                className="relative mb-6 overflow-hidden rounded-2xl"
+                className="relative mb-6 overflow-hidden"
                 style={{
-                  background: T.card,
-                  border: `1px solid ${T.border}`,
-                  boxShadow: T.cardShadow,
+                  background: "#FFFFFF",
+                  border: "1px solid rgba(15, 23, 42, 0.08)",
+                  borderRadius: 24,
+                  boxShadow: "0 18px 45px rgba(15, 23, 42, 0.06)",
+                  padding: "32px 36px",
                 }}
               >
-                {/* mascot — left rail, fully visible */}
+                {/* halo violet behind logo */}
                 <div
-                  className="pointer-events-none absolute left-0 top-0 hidden h-full w-[230px] items-center justify-center md:flex"
+                  className="pointer-events-none absolute hidden md:block"
+                  style={{
+                    left: 10,
+                    bottom: -20,
+                    width: 220,
+                    height: 220,
+                    background:
+                      "radial-gradient(circle, rgba(139, 92, 246, 0.16) 0%, transparent 65%)",
+                  }}
+                  aria-hidden="true"
+                />
+
+                {/* Logo — fixed size, anchored bottom-left */}
+                <div
+                  className="pointer-events-none absolute hidden md:block"
+                  style={{
+                    left: 28,
+                    bottom: 0,
+                    width: 170,
+                    height: 170,
+                    opacity: 0.95,
+                  }}
                   aria-hidden="true"
                 >
-                  {/* violet halo behind */}
-                  <div
-                    className="absolute left-1/2 top-1/2 h-[210px] w-[210px] -translate-x-1/2 -translate-y-1/2 rounded-full"
-                    style={{
-                      background:
-                        "radial-gradient(circle, rgba(168, 85, 247, 0.28) 0%, rgba(124, 58, 237, 0.12) 35%, transparent 65%)",
-                      filter: "blur(10px)",
-                    }}
-                  />
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="/shadow-panther.png"
                     alt=""
-                    className="relative h-[88%] max-h-[210px] w-auto object-contain"
                     style={{
-                      filter:
-                        "drop-shadow(0 10px 24px rgba(124, 58, 237, 0.20))",
+                      width: 170,
+                      height: 170,
+                      objectFit: "contain",
+                      display: "block",
                     }}
                   />
                 </div>
 
-                {/* top row: greeting + actions */}
-                <div className="relative grid grid-cols-1 gap-4 p-5 md:grid-cols-[230px_1fr] md:min-h-[220px] md:p-7">
-                  <div className="hidden md:block" />
-
-                  <div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                {/* Content area — offset right of logo */}
+                <div className="relative md:pl-[210px]">
+                  {/* top row: greeting + buttons */}
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div className="min-w-0 flex-1">
                       <h1
-                        className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[24px] font-bold leading-[1.15] text-slate-900 md:text-[28px]"
+                        className="flex flex-wrap items-center gap-x-3 gap-y-1"
                         style={{
                           fontFamily: "'Clash Display', sans-serif",
+                          fontSize: 28,
+                          fontWeight: 700,
+                          lineHeight: 1.15,
+                          color: "#0F172A",
                           letterSpacing: "-0.005em",
                           fontFeatureSettings: '"calt" 1, "kern" 1',
                           wordSpacing: "0.05em",
+                          margin: 0,
                         }}
                       >
                         <span className="break-words">
                           {greeting}, {user?.companyName || "Operador"}.
                         </span>
                         <span
-                          className="inline-block text-[22px] md:text-[24px]"
-                          style={{ fontFamily: "system-ui, sans-serif" }}
+                          className="inline-block"
+                          style={{
+                            fontFamily: "system-ui, sans-serif",
+                            fontSize: 24,
+                          }}
                         >
                           👋
                         </span>
                       </h1>
-                      <p className="mt-2 text-[13px] text-slate-500">
+                      <p
+                        style={{
+                          marginTop: 8,
+                          fontSize: 14,
+                          color: "#64748B",
+                        }}
+                      >
                         Operação sincronizada. Última atualização há{" "}
-                        <span className="font-semibold text-slate-700">
+                        <span
+                          style={{
+                            fontWeight: 600,
+                            color: "#334155",
+                          }}
+                        >
                           {Math.max(
                             1,
                             Math.floor(
@@ -862,87 +895,145 @@ function DashboardContent() {
                       </p>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
+                    {/* Buttons — top right */}
+                    <div
+                      className="flex flex-wrap items-center"
+                      style={{ gap: 12 }}
+                    >
                       <button
                         onClick={() => router.push("/v1/products/create")}
-                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-[13px] font-semibold text-slate-700 transition-all hover:bg-slate-50"
-                        style={{ border: `1px solid ${T.border}` }}
+                        className="inline-flex items-center gap-2 transition-all hover:bg-slate-50"
+                        style={{
+                          height: 40,
+                          padding: "0 16px",
+                          borderRadius: 12,
+                          background: "#FFFFFF",
+                          border: "1px solid #E5E7EB",
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "#334155",
+                        }}
                       >
-                        <Plus className="h-4 w-4 text-slate-500" /> Novo produto
+                        <Plus className="h-4 w-4" style={{ color: "#64748B" }} />
+                        Novo produto
                       </button>
                       <button
                         onClick={() => router.push("/v1/products/create")}
-                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-[13px] font-semibold text-slate-700 transition-all hover:bg-slate-50"
-                        style={{ border: `1px solid ${T.border}` }}
+                        className="inline-flex items-center gap-2 transition-all hover:bg-slate-50"
+                        style={{
+                          height: 40,
+                          padding: "0 16px",
+                          borderRadius: 12,
+                          background: "#FFFFFF",
+                          border: "1px solid #E5E7EB",
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "#334155",
+                        }}
                       >
-                        <MessageSquare className="h-4 w-4 text-slate-500" />{" "}
+                        <MessageSquare
+                          className="h-4 w-4"
+                          style={{ color: "#64748B" }}
+                        />
                         Criar checkout
                       </button>
                       <button
                         onClick={() => router.push("/v1/finance/withdraw")}
-                        className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-[13px] font-semibold text-white transition-transform hover:-translate-y-0.5"
+                        className="inline-flex items-center gap-2 transition-transform hover:-translate-y-0.5"
                         style={{
+                          height: 40,
+                          padding: "0 18px",
+                          borderRadius: 12,
                           background: "#7C3AED",
-                          boxShadow:
-                            "0 8px 20px -8px rgba(124, 58, 237, 0.55)",
+                          boxShadow: "0 8px 20px -8px rgba(124, 58, 237, 0.55)",
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "#FFFFFF",
                         }}
                       >
-                        <DollarSign className="h-4 w-4" /> Sacar
+                        <DollarSign className="h-4 w-4" />
+                        Sacar
                       </button>
                     </div>
                   </div>
-                </div>
 
-                {/* 2FA alert — inner card */}
-                {localUser &&
-                  !(localUser.twofaEnabled && localUser.twofaConfirmed) && (
-                    <div className="relative px-5 pb-5 md:pl-[230px] md:pr-7 md:pb-7">
+                  {/* 2FA alert — horizontal bar */}
+                  {localUser &&
+                    !(localUser.twofaEnabled && localUser.twofaConfirmed) && (
                       <div
-                        className="flex flex-col gap-3 rounded-xl px-4 py-3.5 md:flex-row md:items-center md:justify-between"
+                        className="flex items-center justify-between"
                         style={{
-                          background: "#F8F9FC",
-                          border: `1px solid ${T.border}`,
+                          marginTop: 28,
+                          height: 64,
+                          borderRadius: 16,
+                          background: "#FFFFFF",
+                          border: "1px solid #E5E7EB",
+                          padding: "0 18px",
                         }}
                       >
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-center" style={{ gap: 14 }}>
                           <div
-                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                            className="flex items-center justify-center"
                             style={{
+                              width: 36,
+                              height: 36,
+                              borderRadius: 10,
                               background: "#EEF0F5",
                               color: "#475569",
+                              flexShrink: 0,
                             }}
                           >
                             <ShieldCheck className="h-4 w-4" />
                           </div>
                           <div>
-                            <p className="text-[13px] font-semibold text-slate-800">
+                            <p
+                              style={{
+                                fontSize: 13,
+                                fontWeight: 600,
+                                color: "#1E293B",
+                                margin: 0,
+                              }}
+                            >
                               Autenticação em duas etapas pendente
                             </p>
-                            <p className="text-[12px] text-slate-500">
+                            <p
+                              style={{
+                                fontSize: 12,
+                                color: "#64748B",
+                                margin: 0,
+                              }}
+                            >
                               Proteja saques, API keys e alterações sensíveis.
                             </p>
                           </div>
                         </div>
                         <button
                           onClick={() => setIs2FAModalOpen(true)}
-                          className="inline-flex h-9 items-center gap-2 rounded-lg px-4 text-[12px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                          className="inline-flex items-center transition-colors hover:bg-slate-50"
                           style={{
-                            border: `1px solid ${T.border}`,
-                            background: T.card,
+                            height: 36,
+                            padding: "0 16px",
+                            borderRadius: 10,
+                            background: "#FFFFFF",
+                            border: "1px solid #E5E7EB",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: "#334155",
                           }}
                         >
                           Ativar agora
                         </button>
                       </div>
-                      <TwoFAModal
-                        isOpen={is2FAModalOpen}
-                        onClose={() => setIs2FAModalOpen(false)}
-                        token={token!}
-                        user={localUser}
-                        setUser={setLocalUser}
-                      />
-                    </div>
-                  )}
+                    )}
+
+                  <TwoFAModal
+                    isOpen={is2FAModalOpen}
+                    onClose={() => setIs2FAModalOpen(false)}
+                    token={token!}
+                    user={localUser}
+                    setUser={setLocalUser}
+                  />
+                </div>
               </motion.section>
 
               {/* KPIs ROW */}
