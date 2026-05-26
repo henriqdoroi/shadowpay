@@ -18,13 +18,11 @@ import {
   Boxes,
 } from "lucide-react";
 
-import { ShadowShell } from "@/components/shadow/ShadowShell";
-import { ShadowPageHeader } from "@/components/shadow/ShadowPageHeader";
-import { ShadowCard } from "@/components/shadow/ShadowCard";
-import { ShadowButton } from "@/components/shadow/ShadowButton";
-import { ShadowMetricCard } from "@/components/shadow/ShadowMetricCard";
-import { useCountUp } from "@/components/shadow/useCountUp";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import { LightShell } from "@/components/LightShell";
 import ShadowPanel from "@/components/ShadowPanel";
+
+const API = "https://shadowpay-api-production.up.railway.app";
 
 interface Product {
   id: string;
@@ -37,9 +35,7 @@ interface Product {
   checkoutUrl: string;
 }
 
-const API = "https://shadowpay-api-production.up.railway.app";
-
-export default function Products() {
+function ProductsContent() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,27 +56,26 @@ export default function Products() {
   const statusPill = (status: string) => {
     const map: Record<string, { color: string; label: string }> = {
       ativo: {
-        color: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+        color: "bg-emerald-50 text-emerald-700 border-emerald-200",
         label: "Ativo",
       },
       inativo: {
-        color: "bg-white/10 text-white/55 border-white/15",
+        color: "bg-slate-50 text-slate-500 border-slate-200",
         label: "Inativo",
       },
       rascunho: {
-        color: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+        color: "bg-amber-50 text-amber-700 border-amber-200",
         label: "Rascunho",
       },
     };
-    const cfg = map[status] ?? {
-      color: "bg-white/10 text-white/55 border-white/15",
-      label: status,
-    };
+    const cfg = map[status] ?? map.inativo;
     return (
       <span
-        className={`inline-block rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide ${cfg.color}`}
+        className={`inline-block rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide ${
+          cfg!.color
+        }`}
       >
-        {cfg.label}
+        {cfg!.label}
       </span>
     );
   };
@@ -102,7 +97,7 @@ export default function Products() {
           <div className="mt-2 flex justify-end gap-2">
             <button
               onClick={() => toast.dismiss()}
-              className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs text-white/80 hover:bg-white/[0.07]"
+              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
             >
               Cancelar
             </button>
@@ -127,7 +122,7 @@ export default function Products() {
                   else toast.error("Erro desconhecido");
                 }
               }}
-              className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-300 hover:bg-rose-500/20"
+              className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100"
             >
               Excluir
             </button>
@@ -144,7 +139,6 @@ export default function Products() {
         setLoading(true);
         const token = localStorage.getItem("token");
         const headers = { Authorization: `Bearer ${token}` };
-
         const prodRes = await fetch(`${API}/api/products`, { headers });
         if (!prodRes.ok) throw new Error(`Erro ${prodRes.status}`);
         const prodJson = await prodRes.json();
@@ -243,69 +237,129 @@ export default function Products() {
     return { total, active, totalSales, revenue };
   }, [products]);
 
-  const revAnim = useCountUp(stats.revenue);
+  const kpis = [
+    {
+      label: "Total de produtos",
+      value: String(stats.total),
+      icon: <Boxes className="h-4 w-4" />,
+      color: "#7C3AED",
+    },
+    {
+      label: "Produtos ativos",
+      value: String(stats.active),
+      icon: <CheckCircle2 className="h-4 w-4" />,
+      color: "#22C55E",
+    },
+    {
+      label: "Vendas aprovadas",
+      value: String(stats.totalSales),
+      icon: <ShoppingBag className="h-4 w-4" />,
+      color: "#3B82F6",
+    },
+    {
+      label: "Receita estimada",
+      value: formatCurrency(stats.revenue),
+      icon: <TrendingUp className="h-4 w-4" />,
+      color: "#22D3EE",
+    },
+  ];
 
   return (
     <>
       <Head>
         <title>ShadowPay — Produtos</title>
       </Head>
-
-      <ShadowShell>
-        <ShadowPageHeader
-          eyebrow="Vendas"
-          title="Produtos"
-          subtitle="Gerencie seus produtos, links de checkout e acompanhe vendas."
-          actions={
-            <ShadowButton onClick={handleNew} variant="primary">
-              <Plus className="h-4 w-4" /> Novo produto
-            </ShadowButton>
-          }
-        />
+      <LightShell>
+        {/* Page header */}
+        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
+              Vendas
+            </p>
+            <h1
+              className="text-[28px] font-bold tracking-tight text-slate-900"
+              style={{
+                fontFamily: "'Clash Display', sans-serif",
+                letterSpacing: "-0.005em",
+              }}
+            >
+              Produtos
+            </h1>
+            <p className="mt-1 text-[14px] text-slate-500">
+              Gerencie seus produtos, links de checkout e acompanhe vendas.
+            </p>
+          </div>
+          <button
+            onClick={handleNew}
+            className="inline-flex h-10 items-center gap-2 rounded-xl px-5 text-[13px] font-semibold text-white transition-transform hover:-translate-y-0.5"
+            style={{
+              background: "#7C3AED",
+              boxShadow: "0 8px 20px -8px rgba(124, 58, 237, 0.55)",
+            }}
+          >
+            <Plus className="h-4 w-4" /> Novo produto
+          </button>
+        </header>
 
         {/* KPIs */}
-        <section className="mb-7 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <ShadowMetricCard
-            label="Total de produtos"
-            value={String(stats.total)}
-            icon={<Boxes className="h-4 w-4" />}
-            accent="#7C3AED"
-            delay={0}
-          />
-          <ShadowMetricCard
-            label="Produtos ativos"
-            value={String(stats.active)}
-            icon={<CheckCircle2 className="h-4 w-4" />}
-            accent="#22C55E"
-            delay={0.05}
-          />
-          <ShadowMetricCard
-            label="Vendas aprovadas"
-            value={String(stats.totalSales)}
-            icon={<ShoppingBag className="h-4 w-4" />}
-            accent="#6366F1"
-            delay={0.1}
-          />
-          <ShadowMetricCard
-            label="Receita estimada"
-            value={formatCurrency(revAnim)}
-            icon={<TrendingUp className="h-4 w-4" />}
-            accent="#22D3EE"
-            delay={0.15}
-          />
+        <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {kpis.map((k) => (
+            <div
+              key={k.label}
+              className="rounded-2xl p-5"
+              style={{
+                background: "#FFFFFF",
+                border: "1px solid rgba(15,23,42,0.06)",
+                boxShadow:
+                  "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-semibold text-slate-500">
+                  {k.label}
+                </p>
+                <span
+                  className="flex h-7 w-7 items-center justify-center rounded-lg"
+                  style={{
+                    background: `${k.color}14`,
+                    color: k.color,
+                  }}
+                >
+                  {k.icon}
+                </span>
+              </div>
+              <div
+                className="mt-2 text-[24px] font-bold leading-none tracking-tight text-slate-900"
+                style={{ fontFamily: "'Clash Display', sans-serif" }}
+              >
+                {k.value}
+              </div>
+            </div>
+          ))}
         </section>
 
         {/* Tabela */}
-        <ShadowCard padded="none">
-          <div className="flex items-center justify-between border-b border-white/[0.05] px-5 py-4">
+        <div
+          className="overflow-hidden rounded-2xl"
+          style={{
+            background: "#FFFFFF",
+            border: "1px solid rgba(15,23,42,0.06)",
+            boxShadow:
+              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+          }}
+        >
+          <div
+            className="flex items-center justify-between px-5 py-4"
+            style={{ borderBottom: "1px solid rgba(15,23,42,0.06)" }}
+          >
             <h2
-              className="flex items-center gap-2 text-sm font-semibold text-white"
+              className="flex items-center gap-2 text-[14px] font-semibold text-slate-900"
               style={{ fontFamily: "'Clash Display', sans-serif" }}
             >
-              <Package className="h-4 w-4 text-violet-300" />
+              <Package className="h-4 w-4 text-violet-500" />
               Lista de produtos
             </h2>
-            <span className="text-xs text-white/40">
+            <span className="text-xs text-slate-400">
               {products.length} {products.length === 1 ? "item" : "itens"}
             </span>
           </div>
@@ -313,13 +367,15 @@ export default function Products() {
           <div className="overflow-x-auto p-2 sm:p-4">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="text-[10px] uppercase tracking-[0.16em] text-white/40">
-                  <th className="px-3 py-2.5 font-medium">Produto</th>
-                  <th className="px-3 py-2.5 font-medium">Status</th>
-                  <th className="px-3 py-2.5 font-medium">Preço</th>
-                  <th className="px-3 py-2.5 font-medium">Vendas</th>
-                  <th className="px-3 py-2.5 font-medium">Criado em</th>
-                  <th className="px-3 py-2.5 text-right font-medium">Ações</th>
+                <tr className="text-[10px] uppercase tracking-[0.16em] text-slate-400">
+                  <th className="px-3 py-2.5 font-semibold">Produto</th>
+                  <th className="px-3 py-2.5 font-semibold">Status</th>
+                  <th className="px-3 py-2.5 font-semibold">Preço</th>
+                  <th className="px-3 py-2.5 font-semibold">Vendas</th>
+                  <th className="px-3 py-2.5 font-semibold">Criado em</th>
+                  <th className="px-3 py-2.5 text-right font-semibold">
+                    Ações
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -327,11 +383,14 @@ export default function Products() {
                   Array.from({ length: 4 }).map((_, i) => (
                     <tr
                       key={i}
-                      className="border-t border-white/[0.04]"
+                      style={{ borderTop: "1px solid rgba(15,23,42,0.04)" }}
                     >
                       {Array.from({ length: 6 }).map((__, j) => (
                         <td key={j} className="px-3 py-3">
-                          <div className="shadow-shimmer h-4 w-full max-w-[120px] rounded" />
+                          <div
+                            className="h-4 w-full max-w-[120px] animate-pulse rounded"
+                            style={{ background: "#F1F2F6" }}
+                          />
                         </td>
                       ))}
                     </tr>
@@ -339,16 +398,16 @@ export default function Products() {
                 ) : products.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-14 text-center">
-                      <Package className="mx-auto mb-3 h-7 w-7 text-violet-400/40" />
-                      <p className="text-sm font-medium text-white/65">
+                      <Package className="mx-auto mb-3 h-7 w-7 text-violet-300" />
+                      <p className="text-sm font-medium text-slate-600">
                         Nenhum produto cadastrado
                       </p>
-                      <p className="mt-1 text-xs text-white/40">
+                      <p className="mt-1 text-xs text-slate-400">
                         Crie seu primeiro produto para começar a vender.
                       </p>
                       <button
                         onClick={handleNew}
-                        className="mx-auto mt-4 inline-flex items-center gap-2 rounded-xl border border-violet-500/25 bg-violet-500/10 px-4 py-2 text-xs font-semibold text-violet-200 transition-colors hover:bg-violet-500/20"
+                        className="mx-auto mt-4 inline-flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-xs font-semibold text-violet-700 transition-colors hover:bg-violet-100"
                       >
                         <Plus className="h-3.5 w-3.5" />
                         Criar produto
@@ -359,18 +418,25 @@ export default function Products() {
                   products.map((product) => (
                     <tr
                       key={product.id}
-                      className="border-t border-white/[0.04] transition-colors hover:bg-white/[0.025]"
+                      className="transition-colors hover:bg-slate-50/50"
+                      style={{ borderTop: "1px solid rgba(15,23,42,0.04)" }}
                     >
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-3">
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300 ring-1 ring-violet-500/20">
+                          <span
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                            style={{
+                              background: "rgba(124,58,237,0.08)",
+                              color: "#7C3AED",
+                            }}
+                          >
                             <Package className="h-4 w-4" />
                           </span>
                           <div className="min-w-0">
-                            <p className="truncate font-semibold text-white/90">
+                            <p className="truncate font-semibold text-slate-900">
                               {product.name}
                             </p>
-                            <p className="line-clamp-1 max-w-[260px] text-xs text-white/40">
+                            <p className="line-clamp-1 max-w-[260px] text-xs text-slate-400">
                               {product.description}
                             </p>
                           </div>
@@ -379,18 +445,18 @@ export default function Products() {
                       <td className="px-3 py-3">
                         {statusPill(product.status)}
                       </td>
-                      <td className="px-3 py-3 font-medium text-white/90">
+                      <td className="px-3 py-3 font-medium text-slate-900">
                         {formatCurrency(product.price)}
                       </td>
                       <td className="px-3 py-3">
-                        <span className="font-bold text-white">
+                        <span className="font-bold text-slate-900">
                           {product.sales}
                         </span>
-                        <span className="ml-1 text-xs text-white/40">
+                        <span className="ml-1 text-xs text-slate-400">
                           vendas
                         </span>
                       </td>
-                      <td className="px-3 py-3 text-white/50">
+                      <td className="px-3 py-3 text-slate-500">
                         {product.createdAt
                           ? formatDate(product.createdAt)
                           : "—"}
@@ -400,7 +466,7 @@ export default function Products() {
                           <button
                             onClick={() => handleLink(product)}
                             title="Abrir checkout"
-                            className="flex h-8 items-center gap-1.5 rounded-lg border border-white/[0.07] bg-white/[0.02] px-2.5 text-xs text-white/70 hover:bg-white/[0.06] hover:text-white"
+                            className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                           >
                             <ExternalLink className="h-3.5 w-3.5" />
                             <span className="hidden sm:inline">Link</span>
@@ -408,7 +474,7 @@ export default function Products() {
                           <button
                             onClick={() => handleEdit(product.id)}
                             title="Editar"
-                            className="flex h-8 items-center gap-1.5 rounded-lg border border-white/[0.07] bg-white/[0.02] px-2.5 text-xs text-white/70 hover:bg-white/[0.06] hover:text-white"
+                            className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                           >
                             <Edit className="h-3.5 w-3.5" />
                             <span className="hidden sm:inline">Editar</span>
@@ -418,7 +484,7 @@ export default function Products() {
                               handleDelete(product.id, product.name)
                             }
                             title="Excluir"
-                            className="flex h-8 items-center gap-1.5 rounded-lg border border-rose-500/25 bg-rose-500/10 px-2.5 text-xs text-rose-300 hover:bg-rose-500/20"
+                            className="flex h-8 items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-2.5 text-xs text-rose-700 hover:bg-rose-100"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                             <span className="hidden sm:inline">Excluir</span>
@@ -433,33 +499,49 @@ export default function Products() {
           </div>
 
           {!loading && products.length > 0 && (
-            <div className="flex flex-col gap-3 border-t border-white/[0.04] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-center text-xs text-white/40 sm:text-left">
+            <div
+              className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+              style={{ borderTop: "1px solid rgba(15,23,42,0.04)" }}
+            >
+              <div className="text-center text-xs text-slate-400 sm:text-left">
                 Mostrando 1-{products.length} de {products.length} produtos
               </div>
               <div className="flex items-center justify-center gap-1.5">
                 <button
                   disabled
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.02] text-white/55 disabled:opacity-40"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 disabled:opacity-40"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
-                <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/15 text-sm font-semibold text-violet-200 ring-1 ring-violet-500/30">
+                <button
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-semibold"
+                  style={{
+                    background: "rgba(124,58,237,0.10)",
+                    color: "#7C3AED",
+                  }}
+                >
                   1
                 </button>
                 <button
                   disabled
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.02] text-white/55 disabled:opacity-40"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 disabled:opacity-40"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
             </div>
           )}
-        </ShadowCard>
-      </ShadowShell>
-
+        </div>
+      </LightShell>
       <ShadowPanel />
     </>
+  );
+}
+
+export default function Products() {
+  return (
+    <ProtectedRoute>
+      <ProductsContent />
+    </ProtectedRoute>
   );
 }
