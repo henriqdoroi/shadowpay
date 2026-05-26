@@ -1,4 +1,4 @@
-import { AppSidebar } from "@/components/app-sidebar";
+import { LightShell } from "@/components/LightShell";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -1048,32 +1048,27 @@ function UsersManagerContent() {
   }
 
   return (
-    <div className="min-h-screen text-white">
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset
-          className="text-white"
+    <>
+    <LightShell>
+      <header className="mb-6">
+        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
+          Admin
+        </p>
+        <h1
+          className="text-[28px] font-bold tracking-tight text-slate-900"
           style={{
-            background:
-              "radial-gradient(1100px 700px at 85% -10%, #0B1020 0%, #060A14 55%, #03060F 100%)",
+            fontFamily: "'Clash Display', sans-serif",
+            letterSpacing: "-0.005em",
           }}
         >
-          <header className="flex items-center gap-3 px-4 pt-6 lg:px-8">
-            <SidebarTrigger className="text-white/60 hover:text-white" />
-            <div>
-              <h1
-                className="text-2xl font-bold tracking-tight text-white md:text-[28px]"
-                style={{ fontFamily: "'Clash Display', sans-serif" }}
-              >
-                Gerenciamento de Sellers
-              </h1>
-              <p className="mt-1 text-xs text-white/40">
-                Visualize e gerencie todos os sellers cadastrados na plataforma
-              </p>
-            </div>
-          </header>
+          Gerenciamento de Sellers
+        </h1>
+        <p className="mt-1 text-[14px] text-slate-500">
+          Visualize e gerencie todos os sellers cadastrados.
+        </p>
+      </header>
 
-          <div className="flex flex-1 flex-col gap-5 p-4 lg:p-8">
+      <div className="flex flex-col gap-5">
 
             {/* Filtros */}
             <Card
@@ -1431,9 +1426,8 @@ function UsersManagerContent() {
                 )}
               </CardContent>
             </Card>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+      </div>
+    </LightShell>
 
       {/* Modal de Detalhes do Seller */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -2309,7 +2303,7 @@ function UsersManagerContent() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }
 
