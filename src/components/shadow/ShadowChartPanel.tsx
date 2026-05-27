@@ -92,7 +92,7 @@ export function ShadowChartPanel({
           <div className="flex items-center gap-2">
             <h2
               className="text-lg font-semibold tracking-tight text-white"
-              style={{ fontFamily: "'Clash Display', sans-serif" }}
+              style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
             >
               {title}
             </h2>

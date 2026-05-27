@@ -331,7 +331,7 @@ function RecivementsContent() {
           <h1
             className="text-[28px] font-bold tracking-tight text-slate-900"
             style={{
-              fontFamily: "'Clash Display', sans-serif",
+              fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
               letterSpacing: "-0.005em",
             }}
           >
@@ -381,7 +381,7 @@ function RecivementsContent() {
             </div>
             <div
               className="text-[28px] font-bold tracking-tight text-slate-900"
-              style={{ fontFamily: "'Clash Display', sans-serif" }}
+              style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
             >
               {fmt(totalDepositos)}
             </div>
@@ -476,7 +476,7 @@ function RecivementsContent() {
           >
             <h2
               className="text-[14px] font-semibold text-slate-900"
-              style={{ fontFamily: "'Clash Display', sans-serif" }}
+              style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
             >
               Histórico de recebimentos
             </h2>
@@ -593,7 +593,7 @@ function RecivementsContent() {
             <p className="text-sm text-slate-500">Valor do depósito</p>
             <p
               className="text-2xl font-bold text-slate-900"
-              style={{ fontFamily: "'Clash Display', sans-serif" }}
+              style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
             >
               {fmt(valor)}
             </p>

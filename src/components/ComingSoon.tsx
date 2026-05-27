@@ -34,7 +34,7 @@ export function ComingSoon({
         <h1
           className="text-[28px] font-bold tracking-tight text-slate-900"
           style={{
-            fontFamily: "'Clash Display', sans-serif",
+            fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
             letterSpacing: "-0.005em",
           }}
         >
@@ -88,7 +88,7 @@ export function ComingSoon({
 
         <h2
           className="relative text-[22px] font-bold tracking-tight text-slate-900"
-          style={{ fontFamily: "'Clash Display', sans-serif" }}
+          style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
         >
           Em breve
         </h2>

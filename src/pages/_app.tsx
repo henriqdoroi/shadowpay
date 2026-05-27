@@ -2,7 +2,7 @@
 
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
-import { Bricolage_Grotesque } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -12,10 +12,18 @@ import { useRouter } from "next/router";
 import { useEffect } from "react";
 import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
 
-const bricolage = Bricolage_Grotesque({
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-bricolage",
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+  variable: "--font-jetbrains",
+  display: "swap",
 });
 
 function AppContent({ Component, pageProps }: AppProps) {
@@ -57,7 +65,8 @@ function AppContent({ Component, pageProps }: AppProps) {
 
   return (
     <div
-      className={`${bricolage.variable} flex min-h-screen w-full overflow-x-hidden`}
+      className={`${inter.variable} ${jetbrainsMono.variable} flex min-h-screen w-full overflow-x-hidden`}
+      style={{ fontFamily: "var(--font-inter), ui-sans-serif, system-ui, sans-serif" }}
     >
       {/* Cada página renderiza seu próprio AppSidebar (desktop) e
           shadcn Sidebar Sheet (mobile drawer) via SidebarProvider.

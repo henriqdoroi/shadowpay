@@ -66,7 +66,7 @@ function PSPKeyContent() {
           <h1
             className="text-[28px] font-bold tracking-tight text-slate-900"
             style={{
-              fontFamily: "'Clash Display', sans-serif",
+              fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
               letterSpacing: "-0.005em",
             }}
           >
@@ -94,7 +94,7 @@ function PSPKeyContent() {
               <div>
                 <h2
                   className="text-lg font-semibold text-slate-900"
-                  style={{ fontFamily: "'Clash Display', sans-serif" }}
+                  style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
                 >
                   Cashtime
                 </h2>

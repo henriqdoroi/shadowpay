@@ -271,7 +271,7 @@ function ProductsContent() {
         style={{
           background: c.bg,
           color: c.text,
-          fontFamily: "'Clash Display', sans-serif",
+          fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
         }}
       >
         {initial}
@@ -339,7 +339,7 @@ function ProductsContent() {
                 <h1
                   className="text-[24px] font-bold leading-none tracking-tight text-slate-900"
                   style={{
-                    fontFamily: "'Clash Display', sans-serif",
+                    fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                     letterSpacing: "-0.005em",
                   }}
                 >
@@ -550,7 +550,7 @@ function ProductsContent() {
                     </p>
                     <h3
                       className="mt-0.5 line-clamp-2 text-[14px] font-bold leading-snug text-slate-900"
-                      style={{ fontFamily: "'Clash Display', sans-serif" }}
+                      style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
                       title={p.name}
                     >
                       {p.name}

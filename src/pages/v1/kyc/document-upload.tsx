@@ -74,7 +74,7 @@ function UploadSlot({
         </span>
         <span
           className="text-sm font-semibold"
-          style={{ fontFamily: "'Clash Display', sans-serif", color: T.text }}
+          style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif", color: T.text }}
         >
           {title}
         </span>
@@ -354,7 +354,7 @@ function DocumentUploadContent() {
         style={{
           background: T.bg,
           color: T.text,
-          fontFamily: "'Satoshi', system-ui, sans-serif",
+          fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
         }}
       >
         <div className="relative z-10 mx-auto w-full max-w-5xl space-y-8 py-6">
@@ -376,7 +376,7 @@ function DocumentUploadContent() {
             </div>
             <span
               className="text-xs font-semibold tracking-[0.16em]"
-              style={{ fontFamily: "'Clash Display', sans-serif", color: T.text2 }}
+              style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif", color: T.text2 }}
             >
               SHADOWPAY · KYC
             </span>
@@ -391,7 +391,7 @@ function DocumentUploadContent() {
           >
             <h1
               className="text-3xl font-bold md:text-[36px]"
-              style={{ fontFamily: "'Clash Display', sans-serif", color: T.text }}
+              style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif", color: T.text }}
             >
               Upload de documentos
             </h1>
@@ -429,7 +429,7 @@ function DocumentUploadContent() {
                 </div>
                 <span
                   className="hidden text-xs font-semibold sm:inline"
-                  style={{ fontFamily: "'Clash Display', sans-serif", color: T.text }}
+                  style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif", color: T.text }}
                 >
                   Documentos
                 </span>

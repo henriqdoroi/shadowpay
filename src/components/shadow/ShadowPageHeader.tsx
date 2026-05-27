@@ -27,7 +27,7 @@ export function ShadowPageHeader({
         <h1
           className="text-[28px] font-bold leading-[1.1] tracking-tight text-white md:text-[34px]"
           style={{
-            fontFamily: "'Clash Display', sans-serif",
+            fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
           }}
         >
           {gradientTitle ? (

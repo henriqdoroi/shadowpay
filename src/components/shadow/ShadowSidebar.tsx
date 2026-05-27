@@ -198,7 +198,7 @@ export function ShadowSidebar({
         <div className="flex flex-col leading-tight">
           <span
             className="text-[15px] font-bold tracking-tight text-white"
-            style={{ fontFamily: "'Clash Display', sans-serif" }}
+            style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
           >
             ShadowPay
           </span>

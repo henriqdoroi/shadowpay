@@ -476,7 +476,7 @@ function DashboardContent() {
         style={{
           background: "#F1F3F8",
           color: T.text,
-          fontFamily: "'Satoshi', 'Inter', sans-serif",
+          fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
         }}
       >
         {/* ============================================================
@@ -501,7 +501,7 @@ function DashboardContent() {
               <div className="text-center leading-tight">
                 <div
                   className="text-[13px] font-bold tracking-[0.18em] text-slate-700"
-                  style={{ fontFamily: "'Clash Display', sans-serif" }}
+                  style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
                 >
                   SHADOWPAY
                 </div>
@@ -872,7 +872,7 @@ function DashboardContent() {
                       <h1
                         className="flex flex-wrap items-center gap-x-3 gap-y-1"
                         style={{
-                          fontFamily: "'Clash Display', sans-serif",
+                          fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                           fontSize: 28,
                           fontWeight: 700,
                           lineHeight: 1.15,
@@ -1100,7 +1100,7 @@ function DashboardContent() {
                     </div>
                     <div
                       className="mt-2 text-[24px] font-bold leading-none tracking-tight text-slate-900"
-                      style={{ fontFamily: "'Clash Display', sans-serif" }}
+                      style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
                     >
                       {k.value}
                     </div>
@@ -1169,7 +1169,7 @@ function DashboardContent() {
                   </div>
                   <div
                     className="mt-2 text-[24px] font-bold leading-none tracking-tight text-slate-900"
-                    style={{ fontFamily: "'Clash Display', sans-serif" }}
+                    style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
                   >
                     {hideable(fmt(walletStats.currentBalance))}
                   </div>
@@ -1216,7 +1216,7 @@ function DashboardContent() {
                     <div>
                       <h2
                         className="text-[15px] font-bold tracking-tight text-slate-900"
-                        style={{ fontFamily: "'Clash Display', sans-serif" }}
+                        style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
                       >
                         Volume processado
                       </h2>
@@ -1415,7 +1415,7 @@ function DashboardContent() {
                     <div className="flex items-center gap-2">
                       <h3
                         className="text-[14px] font-bold tracking-tight text-slate-900"
-                        style={{ fontFamily: "'Clash Display', sans-serif" }}
+                        style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
                       >
                         Atividade ao vivo
                       </h3>
@@ -1484,7 +1484,7 @@ function DashboardContent() {
                                     item.kind === "paid"
                                       ? T.primary
                                       : T.green,
-                                  fontFamily: "'Clash Display', sans-serif",
+                                  fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                                 }}
                               >
                                 {valuesVisible ? item.value : "•••••"}
@@ -1535,7 +1535,7 @@ function DashboardContent() {
                           <span
                             className="text-[18px] font-bold tracking-tight text-slate-900"
                             style={{
-                              fontFamily: "'Clash Display', sans-serif",
+                              fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                             }}
                           >
                             {m.value}
@@ -1602,7 +1602,7 @@ function DashboardContent() {
                       <Sparkles className="h-4 w-4 text-violet-300" />
                       <h3
                         className="text-[16px] font-bold tracking-tight text-white"
-                        style={{ fontFamily: "'Clash Display', sans-serif" }}
+                        style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
                       >
                         Shadow AI
                       </h3>

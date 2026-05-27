@@ -82,7 +82,7 @@ export function ShadowLiveFeed({
         <div className="flex items-center gap-2">
           <h3
             className="text-sm font-semibold text-white"
-            style={{ fontFamily: "'Clash Display', sans-serif" }}
+            style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
           >
             {title}
           </h3>
@@ -137,7 +137,7 @@ export function ShadowLiveFeed({
                       className="text-xs font-bold"
                       style={{
                         color: cfg.color,
-                        fontFamily: "'Clash Display', sans-serif",
+                        fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                       }}
                     >
                       {item.value}

@@ -83,7 +83,7 @@ export default function ShadowPanel() {
   if (!token) return null;
 
   return (
-    <div style={{ fontFamily: "'Satoshi', system-ui, sans-serif" }}>
+    <div style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}>
       {/* Botão flutuante */}
       <motion.button
         onClick={() => setOpen((o) => !o)}
@@ -139,7 +139,7 @@ export default function ShadowPanel() {
                   <div
                     className="text-sm font-semibold leading-none"
                     style={{
-                      fontFamily: "'Clash Display', sans-serif",
+                      fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                       color: "#0F172A",
                     }}
                   >

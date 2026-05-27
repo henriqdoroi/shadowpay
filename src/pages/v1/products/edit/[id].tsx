@@ -764,7 +764,7 @@ export default function EditProduct() {
             <div>
               <h1
                 className="text-2xl font-bold tracking-tight md:text-[28px]"
-                style={{ fontFamily: "'Clash Display', sans-serif", color: "#0F172A" }}
+                style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif", color: "#0F172A" }}
               >
                 Editar Produto
               </h1>

@@ -113,7 +113,7 @@ export default function Login() {
       <div
         className="relative min-h-screen w-full overflow-hidden"
         style={{
-          fontFamily: "'Satoshi', system-ui, sans-serif",
+          fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
           background: T.bg,
           color: T.text,
         }}
@@ -142,7 +142,7 @@ export default function Login() {
               </div>
               <h1
                 className="text-2xl font-bold tracking-tight"
-                style={{ fontFamily: "'Clash Display', sans-serif", color: T.text }}
+                style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif", color: T.text }}
               >
                 ShadowPay
               </h1>

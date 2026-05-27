@@ -133,7 +133,7 @@ function ProfileContent() {
             <h1
               className="text-[28px] font-bold tracking-tight text-slate-900"
               style={{
-                fontFamily: "'Clash Display', sans-serif",
+                fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                 letterSpacing: "-0.005em",
               }}
             >

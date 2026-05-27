@@ -227,7 +227,7 @@ function SalesContent() {
             <h1
               className="text-[28px] font-bold tracking-tight text-slate-900"
               style={{
-                fontFamily: "'Clash Display', sans-serif",
+                fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                 letterSpacing: "-0.005em",
               }}
             >
@@ -272,7 +272,7 @@ function SalesContent() {
               </div>
               <div
                 className="mt-2 text-[24px] font-bold leading-none tracking-tight text-slate-900"
-                style={{ fontFamily: "'Clash Display', sans-serif" }}
+                style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
               >
                 {k.value}
               </div>
@@ -295,7 +295,7 @@ function SalesContent() {
           >
             <h2
               className="flex items-center gap-2 text-[14px] font-semibold text-slate-900"
-              style={{ fontFamily: "'Clash Display', sans-serif" }}
+              style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
             >
               <Receipt className="h-4 w-4 text-violet-500" />
               Lista de pedidos

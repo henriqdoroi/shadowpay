@@ -163,7 +163,7 @@ function ApiKeyContent() {
           <h1
             className="text-[28px] font-bold tracking-tight text-slate-900"
             style={{
-              fontFamily: "'Clash Display', sans-serif",
+              fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
               letterSpacing: "-0.005em",
             }}
           >
@@ -307,7 +307,7 @@ function ApiKeyContent() {
           >
             <h2
               className="text-[14px] font-semibold text-slate-900"
-              style={{ fontFamily: "'Clash Display', sans-serif" }}
+              style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
             >
               Histórico de credenciais
             </h2>

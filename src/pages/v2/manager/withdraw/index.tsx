@@ -222,7 +222,7 @@ function WithdrawAdminContent() {
           <h1
             className="text-[28px] font-bold tracking-tight text-slate-900"
             style={{
-              fontFamily: "'Clash Display', sans-serif",
+              fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
               letterSpacing: "-0.005em",
             }}
           >
@@ -258,7 +258,7 @@ function WithdrawAdminContent() {
               </div>
               <div
                 className="mt-2 text-[24px] font-bold leading-none tracking-tight text-slate-900"
-                style={{ fontFamily: "'Clash Display', sans-serif" }}
+                style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
               >
                 {k.value}
               </div>
@@ -282,7 +282,7 @@ function WithdrawAdminContent() {
           >
             <h2
               className="text-[14px] font-semibold text-slate-900"
-              style={{ fontFamily: "'Clash Display', sans-serif" }}
+              style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
             >
               Solicitações de saque
             </h2>

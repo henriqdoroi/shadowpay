@@ -78,7 +78,7 @@ export default function Selfie() {
         style={{
           background: T.bg,
           color: T.text,
-          fontFamily: "'Satoshi', system-ui, sans-serif",
+          fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
         }}
       >
         <div className="relative z-10 mx-auto w-full max-w-4xl space-y-8 py-6">
@@ -95,7 +95,7 @@ export default function Selfie() {
             </div>
             <span
               className="text-xs font-semibold tracking-[0.16em]"
-              style={{ fontFamily: "'Clash Display', sans-serif", color: T.text2 }}
+              style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif", color: T.text2 }}
             >
               SHADOWPAY · KYC
             </span>
@@ -110,7 +110,7 @@ export default function Selfie() {
           >
             <h1
               className="text-3xl font-bold md:text-[36px]"
-              style={{ fontFamily: "'Clash Display', sans-serif", color: T.text }}
+              style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif", color: T.text }}
             >
               Selfie & CNPJ
             </h1>
@@ -143,7 +143,7 @@ export default function Selfie() {
                   <span
                     className="hidden text-xs sm:inline"
                     style={{
-                      fontFamily: "'Clash Display', sans-serif",
+                      fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                       fontWeight: step.current ? 600 : 400,
                       color: step.current ? T.text : T.text2,
                     }}
@@ -181,7 +181,7 @@ export default function Selfie() {
                 </span>
                 <span
                   className="text-sm font-semibold"
-                  style={{ fontFamily: "'Clash Display', sans-serif", color: T.text }}
+                  style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif", color: T.text }}
                 >
                   Selfie
                 </span>
@@ -268,7 +268,7 @@ export default function Selfie() {
                 </span>
                 <span
                   className="text-sm font-semibold"
-                  style={{ fontFamily: "'Clash Display', sans-serif", color: T.text }}
+                  style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif", color: T.text }}
                 >
                   Documento CNPJ
                 </span>

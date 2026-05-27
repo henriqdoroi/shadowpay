@@ -48,7 +48,7 @@ function KycContent() {
         style={{
           background: T.bg,
           color: T.text,
-          fontFamily: "'Satoshi', system-ui, sans-serif",
+          fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
         }}
       >
         {/* Halo violeta sutil */}
@@ -80,7 +80,7 @@ function KycContent() {
             </div>
             <span
               className="text-sm font-semibold tracking-[0.16em]"
-              style={{ fontFamily: "'Clash Display', sans-serif", color: T.text2 }}
+              style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif", color: T.text2 }}
             >
               SHADOWPAY · KYC
             </span>
@@ -95,7 +95,7 @@ function KycContent() {
           >
             <h1
               className="text-3xl font-bold md:text-[40px]"
-              style={{ fontFamily: "'Clash Display', sans-serif", color: T.text }}
+              style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif", color: T.text }}
             >
               Verificação de identidade
             </h1>
@@ -133,7 +133,7 @@ function KycContent() {
             <div className="relative mt-6 space-y-3">
               <h3
                 className="text-center text-sm font-semibold uppercase tracking-[0.16em]"
-                style={{ fontFamily: "'Clash Display', sans-serif", color: T.text2 }}
+                style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif", color: T.text2 }}
               >
                 O que você precisa
               </h3>

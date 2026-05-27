@@ -193,7 +193,7 @@ function FeeContent() {
           <h1
             className="text-[28px] font-bold tracking-tight text-slate-900"
             style={{
-              fontFamily: "'Clash Display', sans-serif",
+              fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
               letterSpacing: "-0.005em",
             }}
           >
@@ -255,7 +255,7 @@ function FeeContent() {
                     </p>
                     <p
                       className="mt-1 text-[22px] font-bold tracking-tight text-slate-900"
-                      style={{ fontFamily: "'Clash Display', sans-serif" }}
+                      style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
                     >
                       {fmt(fee.fixedFee)}
                     </p>
@@ -305,7 +305,7 @@ function FeeContent() {
         >
           <h2
             className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-slate-900"
-            style={{ fontFamily: "'Clash Display', sans-serif" }}
+            style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
           >
             <Percent className="h-4 w-4 text-violet-500" />
             Informações importantes

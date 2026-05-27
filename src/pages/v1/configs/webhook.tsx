@@ -215,7 +215,7 @@ function WebhookContent() {
             <h1
               className="text-[28px] font-bold tracking-tight text-slate-900"
               style={{
-                fontFamily: "'Clash Display', sans-serif",
+                fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                 letterSpacing: "-0.005em",
               }}
             >
@@ -262,7 +262,7 @@ function WebhookContent() {
               </div>
               <div
                 className="mt-2 text-[28px] font-bold leading-none tracking-tight text-slate-900"
-                style={{ fontFamily: "'Clash Display', sans-serif" }}
+                style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
               >
                 {k.value}
               </div>
@@ -286,7 +286,7 @@ function WebhookContent() {
           >
             <h2
               className="text-[14px] font-semibold text-slate-900"
-              style={{ fontFamily: "'Clash Display', sans-serif" }}
+              style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
             >
               Webhooks conectados
             </h2>

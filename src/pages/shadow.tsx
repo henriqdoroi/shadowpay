@@ -94,7 +94,7 @@ function MetricCard({
       </div>
       <div
         className="text-3xl font-semibold tracking-tight"
-        style={{ fontFamily: "'Clash Display', sans-serif", color: T.text }}
+        style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif", color: T.text }}
       >
         {prefix}
         {formatted}
@@ -147,7 +147,7 @@ export default function ShadowCorePage() {
       <main
         className="relative min-h-screen w-full overflow-hidden"
         style={{
-          fontFamily: "'Satoshi', system-ui, sans-serif",
+          fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
           background: T.bg,
           color: T.text,
         }}
@@ -169,7 +169,7 @@ export default function ShadowCorePage() {
             <ShadowMark size={26} />
             <span
               className="text-sm font-semibold tracking-[0.05em]"
-              style={{ fontFamily: "'Clash Display', sans-serif", color: T.text }}
+              style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif", color: T.text }}
             >
               ShadowPay
             </span>
@@ -227,7 +227,7 @@ export default function ShadowCorePage() {
             animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8, delay: 0.3 }}
             className="max-w-3xl text-balance text-5xl font-bold leading-[1.05] tracking-tight md:text-7xl"
-            style={{ fontFamily: "'Clash Display', sans-serif", color: T.text }}
+            style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif", color: T.text }}
           >
             Infraestrutura
             <br />

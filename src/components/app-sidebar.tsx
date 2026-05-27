@@ -189,7 +189,7 @@ export function AppSidebar({
             <span
               className="text-[15px] font-bold tracking-tight"
               style={{
-                fontFamily: "'Clash Display', sans-serif",
+                fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                 color: "#0F172A",
               }}
             >

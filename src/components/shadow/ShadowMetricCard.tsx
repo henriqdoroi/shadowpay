@@ -132,7 +132,7 @@ export function ShadowMetricCard({
         </p>
         <div
           className="mt-1.5 text-[26px] font-bold leading-none tracking-tight text-white"
-          style={{ fontFamily: "'Clash Display', sans-serif" }}
+          style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
         >
           {hidden ? "••••••" : value}
         </div>

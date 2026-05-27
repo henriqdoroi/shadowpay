@@ -312,7 +312,7 @@ function ManagerDashboardContent() {
           </div>
           <h2
             className="text-xl font-semibold text-rose-700"
-            style={{ fontFamily: "'Clash Display', sans-serif" }}
+            style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
           >
             Acesso negado
           </h2>
@@ -416,7 +416,7 @@ function ManagerDashboardContent() {
             <h1
               className="text-[28px] font-bold tracking-tight text-slate-900"
               style={{
-                fontFamily: "'Clash Display', sans-serif",
+                fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                 letterSpacing: "-0.005em",
               }}
             >
@@ -583,7 +583,7 @@ function ManagerDashboardContent() {
                   </div>
                   <div
                     className="mt-2 text-[24px] font-bold tracking-tight text-slate-900"
-                    style={{ fontFamily: "'Clash Display', sans-serif" }}
+                    style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
                   >
                     {visible ? m.value : "••••••"}
                   </div>
@@ -617,7 +617,7 @@ function ManagerDashboardContent() {
                   className={`mt-2 text-[24px] font-bold tracking-tight ${
                     saldoExibido < 0 ? "text-rose-700" : "text-emerald-700"
                   }`}
-                  style={{ fontFamily: "'Clash Display', sans-serif" }}
+                  style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
                 >
                   {visible
                     ? saldoExibido < 0

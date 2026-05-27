@@ -184,7 +184,7 @@ function ReportsContent() {
             <h1
               className="text-[28px] font-bold tracking-tight text-slate-900"
               style={{
-                fontFamily: "'Clash Display', sans-serif",
+                fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                 letterSpacing: "-0.005em",
               }}
             >
@@ -279,7 +279,7 @@ function ReportsContent() {
               </div>
               <div
                 className="mt-2 text-[24px] font-bold leading-none tracking-tight text-slate-900"
-                style={{ fontFamily: "'Clash Display', sans-serif" }}
+                style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
               >
                 {c.value}
               </div>

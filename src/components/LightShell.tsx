@@ -217,7 +217,7 @@ export function LightShell({
       style={{
         background: "#F1F3F8",
         color: T.text,
-        fontFamily: "'Satoshi', 'Inter', sans-serif",
+        fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
       }}
     >
       {/* ============================================================
@@ -242,7 +242,7 @@ export function LightShell({
             <div className="text-center leading-tight">
               <div
                 className="text-[13px] font-bold tracking-[0.18em] text-slate-700"
-                style={{ fontFamily: "'Clash Display', sans-serif" }}
+                style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
               >
                 SHADOWPAY
               </div>
