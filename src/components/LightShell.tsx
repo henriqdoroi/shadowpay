@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useState, useEffect } from "react";
+import { ReactNode, useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,15 +11,20 @@ import {
   MessageCircle,
   HelpCircle,
   ChevronDown,
+  ChevronRight,
   LayoutDashboard,
   Package,
-  Receipt,
-  ArrowDownToLine,
+  Wallet,
   ArrowUpFromLine,
+  ShieldAlert,
   BarChart3,
+  LineChart,
+  Receipt,
+  Plug,
+  Building2,
   Megaphone,
   Workflow,
-  Sparkles,
+  Settings,
   Webhook as WebhookIcon,
   Code,
   Target,
@@ -27,6 +32,8 @@ import {
   UserCircle2,
   Shield,
   BellRing,
+  Percent,
+  IdCard,
   LifeBuoy,
   ShieldCheck,
   LogOut,
@@ -36,8 +43,6 @@ import {
   PanelLeftOpen,
   Users,
   Activity,
-  Building2,
-  Settings,
 } from "lucide-react";
 
 const T = {
@@ -63,63 +68,69 @@ type NavItem = {
     className?: string;
     style?: React.CSSProperties;
   }>;
+  children?: NavItem[];
 };
 type NavGroup = { label: string; items: NavItem[] };
 
 function buildNav(isAdmin: boolean): NavGroup[] {
   const groups: NavGroup[] = [
     {
-      label: "Command Center",
+      label: "Negócios",
       items: [
         { label: "Dashboard", href: "/v1/dashboard", icon: LayoutDashboard },
-        { label: "Produtos", href: "/v1/products", icon: Package },
-        { label: "Pedidos", href: "/v1/products/sales", icon: Receipt },
         {
-          label: "Saques",
+          label: "Produtos",
+          href: "/v1/products",
+          icon: Package,
+          children: [
+            { label: "Todos", href: "/v1/products", icon: Package },
+            { label: "Pixels", href: "/v1/integrations/pixels", icon: Target },
+            { label: "Domínios", href: "/v1/integrations/domains", icon: Globe },
+          ],
+        },
+        {
+          label: "Financeiro",
           href: "/v1/finance/withdraw",
-          icon: ArrowUpFromLine,
+          icon: Wallet,
+          children: [
+            { label: "Saques", href: "/v1/finance/withdraw", icon: ArrowUpFromLine },
+            { label: "Compliance", href: "/v1/finance/compliance", icon: ShieldAlert },
+          ],
         },
       ],
     },
     {
-      label: "Inteligência",
+      label: "Análises",
       items: [
         { label: "Relatórios", href: "/v1/reports", icon: BarChart3 },
+        { label: "UTMs", href: "/v1/analytics/utms", icon: LineChart },
+        { label: "Vendas", href: "/v1/products/sales", icon: Receipt },
+      ],
+    },
+    {
+      label: "Avançado",
+      items: [
+        { label: "Integrações", href: "/v1/integrations", icon: Plug },
+        {
+          label: "Adquirentes",
+          href: isAdmin ? "/v2/manager/adquerers" : "/v1/integrations/acquirers",
+          icon: Building2,
+        },
         { label: "Campanhas", href: "/v1/campaigns", icon: Megaphone },
-        { label: "Automação", href: "/v1/automation", icon: Workflow },
-        { label: "Shadow AI", href: "/shadow", icon: Sparkles },
-      ],
-    },
-    {
-      label: "Integrações",
-      items: [
-        { label: "Webhooks", href: "/v1/configs/webhook", icon: WebhookIcon },
-        { label: "API & Docs", href: "/v1/configs/apikey", icon: Code },
+        { label: "Automações", href: "/v1/automation", icon: Workflow },
         {
-          label: "Pixels",
-          href: "/v1/integrations/pixels",
-          icon: Target,
-        },
-        {
-          label: "Domínios",
-          href: "/v1/integrations/domains",
-          icon: Globe,
-        },
-      ],
-    },
-    {
-      label: "Configurações",
-      items: [
-        { label: "Conta", href: "/v1/configs/profile", icon: UserCircle2 },
-        {
-          label: "Segurança",
-          href: "/v1/configs/security",
-          icon: Shield,
-        },
-        {
-          label: "Notificações",
-          href: "/v1/configs/notifications",
-          icon: BellRing,
+          label: "Configurações",
+          href: "/v1/configs/profile",
+          icon: Settings,
+          children: [
+            { label: "Perfil", href: "/v1/configs/profile", icon: UserCircle2 },
+            { label: "Segurança", href: "/v1/configs/security", icon: Shield },
+            { label: "Notificações", href: "/v1/configs/notifications", icon: BellRing },
+            { label: "API & Docs", href: "/v1/configs/apikey", icon: Code },
+            { label: "Webhooks", href: "/v1/configs/webhook", icon: WebhookIcon },
+            { label: "Taxas", href: "/v1/configs/fee", icon: Percent },
+            { label: "KYC", href: "/v1/kyc", icon: IdCard },
+          ],
         },
       ],
     },
@@ -131,27 +142,23 @@ function buildNav(isAdmin: boolean): NavGroup[] {
       items: [
         { label: "Painel", href: "/v2/manager", icon: ShieldCheck },
         { label: "Sellers", href: "/v2/manager/users", icon: Users },
-        {
-          label: "Transações",
-          href: "/v2/manager/transactions",
-          icon: Activity,
-        },
-        {
-          label: "Adquirentes",
-          href: "/v2/manager/adquerers",
-          icon: Building2,
-        },
-        {
-          label: "Saques admin",
-          href: "/v2/manager/withdraw",
-          icon: ArrowUpFromLine,
-        },
+        { label: "Transações", href: "/v2/manager/transactions", icon: Activity },
+        { label: "Saques admin", href: "/v2/manager/withdraw", icon: ArrowUpFromLine },
         { label: "PSP Keys", href: "/v2/manager/psp-key", icon: Settings },
       ],
     });
   }
 
   return groups;
+}
+
+/* Active-state matcher: exact or descendant path (with /v1/products excluded
+   from matching /v1/products/sales since they belong to different sections now). */
+function isActive(pathname: string, href: string): boolean {
+  if (pathname === href) return true;
+  if (href === "/v1/products") return false; // grupo Produtos NÃO casa com /v1/products/sales (Vendas)
+  if (href === "/v1/dashboard") return false;
+  return pathname.startsWith(href + "/");
 }
 
 export function LightShell({
@@ -164,6 +171,7 @@ export function LightShell({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [now, setNow] = useState<Date | null>(null);
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
   const sidebarWidth = sidebarCollapsed ? 76 : 260;
 
   useEffect(() => {
@@ -183,7 +191,39 @@ export function LightShell({
     );
   }, [sidebarCollapsed]);
 
-  const nav = buildNav(!!user?.isAdministrator);
+  const nav = useMemo(
+    () => buildNav(!!user?.isAdministrator),
+    [user?.isAdministrator]
+  );
+
+  // Auto-expand a parent whose child matches the current route
+  useEffect(() => {
+    const toOpen = new Set<string>(expandedKeys);
+    let changed = false;
+    nav.forEach((group) => {
+      group.items.forEach((item) => {
+        if (item.children && item.children.some((c) => isActive(router.pathname, c.href))) {
+          const key = `${group.label}-${item.label}`;
+          if (!toOpen.has(key)) {
+            toOpen.add(key);
+            changed = true;
+          }
+        }
+      });
+    });
+    if (changed) setExpandedKeys(toOpen);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.pathname, nav]);
+
+  const toggleExpanded = (key: string) => {
+    setExpandedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
   const initial = (user?.companyName?.[0] || "S").toUpperCase();
 
   const kycStatus = (user as any)?.kycStatus as
@@ -195,25 +235,19 @@ export function LightShell({
   const kycPill = (() => {
     switch (kycStatus) {
       case "APPROVED":
-        return {
-          text: "KYC verificado",
-          color: "text-emerald-700 bg-emerald-50",
-        };
+        return { text: "KYC verificado", color: "text-emerald-700 bg-emerald-50" };
       case "PENDING":
         return { text: "KYC em análise", color: "text-sky-700 bg-sky-50" };
       case "BANNED":
         return { text: "Conta suspensa", color: "text-rose-700 bg-rose-50" };
       default:
-        return {
-          text: "KYC pendente",
-          color: "text-amber-700 bg-amber-50",
-        };
+        return { text: "KYC pendente", color: "text-amber-700 bg-amber-50" };
     }
   })();
 
   return (
     <div
-      className="relative flex min-h-screen w-full"
+      className="relative min-h-screen w-full"
       style={{
         background: "#F1F3F8",
         color: T.text,
@@ -221,10 +255,10 @@ export function LightShell({
       }}
     >
       {/* ============================================================
-          SIDEBAR
+          SIDEBAR (FIXED — never scrolls com o conteúdo)
           ============================================================ */}
       <aside
-        className="sticky top-0 z-30 hidden h-screen shrink-0 flex-col md:flex"
+        className="fixed inset-y-0 left-0 z-30 hidden flex-col md:flex"
         style={{
           width: sidebarWidth,
           background: "#F1F3F8",
@@ -240,10 +274,7 @@ export function LightShell({
           <ShadowLogo size={sidebarCollapsed ? 56 : 110} />
           {!sidebarCollapsed && (
             <div className="text-center leading-tight">
-              <div
-                className="text-[13px] font-bold tracking-[0.18em] text-slate-700"
-                style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
-              >
+              <div className="text-[13px] font-bold tracking-[0.18em] text-slate-700">
                 SHADOWPAY
               </div>
               <div className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.30em] text-slate-400">
@@ -268,32 +299,93 @@ export function LightShell({
               <ul className="space-y-0.5">
                 {group.items.map((item) => {
                   const Icon = item.icon;
-                  const active = router.pathname === item.href;
+                  const key = `${group.label}-${item.label}`;
+                  const hasChildren = !!item.children?.length;
+                  const expanded = expandedKeys.has(key);
+                  const selfActive = isActive(router.pathname, item.href);
+                  const childActive =
+                    hasChildren &&
+                    item.children!.some((c) => isActive(router.pathname, c.href));
+                  const active = selfActive || childActive;
+
                   return (
-                    <li key={`${group.label}-${item.label}`}>
-                      <Link
-                        href={item.href}
-                        title={sidebarCollapsed ? item.label : undefined}
-                        className="group flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-colors"
-                        style={{
-                          padding: sidebarCollapsed ? "10px" : "8px 12px",
-                          justifyContent: sidebarCollapsed
-                            ? "center"
-                            : "flex-start",
-                          background: active ? T.primaryBg : "transparent",
-                          color: active ? T.primary : T.text2,
-                        }}
-                      >
-                        <Icon
-                          className="h-4 w-4 shrink-0"
+                    <li key={key}>
+                      {hasChildren && !sidebarCollapsed ? (
+                        <button
+                          onClick={() => toggleExpanded(key)}
+                          className="group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors"
                           style={{
-                            color: active ? T.primary : T.textMuted,
+                            background: active ? T.primaryBg : "transparent",
+                            color: active ? T.primary : T.text2,
                           }}
-                        />
-                        {!sidebarCollapsed && (
-                          <span className="flex-1 truncate">{item.label}</span>
-                        )}
-                      </Link>
+                        >
+                          <Icon
+                            className="h-4 w-4 shrink-0"
+                            style={{ color: active ? T.primary : T.textMuted }}
+                          />
+                          <span className="flex-1 truncate text-left">
+                            {item.label}
+                          </span>
+                          <ChevronRight
+                            className="h-3.5 w-3.5 shrink-0 transition-transform"
+                            style={{
+                              color: active ? T.primary : T.textMuted,
+                              transform: expanded ? "rotate(90deg)" : "none",
+                            }}
+                          />
+                        </button>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          title={sidebarCollapsed ? item.label : undefined}
+                          className="group flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-colors"
+                          style={{
+                            padding: sidebarCollapsed ? "10px" : "8px 12px",
+                            justifyContent: sidebarCollapsed ? "center" : "flex-start",
+                            background: active ? T.primaryBg : "transparent",
+                            color: active ? T.primary : T.text2,
+                          }}
+                        >
+                          <Icon
+                            className="h-4 w-4 shrink-0"
+                            style={{ color: active ? T.primary : T.textMuted }}
+                          />
+                          {!sidebarCollapsed && (
+                            <span className="flex-1 truncate">{item.label}</span>
+                          )}
+                        </Link>
+                      )}
+
+                      {/* Children (only when sidebar expanded + parent open) */}
+                      {hasChildren && !sidebarCollapsed && expanded && (
+                        <ul className="mt-0.5 space-y-0.5 pl-3">
+                          {item.children!.map((child) => {
+                            const ChildIcon = child.icon;
+                            const cActive = isActive(router.pathname, child.href);
+                            return (
+                              <li key={`${key}-${child.label}`}>
+                                <Link
+                                  href={child.href}
+                                  className="group flex items-center gap-2 rounded-lg py-1.5 pl-4 pr-3 text-[12.5px] font-medium transition-colors"
+                                  style={{
+                                    background: cActive ? T.primaryBg : "transparent",
+                                    color: cActive ? T.primary : T.text2,
+                                    borderLeft: cActive
+                                      ? `2px solid ${T.primary}`
+                                      : `2px solid transparent`,
+                                  }}
+                                >
+                                  <ChildIcon
+                                    className="h-3.5 w-3.5 shrink-0"
+                                    style={{ color: cActive ? T.primary : T.textMuted }}
+                                  />
+                                  <span className="flex-1 truncate">{child.label}</span>
+                                </Link>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
                     </li>
                   );
                 })}
@@ -319,7 +411,7 @@ export function LightShell({
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
                     style={{
                       background:
-                        "linear-gradient(135deg, #7C3AED 0%, #22D3EE 100%)",
+                        "linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)",
                     }}
                   >
                     {initial}
@@ -329,7 +421,7 @@ export function LightShell({
                       {user?.companyName || "Operador"}
                     </p>
                     <p className="truncate text-[10px] text-slate-500">
-                      Seller Bronze
+                      {user?.isAdministrator ? "Administrador" : "Seller Bronze"}
                     </p>
                   </div>
                 </div>
@@ -341,9 +433,7 @@ export function LightShell({
                 </div>
                 <p className="mt-2 text-[10px] text-slate-500">
                   Próximo repasse{" "}
-                  <span className="font-semibold text-slate-700">
-                    25 Mai 2026
-                  </span>
+                  <span className="font-semibold text-slate-700">25 Mai 2026</span>
                 </p>
               </div>
 
@@ -361,8 +451,7 @@ export function LightShell({
             <div
               className="mx-auto flex h-10 w-10 items-center justify-center rounded-full text-xs font-bold text-white"
               style={{
-                background:
-                  "linear-gradient(135deg, #7C3AED 0%, #22D3EE 100%)",
+                background: "linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)",
               }}
               title={user?.companyName || "Operador"}
             >
@@ -373,15 +462,19 @@ export function LightShell({
       </aside>
 
       {/* ============================================================
-          MAIN COLUMN
+          MAIN COLUMN — shifts pra direita da sidebar fixa
           ============================================================ */}
       <div
-        className="relative flex min-h-screen min-w-0 flex-1 flex-col"
-        style={{
-          background: "#FFFFFF",
-          boxShadow:
-            "-12px 0 28px -16px rgba(15, 23, 42, 0.10), -2px 0 8px rgba(15, 23, 42, 0.05)",
-        }}
+        className="relative flex min-h-screen min-w-0 flex-col md:ml-[var(--sidebar-w)]"
+        style={
+          {
+            ["--sidebar-w" as any]: `${sidebarWidth}px`,
+            transition: "margin-left 0.22s cubic-bezier(0.22, 1, 0.36, 1)",
+            background: "#FFFFFF",
+            boxShadow:
+              "-12px 0 28px -16px rgba(15, 23, 42, 0.10), -2px 0 8px rgba(15, 23, 42, 0.05)",
+          } as React.CSSProperties
+        }
       >
         {/* Toggle button */}
         <button
@@ -443,33 +536,6 @@ export function LightShell({
             </div>
 
             <div className="ml-auto flex items-center gap-2">
-              <Link
-                href="/shadow"
-                className="hidden h-9 items-center gap-2 rounded-xl px-3 text-[12px] font-semibold text-slate-700 transition-colors hover:bg-slate-50 sm:flex"
-                style={{ border: `1px solid ${T.border}` }}
-              >
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                </span>
-                Shadow online
-                <svg
-                  width="44"
-                  height="14"
-                  viewBox="0 0 44 14"
-                  className="ml-1"
-                  fill="none"
-                >
-                  <path
-                    d="M0 7 L8 7 L10 3 L14 11 L18 5 L22 9 L26 4 L30 8 L34 7 L44 7"
-                    stroke={T.primary}
-                    strokeWidth="1.3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </Link>
-
               {onToggleValues && (
                 <button
                   onClick={onToggleValues}
@@ -523,7 +589,7 @@ export function LightShell({
                     className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold text-white"
                     style={{
                       background:
-                        "linear-gradient(135deg, #7C3AED 0%, #22D3EE 100%)",
+                        "linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)",
                     }}
                   >
                     {initial}
@@ -532,7 +598,9 @@ export function LightShell({
                     <p className="text-[12px] font-semibold text-slate-800">
                       {(user?.companyName || "Operador").slice(0, 16)}
                     </p>
-                    <p className="text-[10px] text-slate-500">Seller Bronze</p>
+                    <p className="text-[10px] text-slate-500">
+                      {user?.isAdministrator ? "Administrador" : "Seller Bronze"}
+                    </p>
                   </div>
                   <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
                 </button>

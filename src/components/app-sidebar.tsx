@@ -16,7 +16,6 @@ import {
   Percent,
   UserCircle2,
   IdCard,
-  Sparkles,
   ShieldCheck,
   Users,
   Activity,
@@ -24,6 +23,16 @@ import {
   Settings,
   LifeBuoy,
   ChevronRight,
+  Wallet,
+  ShieldAlert,
+  LineChart,
+  Plug,
+  Megaphone,
+  Workflow,
+  Target,
+  Globe,
+  BellRing,
+  Code,
 } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -53,43 +62,41 @@ type NavGroup = {
 function buildNav(isAdmin: boolean): NavGroup[] {
   const base: NavGroup[] = [
     {
-      label: "Command Center",
+      label: "Negócios",
       items: [
         { label: "Dashboard", href: "/v1/dashboard", icon: LayoutDashboard },
-        { label: "Shadow AI", href: "/shadow", icon: Sparkles, badge: "AI" },
-      ],
-    },
-    {
-      label: "Vendas",
-      items: [
         { label: "Produtos", href: "/v1/products", icon: Package },
-        { label: "Pedidos", href: "/v1/products/sales", icon: Receipt },
-        {
-          label: "Saques",
-          href: "/v1/finance/withdraw",
-          icon: ArrowUpFromLine,
-        },
+        { label: "Pixels", href: "/v1/integrations/pixels", icon: Target },
+        { label: "Domínios", href: "/v1/integrations/domains", icon: Globe },
+        { label: "Saques", href: "/v1/finance/withdraw", icon: ArrowUpFromLine },
+        { label: "Compliance", href: "/v1/finance/compliance", icon: ShieldAlert },
       ],
     },
     {
-      label: "Inteligência",
+      label: "Análises",
       items: [
         { label: "Relatórios", href: "/v1/reports", icon: BarChart3 },
-        { label: "Compliance", href: "/v1/finance/compliance", icon: Shield },
+        { label: "UTMs", href: "/v1/analytics/utms", icon: LineChart },
+        { label: "Vendas", href: "/v1/products/sales", icon: Receipt },
       ],
     },
     {
-      label: "Integrações",
+      label: "Avançado",
       items: [
-        { label: "API Keys", href: "/v1/configs/apikey", icon: KeyRound },
+        { label: "Integrações", href: "/v1/integrations", icon: Plug },
+        {
+          label: "Adquirentes",
+          href: isAdmin ? "/v2/manager/adquerers" : "/v1/integrations/acquirers",
+          icon: Building2,
+        },
+        { label: "Campanhas", href: "/v1/campaigns", icon: Megaphone },
+        { label: "Automações", href: "/v1/automation", icon: Workflow },
+        { label: "Perfil", href: "/v1/configs/profile", icon: UserCircle2 },
+        { label: "Segurança", href: "/v1/configs/security", icon: Shield },
+        { label: "Notificações", href: "/v1/configs/notifications", icon: BellRing },
+        { label: "API & Docs", href: "/v1/configs/apikey", icon: Code },
         { label: "Webhooks", href: "/v1/configs/webhook", icon: Webhook },
         { label: "Taxas", href: "/v1/configs/fee", icon: Percent },
-      ],
-    },
-    {
-      label: "Conta",
-      items: [
-        { label: "Perfil", href: "/v1/configs/profile", icon: UserCircle2 },
         { label: "KYC", href: "/v1/kyc", icon: IdCard },
       ],
     },
@@ -101,21 +108,8 @@ function buildNav(isAdmin: boolean): NavGroup[] {
       items: [
         { label: "Painel", href: "/v2/manager", icon: ShieldCheck },
         { label: "Sellers", href: "/v2/manager/users", icon: Users },
-        {
-          label: "Transações",
-          href: "/v2/manager/transactions",
-          icon: Activity,
-        },
-        {
-          label: "Adquirentes",
-          href: "/v2/manager/adquerers",
-          icon: Building2,
-        },
-        {
-          label: "Saques admin",
-          href: "/v2/manager/withdraw",
-          icon: ArrowUpFromLine,
-        },
+        { label: "Transações", href: "/v2/manager/transactions", icon: Activity },
+        { label: "Saques admin", href: "/v2/manager/withdraw", icon: ArrowUpFromLine },
         { label: "PSP Keys", href: "/v2/manager/psp-key", icon: Settings },
       ],
     });
