@@ -131,7 +131,9 @@ export default function App(props: AppProps) {
       </Head>
       <ThemeProvider
         attribute="class"
-        defaultTheme="dark"
+        defaultTheme="light"
+        forcedTheme="light"
+        enableSystem={false}
         disableTransitionOnChange
       >
         <AuthProvider>

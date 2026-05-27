@@ -4,16 +4,21 @@ import { useRouter } from "next/router";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Head from "next/head";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
 
-const SHADOW_BG =
-  "radial-gradient(1100px 700px at 50% -10%, rgba(124,58,237,0.18) 0%, transparent 50%), linear-gradient(180deg,#040712,#070b17 50%,#090f1f)";
+const T = {
+  bg: "#F1F3F8",
+  surface: "#FFFFFF",
+  text: "#0F172A",
+  text2: "#475569",
+  text3: "#94A3B8",
+  primary: "#7C3AED",
+  primaryStrong: "#6D28D9",
+  primaryBg: "rgba(124, 58, 237, 0.08)",
+  border: "rgba(15, 23, 42, 0.08)",
+};
 
 function KycContent() {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
 
   const handleStartVerification = () => {
     router.push("/v1/kyc/document-upload");
@@ -39,40 +44,20 @@ function KycContent() {
       </Head>
 
       <div
-        className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden p-4 text-white"
-        style={{ background: SHADOW_BG }}
+        className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden p-4"
+        style={{
+          background: T.bg,
+          color: T.text,
+          fontFamily: "'Satoshi', system-ui, sans-serif",
+        }}
       >
-        {/* Partículas */}
-        {mounted && (
-          <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            {Array.from({ length: 14 }).map((_, i) => (
-              <motion.span
-                key={i}
-                className="absolute h-1 w-1 rounded-full bg-violet-400/30"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                }}
-                animate={{ y: [0, -20, 0], opacity: [0.2, 0.6, 0.2] }}
-                transition={{
-                  duration: 5 + Math.random() * 4,
-                  repeat: Infinity,
-                  delay: i * 0.3,
-                }}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Orb */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-          className="pointer-events-none absolute left-1/2 top-1/3 h-[480px] w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-40 blur-3xl"
+        {/* Halo violeta sutil */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-[-10%] h-[600px] w-[800px] -translate-x-1/2 rounded-full"
           style={{
-            background:
-              "radial-gradient(circle, rgba(124,58,237,0.45), rgba(99,102,241,0.15) 50%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(124,58,237,0.10) 0%, transparent 60%)",
+            filter: "blur(40px)",
           }}
         />
 
@@ -84,12 +69,18 @@ function KycContent() {
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             className="flex items-center justify-center gap-2"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 shadow-[0_8px_24px_-12px_rgba(124,58,237,0.7)]">
-              <ShieldCheck className="h-4 w-4 text-white" />
+            <div
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-white"
+              style={{
+                background: `linear-gradient(135deg, ${T.primary}, ${T.primaryStrong})`,
+                boxShadow: "0 8px 24px -12px rgba(124,58,237,0.5)",
+              }}
+            >
+              <ShieldCheck className="h-4 w-4" />
             </div>
             <span
-              className="text-sm font-semibold tracking-[0.16em] text-white/70"
-              style={{ fontFamily: "'Clash Display', sans-serif" }}
+              className="text-sm font-semibold tracking-[0.16em]"
+              style={{ fontFamily: "'Clash Display', sans-serif", color: T.text2 }}
             >
               SHADOWPAY · KYC
             </span>
@@ -97,35 +88,36 @@ function KycContent() {
 
           {/* Header */}
           <motion.div
-            initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.7, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.06 }}
             className="space-y-3 text-center"
           >
             <h1
-              className="text-3xl font-bold text-white md:text-[40px]"
-              style={{ fontFamily: "'Clash Display', sans-serif" }}
+              className="text-3xl font-bold md:text-[40px]"
+              style={{ fontFamily: "'Clash Display', sans-serif", color: T.text }}
             >
               Verificação de identidade
             </h1>
-            <p className="mx-auto max-w-lg text-sm text-white/55 md:text-base">
+            <p className="mx-auto max-w-lg text-sm md:text-base" style={{ color: T.text2 }}>
               Para sua segurança e conformidade, precisamos confirmar quem você é
               antes de liberar toda a operação.
             </p>
           </motion.div>
 
-          {/* Glass card */}
+          {/* Card */}
           <motion.div
-            initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.8, delay: 0.16, ease: [0.22, 1, 0.36, 1] }}
-            className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-white/[0.025] p-8 backdrop-blur-xl"
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.12 }}
+            className="relative overflow-hidden rounded-3xl p-8"
+            style={{
+              background: T.surface,
+              border: `1px solid ${T.border}`,
+              boxShadow:
+                "0 1px 2px rgba(15,23,42,0.04), 0 12px 32px -12px rgba(15,23,42,0.10)",
+            }}
           >
-            <div
-              className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full blur-3xl"
-              style={{ background: "rgba(139,92,246,0.18)" }}
-            />
-
             {/* Ilustração */}
             <div className="relative flex justify-center">
               <Image
@@ -133,15 +125,15 @@ function KycContent() {
                 src={"/8449768_3907312.svg"}
                 width={560}
                 height={320}
-                className="h-auto max-w-full opacity-90"
+                className="h-auto max-w-full"
               />
             </div>
 
             {/* Checklist */}
             <div className="relative mt-6 space-y-3">
               <h3
-                className="text-center text-sm font-semibold uppercase tracking-[0.16em] text-white/55"
-                style={{ fontFamily: "'Clash Display', sans-serif" }}
+                className="text-center text-sm font-semibold uppercase tracking-[0.16em]"
+                style={{ fontFamily: "'Clash Display', sans-serif", color: T.text2 }}
               >
                 O que você precisa
               </h3>
@@ -151,23 +143,32 @@ function KycContent() {
                     key={item.label}
                     initial={{ opacity: 0, x: -8 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.5, delay: 0.25 + i * 0.05 }}
-                    className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 text-sm text-white/80"
+                    transition={{ duration: 0.4, delay: 0.2 + i * 0.05 }}
+                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm"
+                    style={{
+                      background: "#F8FAFC",
+                      border: `1px solid ${T.border}`,
+                      color: T.text,
+                    }}
                   >
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300">
+                    <span
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+                      style={{ background: T.primaryBg, color: T.primary }}
+                    >
                       {item.icon}
                     </span>
                     <span>{item.label}</span>
                   </motion.div>
                 ))}
               </div>
-              <p className="text-center text-xs text-white/40">
+              <p className="text-center text-xs" style={{ color: T.text3 }}>
                 Não tem o CNPJ?{" "}
                 <a
                   href="https://solucoes.receita.fazenda.gov.br/servicos/cnpjreva/cnpjreva_solicitacao.asp"
                   target="_blank"
                   rel="noreferrer"
-                  className="text-violet-300 underline-offset-2 hover:underline"
+                  className="underline-offset-2 hover:underline"
+                  style={{ color: T.primary }}
                 >
                   Emita aqui
                 </a>
@@ -177,26 +178,28 @@ function KycContent() {
             {/* CTA */}
             <button
               onClick={handleStartVerification}
-              className="group relative mt-7 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl text-base font-semibold text-white transition-transform hover:-translate-y-0.5"
+              className="group relative mt-7 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl text-base font-semibold transition-transform hover:-translate-y-0.5"
               style={{
-                background: "linear-gradient(120deg, #7C3AED, #6366F1)",
-                boxShadow: "0 20px 48px -18px rgba(124,58,237,0.7)",
+                background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
+                color: "#FFFFFF",
+                boxShadow: "0 16px 36px -16px rgba(124,58,237,0.5)",
               }}
             >
               Iniciar verificação
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
             </button>
 
-            <p className="relative mt-4 text-center text-xs text-white/40">
-              🔒 Seus dados são protegidos com criptografia ponta-a-ponta
+            <p className="relative mt-4 text-center text-xs" style={{ color: T.text3 }}>
+              Seus dados são protegidos com criptografia ponta-a-ponta
             </p>
           </motion.div>
 
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.7, delay: 0.45 }}
-            className="text-center text-xs text-white/35"
+            transition={{ duration: 0.6, delay: 0.35 }}
+            className="text-center text-xs"
+            style={{ color: T.text3 }}
           >
             Processo rápido e seguro · Geralmente leva menos de 2 minutos
           </motion.p>

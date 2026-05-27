@@ -75,11 +75,6 @@ function buildNav(isAdmin: boolean): NavGroup[] {
         { label: "Produtos", href: "/v1/products", icon: Package },
         { label: "Pedidos", href: "/v1/products/sales", icon: Receipt },
         {
-          label: "Recebimentos",
-          href: "/v1/finance/recivements",
-          icon: ArrowDownToLine,
-        },
-        {
           label: "Saques",
           href: "/v1/finance/withdraw",
           icon: ArrowUpFromLine,

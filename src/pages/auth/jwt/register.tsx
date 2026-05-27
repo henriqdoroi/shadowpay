@@ -13,30 +13,46 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Link from "next/link";
-import { useState, useEffect, useMemo } from "react";
+import { useState } from "react";
 import { useRouter } from "next/router";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { ArrowRight, Loader2, Radio } from "lucide-react";
+import { ArrowRight, Loader2, ShieldCheck } from "lucide-react";
 
-const COLORS = { bg0: "#050816", bg1: "#0B1020", violet: "#8B5CF6", blue: "#3B82F6", indigo: "#6366F1" };
-const inputCls =
-  "h-11 border-white/10 bg-white/[0.04] text-white placeholder:text-white/30 focus-visible:border-[#8B5CF6] focus-visible:ring-[#8B5CF6]/25";
-const labelCls = "text-xs font-medium uppercase tracking-wider text-white/50";
+const T = {
+  bg: "#F1F3F8",
+  surface: "#FFFFFF",
+  inputBg: "#F8FAFC",
+  text: "#0F172A",
+  text2: "#475569",
+  text3: "#94A3B8",
+  primary: "#7C3AED",
+  primaryStrong: "#6D28D9",
+  border: "rgba(15, 23, 42, 0.08)",
+};
+
+const inputCls = "h-11";
+const inputStyle: React.CSSProperties = {
+  background: T.inputBg,
+  border: `1px solid ${T.border}`,
+  color: T.text,
+};
+const labelCls = "text-xs font-medium uppercase tracking-wider";
+const labelStyle: React.CSSProperties = { color: T.text2 };
 
 function ShadowMark({ size = 32 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
       <defs>
         <linearGradient id="sg-register" x1="0" y1="0" x2="48" y2="48">
-          <stop offset="0" stopColor="#A855F7" />
-          <stop offset="1" stopColor="#3B82F6" />
+          <stop offset="0" stopColor="#7C3AED" />
+          <stop offset="1" stopColor="#A855F7" />
         </linearGradient>
       </defs>
-      <circle cx="24" cy="24" r="21" stroke="url(#sg-register)" strokeWidth="2" opacity="0.6" />
+      <circle cx="24" cy="24" r="21" stroke="url(#sg-register)" strokeWidth="2" opacity="0.5" />
       <circle cx="24" cy="24" r="8" fill="url(#sg-register)" />
-      <circle cx="24" cy="24" r="13" stroke="url(#sg-register)" strokeWidth="1.5" opacity="0.35" />
+      <circle cx="24" cy="24" r="13" stroke="url(#sg-register)" strokeWidth="1.5" opacity="0.3" />
     </svg>
   );
 }
@@ -64,24 +80,8 @@ export default function Register() {
     companyActivity: "",
   });
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const { register, isLoading } = useAuth();
-
-  useEffect(() => setMounted(true), []);
-
-  const particles = useMemo(
-    () =>
-      Array.from({ length: 20 }).map((_, i) => ({
-        id: i,
-        left: Math.random() * 100,
-        top: Math.random() * 100,
-        size: 1 + Math.random() * 2,
-        delay: Math.random() * 5,
-        duration: 6 + Math.random() * 8,
-      })),
-    [],
-  );
 
   // Máscaras
   const applyCpfcnpjMask = (value: string) => {
@@ -236,104 +236,65 @@ export default function Register() {
     <>
       <Head>
         <title>ShadowPay — Criar conta</title>
-        <link rel="preconnect" href="https://api.fontshare.com" />
-        <link
-          href="https://api.fontshare.com/v2/css?f[]=clash-display@600,700&f[]=satoshi@400,500,700&display=swap"
-          rel="stylesheet"
-        />
       </Head>
 
       <div
-        className="relative min-h-screen w-full overflow-hidden text-white"
+        className="relative min-h-screen w-full overflow-hidden"
         style={{
           fontFamily: "'Satoshi', system-ui, sans-serif",
-          background: `radial-gradient(1100px 650px at 50% -10%, ${COLORS.bg1} 0%, ${COLORS.bg0} 55%, #02030A 100%)`,
+          background: T.bg,
+          color: T.text,
         }}
       >
-        <motion.div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-[-15%] h-[560px] w-[560px] -translate-x-1/2 rounded-full blur-[120px]"
-          style={{ background: `radial-gradient(circle, ${COLORS.violet}50, transparent 60%)` }}
-          animate={{ opacity: [0.4, 0.65, 0.4], scale: [1, 1.08, 1] }}
-          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          aria-hidden
-          className="pointer-events-none absolute bottom-[-20%] right-[-10%] h-[480px] w-[480px] rounded-full blur-[120px]"
-          style={{ background: `radial-gradient(circle, ${COLORS.blue}3a, transparent 60%)` }}
-          animate={{ opacity: [0.25, 0.5, 0.25] }}
-          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
-        />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.12]"
+          className="pointer-events-none absolute left-1/2 top-[-30%] h-[600px] w-[800px] -translate-x-1/2 rounded-full"
           style={{
-            backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)",
-            backgroundSize: "56px 56px",
-            maskImage: "radial-gradient(800px 600px at 50% 30%, #000 30%, transparent 75%)",
+            background: "radial-gradient(circle, rgba(124,58,237,0.10) 0%, transparent 60%)",
+            filter: "blur(40px)",
           }}
         />
-        {mounted &&
-          particles.map((p) => (
-            <motion.span
-              key={p.id}
-              aria-hidden
-              className="pointer-events-none absolute rounded-full"
-              style={{
-                left: `${p.left}%`,
-                top: `${p.top}%`,
-                width: p.size,
-                height: p.size,
-                background: "rgba(255,255,255,0.5)",
-                boxShadow: "0 0 6px rgba(139,92,246,0.8)",
-              }}
-              animate={{ y: [0, -20, 0], opacity: [0, 0.7, 0] }}
-              transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: "easeInOut" }}
-            />
-          ))}
 
         <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-8">
           <motion.div
-            initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             className="w-full max-w-lg"
           >
             <div className="mb-7 flex flex-col items-center">
-              <div className="relative mb-4 flex items-center justify-center">
-                <motion.div
-                  className="absolute h-24 w-24 rounded-full blur-2xl"
-                  style={{ background: `radial-gradient(circle, ${COLORS.violet}, transparent 65%)` }}
-                  animate={{ opacity: [0.5, 0.9, 0.5], scale: [0.95, 1.1, 0.95] }}
-                  transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-                />
-                <div
-                  className="relative flex h-16 w-16 items-center justify-center rounded-full border border-white/15"
-                  style={{
-                    background: "radial-gradient(circle at 35% 30%, rgba(255,255,255,0.16), rgba(255,255,255,0.02) 55%)",
-                    boxShadow: "inset 0 0 24px rgba(139,92,246,0.4), 0 0 50px -12px rgba(139,92,246,0.6)",
-                  }}
-                >
-                  <ShadowMark size={30} />
-                </div>
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-[0_8px_24px_-12px_rgba(124,58,237,0.4),0_2px_8px_rgba(15,23,42,0.06)]">
+                <ShadowMark size={36} />
               </div>
-              <h1 className="text-2xl font-bold tracking-tight" style={{ fontFamily: "'Clash Display', sans-serif" }}>
+              <h1
+                className="text-2xl font-bold tracking-tight"
+                style={{ fontFamily: "'Clash Display', sans-serif", color: T.text }}
+              >
                 ShadowPay
               </h1>
-              <div className="mt-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
-                <Radio className="h-3 w-3" style={{ color: COLORS.violet }} />
+              <div
+                className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.3em]"
+                style={{ color: T.text3 }}
+              >
+                <ShieldCheck className="h-3 w-3" style={{ color: T.primary }} />
                 Crie sua infraestrutura
               </div>
             </div>
 
             <div
-              className="rounded-2xl border border-white/[0.08] p-7 backdrop-blur-xl"
-              style={{ background: "rgba(255,255,255,0.03)", boxShadow: "0 30px 80px -40px rgba(139,92,246,0.5)" }}
+              className="rounded-2xl p-7"
+              style={{
+                background: T.surface,
+                border: `1px solid ${T.border}`,
+                boxShadow:
+                  "0 1px 2px rgba(15,23,42,0.04), 0 12px 32px -12px rgba(15,23,42,0.12)",
+              }}
             >
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="razao-social" className={labelCls}>Razão social</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="razao-social" className={labelCls} style={labelStyle}>
+                    Razão social
+                  </Label>
                   <Input
                     id="razao-social"
                     type="text"
@@ -341,45 +302,110 @@ export default function Register() {
                     value={formData.companyName}
                     onChange={(e) => handleInputChange("companyName", e.target.value)}
                     className={inputCls}
+                    style={inputStyle}
                     required
                   />
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className={labelCls}>E-mail</Label>
-                    <Input id="email" type="email" placeholder="seu@email.com" value={formData.email} onChange={(e) => handleInputChange("email", e.target.value)} className={inputCls} required />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email" className={labelCls} style={labelStyle}>
+                      E-mail
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={formData.email}
+                      onChange={(e) => handleInputChange("email", e.target.value)}
+                      className={inputCls}
+                      style={inputStyle}
+                      required
+                    />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="whatsapp" className={labelCls}>WhatsApp</Label>
-                    <Input id="whatsapp" type="tel" placeholder="(11) 99999-9999" value={formData.number} onChange={(e) => handleInputChange("number", e.target.value)} className={inputCls} maxLength={15} required />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="whatsapp" className={labelCls} style={labelStyle}>
+                      WhatsApp
+                    </Label>
+                    <Input
+                      id="whatsapp"
+                      type="tel"
+                      placeholder="(11) 99999-9999"
+                      value={formData.number}
+                      onChange={(e) => handleInputChange("number", e.target.value)}
+                      className={inputCls}
+                      style={inputStyle}
+                      maxLength={15}
+                      required
+                    />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password" className={labelCls}>Senha</Label>
-                  <Input id="password" type="password" placeholder="••••••••" value={formData.password} onChange={(e) => handleInputChange("password", e.target.value)} className={inputCls} minLength={6} required />
+                <div className="space-y-1.5">
+                  <Label htmlFor="password" className={labelCls} style={labelStyle}>
+                    Senha
+                  </Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={(e) => handleInputChange("password", e.target.value)}
+                    className={inputCls}
+                    style={inputStyle}
+                    minLength={6}
+                    required
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="cpf_cnpj" className={labelCls}>CPF/CNPJ</Label>
-                    <Input id="cpf_cnpj" type="text" placeholder="00.000.000/0000-00" value={formData.cpf_cnpj} onChange={(e) => handleInputChange("cpf_cnpj", e.target.value)} className={inputCls} maxLength={18} required />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="cpf_cnpj" className={labelCls} style={labelStyle}>
+                      CPF/CNPJ
+                    </Label>
+                    <Input
+                      id="cpf_cnpj"
+                      type="text"
+                      placeholder="00.000.000/0000-00"
+                      value={formData.cpf_cnpj}
+                      onChange={(e) => handleInputChange("cpf_cnpj", e.target.value)}
+                      className={inputCls}
+                      style={inputStyle}
+                      maxLength={18}
+                      required
+                    />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cep" className={labelCls}>CEP</Label>
-                    <Input id="cep" type="text" placeholder="00000-000" value={formData.zipCode} onChange={(e) => handleInputChange("zipCode", e.target.value)} className={inputCls} maxLength={9} required />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="cep" className={labelCls} style={labelStyle}>
+                      CEP
+                    </Label>
+                    <Input
+                      id="cep"
+                      type="text"
+                      placeholder="00000-000"
+                      value={formData.zipCode}
+                      onChange={(e) => handleInputChange("zipCode", e.target.value)}
+                      className={inputCls}
+                      style={inputStyle}
+                      maxLength={9}
+                      required
+                    />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label className={labelCls}>Tipo de empresa</Label>
-                    <Select value={formData.companyModality} onValueChange={(value) => handleSelectChange("companyModality", value)}>
-                      <SelectTrigger className="h-11 w-full border-white/10 bg-white/[0.04] text-white">
+                  <div className="space-y-1.5">
+                    <Label className={labelCls} style={labelStyle}>
+                      Tipo de empresa
+                    </Label>
+                    <Select
+                      value={formData.companyModality}
+                      onValueChange={(value) => handleSelectChange("companyModality", value)}
+                    >
+                      <SelectTrigger className="h-11 w-full" style={inputStyle}>
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
-                      <SelectContent className="border-white/10 bg-[#0B1020] text-white">
+                      <SelectContent>
                         <SelectItem value="MEI">MEI</SelectItem>
                         <SelectItem value="LTDA">LTDA</SelectItem>
                         <SelectItem value="SA">SA</SelectItem>
@@ -387,13 +413,18 @@ export default function Register() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label className={labelCls}>Ramo de atuação</Label>
-                    <Select value={formData.companyActivity} onValueChange={(value) => handleSelectChange("companyActivity", value)}>
-                      <SelectTrigger className="h-11 w-full border-white/10 bg-white/[0.04] text-white">
+                  <div className="space-y-1.5">
+                    <Label className={labelCls} style={labelStyle}>
+                      Ramo de atuação
+                    </Label>
+                    <Select
+                      value={formData.companyActivity}
+                      onValueChange={(value) => handleSelectChange("companyActivity", value)}
+                    >
+                      <SelectTrigger className="h-11 w-full" style={inputStyle}>
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
-                      <SelectContent className="border-white/10 bg-[#0B1020] text-white">
+                      <SelectContent>
                         <SelectItem value="IGAMING">iGaming</SelectItem>
                         <SelectItem value="ECOMMERCE">E-Commerce</SelectItem>
                         <SelectItem value="TECHNOLOGY">Tech</SelectItem>
@@ -408,49 +439,82 @@ export default function Register() {
                     id="terms"
                     checked={termsAccepted}
                     onCheckedChange={(checked) => setTermsAccepted(checked as boolean)}
-                    className="mt-0.5 shrink-0 border-white/20 data-[state=checked]:border-[#8B5CF6] data-[state=checked]:bg-[#8B5CF6]"
+                    className="mt-0.5 shrink-0"
                   />
-                  <Label htmlFor="terms" className="flex-1 text-sm leading-relaxed text-white/55">
+                  <Label
+                    htmlFor="terms"
+                    className="flex-1 text-sm leading-relaxed"
+                    style={{ color: T.text2 }}
+                  >
                     Li e aceito os{" "}
-                    <Link href="https://safiracash.com.br/termos" className="text-[#A855F7] underline hover:text-[#C084FC]">Termos de Uso</Link>{" "}
+                    <Link
+                      href="https://safiracash.com.br/termos"
+                      className="underline hover:opacity-80"
+                      style={{ color: T.primary }}
+                    >
+                      Termos de Uso
+                    </Link>{" "}
                     e a{" "}
-                    <Link href="https://safiracash.com.br/privacidade" className="text-[#A855F7] underline hover:text-[#C084FC]">Política de Privacidade</Link>
+                    <Link
+                      href="https://safiracash.com.br/privacidade"
+                      className="underline hover:opacity-80"
+                      style={{ color: T.primary }}
+                    >
+                      Política de Privacidade
+                    </Link>
                   </Label>
                 </div>
 
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="group relative h-11 w-full overflow-hidden rounded-xl border-0 font-semibold text-white transition-transform hover:-translate-y-0.5 disabled:translate-y-0 disabled:opacity-50"
+                  className="group relative h-11 w-full overflow-hidden rounded-xl border-0 font-semibold transition-transform hover:-translate-y-0.5 disabled:translate-y-0 disabled:opacity-50"
                   style={{
-                    background: `linear-gradient(120deg, ${COLORS.violet}, ${COLORS.indigo})`,
-                    boxShadow: "0 14px 36px -12px rgba(139,92,246,0.7)",
+                    background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
+                    color: "#FFFFFF",
+                    boxShadow: "0 12px 28px -12px rgba(124,58,237,0.5)",
                   }}
                 >
-                  <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 group-hover:translate-x-full" aria-hidden />
                   {isLoading ? (
-                    <span className="flex items-center justify-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Criando conta…</span>
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Criando conta…
+                    </span>
                   ) : (
-                    <span className="flex items-center justify-center gap-2">Criar conta <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" /></span>
+                    <span className="flex items-center justify-center gap-2">
+                      Criar conta
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                    </span>
                   )}
                 </Button>
               </form>
 
               <div className="my-6 flex items-center gap-3">
-                <div className="h-px flex-1 bg-white/10" />
-                <span className="text-[10px] uppercase tracking-[0.2em] text-white/30">ou</span>
-                <div className="h-px flex-1 bg-white/10" />
+                <div className="h-px flex-1" style={{ background: T.border }} />
+                <span
+                  className="text-[10px] uppercase tracking-[0.2em]"
+                  style={{ color: T.text3 }}
+                >
+                  ou
+                </span>
+                <div className="h-px flex-1" style={{ background: T.border }} />
               </div>
 
-              <p className="text-center text-sm text-white/45">
+              <p className="text-center text-sm" style={{ color: T.text2 }}>
                 Já tem uma conta?{" "}
-                <Link href="/auth/jwt/login" className="font-medium text-[#A855F7] hover:text-[#C084FC]">
+                <Link
+                  href="/auth/jwt/login"
+                  className="font-medium hover:opacity-80"
+                  style={{ color: T.primary }}
+                >
                   Fazer login
                 </Link>
               </p>
             </div>
 
-            <p className="mt-6 text-center text-[10px] uppercase tracking-[0.3em] text-white/20">
+            <p
+              className="mt-6 text-center text-[10px] uppercase tracking-[0.3em]"
+              style={{ color: T.text3 }}
+            >
               Elite Financial Infrastructure
             </p>
           </motion.div>

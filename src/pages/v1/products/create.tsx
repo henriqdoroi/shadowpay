@@ -446,26 +446,25 @@ export default function CreateProduct() {
   };
 
   return (
-    <div className="min-h-screen text-white">
+    <div className="min-h-screen" style={{ color: "#0F172A" }}>
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset
-          className="text-white"
           style={{
-            background:
-              "radial-gradient(1100px 700px at 85% -10%, #0B1020 0%, #060A14 55%, #03060F 100%)",
+            background: "#F1F3F8",
+            color: "#0F172A",
           }}
         >
           <header className="flex items-center gap-3 px-4 pt-6 lg:px-8">
-            <SidebarTrigger className="text-white/60 hover:text-white" />
+            <SidebarTrigger style={{ color: "#64748B" }} />
             <div>
               <h1
-                className="text-2xl font-bold tracking-tight text-white md:text-[28px]"
-                style={{ fontFamily: "'Clash Display', sans-serif" }}
+                className="text-2xl font-bold tracking-tight md:text-[28px]"
+                style={{ fontFamily: "'Clash Display', sans-serif", color: "#0F172A" }}
               >
                 Criar Produto
               </h1>
-              <p className="mt-1 text-xs text-white/40">
+              <p className="mt-1 text-xs" style={{ color: "#64748B" }}>
                 Configure produto, checkout e formas de pagamento
               </p>
             </div>

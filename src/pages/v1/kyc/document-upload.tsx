@@ -17,8 +17,19 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Head from "next/head";
 import { motion } from "framer-motion";
 
-const SHADOW_BG =
-  "radial-gradient(1100px 700px at 50% -10%, rgba(124,58,237,0.18) 0%, transparent 50%), linear-gradient(180deg,#040712,#070b17 50%,#090f1f)";
+const T = {
+  bg: "#F1F3F8",
+  surface: "#FFFFFF",
+  text: "#0F172A",
+  text2: "#475569",
+  text3: "#94A3B8",
+  primary: "#7C3AED",
+  primaryStrong: "#6D28D9",
+  primaryBg: "rgba(124, 58, 237, 0.08)",
+  border: "rgba(15, 23, 42, 0.08)",
+  success: "#16A34A",
+  successBg: "rgba(22, 163, 74, 0.10)",
+};
 
 interface UploadSlotProps {
   title: string;
@@ -46,14 +57,24 @@ function UploadSlot({
   helper,
 }: UploadSlotProps) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-xl">
+    <div
+      className="relative overflow-hidden rounded-2xl p-5"
+      style={{
+        background: T.surface,
+        border: `1px solid ${T.border}`,
+        boxShadow: "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+      }}
+    >
       <div className="mb-4 flex items-center gap-2.5">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300">
+        <span
+          className="flex h-8 w-8 items-center justify-center rounded-lg"
+          style={{ background: T.primaryBg, color: T.primary }}
+        >
           {icon}
         </span>
         <span
-          className="text-sm font-semibold text-white/85"
-          style={{ fontFamily: "'Clash Display', sans-serif" }}
+          className="text-sm font-semibold"
+          style={{ fontFamily: "'Clash Display', sans-serif", color: T.text }}
         >
           {title}
         </span>
@@ -66,28 +87,40 @@ function UploadSlot({
             <img
               src={preview}
               alt={title}
-              className="h-48 w-full rounded-xl border-2 border-emerald-500/60 object-cover"
+              className="h-48 w-full rounded-xl object-cover"
+              style={{ border: `2px solid ${T.success}` }}
             />
           ) : (
-            <div className="flex h-48 w-full flex-col items-center justify-center rounded-xl border-2 border-emerald-500/60 bg-white/[0.03]">
-              <FileText className="mb-3 h-12 w-12 text-emerald-400" />
-              <p className="px-3 text-center text-sm font-medium text-white/85">
+            <div
+              className="flex h-48 w-full flex-col items-center justify-center rounded-xl"
+              style={{ background: T.successBg, border: `2px solid ${T.success}` }}
+            >
+              <FileText className="mb-3 h-12 w-12" style={{ color: T.success }} />
+              <p className="px-3 text-center text-sm font-medium" style={{ color: T.text }}>
                 {fileName}
               </p>
               {typeof fileSize === "number" && (
-                <p className="text-xs text-white/45">
+                <p className="text-xs" style={{ color: T.text2 }}>
                   {(fileSize / 1024 / 1024).toFixed(2)} MB
                 </p>
               )}
             </div>
           )}
-          <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500">
-            <CheckCircle className="h-4 w-4 text-white" />
+          <span
+            className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full text-white"
+            style={{ background: T.success }}
+          >
+            <CheckCircle className="h-4 w-4" />
           </span>
           <button
             type="button"
             onClick={onRemove}
-            className="mt-2 inline-flex h-9 w-full items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 text-xs font-medium text-white/70 transition-colors hover:bg-white/[0.07] hover:text-white"
+            className="mt-2 inline-flex h-9 w-full items-center justify-center rounded-lg px-3 text-xs font-medium transition-colors hover:opacity-80"
+            style={{
+              background: "#F8FAFC",
+              border: `1px solid ${T.border}`,
+              color: T.text2,
+            }}
           >
             Trocar arquivo
           </button>
@@ -95,14 +128,23 @@ function UploadSlot({
       ) : (
         <label
           htmlFor={inputId}
-          className="group flex h-48 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/[0.1] bg-white/[0.02] p-6 text-center transition-colors hover:border-violet-500/40 hover:bg-white/[0.04]"
+          className="group flex h-48 cursor-pointer flex-col items-center justify-center rounded-xl p-6 text-center transition-colors"
+          style={{
+            background: "#F8FAFC",
+            border: `2px dashed ${T.border}`,
+          }}
         >
-          <Upload className="mb-3 h-10 w-10 text-white/40 transition-transform group-hover:scale-110" />
-          <p className="text-sm font-semibold text-white/80">
+          <Upload
+            className="mb-3 h-10 w-10 transition-transform group-hover:scale-110"
+            style={{ color: T.text3 }}
+          />
+          <p className="text-sm font-semibold" style={{ color: T.text }}>
             Clique para enviar
           </p>
           {helper && (
-            <p className="mt-1 text-xs text-white/40">{helper}</p>
+            <p className="mt-1 text-xs" style={{ color: T.text3 }}>
+              {helper}
+            </p>
           )}
           <input
             id={inputId}
@@ -308,8 +350,12 @@ function DocumentUploadContent() {
       </Head>
 
       <div
-        className="relative min-h-screen overflow-hidden p-4 text-white md:p-8"
-        style={{ background: SHADOW_BG }}
+        className="relative min-h-screen overflow-hidden p-4 md:p-8"
+        style={{
+          background: T.bg,
+          color: T.text,
+          fontFamily: "'Satoshi', system-ui, sans-serif",
+        }}
       >
         <div className="relative z-10 mx-auto w-full max-w-5xl space-y-8 py-6">
           {/* Brand */}
@@ -319,12 +365,18 @@ function DocumentUploadContent() {
             transition={{ duration: 0.5 }}
             className="flex items-center justify-center gap-2"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 shadow-[0_8px_24px_-12px_rgba(124,58,237,0.7)]">
-              <ShieldCheck className="h-4 w-4 text-white" />
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-xl text-white"
+              style={{
+                background: `linear-gradient(135deg, ${T.primary}, ${T.primaryStrong})`,
+                boxShadow: "0 8px 24px -12px rgba(124,58,237,0.4)",
+              }}
+            >
+              <ShieldCheck className="h-4 w-4" />
             </div>
             <span
-              className="text-xs font-semibold tracking-[0.16em] text-white/60"
-              style={{ fontFamily: "'Clash Display', sans-serif" }}
+              className="text-xs font-semibold tracking-[0.16em]"
+              style={{ fontFamily: "'Clash Display', sans-serif", color: T.text2 }}
             >
               SHADOWPAY · KYC
             </span>
@@ -332,18 +384,18 @@ function DocumentUploadContent() {
 
           {/* Header */}
           <motion.div
-            initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
             className="space-y-3 text-center"
           >
             <h1
-              className="text-3xl font-bold text-white md:text-[36px]"
-              style={{ fontFamily: "'Clash Display', sans-serif" }}
+              className="text-3xl font-bold md:text-[36px]"
+              style={{ fontFamily: "'Clash Display', sans-serif", color: T.text }}
             >
               Upload de documentos
             </h1>
-            <p className="mx-auto max-w-2xl text-sm text-white/55">
+            <p className="mx-auto max-w-2xl text-sm" style={{ color: T.text2 }}>
               Envie todos os documentos necessários: frente e verso do documento
               de identidade, selfie e comprovante CNPJ.
             </p>
@@ -353,21 +405,31 @@ function DocumentUploadContent() {
           <div className="flex justify-center">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 text-xs font-semibold text-white">
+                <div
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-white"
+                  style={{
+                    background: `linear-gradient(135deg, ${T.primary}, ${T.primaryStrong})`,
+                  }}
+                >
                   ✓
                 </div>
-                <span className="hidden text-xs text-white/45 sm:inline">
+                <span className="hidden text-xs sm:inline" style={{ color: T.text2 }}>
                   Introdução
                 </span>
               </div>
-              <div className="h-px w-10 bg-violet-500/40" />
+              <div className="h-px w-10" style={{ background: T.primary, opacity: 0.4 }} />
               <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 text-xs font-semibold text-white">
+                <div
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-white"
+                  style={{
+                    background: `linear-gradient(135deg, ${T.primary}, ${T.primaryStrong})`,
+                  }}
+                >
                   2
                 </div>
                 <span
-                  className="hidden text-xs font-semibold text-white sm:inline"
-                  style={{ fontFamily: "'Clash Display', sans-serif" }}
+                  className="hidden text-xs font-semibold sm:inline"
+                  style={{ fontFamily: "'Clash Display', sans-serif", color: T.text }}
                 >
                   Documentos
                 </span>
@@ -432,35 +494,58 @@ function DocumentUploadContent() {
 
           {/* Dicas */}
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 backdrop-blur-xl"
+            transition={{ duration: 0.5, delay: 0.08 }}
+            className="rounded-2xl p-5"
+            style={{
+              background: T.surface,
+              border: `1px solid ${T.border}`,
+              boxShadow: "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+            }}
           >
-            <h3 className="mb-3 text-center text-xs font-semibold uppercase tracking-[0.16em] text-white/55">
+            <h3
+              className="mb-3 text-center text-xs font-semibold uppercase tracking-[0.16em]"
+              style={{ color: T.text2 }}
+            >
               Dicas importantes
             </h3>
-            <div className="grid gap-3 text-sm text-white/65 md:grid-cols-4">
+            <div
+              className="grid gap-3 text-sm md:grid-cols-4"
+              style={{ color: T.text2 }}
+            >
               <div className="text-center">
-                <div className="mx-auto mb-1 flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/15 text-violet-200">
+                <div
+                  className="mx-auto mb-1 flex h-8 w-8 items-center justify-center rounded-lg"
+                  style={{ background: T.primaryBg, color: T.primary }}
+                >
                   💡
                 </div>
                 <p className="text-xs">Boa iluminação, sem sombras</p>
               </div>
               <div className="text-center">
-                <div className="mx-auto mb-1 flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/15 text-violet-200">
+                <div
+                  className="mx-auto mb-1 flex h-8 w-8 items-center justify-center rounded-lg"
+                  style={{ background: T.primaryBg, color: T.primary }}
+                >
                   📱
                 </div>
                 <p className="text-xs">Mantenha documentos retos</p>
               </div>
               <div className="text-center">
-                <div className="mx-auto mb-1 flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/15 text-violet-200">
+                <div
+                  className="mx-auto mb-1 flex h-8 w-8 items-center justify-center rounded-lg"
+                  style={{ background: T.primaryBg, color: T.primary }}
+                >
                   🔍
                 </div>
                 <p className="text-xs">Texto legível e nítido</p>
               </div>
               <div className="text-center">
-                <div className="mx-auto mb-1 flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/15 text-violet-200">
+                <div
+                  className="mx-auto mb-1 flex h-8 w-8 items-center justify-center rounded-lg"
+                  style={{ background: T.primaryBg, color: T.primary }}
+                >
                   📄
                 </div>
                 <p className="text-xs">CNPJ em PDF atualizado</p>
@@ -470,18 +555,39 @@ function DocumentUploadContent() {
 
           {/* Mensagens */}
           {error && (
-            <div className="rounded-xl border border-rose-500/30 bg-rose-500/[0.07] p-4 text-center text-sm text-rose-300">
+            <div
+              className="rounded-xl p-4 text-center text-sm"
+              style={{
+                background: "rgba(239, 68, 68, 0.08)",
+                border: "1px solid rgba(239, 68, 68, 0.30)",
+                color: "#B91C1C",
+              }}
+            >
               {error}
             </div>
           )}
           {isStartingKyc && (
-            <div className="flex items-center justify-center gap-2 rounded-xl border border-sky-500/30 bg-sky-500/[0.07] p-4 text-sm text-sky-300">
+            <div
+              className="flex items-center justify-center gap-2 rounded-xl p-4 text-sm"
+              style={{
+                background: "rgba(14, 165, 233, 0.08)",
+                border: "1px solid rgba(14, 165, 233, 0.30)",
+                color: "#0369A1",
+              }}
+            >
               <Loader2 className="h-4 w-4 animate-spin" />
               Iniciando processo de verificação…
             </div>
           )}
           {kycId && !isStartingKyc && (
-            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/[0.07] p-4 text-center text-sm text-emerald-300">
+            <div
+              className="rounded-xl p-4 text-center text-sm"
+              style={{
+                background: T.successBg,
+                border: `1px solid ${T.success}`,
+                color: "#166534",
+              }}
+            >
               ✓ Processo de verificação iniciado. Envie seus documentos para
               finalizar.
             </div>
@@ -492,7 +598,12 @@ function DocumentUploadContent() {
             <button
               onClick={handleBack}
               disabled={isLoading || isStartingKyc}
-              className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm font-semibold text-white/80 transition-colors hover:bg-white/[0.07] hover:text-white disabled:opacity-50"
+              className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-colors hover:opacity-80 disabled:opacity-50"
+              style={{
+                background: T.surface,
+                border: `1px solid ${T.border}`,
+                color: T.text,
+              }}
             >
               <ArrowLeft className="h-4 w-4" />
               Voltar
@@ -500,13 +611,14 @@ function DocumentUploadContent() {
             <button
               onClick={handleNext}
               disabled={!allReady || isLoading || isStartingKyc}
-              className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl text-base font-semibold text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+              className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl text-base font-semibold transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
               style={{
                 background: allReady
-                  ? "linear-gradient(120deg, #7C3AED, #6366F1)"
-                  : "rgba(255,255,255,0.05)",
+                  ? `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`
+                  : "#E2E8F0",
+                color: allReady ? "#FFFFFF" : T.text3,
                 boxShadow: allReady
-                  ? "0 20px 48px -18px rgba(124,58,237,0.7)"
+                  ? "0 16px 36px -16px rgba(124,58,237,0.5)"
                   : "none",
               }}
             >
@@ -524,8 +636,8 @@ function DocumentUploadContent() {
             </button>
           </div>
 
-          <p className="text-center text-xs text-white/40">
-            🔒 Todos os dados são processados com segurança e protegidos por
+          <p className="text-center text-xs" style={{ color: T.text3 }}>
+            Todos os dados são processados com segurança e protegidos por
             criptografia
           </p>
         </div>

@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   Package,
   Receipt,
-  ArrowDownToLine,
   ArrowUpFromLine,
   BarChart3,
   Shield,
@@ -39,7 +38,10 @@ import { ShadowMark } from "@/components/shadow/ShadowMark";
 type NavItem = {
   label: string;
   href: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{
+    className?: string;
+    style?: React.CSSProperties;
+  }>;
   badge?: string;
 };
 
@@ -62,11 +64,6 @@ function buildNav(isAdmin: boolean): NavGroup[] {
       items: [
         { label: "Produtos", href: "/v1/products", icon: Package },
         { label: "Pedidos", href: "/v1/products/sales", icon: Receipt },
-        {
-          label: "Recebimentos",
-          href: "/v1/finance/recivements",
-          icon: ArrowDownToLine,
-        },
         {
           label: "Saques",
           href: "/v1/finance/withdraw",
@@ -145,26 +142,26 @@ export function AppSidebar({
       case "APPROVED":
         return {
           text: "KYC verificado",
-          color: "text-emerald-300 bg-emerald-500/10 border-emerald-500/20",
-          dot: "bg-emerald-400",
+          color: "text-emerald-700 bg-emerald-100 border-emerald-200",
+          dot: "bg-emerald-500",
         };
       case "PENDING":
         return {
           text: "KYC em análise",
-          color: "text-sky-300 bg-sky-500/10 border-sky-500/20",
-          dot: "bg-sky-400",
+          color: "text-sky-700 bg-sky-100 border-sky-200",
+          dot: "bg-sky-500",
         };
       case "BANNED":
         return {
           text: "Conta suspensa",
-          color: "text-rose-300 bg-rose-500/10 border-rose-500/20",
-          dot: "bg-rose-400",
+          color: "text-rose-700 bg-rose-100 border-rose-200",
+          dot: "bg-rose-500",
         };
       default:
         return {
           text: "KYC pendente",
-          color: "text-amber-300 bg-amber-500/10 border-amber-500/20",
-          dot: "bg-amber-400",
+          color: "text-amber-700 bg-amber-100 border-amber-200",
+          dot: "bg-amber-500",
         };
     }
   })();
@@ -175,22 +172,33 @@ export function AppSidebar({
     <Sidebar
       variant="inset"
       {...props}
-      style={{ ["--sidebar-width" as any]: "280px" }}
+      style={{
+        ["--sidebar-width" as any]: "280px",
+        ["--sidebar" as any]: "#FFFFFF",
+        ["--sidebar-foreground" as any]: "#475569",
+        ["--sidebar-border" as any]: "rgba(15, 23, 42, 0.08)",
+      }}
     >
-      <SidebarHeader className="border-b border-white/[0.05] px-5 py-4">
-        <Link
-          href="/v1/dashboard"
-          className="flex items-center gap-3"
-        >
+      <SidebarHeader
+        className="px-5 py-4"
+        style={{ borderBottom: "1px solid rgba(15, 23, 42, 0.06)" }}
+      >
+        <Link href="/v1/dashboard" className="flex items-center gap-3">
           <ShadowMark size={26} />
           <div className="flex flex-col leading-tight">
             <span
-              className="text-[15px] font-bold tracking-tight text-white"
-              style={{ fontFamily: "'Clash Display', sans-serif" }}
+              className="text-[15px] font-bold tracking-tight"
+              style={{
+                fontFamily: "'Clash Display', sans-serif",
+                color: "#0F172A",
+              }}
             >
               ShadowPay
             </span>
-            <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+            <span
+              className="text-[10px] font-medium uppercase tracking-[0.18em]"
+              style={{ color: "#94A3B8" }}
+            >
               Financial OS
             </span>
           </div>
@@ -200,7 +208,10 @@ export function AppSidebar({
       <SidebarContent className="px-3 py-4">
         {groups.map((group) => (
           <div key={group.label} className="mb-5 last:mb-0">
-            <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/35">
+            <p
+              className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em]"
+              style={{ color: "#94A3B8" }}
+            >
               {group.label}
             </p>
             <ul className="space-y-0.5">
@@ -218,9 +229,9 @@ export function AppSidebar({
                       href={item.href}
                       className="group relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors"
                       style={{
-                        color: active ? "#F8FAFC" : "#A4ACBE",
+                        color: active ? "#0F172A" : "#475569",
                         background: active
-                          ? "linear-gradient(90deg, rgba(124, 58, 237, 0.12), rgba(124, 58, 237, 0) 80%)"
+                          ? "rgba(124, 58, 237, 0.08)"
                           : "transparent",
                       }}
                     >
@@ -229,35 +240,40 @@ export function AppSidebar({
                           layoutId="appsb-active-indicator"
                           className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full"
                           style={{
-                            background:
-                              "linear-gradient(180deg, #A855F7 0%, #7C3AED 100%)",
-                            boxShadow: "0 0 12px rgba(124, 58, 237, 0.6)",
+                            background: "linear-gradient(180deg, #7C3AED 0%, #6D28D9 100%)",
                           }}
                         />
                       )}
                       <Icon
-                        className={`h-4 w-4 shrink-0 transition-colors ${
-                          active
-                            ? "text-violet-300"
-                            : "text-white/45 group-hover:text-white/70"
-                        }`}
+                        className="h-4 w-4 shrink-0 transition-colors"
+                        style={{ color: active ? "#7C3AED" : "#94A3B8" }}
                       />
-                      <span className="flex-1 truncate group-hover:text-white">
-                        {item.label}
-                      </span>
+                      <span className="flex-1 truncate">{item.label}</span>
                       {item.badge && (
                         <span
-                          className={`ml-auto rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                          className="ml-auto rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+                          style={
                             item.badge === "AI"
-                              ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-300"
-                              : "border-amber-500/30 bg-amber-500/10 text-amber-300"
-                          }`}
+                              ? {
+                                  borderColor: "rgba(6, 182, 212, 0.30)",
+                                  background: "rgba(6, 182, 212, 0.10)",
+                                  color: "#0891B2",
+                                }
+                              : {
+                                  borderColor: "rgba(245, 158, 11, 0.30)",
+                                  background: "rgba(245, 158, 11, 0.10)",
+                                  color: "#B45309",
+                                }
+                          }
                         >
                           {item.badge}
                         </span>
                       )}
                       {active && (
-                        <ChevronRight className="h-3.5 w-3.5 text-violet-300/50" />
+                        <ChevronRight
+                          className="h-3.5 w-3.5"
+                          style={{ color: "rgba(124, 58, 237, 0.5)" }}
+                        />
                       )}
                     </Link>
                   </li>
@@ -268,23 +284,34 @@ export function AppSidebar({
         ))}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-white/[0.05] p-3">
-        <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
+      <SidebarFooter
+        className="p-3"
+        style={{ borderTop: "1px solid rgba(15, 23, 42, 0.06)" }}
+      >
+        <div
+          className="rounded-xl p-3"
+          style={{
+            background: "#F8FAFC",
+            border: "1px solid rgba(15, 23, 42, 0.06)",
+          }}
+        >
           <div className="flex items-center gap-2.5">
             <div
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
               style={{
-                background:
-                  "linear-gradient(135deg, #7C3AED 0%, #22D3EE 100%)",
+                background: "linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)",
               }}
             >
               {initial}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-semibold text-white">
+              <p
+                className="truncate text-xs font-semibold"
+                style={{ color: "#0F172A" }}
+              >
                 {user?.companyName || "Operador"}
               </p>
-              <p className="truncate text-[10px] text-white/45">
+              <p className="truncate text-[10px]" style={{ color: "#94A3B8" }}>
                 {user?.email || "—"}
               </p>
             </div>
@@ -292,9 +319,7 @@ export function AppSidebar({
           <div
             className={`mt-3 inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${kycPill.color}`}
           >
-            <span
-              className={`h-1.5 w-1.5 rounded-full ${kycPill.dot} shadow-pulse-dot`}
-            />
+            <span className={`h-1.5 w-1.5 rounded-full ${kycPill.dot}`} />
             {kycPill.text}
           </div>
         </div>
@@ -303,7 +328,12 @@ export function AppSidebar({
           href="https://wa.me/559991519044?text=Ol%C3%A1%20preciso%20de%20ajuda%20com%20a%20ShadowPay."
           target="_blank"
           rel="noreferrer"
-          className="mt-2 flex items-center justify-center gap-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] py-1.5 text-[11px] font-medium text-white/55 transition-colors hover:bg-white/[0.05] hover:text-white"
+          className="mt-2 flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-medium transition-colors hover:opacity-80"
+          style={{
+            background: "#F8FAFC",
+            border: "1px solid rgba(15, 23, 42, 0.06)",
+            color: "#475569",
+          }}
         >
           <LifeBuoy className="h-3.5 w-3.5" />
           Suporte rápido

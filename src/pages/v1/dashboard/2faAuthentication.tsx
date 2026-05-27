@@ -98,7 +98,11 @@ export default function TwoFAModal({
           <Button
             onClick={fetchSetup}
             disabled={loading}
-            className="cursor-pointer w-full border border-white bg-transparent text-white hover:bg-[#6a0dad] transition-colors"
+            className="cursor-pointer w-full text-white transition-colors"
+            style={{
+              background: "linear-gradient(120deg, #7C3AED, #6D28D9)",
+              boxShadow: "0 12px 28px -12px rgba(124,58,237,0.5)",
+            }}
           >
             {loading ? "Gerando QR Code..." : "Gerar QR Code / Secret"}
           </Button>
@@ -123,7 +127,8 @@ export default function TwoFAModal({
               placeholder="Digite o código do Authenticator"
               value={userToken}
               onChange={(e) => setUserToken(e.target.value)}
-              className="border border-input rounded-md p-3 w-full text-center focus:outline-none focus:ring-2 focus:ring-primary text-white"
+              className="border border-input rounded-md p-3 w-full text-center focus:outline-none focus:ring-2 focus:ring-primary"
+              style={{ color: "#0F172A", background: "#FFFFFF" }}
             />
 
             {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -131,7 +136,11 @@ export default function TwoFAModal({
             <Button
               onClick={handleVerify}
               disabled={loading || !userToken}
-              className="w-full border border-white bg-transparent text-white hover:bg-[#6a0dad] transition-colors"
+              className="w-full text-white transition-colors"
+              style={{
+                background: "linear-gradient(120deg, #7C3AED, #6D28D9)",
+                boxShadow: "0 12px 28px -12px rgba(124,58,237,0.5)",
+              }}
             >
               {loading ? "Verificando..." : "Ativar 2FA"}
             </Button>
