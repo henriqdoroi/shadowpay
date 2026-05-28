@@ -32,7 +32,7 @@ const T = {
 type Integration = {
   id: string;
   name: string;
-  category: "Trackeamento" | "Pixels" | "Domínios" | "Webhooks" | "Analytics";
+  category: "Trackeamento" | "Webhooks" | "Analytics";
   description: string;
   logo: string; // 1-2 letras (placeholder)
   logoBg: string;
@@ -102,49 +102,6 @@ const INTEGRATIONS: Integration[] = [
     status: "available",
   },
   {
-    id: "meta-pixel",
-    name: "Meta Pixel",
-    category: "Pixels",
-    description:
-      "Eventos de compra (Purchase) enviados via CAPI pra Facebook e Instagram Ads.",
-    logo: "M",
-    logoBg: "linear-gradient(135deg, #1877F2, #0866FF)",
-    status: "available",
-    href: "/v1/integrations/pixels",
-  },
-  {
-    id: "google-ads",
-    name: "Google Ads",
-    category: "Pixels",
-    description:
-      "Conversion tracking via gtag — atribuição de venda nas campanhas do Google.",
-    logo: "GA",
-    logoBg: "linear-gradient(135deg, #4285F4, #1A73E8)",
-    status: "available",
-    href: "/v1/integrations/pixels",
-  },
-  {
-    id: "tiktok-pixel",
-    name: "TikTok Pixel",
-    category: "Pixels",
-    description: "Pixel + Events API pra rastrear compras em campanhas TikTok.",
-    logo: "TT",
-    logoBg: "linear-gradient(135deg, #000000, #25F4EE)",
-    status: "available",
-    href: "/v1/integrations/pixels",
-  },
-  {
-    id: "kwai-pixel",
-    name: "Kwai Pixel",
-    category: "Pixels",
-    description:
-      "Pixel oficial do Kwai pra campanhas de venda direta no app.",
-    logo: "KW",
-    logoBg: "linear-gradient(135deg, #FF4500, #FF6B35)",
-    status: "available",
-    href: "/v1/integrations/pixels",
-  },
-  {
     id: "google-analytics",
     name: "Google Analytics 4",
     category: "Analytics",
@@ -153,17 +110,6 @@ const INTEGRATIONS: Integration[] = [
     logo: "G4",
     logoBg: "linear-gradient(135deg, #F59E0B, #D97706)",
     status: "available",
-  },
-  {
-    id: "custom-domain",
-    name: "Domínios próprios",
-    category: "Domínios",
-    description:
-      "Conecte seu domínio (CNAME) pra rodar checkout em seu_dominio.com.br.",
-    logo: "DN",
-    logoBg: "linear-gradient(135deg, #10B981, #059669)",
-    status: "available",
-    href: "/v1/integrations/domains",
   },
   {
     id: "webhooks",
@@ -191,8 +137,6 @@ const INTEGRATIONS: Integration[] = [
 const CATEGORIES = [
   "Tudo",
   "Trackeamento",
-  "Pixels",
-  "Domínios",
   "Webhooks",
   "Analytics",
 ] as const;
