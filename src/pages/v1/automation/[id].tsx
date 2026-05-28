@@ -4,8 +4,29 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
+import {
+  ReactFlow,
+  ReactFlowProvider,
+  Background,
+  Handle,
+  Position,
+  MarkerType,
+  useReactFlow,
+  useNodesState,
+  useEdgesState,
+  addEdge,
+  getBezierPath,
+  BaseEdge,
+  EdgeLabelRenderer,
+  type Node,
+  type Edge,
+  type Connection,
+  type NodeProps,
+  type EdgeProps,
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 import {
   ArrowLeft,
   Braces,
@@ -28,6 +49,7 @@ import {
   Trash2,
   ChevronDown,
   Check,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -35,11 +57,11 @@ import { useAuth } from "@/contexts/AuthContext";
 const API = "https://shadowpay-api-production.up.railway.app";
 
 /* ============================================================
- * TOKENS — light theme igual o resto do gateway
+ * TOKENS — light theme
  * ============================================================ */
 const T = {
-  bg: "#F4F5F9",            // canvas bg
-  dot: "#C7CBD4",           // bullet do background dotted
+  bg: "#F4F5F9",
+  dot: "#C7CBD4",
   surface: "#FFFFFF",
   surfaceSoft: "#F8FAFC",
   border: "rgba(15, 23, 42, 0.08)",
@@ -70,7 +92,12 @@ const T = {
 const TRIGGERS = [
   { value: "SALE_PENDING", label: "Pix gerado", color: T.pix, soft: T.pixSoft },
   { value: "SALE_APPROVED", label: "Compra aprovada", color: T.approved, soft: T.approvedSoft },
-  { value: "SUBSCRIPTION_CANCELLED", label: "Assinatura cancelada", color: T.subscription, soft: T.subscriptionSoft },
+  {
+    value: "SUBSCRIPTION_CANCELLED",
+    label: "Assinatura cancelada",
+    color: T.subscription,
+    soft: T.subscriptionSoft,
+  },
   { value: "REFUND_REQUESTED", label: "Reembolso solicitado", color: T.refund, soft: T.refundSoft },
 ] as const;
 
@@ -83,7 +110,7 @@ const VARIABLES = [
 ];
 
 /* ============================================================
- * SVG REAIS — WhatsApp e Pix oficiais
+ * SVG REAIS — WhatsApp e Pix
  * ============================================================ */
 function WhatsAppIcon({ size = 16, color = "#FFFFFF" }: { size?: number; color?: string }) {
   return (
@@ -92,7 +119,6 @@ function WhatsAppIcon({ size = 16, color = "#FFFFFF" }: { size?: number; color?:
     </svg>
   );
 }
-
 function PixIcon({ size = 16, color = "#FFFFFF" }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
@@ -104,10 +130,13 @@ function PixIcon({ size = 16, color = "#FFFFFF" }: { size?: number; color?: stri
 /* ============================================================
  * TYPES
  * ============================================================ */
-type Step = {
-  id: string;
-  type: "SEND_WHATSAPP" | "SEND_EMAIL" | "TIMER";
-  config: Record<string, any>;
+type StepType = "SEND_WHATSAPP" | "SEND_EMAIL" | "TIMER";
+
+type StepConfig = Record<string, any>;
+
+type AutomationFlow = {
+  nodes: Node[];
+  edges: Edge[];
 };
 
 type Automation = {
@@ -116,7 +145,7 @@ type Automation = {
   trigger: string;
   productId?: string | null;
   offerId?: string | null;
-  steps: Step[];
+  steps: any;
   active: boolean;
 };
 
@@ -127,483 +156,188 @@ type WhatsAppAccount = {
   status: string;
 };
 
-type FocusedField = {
-  stepIdx: number;
-  field: "content" | "subject" | "mediaUrl";
-} | null;
+type FocusedField = { stepId: string; field: string } | null;
 
 /* ============================================================
- * EDITOR PAGE
+ * Confirm modal customizado (substitui o confirm() do browser)
  * ============================================================ */
-function EditorContent({ id }: { id: string }) {
-  const { token } = useAuth();
-  const [automation, setAutomation] = useState<Automation | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [sidebar, setSidebar] = useState<"none" | "vars" | "config">("none");
-  const [showAddStep, setShowAddStep] = useState<{ afterIdx: number } | null>(null);
-  const [whatsappAccounts, setWhatsappAccounts] = useState<WhatsAppAccount[]>([]);
-  const [openStepId, setOpenStepId] = useState<string | null>(null);
-  const [focused, setFocused] = useState<FocusedField>(null);
-
-  /* ===== Canvas: zoom + pan + auto-center ===== */
-  const canvasRef = useRef<HTMLDivElement>(null);
-  const flowRef = useRef<HTMLDivElement>(null);
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [centered, setCentered] = useState(false);
-  const dragRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
-
-  function centerFlow(forceZoom?: number) {
-    const canvas = canvasRef.current?.getBoundingClientRect();
-    const flow = flowRef.current?.getBoundingClientRect();
-    if (!canvas || !flow) return;
-    const z = forceZoom ?? zoom;
-    // largura/altura reais do flow no zoom=1
-    const realW = flow.width / z;
-    const realH = flow.height / z;
-    const nextPanX = (canvas.width - realW * z) / 2;
-    const nextPanY = (canvas.height - realH * z) / 2;
-    setPan({ x: nextPanX, y: nextPanY });
-  }
-
-  useEffect(() => {
-    if (!loading && !centered) {
-      const t = setTimeout(() => {
-        centerFlow();
-        setCentered(true);
-      }, 50);
-      return () => clearTimeout(t);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, centered]);
-
-  function zoomIn() {
-    setZoom((z) => Math.min(1.8, Math.round((z + 0.1) * 10) / 10));
-  }
-  function zoomOut() {
-    setZoom((z) => Math.max(0.4, Math.round((z - 0.1) * 10) / 10));
-  }
-  function fitView() {
-    setZoom(1);
-    setTimeout(() => centerFlow(1), 10);
-  }
-  const [locked, setLocked] = useState(false);
-
-  function onWheel(e: React.WheelEvent) {
-    if (!e.ctrlKey && !e.metaKey) return;
-    e.preventDefault();
-    setZoom((z) => {
-      const next = z - e.deltaY * 0.001;
-      return Math.max(0.4, Math.min(1.8, Math.round(next * 100) / 100));
-    });
-  }
-
-  function startPan(e: React.MouseEvent) {
-    if (locked) return;
-    // ignora se clicou dentro de um node (data-node)
-    const target = e.target as HTMLElement;
-    if (target.closest("[data-node]")) return;
-    dragRef.current = { startX: e.clientX, startY: e.clientY, baseX: pan.x, baseY: pan.y };
-  }
-  function doPan(e: React.MouseEvent) {
-    if (!dragRef.current) return;
-    const dx = e.clientX - dragRef.current.startX;
-    const dy = e.clientY - dragRef.current.startY;
-    setPan({ x: dragRef.current.baseX + dx, y: dragRef.current.baseY + dy });
-  }
-  function endPan() {
-    dragRef.current = null;
-  }
-
-  /* ===== Fetch ===== */
-  useEffect(() => {
-    if (!token) return;
-    Promise.all([
-      axios.get(`${API}/api/integrations/automations/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
-      axios
-        .get(`${API}/api/integrations/whatsapp-accounts`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        .catch(() => null),
-    ])
-      .then(([r1, r2]) => {
-        if (r1.data?.success) {
-          const a = r1.data.data;
-          setAutomation({
-            ...a,
-            steps: Array.isArray(a.steps) ? a.steps : [],
-          });
-          if (Array.isArray(a.steps) && a.steps.length > 0) {
-            setOpenStepId(a.steps[0].id);
-          }
-        }
-        if (r2?.data?.success) setWhatsappAccounts(r2.data.data || []);
-      })
-      .catch(() => toast.error("Erro ao carregar automação."))
-      .finally(() => setLoading(false));
-  }, [id, token]);
-
-  /* ===== Mutations ===== */
-  async function save() {
-    if (!automation || !token) return;
-    setSaving(true);
-    try {
-      const r = await axios.post(
-        `${API}/api/integrations/automations/${id}`,
-        {
-          name: automation.name,
-          trigger: automation.trigger,
-          productId: automation.productId,
-          offerId: automation.offerId,
-          steps: automation.steps,
-          active: automation.active,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (r.data?.success) {
-        toast.success("Automação salva");
-      }
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message || "Erro ao salvar.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function updateStep(idx: number, patch: Partial<Step>) {
-    if (!automation) return;
-    const steps = [...automation.steps];
-    steps[idx] = { ...steps[idx]!, ...patch } as Step;
-    setAutomation({ ...automation, steps });
-  }
-
-  function updateStepConfig(idx: number, configPatch: Record<string, any>) {
-    if (!automation) return;
-    const steps = [...automation.steps];
-    const cur = steps[idx]!;
-    steps[idx] = { ...cur, config: { ...cur.config, ...configPatch } } as Step;
-    setAutomation({ ...automation, steps });
-  }
-
-  function removeStep(idx: number) {
-    if (!automation) return;
-    if (!confirm("Remover esta etapa?")) return;
-    const steps = automation.steps.filter((_, i) => i !== idx);
-    setAutomation({ ...automation, steps });
-    setOpenStepId(null);
-    setFocused(null);
-    toast.success("Etapa removida.");
-  }
-
-  function addStep(afterIdx: number, type: Step["type"]) {
-    if (!automation) return;
-    const newStep: Step = {
-      id: `step-${Date.now()}`,
-      type,
-      config:
-        type === "SEND_WHATSAPP"
-          ? { whatsappAccountId: "", mediaUrl: "", content: "" }
-          : type === "SEND_EMAIL"
-          ? { from: "no-reply@shadowpay.com.br", subject: "", content: "" }
-          : { delayValue: 5, delayUnit: "minutes" },
-    };
-    const steps = [...automation.steps];
-    steps.splice(afterIdx + 1, 0, newStep);
-    setAutomation({ ...automation, steps });
-    setShowAddStep(null);
-    setOpenStepId(newStep.id);
-  }
-
-  function insertVariable(v: string) {
-    if (!focused || !automation) {
-      navigator.clipboard.writeText(v);
-      toast.success("Variável copiada.");
-      return;
-    }
-    const step = automation.steps[focused.stepIdx];
-    if (!step) return;
-    const cur = (step.config as any)[focused.field] || "";
-    updateStepConfig(focused.stepIdx, { [focused.field]: cur + v });
-    toast.success("Variável inserida.");
-  }
-
-  if (loading || !automation) {
-    return (
-      <div
-        className="flex h-screen items-center justify-center"
-        style={{ background: T.bg, color: T.text2 }}
-      >
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
-    );
-  }
-
-  const trigger = TRIGGERS.find((t) => t.value === automation.trigger) || TRIGGERS[0];
-
+function ConfirmDialog({
+  open,
+  title,
+  message,
+  confirmLabel = "Remover",
+  cancelLabel = "Cancelar",
+  destructive = true,
+  onConfirm,
+  onCancel,
+}: {
+  open: boolean;
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  destructive?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  if (!open) return null;
   return (
     <div
-      className="relative flex h-screen flex-col"
-      style={{
-        background: T.bg,
-        color: T.text,
-        fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
-      }}
+      className="fixed inset-0 z-[100] flex items-center justify-center px-4"
+      style={{ background: "rgba(15,23,42,0.55)" }}
+      onClick={onCancel}
     >
-      {/* TOPBAR */}
-      <header
-        className="flex h-14 shrink-0 items-center gap-3 px-4"
+      <div
+        className="w-full max-w-sm rounded-2xl p-5"
         style={{
-          background: "#FFFFFF",
-          borderBottom: `1px solid ${T.border}`,
+          background: T.surface,
+          border: `1px solid ${T.border}`,
+          boxShadow: "0 24px 64px -20px rgba(15,23,42,0.30)",
         }}
+        onClick={(e) => e.stopPropagation()}
       >
-        <Link
-          href="/v1/automation"
-          className="rounded-md p-1.5 hover:bg-slate-100"
-          style={{ color: T.text2 }}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Link>
-        <input
-          value={automation.name}
-          onChange={(e) =>
-            setAutomation({ ...automation, name: e.target.value })
-          }
-          className="flex-1 bg-transparent text-[14px] font-semibold outline-none"
-          style={{ color: T.text }}
-        />
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setSidebar((s) => (s === "vars" ? "none" : "vars"))}
-            className="rounded-md p-2 hover:bg-slate-100"
-            style={{
-              background: sidebar === "vars" ? T.primarySoft : "transparent",
-              color: sidebar === "vars" ? T.primary : T.text2,
-            }}
-            title="Variáveis"
-          >
-            <Braces className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => setSidebar((s) => (s === "config" ? "none" : "config"))}
-            className="rounded-md p-2 hover:bg-slate-100"
-            style={{
-              background: sidebar === "config" ? T.primarySoft : "transparent",
-              color: sidebar === "config" ? T.primary : T.text2,
-            }}
-            title="Configurações"
-          >
-            <Settings className="h-4 w-4" />
-          </button>
-          <button
-            className="rounded-md p-2 hover:bg-slate-100"
-            style={{ color: T.text2 }}
-            title="Preview"
-          >
-            <Eye className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="mx-2 h-6 w-px" style={{ background: T.border }} />
-        <button
-          onClick={() => setAutomation({ ...automation, active: !automation.active })}
-          className="flex items-center gap-2 text-[12px] font-semibold"
-        >
+        <div className="mb-3 flex items-start gap-3">
           <span
-            className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
-            style={{ background: automation.active ? T.primary : "#E2E8F0" }}
-          >
-            <span
-              className="inline-block h-4 w-4 rounded-full bg-white shadow transition-transform"
-              style={{
-                transform: automation.active
-                  ? "translateX(18px)"
-                  : "translateX(2px)",
-              }}
-            />
-          </span>
-          <span style={{ color: automation.active ? T.text : T.text2 }}>
-            {automation.active ? "Ativa" : "Pausada"}
-          </span>
-        </button>
-        <button
-          onClick={save}
-          disabled={saving}
-          className="inline-flex h-9 items-center gap-2 rounded-lg px-4 text-[12px] font-semibold text-white disabled:opacity-50"
-          style={{
-            background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
-            boxShadow: "0 8px 20px -8px rgba(124,58,237,0.45)",
-          }}
-        >
-          {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-          Salvar
-        </button>
-      </header>
-
-      {/* CANVAS + SIDEBAR */}
-      <div className="relative flex flex-1 overflow-hidden">
-        <div
-          ref={canvasRef}
-          className="relative flex-1 overflow-hidden"
-          onWheel={onWheel}
-          onMouseDown={startPan}
-          onMouseMove={doPan}
-          onMouseUp={endPan}
-          onMouseLeave={endPan}
-          style={{
-            backgroundImage: `radial-gradient(${T.dot} 1px, transparent 1px)`,
-            backgroundSize: "20px 20px",
-            cursor: dragRef.current ? "grabbing" : locked ? "default" : "grab",
-          }}
-        >
-          {/* Flow */}
-          <div
-            ref={flowRef}
-            className="absolute left-0 top-0 inline-flex items-start"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
             style={{
-              transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-              transformOrigin: "0 0",
-              transition: dragRef.current ? "none" : "transform 0.15s ease-out",
+              background: destructive ? "rgba(239,68,68,0.12)" : T.primarySoft,
+              color: destructive ? "#EF4444" : T.primary,
             }}
           >
-            <TriggerNode
-              automation={automation}
-              trigger={trigger}
-              onClickAlter={() => setSidebar("config")}
-            />
-
-            {automation.steps.map((step, idx) => (
-              <div key={step.id} data-node className="flex items-start">
-                <Connector />
-                <StepNode
-                  step={step}
-                  stepIdx={idx}
-                  expanded={openStepId === step.id}
-                  onClick={() =>
-                    setOpenStepId((cur) => (cur === step.id ? null : step.id))
-                  }
-                  onClose={() => setOpenStepId(null)}
-                  onChange={(patch) => updateStep(idx, patch)}
-                  onChangeConfig={(cfg) => updateStepConfig(idx, cfg)}
-                  onRemove={() => removeStep(idx)}
-                  whatsappAccounts={whatsappAccounts}
-                  onFieldFocus={setFocused}
-                />
-              </div>
-            ))}
-
-            <div data-node className="flex items-start">
-              <Connector />
-              <button
-                onClick={() =>
-                  setShowAddStep({ afterIdx: automation.steps.length - 1 })
-                }
-                className="flex h-12 w-12 items-center justify-center rounded-full transition-all hover:scale-110"
-                style={{
-                  background: T.surface,
-                  border: `2px dashed ${T.borderStrong}`,
-                  color: T.primary,
-                  marginTop: 60,
-                }}
-                title="Adicionar etapa"
-              >
-                <Plus className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Canvas controls — bottom left */}
-          <div className="absolute bottom-6 left-4 flex flex-col gap-1.5">
-            {[
-              { icon: Plus, action: zoomIn, title: "Aproximar" },
-              { icon: Minus, action: zoomOut, title: "Afastar" },
-              { icon: Maximize, action: fitView, title: "Centralizar" },
-              {
-                icon: Lock,
-                action: () => setLocked((l) => !l),
-                title: locked ? "Destravar" : "Travar canvas",
-                active: locked,
-              },
-            ].map((b, i) => {
-              const Ic = b.icon;
-              return (
-                <button
-                  key={i}
-                  onClick={b.action}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-slate-50"
-                  style={{
-                    background: (b as any).active ? T.primarySoft : T.surface,
-                    border: `1px solid ${T.border}`,
-                    color: (b as any).active ? T.primary : T.text2,
-                    boxShadow: "0 1px 2px rgba(15,23,42,0.04)",
-                  }}
-                  title={b.title}
-                >
-                  <Ic className="h-3.5 w-3.5" />
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Zoom indicator */}
-          <div
-            className="absolute bottom-6 right-6 rounded-lg px-3 py-1.5 text-[11px] font-mono font-bold"
-            style={{
-              background: T.surface,
-              border: `1px solid ${T.border}`,
-              color: T.text2,
-              boxShadow: "0 1px 2px rgba(15,23,42,0.04)",
-            }}
-          >
-            {Math.round(zoom * 100)}%
+            <AlertTriangle className="h-4 w-4" />
+          </span>
+          <div className="flex-1">
+            <h3 className="text-[14px] font-bold" style={{ color: T.text }}>
+              {title}
+            </h3>
+            <p className="mt-1 text-[12.5px]" style={{ color: T.text2 }}>
+              {message}
+            </p>
           </div>
         </div>
-
-        {/* SIDEBAR DIREITA */}
-        {sidebar === "vars" && (
-          <VariablesPanel
-            onClose={() => setSidebar("none")}
-            onInsert={insertVariable}
-            hasFocused={!!focused}
-          />
-        )}
-        {sidebar === "config" && (
-          <ConfigPanel
-            automation={automation}
-            whatsappAccounts={whatsappAccounts}
-            onClose={() => setSidebar("none")}
-            onChange={(patch) => setAutomation({ ...automation, ...patch })}
-            onSave={save}
-            saving={saving}
-          />
-        )}
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            onClick={onCancel}
+            className="inline-flex h-9 items-center rounded-lg px-4 text-[12px] font-semibold hover:bg-slate-50"
+            style={{ border: `1px solid ${T.border}`, color: T.text2 }}
+          >
+            {cancelLabel}
+          </button>
+          <button
+            onClick={onConfirm}
+            className="inline-flex h-9 items-center rounded-lg px-4 text-[12px] font-semibold text-white"
+            style={{
+              background: destructive
+                ? "linear-gradient(120deg, #EF4444, #DC2626)"
+                : `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
+              boxShadow: destructive
+                ? "0 6px 16px -8px rgba(239,68,68,0.40)"
+                : "0 6px 16px -8px rgba(124,58,237,0.45)",
+            }}
+          >
+            {confirmLabel}
+          </button>
+        </div>
       </div>
-
-      {/* MODAL: ADICIONAR ETAPA */}
-      {showAddStep && (
-        <AddStepModal
-          onClose={() => setShowAddStep(null)}
-          onAdd={(type) => addStep(showAddStep.afterIdx, type)}
-        />
-      )}
     </div>
   );
 }
 
 /* ============================================================
- * TRIGGER NODE — agora com SVG real do gatilho
+ * EDGE customizada — bezier suave violeta + arrow + delete on click
  * ============================================================ */
-function TriggerNode({
-  automation,
-  trigger,
-  onClickAlter,
-}: {
-  automation: Automation;
-  trigger: (typeof TRIGGERS)[number];
-  onClickAlter: () => void;
-}) {
+function FlowEdge(props: any) {
+  const { id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition } = props;
+  const [edgePath, labelX, labelY] = getBezierPath({
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
+  });
+  const { setEdges } = useReactFlow();
+  const [hover, setHover] = useState(false);
+
+  return (
+    <>
+      <BaseEdge
+        id={id}
+        path={edgePath}
+        markerEnd={props.markerEnd}
+        style={{
+          stroke: T.primary,
+          strokeWidth: 2,
+          strokeDasharray: "5 4",
+          opacity: hover ? 1 : 0.85,
+          cursor: "pointer",
+        }}
+      />
+      {/* hitbox transparente mais largo pra facilitar o click */}
+      <path
+        d={edgePath}
+        fill="none"
+        stroke="transparent"
+        strokeWidth={20}
+        style={{ cursor: "pointer" }}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+      />
+      {hover && (
+        <EdgeLabelRenderer>
+          <button
+            onClick={() => setEdges((eds) => eds.filter((e) => e.id !== id))}
+            style={{
+              position: "absolute",
+              transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+              pointerEvents: "all",
+              background: "#EF4444",
+              color: "#FFFFFF",
+              border: "2px solid #FFFFFF",
+              borderRadius: 999,
+              width: 22,
+              height: 22,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.20)",
+            }}
+            title="Desconectar"
+          >
+            <X size={12} strokeWidth={3} />
+          </button>
+        </EdgeLabelRenderer>
+      )}
+    </>
+  );
+}
+
+/* ============================================================
+ * Custom Handles — pontas pra plugar/desplugar
+ * ============================================================ */
+function HandleDot({ type, position }: { type: "source" | "target"; position: Position }) {
+  return (
+    <Handle
+      type={type}
+      position={position}
+      style={{
+        width: 12,
+        height: 12,
+        background: T.primary,
+        border: `2px solid ${T.surface}`,
+        boxShadow: "0 0 0 1px " + T.primary,
+      }}
+    />
+  );
+}
+
+/* ============================================================
+ * TRIGGER NODE (react-flow custom)
+ * ============================================================ */
+function TriggerNode({ data }: any) {
+  const trigger =
+    TRIGGERS.find((t) => t.value === data.trigger) || TRIGGERS[0];
   const TriggerSvg = ({ color }: { color: string }) => {
     if (trigger.value === "SALE_PENDING") return <PixIcon size={14} color={color} />;
     if (trigger.value === "SALE_APPROVED")
@@ -615,12 +349,12 @@ function TriggerNode({
 
   return (
     <div
-      data-node
       className="w-[300px] rounded-2xl p-4"
       style={{
         background: T.surface,
         border: `1px solid ${T.border}`,
-        boxShadow: "0 1px 2px rgba(15,23,42,0.04), 0 8px 24px -12px rgba(15,23,42,0.08)",
+        boxShadow:
+          "0 1px 2px rgba(15,23,42,0.04), 0 8px 24px -12px rgba(15,23,42,0.08)",
       }}
     >
       <div className="mb-3 flex items-center gap-2">
@@ -635,48 +369,41 @@ function TriggerNode({
         </span>
       </div>
       <div
-        className="mb-3 flex items-center justify-between rounded-lg px-3 py-2.5"
+        className="mb-3 flex items-center gap-2 rounded-lg px-3 py-2.5"
         style={{
           background: trigger.soft,
           border: `1px solid ${trigger.color}33`,
         }}
       >
-        <div className="flex items-center gap-2">
-          <span
-            className="flex h-6 w-6 items-center justify-center rounded-md"
-            style={{ background: trigger.color + "22" }}
-          >
-            <TriggerSvg color={trigger.color} />
-          </span>
-          <span className="text-[13px] font-semibold" style={{ color: T.text }}>
-            {trigger.label}
-          </span>
-        </div>
+        <span
+          className="flex h-6 w-6 items-center justify-center rounded-md"
+          style={{ background: trigger.color + "22" }}
+        >
+          <TriggerSvg color={trigger.color} />
+        </span>
+        <span className="text-[13px] font-semibold" style={{ color: T.text }}>
+          {trigger.label}
+        </span>
       </div>
       <p className="text-[12px]" style={{ color: T.text2 }}>
-        Produto:{" "}
-        <b style={{ color: T.text }}>
-          {automation.productId || "Todos"}
-        </b>
+        Produto: <b style={{ color: T.text }}>{data.productId || "Todos"}</b>
       </p>
       <p className="text-[12px]" style={{ color: T.text2 }}>
-        Oferta:{" "}
-        <b style={{ color: T.text }}>
-          {automation.offerId || "Todas"}
-        </b>
+        Oferta: <b style={{ color: T.text }}>{data.offerId || "Todas"}</b>
       </p>
       <div
         className="mt-3 flex items-center justify-between border-t pt-3 text-[11px]"
         style={{ borderColor: T.borderSoft, color: T.text2 }}
       >
         <button
-          onClick={onClickAlter}
+          onClick={data.onClickAlter}
           className="font-semibold hover:underline"
           style={{ color: T.primary }}
         >
           Alterar gatilho
         </button>
       </div>
+      <HandleDot type="source" position={Position.Right} />
     </div>
   );
 }
@@ -684,333 +411,321 @@ function TriggerNode({
 /* ============================================================
  * STEP NODE
  * ============================================================ */
-function StepNode({
-  step,
-  stepIdx,
-  expanded,
-  onClick,
-  onClose,
-  onChangeConfig,
-  onRemove,
-  whatsappAccounts,
-  onFieldFocus,
-}: {
-  step: Step;
-  stepIdx: number;
-  expanded: boolean;
-  onClick: () => void;
-  onClose: () => void;
-  onChange: (patch: Partial<Step>) => void;
-  onChangeConfig: (cfg: Record<string, any>) => void;
-  onRemove: () => void;
-  whatsappAccounts: WhatsAppAccount[];
-  onFieldFocus: (f: FocusedField) => void;
-}) {
+function StepCardNode({ data }: any) {
+  const stepType: StepType = data.stepType;
   const meta =
-    step.type === "SEND_WHATSAPP"
+    stepType === "SEND_WHATSAPP"
       ? {
           color: T.whatsapp,
           soft: T.whatsappSoft,
           title: "Enviar WhatsApp",
-          renderIcon: (size: number) => <WhatsAppIcon size={size} />,
+          renderIcon: (size: number) => <WhatsAppIcon size={size} color={T.whatsapp} />,
         }
-      : step.type === "SEND_EMAIL"
+      : stepType === "SEND_EMAIL"
       ? {
           color: T.email,
           soft: T.emailSoft,
           title: "Enviar e-mail",
-          renderIcon: (size: number) => <Mail style={{ width: size, height: size }} />,
+          renderIcon: (size: number) => <Mail style={{ width: size, height: size, color: T.email }} />,
         }
       : {
           color: T.timer,
           soft: T.timerSoft,
           title: "Temporizador",
-          renderIcon: (size: number) => <Clock style={{ width: size, height: size }} />,
+          renderIcon: (size: number) => <Clock style={{ width: size, height: size, color: T.timer }} />,
         };
+
+  const expanded = data.expanded;
 
   if (!expanded) {
     return (
-      <button
-        data-node
-        onClick={onClick}
-        className="flex w-[240px] items-center gap-2.5 rounded-2xl p-3.5 text-left transition-all hover:-translate-y-0.5"
-        style={{
-          background: T.surface,
-          border: `1px solid ${T.border}`,
-          color: T.text,
-          boxShadow: "0 1px 2px rgba(15,23,42,0.04), 0 4px 12px -4px rgba(15,23,42,0.06)",
-        }}
-      >
-        <span
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-white"
-          style={{ background: meta.soft, color: meta.color }}
+      <>
+        <HandleDot type="target" position={Position.Left} />
+        <button
+          onClick={data.onClick}
+          className="flex w-[240px] items-center gap-2.5 rounded-2xl p-3.5 text-left transition-all hover:-translate-y-0.5"
+          style={{
+            background: T.surface,
+            border: `1px solid ${T.border}`,
+            color: T.text,
+            boxShadow:
+              "0 1px 2px rgba(15,23,42,0.04), 0 4px 12px -4px rgba(15,23,42,0.06)",
+          }}
         >
-          {meta.renderIcon(18)}
-        </span>
-        <span className="text-[13px] font-bold">{meta.title}</span>
-      </button>
+          <span
+            className="flex h-9 w-9 items-center justify-center rounded-lg"
+            style={{ background: meta.soft }}
+          >
+            {meta.renderIcon(18)}
+          </span>
+          <span className="text-[13px] font-bold">{meta.title}</span>
+        </button>
+        <HandleDot type="source" position={Position.Right} />
+      </>
     );
   }
 
   return (
-    <div
-      data-node
-      className="w-[340px] rounded-2xl p-4"
-      style={{
-        background: T.surface,
-        border: `1px solid ${T.border}`,
-        boxShadow: "0 1px 2px rgba(15,23,42,0.04), 0 12px 32px -12px rgba(15,23,42,0.14)",
-      }}
-    >
-      <div className="mb-3 flex items-center gap-2">
+    <>
+      <HandleDot type="target" position={Position.Left} />
+      <div
+        className="w-[340px] rounded-2xl p-4"
+        style={{
+          background: T.surface,
+          border: `1px solid ${T.border}`,
+          boxShadow:
+            "0 1px 2px rgba(15,23,42,0.04), 0 12px 32px -12px rgba(15,23,42,0.14)",
+        }}
+      >
+        <div className="mb-3 flex items-center gap-2">
+          <span
+            className="flex h-8 w-8 items-center justify-center rounded-lg"
+            style={{ background: meta.soft }}
+          >
+            {meta.renderIcon(16)}
+          </span>
+          <span className="flex-1 text-[13px] font-bold" style={{ color: T.text }}>
+            {meta.title}
+          </span>
+          <button
+            onClick={data.onRequestRemove}
+            className="rounded p-1.5 hover:bg-rose-50"
+            style={{ color: "#EF4444" }}
+            title="Remover etapa"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={data.onClose}
+            className="rounded p-1.5 hover:bg-slate-100"
+            style={{ color: T.text2 }}
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        {stepType === "SEND_WHATSAPP" && (
+          <WhatsAppForm
+            config={data.config}
+            onChange={data.onChangeConfig}
+            whatsappAccounts={data.whatsappAccounts}
+            onFieldFocus={(field: string) => data.onFieldFocus({ stepId: data.stepId, field })}
+          />
+        )}
+        {stepType === "SEND_EMAIL" && (
+          <EmailForm
+            config={data.config}
+            onChange={data.onChangeConfig}
+            onFieldFocus={(field: string) => data.onFieldFocus({ stepId: data.stepId, field })}
+          />
+        )}
+        {stepType === "TIMER" && (
+          <TimerForm config={data.config} onChange={data.onChangeConfig} />
+        )}
+      </div>
+      <HandleDot type="source" position={Position.Right} />
+    </>
+  );
+}
+
+/* ============================================================
+ * Sub-forms
+ * ============================================================ */
+function WhatsAppForm({
+  config,
+  onChange,
+  whatsappAccounts,
+  onFieldFocus,
+}: {
+  config: StepConfig;
+  onChange: (cfg: StepConfig) => void;
+  whatsappAccounts: WhatsAppAccount[];
+  onFieldFocus: (field: string) => void;
+}) {
+  const inputStyle: React.CSSProperties = {
+    background: T.surfaceSoft,
+    border: `1px solid ${T.border}`,
+    color: T.text,
+  };
+  return (
+    <>
+      <div
+        className="mb-3 flex items-center gap-2 rounded-md px-2 py-1.5 text-[12px]"
+        style={{ background: T.whatsappSoft }}
+      >
         <span
-          className="flex h-8 w-8 items-center justify-center rounded-lg"
-          style={{ background: meta.soft, color: meta.color }}
-        >
-          {meta.renderIcon(16)}
-        </span>
-        <span className="flex-1 text-[13px] font-bold" style={{ color: T.text }}>
-          {meta.title}
-        </span>
-        <button
-          onClick={onRemove}
-          className="rounded p-1.5 transition-colors hover:bg-rose-50"
-          style={{ color: "#EF4444" }}
-          title="Remover etapa"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
-        <button
-          onClick={onClose}
-          className="rounded p-1.5 hover:bg-slate-100"
+          className="h-2 w-2 rounded-full"
+          style={{ background: T.whatsapp }}
+        />
+        <span style={{ color: "#15803D", fontWeight: 600 }}>Ativo</span>
+      </div>
+      <div className="mb-3">
+        <label
+          className="mb-1 block text-[11px] font-semibold uppercase tracking-wider"
           style={{ color: T.text2 }}
         >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      </div>
-
-      {step.type === "SEND_WHATSAPP" && (
-        <>
-          <div
-            className="mb-3 flex items-center gap-2 rounded-md px-2 py-1.5 text-[12px]"
-            style={{ background: T.whatsappSoft }}
-          >
-            <span
-              className="relative flex h-2 w-2"
-              style={{ background: T.whatsapp, borderRadius: 999 }}
-            />
-            <span style={{ color: "#15803D", fontWeight: 600 }}>Ativo</span>
-          </div>
-
-          <div className="mb-3">
-            <label
-              className="mb-1 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider"
-              style={{ color: T.text2 }}
-            >
-              Link de mídia{" "}
-              <span style={{ color: T.textMuted, textTransform: "none" }}>
-                (opcional)
-              </span>
-            </label>
-            <input
-              value={step.config.mediaUrl || ""}
-              onChange={(e) => onChangeConfig({ mediaUrl: e.target.value })}
-              onFocus={() => onFieldFocus({ stepIdx, field: "mediaUrl" })}
-              placeholder="https://… imagem, áudio, vídeo ou arquivo"
-              className="w-full rounded-md px-2.5 py-2 text-[12px] outline-none focus:border-violet-400"
-              style={{
-                background: T.surfaceSoft,
-                border: `1px solid ${T.border}`,
-                color: T.text,
-              }}
-            />
-          </div>
-
-          <div className="mb-3">
-            <label
-              className="mb-1 block text-[11px] font-semibold uppercase tracking-wider"
-              style={{ color: T.text2 }}
-            >
-              Conta WhatsApp
-            </label>
-            <select
-              value={step.config.whatsappAccountId || ""}
-              onChange={(e) =>
-                onChangeConfig({ whatsappAccountId: e.target.value })
-              }
-              className="w-full rounded-md px-2.5 py-2 text-[12px] outline-none"
-              style={{
-                background: T.surfaceSoft,
-                border: `1px solid ${T.border}`,
-                color: T.text,
-              }}
-            >
-              <option value="">Selecione…</option>
-              {whatsappAccounts
-                .filter((a) => a.status === "CONNECTED")
-                .map((a, i) => (
-                  <option key={a.id} value={a.id}>
-                    {String(i + 1).padStart(2, "0")} ·{" "}
-                    {a.phoneNumber || a.label || a.id.slice(0, 6)}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          <div>
-            <label
-              className="mb-1 block text-[11px] font-semibold uppercase tracking-wider"
-              style={{ color: T.text2 }}
-            >
-              Conteúdo
-            </label>
-            <textarea
-              value={step.config.content || ""}
-              onChange={(e) => onChangeConfig({ content: e.target.value })}
-              onFocus={() => onFieldFocus({ stepIdx, field: "content" })}
-              rows={9}
-              className="w-full resize-none rounded-md p-2.5 text-[12px] outline-none focus:border-violet-400"
-              style={{
-                background: T.surfaceSoft,
-                border: `1px solid ${T.border}`,
-                color: T.text,
-                lineHeight: 1.5,
-              }}
-              placeholder="Olá [NOME DO CLIENTE]! ..."
-            />
-          </div>
-        </>
-      )}
-
-      {step.type === "SEND_EMAIL" && (
-        <>
-          <p
-            className="mb-3 flex items-center gap-1 rounded-md px-2 py-1.5 text-[12px]"
-            style={{ background: T.emailSoft, color: T.email }}
-          >
-            <span style={{ color: T.text2 }}>Enviar de:</span>
-            <b>{step.config.from || "no-reply@shadowpay.com.br"}</b>
-          </p>
-          <div className="mb-3">
-            <label
-              className="mb-1 block text-[11px] font-semibold uppercase tracking-wider"
-              style={{ color: T.text2 }}
-            >
-              Assunto
-            </label>
-            <input
-              value={step.config.subject || ""}
-              onChange={(e) => onChangeConfig({ subject: e.target.value })}
-              onFocus={() => onFieldFocus({ stepIdx, field: "subject" })}
-              className="w-full rounded-md px-2.5 py-2 text-[12px] outline-none focus:border-violet-400"
-              style={{
-                background: T.surfaceSoft,
-                border: `1px solid ${T.border}`,
-                color: T.text,
-              }}
-              placeholder="Assunto do e-mail"
-            />
-          </div>
-          <div>
-            <label
-              className="mb-1 block text-[11px] font-semibold uppercase tracking-wider"
-              style={{ color: T.text2 }}
-            >
-              Conteúdo
-            </label>
-            <textarea
-              value={step.config.content || ""}
-              onChange={(e) => onChangeConfig({ content: e.target.value })}
-              onFocus={() => onFieldFocus({ stepIdx, field: "content" })}
-              rows={12}
-              className="w-full resize-none rounded-md p-2.5 text-[12px] outline-none focus:border-violet-400"
-              style={{
-                background: T.surfaceSoft,
-                border: `1px solid ${T.border}`,
-                color: T.text,
-                lineHeight: 1.5,
-              }}
-              placeholder="Olá [NOME DO CLIENTE], ..."
-            />
-          </div>
-        </>
-      )}
-
-      {step.type === "TIMER" && (
-        <div className="flex items-end gap-2">
-          <div className="flex-1">
-            <label
-              className="mb-1 block text-[11px] font-semibold uppercase tracking-wider"
-              style={{ color: T.text2 }}
-            >
-              Aguardar
-            </label>
-            <input
-              type="number"
-              min={1}
-              value={step.config.delayValue || 5}
-              onChange={(e) =>
-                onChangeConfig({ delayValue: Number(e.target.value) })
-              }
-              className="w-full rounded-md px-2.5 py-2 text-[12px] outline-none focus:border-violet-400"
-              style={{
-                background: T.surfaceSoft,
-                border: `1px solid ${T.border}`,
-                color: T.text,
-              }}
-            />
-          </div>
-          <select
-            value={step.config.delayUnit || "minutes"}
-            onChange={(e) => onChangeConfig({ delayUnit: e.target.value })}
-            className="rounded-md px-2.5 py-2 text-[12px] outline-none"
-            style={{
-              background: T.surfaceSoft,
-              border: `1px solid ${T.border}`,
-              color: T.text,
-            }}
-          >
-            <option value="minutes">Minutos</option>
-            <option value="hours">Horas</option>
-            <option value="days">Dias</option>
-          </select>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ============================================================
- * CONNECTOR — seta violeta tracejada
- * ============================================================ */
-function Connector() {
-  return (
-    <div className="flex items-center" style={{ height: 56, marginTop: 60 }}>
-      <svg width="56" height="20" viewBox="0 0 56 20" fill="none">
-        <defs>
-          <linearGradient id="conn-grad" x1="0" y1="0" x2="56" y2="0">
-            <stop offset="0%" stopColor={T.primary} stopOpacity="0.4" />
-            <stop offset="100%" stopColor={T.primary} stopOpacity="1" />
-          </linearGradient>
-        </defs>
-        <line
-          x1="0"
-          y1="10"
-          x2="50"
-          y2="10"
-          stroke="url(#conn-grad)"
-          strokeWidth="2"
-          strokeDasharray="5 3"
-          strokeLinecap="round"
+          Link de mídia <span style={{ color: T.textMuted, textTransform: "none" }}>(opcional)</span>
+        </label>
+        <input
+          value={config.mediaUrl || ""}
+          onChange={(e) => onChange({ ...config, mediaUrl: e.target.value })}
+          onFocus={() => onFieldFocus("mediaUrl")}
+          placeholder="https://… imagem, áudio, vídeo ou arquivo"
+          className="w-full rounded-md px-2.5 py-2 text-[12px] outline-none"
+          style={inputStyle}
         />
-        <polygon points="48,4 56,10 48,16" fill={T.primary} />
-      </svg>
+      </div>
+      <div className="mb-3">
+        <label
+          className="mb-1 block text-[11px] font-semibold uppercase tracking-wider"
+          style={{ color: T.text2 }}
+        >
+          Conta WhatsApp
+        </label>
+        <select
+          value={config.whatsappAccountId || ""}
+          onChange={(e) => onChange({ ...config, whatsappAccountId: e.target.value })}
+          className="w-full rounded-md px-2.5 py-2 text-[12px] outline-none"
+          style={inputStyle}
+        >
+          <option value="">Selecione…</option>
+          {whatsappAccounts
+            .filter((a) => a.status === "CONNECTED")
+            .map((a, i) => (
+              <option key={a.id} value={a.id}>
+                {String(i + 1).padStart(2, "0")} ·{" "}
+                {a.phoneNumber || a.label || a.id.slice(0, 6)}
+              </option>
+            ))}
+        </select>
+      </div>
+      <div>
+        <label
+          className="mb-1 block text-[11px] font-semibold uppercase tracking-wider"
+          style={{ color: T.text2 }}
+        >
+          Conteúdo
+        </label>
+        <textarea
+          value={config.content || ""}
+          onChange={(e) => onChange({ ...config, content: e.target.value })}
+          onFocus={() => onFieldFocus("content")}
+          rows={9}
+          className="w-full resize-none rounded-md p-2.5 text-[12px] outline-none nodrag"
+          style={{ ...inputStyle, lineHeight: 1.5 }}
+          placeholder="Olá [NOME DO CLIENTE]! ..."
+        />
+      </div>
+    </>
+  );
+}
+
+function EmailForm({
+  config,
+  onChange,
+  onFieldFocus,
+}: {
+  config: StepConfig;
+  onChange: (cfg: StepConfig) => void;
+  onFieldFocus: (field: string) => void;
+}) {
+  const inputStyle: React.CSSProperties = {
+    background: T.surfaceSoft,
+    border: `1px solid ${T.border}`,
+    color: T.text,
+  };
+  return (
+    <>
+      <p
+        className="mb-3 flex items-center gap-1 rounded-md px-2 py-1.5 text-[12px]"
+        style={{ background: T.emailSoft, color: T.email }}
+      >
+        <span style={{ color: T.text2 }}>Enviar de:</span>
+        <b>{config.from || "no-reply@shadowpay.com.br"}</b>
+      </p>
+      <div className="mb-3">
+        <label
+          className="mb-1 block text-[11px] font-semibold uppercase tracking-wider"
+          style={{ color: T.text2 }}
+        >
+          Assunto
+        </label>
+        <input
+          value={config.subject || ""}
+          onChange={(e) => onChange({ ...config, subject: e.target.value })}
+          onFocus={() => onFieldFocus("subject")}
+          className="w-full rounded-md px-2.5 py-2 text-[12px] outline-none"
+          style={inputStyle}
+          placeholder="Assunto do e-mail"
+        />
+      </div>
+      <div>
+        <label
+          className="mb-1 block text-[11px] font-semibold uppercase tracking-wider"
+          style={{ color: T.text2 }}
+        >
+          Conteúdo
+        </label>
+        <textarea
+          value={config.content || ""}
+          onChange={(e) => onChange({ ...config, content: e.target.value })}
+          onFocus={() => onFieldFocus("content")}
+          rows={12}
+          className="w-full resize-none rounded-md p-2.5 text-[12px] outline-none nodrag"
+          style={{ ...inputStyle, lineHeight: 1.5 }}
+          placeholder="Olá [NOME DO CLIENTE], ..."
+        />
+      </div>
+    </>
+  );
+}
+
+function TimerForm({
+  config,
+  onChange,
+}: {
+  config: StepConfig;
+  onChange: (cfg: StepConfig) => void;
+}) {
+  const inputStyle: React.CSSProperties = {
+    background: T.surfaceSoft,
+    border: `1px solid ${T.border}`,
+    color: T.text,
+  };
+  return (
+    <div className="flex items-end gap-2">
+      <div className="flex-1">
+        <label
+          className="mb-1 block text-[11px] font-semibold uppercase tracking-wider"
+          style={{ color: T.text2 }}
+        >
+          Aguardar
+        </label>
+        <input
+          type="number"
+          min={1}
+          value={config.delayValue || 5}
+          onChange={(e) => onChange({ ...config, delayValue: Number(e.target.value) })}
+          className="w-full rounded-md px-2.5 py-2 text-[12px] outline-none"
+          style={inputStyle}
+        />
+      </div>
+      <select
+        value={config.delayUnit || "minutes"}
+        onChange={(e) => onChange({ ...config, delayUnit: e.target.value })}
+        className="rounded-md px-2.5 py-2 text-[12px] outline-none"
+        style={inputStyle}
+      >
+        <option value="minutes">Minutos</option>
+        <option value="hours">Horas</option>
+        <option value="days">Dias</option>
+      </select>
     </div>
   );
 }
 
 /* ============================================================
- * VARIABLES PANEL — clique insere no campo focado
+ * Sidebars
  * ============================================================ */
 function VariablesPanel({
   onClose,
@@ -1056,7 +771,7 @@ function VariablesPanel({
         >
           {hasFocused
             ? "Clique pra inserir no campo selecionado."
-            : "Foque num campo de texto e clique pra inserir, ou clique pra copiar."}
+            : "Foque num campo e clique pra inserir."}
         </p>
         {VARIABLES.map((v) => (
           <button
@@ -1078,9 +793,6 @@ function VariablesPanel({
   );
 }
 
-/* ============================================================
- * CONFIG PANEL — todos os gatilhos
- * ============================================================ */
 function ConfigPanel({
   automation,
   whatsappAccounts,
@@ -1097,6 +809,11 @@ function ConfigPanel({
   saving: boolean;
 }) {
   const connected = whatsappAccounts.filter((a) => a.status === "CONNECTED");
+  const inputStyle: React.CSSProperties = {
+    background: T.surfaceSoft,
+    border: `1px solid ${T.border}`,
+    color: T.text,
+  };
   return (
     <aside
       className="flex h-full w-80 shrink-0 flex-col"
@@ -1113,11 +830,7 @@ function ConfigPanel({
         <h2 className="text-[14px] font-bold" style={{ color: T.text }}>
           Configurações
         </h2>
-        <button
-          onClick={onClose}
-          className="rounded p-1 hover:bg-slate-100"
-          style={{ color: T.text2 }}
-        >
+        <button onClick={onClose} className="rounded p-1 hover:bg-slate-100" style={{ color: T.text2 }}>
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -1132,15 +845,10 @@ function ConfigPanel({
           <input
             value={automation.name}
             onChange={(e) => onChange({ name: e.target.value })}
-            className="w-full rounded-md px-2.5 py-2 text-[12px] outline-none focus:border-violet-400"
-            style={{
-              background: T.surfaceSoft,
-              border: `1px solid ${T.border}`,
-              color: T.text,
-            }}
+            className="w-full rounded-md px-2.5 py-2 text-[12px] outline-none"
+            style={inputStyle}
           />
         </div>
-
         <div>
           <label
             className="mb-1 block text-[11px] font-semibold uppercase tracking-wider"
@@ -1152,16 +860,11 @@ function ConfigPanel({
             value={automation.productId || ""}
             onChange={(e) => onChange({ productId: e.target.value || null })}
             className="w-full rounded-md px-2.5 py-2 text-[12px] outline-none"
-            style={{
-              background: T.surfaceSoft,
-              border: `1px solid ${T.border}`,
-              color: T.text,
-            }}
+            style={inputStyle}
           >
             <option value="">Todos os produtos</option>
           </select>
         </div>
-
         <div>
           <label
             className="mb-1 block text-[11px] font-semibold uppercase tracking-wider"
@@ -1173,18 +876,12 @@ function ConfigPanel({
             value={automation.offerId || ""}
             onChange={(e) => onChange({ offerId: e.target.value || null })}
             className="w-full rounded-md px-2.5 py-2 text-[12px] outline-none"
-            style={{
-              background: T.surfaceSoft,
-              border: `1px solid ${T.border}`,
-              color: T.text,
-            }}
+            style={inputStyle}
           >
             <option value="">Todas as ofertas</option>
           </select>
         </div>
-
         <div className="h-px" style={{ background: T.borderSoft }} />
-
         <div>
           <label
             className="mb-1 block text-[11px] font-semibold uppercase tracking-wider"
@@ -1195,12 +892,8 @@ function ConfigPanel({
           <select
             value={automation.trigger}
             onChange={(e) => onChange({ trigger: e.target.value })}
-            className="w-full rounded-md px-2.5 py-2 text-[12px] outline-none focus:border-violet-400"
-            style={{
-              background: T.surfaceSoft,
-              border: `1px solid ${T.border}`,
-              color: T.text,
-            }}
+            className="w-full rounded-md px-2.5 py-2 text-[12px] outline-none"
+            style={inputStyle}
           >
             {TRIGGERS.map((t) => (
               <option key={t.value} value={t.value}>
@@ -1208,16 +901,11 @@ function ConfigPanel({
               </option>
             ))}
           </select>
-          <p
-            className="mt-1 text-[11px]"
-            style={{ color: T.textMuted }}
-          >
+          <p className="mt-1 text-[11px]" style={{ color: T.textMuted }}>
             A automação será disparada quando este evento ocorrer.
           </p>
         </div>
-
         <div className="h-px" style={{ background: T.borderSoft }} />
-
         <div>
           <div className="mb-1 flex items-center justify-between">
             <label
@@ -1248,11 +936,7 @@ function ConfigPanel({
           ) : (
             <select
               className="w-full rounded-md px-2.5 py-2 text-[12px] outline-none"
-              style={{
-                background: T.surfaceSoft,
-                border: `1px solid ${T.border}`,
-                color: T.text,
-              }}
+              style={inputStyle}
             >
               {connected.map((a, i) => (
                 <option key={a.id} value={a.id}>
@@ -1263,7 +947,6 @@ function ConfigPanel({
             </select>
           )}
         </div>
-
         <button
           onClick={onSave}
           disabled={saving}
@@ -1282,43 +965,48 @@ function ConfigPanel({
 }
 
 /* ============================================================
- * ADD STEP MODAL — light theme
+ * Add Step Modal
  * ============================================================ */
 function AddStepModal({
   onClose,
   onAdd,
 }: {
   onClose: () => void;
-  onAdd: (type: Step["type"]) => void;
+  onAdd: (type: StepType) => void;
 }) {
-  const [type, setType] = useState<Step["type"]>("TIMER");
+  const [type, setType] = useState<StepType>("TIMER");
   const [open, setOpen] = useState(false);
 
   const options: Array<{
-    value: Step["type"];
+    value: StepType;
     label: string;
-    icon: any;
     color: string;
     soft: string;
+    renderIcon: (size: number) => React.ReactNode;
   }> = [
-    { value: "TIMER", label: "Temporizador", icon: Clock, color: T.timer, soft: T.timerSoft },
+    {
+      value: "TIMER",
+      label: "Temporizador",
+      color: T.timer,
+      soft: T.timerSoft,
+      renderIcon: (s) => <Clock style={{ width: s, height: s, color: T.timer }} />,
+    },
     {
       value: "SEND_WHATSAPP",
       label: "Enviar WhatsApp",
-      icon: WhatsAppIcon,
       color: T.whatsapp,
       soft: T.whatsappSoft,
+      renderIcon: (s) => <WhatsAppIcon size={s} color={T.whatsapp} />,
     },
-    { value: "SEND_EMAIL", label: "Enviar e-mail", icon: Mail, color: T.email, soft: T.emailSoft },
+    {
+      value: "SEND_EMAIL",
+      label: "Enviar e-mail",
+      color: T.email,
+      soft: T.emailSoft,
+      renderIcon: (s) => <Mail style={{ width: s, height: s, color: T.email }} />,
+    },
   ];
   const current = options.find((o) => o.value === type)!;
-
-  function renderIcon(opt: (typeof options)[number], size = 14) {
-    if (opt.value === "SEND_WHATSAPP")
-      return <WhatsAppIcon size={size} color={opt.color} />;
-    const Ic = opt.icon as any;
-    return <Ic style={{ width: size, height: size, color: opt.color }} />;
-  }
 
   return (
     <div
@@ -1339,15 +1027,10 @@ function AddStepModal({
           <h2 className="text-[15px] font-bold" style={{ color: T.text }}>
             Adicionar etapa
           </h2>
-          <button
-            onClick={onClose}
-            className="rounded p-1 hover:bg-slate-100"
-            style={{ color: T.text2 }}
-          >
+          <button onClick={onClose} className="rounded p-1 hover:bg-slate-100" style={{ color: T.text2 }}>
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
-
         <label
           className="mb-2 block text-[11px] font-semibold uppercase tracking-wider"
           style={{ color: T.text2 }}
@@ -1369,7 +1052,7 @@ function AddStepModal({
                 className="flex h-6 w-6 items-center justify-center rounded-md"
                 style={{ background: current.soft }}
               >
-                {renderIcon(current)}
+                {current.renderIcon(14)}
               </span>
               {current.label}
             </span>
@@ -1408,7 +1091,7 @@ function AddStepModal({
                       className="flex h-6 w-6 items-center justify-center rounded-md"
                       style={{ background: o.soft }}
                     >
-                      {renderIcon(o)}
+                      {o.renderIcon(14)}
                     </span>
                     {o.label}
                   </span>
@@ -1418,7 +1101,6 @@ function AddStepModal({
             </div>
           )}
         </div>
-
         <button
           onClick={() => onAdd(type)}
           className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md text-[13px] font-semibold text-white"
@@ -1435,6 +1117,512 @@ function AddStepModal({
   );
 }
 
+/* ============================================================
+ * FLOW <-> Automation persistence helpers
+ * ============================================================ */
+function flowFromSteps(stepsRaw: any): AutomationFlow {
+  // Novo formato: { nodes, edges }
+  if (stepsRaw && typeof stepsRaw === "object" && !Array.isArray(stepsRaw)) {
+    if (Array.isArray(stepsRaw.nodes) && Array.isArray(stepsRaw.edges)) {
+      return { nodes: stepsRaw.nodes, edges: stepsRaw.edges };
+    }
+  }
+  // Legado: array linear
+  const arr = Array.isArray(stepsRaw) ? stepsRaw : [];
+  const nodes: Node[] = [
+    {
+      id: "trigger",
+      type: "trigger",
+      position: { x: 0, y: 0 },
+      data: {},
+      deletable: false,
+    },
+    ...arr.map((s: any, i: number) => ({
+      id: s.id || `step-${i}`,
+      type: "step",
+      position: { x: 380 * (i + 1), y: 0 },
+      data: {
+        stepType: s.type,
+        stepId: s.id || `step-${i}`,
+        config: s.config || {},
+      },
+    })),
+  ];
+  const edges: Edge[] = [];
+  if (arr.length > 0) {
+    edges.push({
+      id: "e-trigger-0",
+      source: "trigger",
+      target: arr[0].id || "step-0",
+      type: "flow",
+    });
+    for (let i = 0; i < arr.length - 1; i++) {
+      edges.push({
+        id: `e-${i}-${i + 1}`,
+        source: arr[i].id || `step-${i}`,
+        target: arr[i + 1].id || `step-${i + 1}`,
+        type: "flow",
+      });
+    }
+  }
+  return { nodes, edges };
+}
+
+function flowToSteps(nodes: Node[], edges: Edge[]) {
+  // Limpa data callbacks pra não persistir funções
+  const cleanNodes = nodes.map((n) => ({
+    id: n.id,
+    type: n.type,
+    position: n.position,
+    data: {
+      stepType: (n.data as any)?.stepType,
+      stepId: (n.data as any)?.stepId,
+      config: (n.data as any)?.config,
+    },
+  }));
+  const cleanEdges = edges.map((e) => ({
+    id: e.id,
+    source: e.source,
+    target: e.target,
+    type: e.type,
+  }));
+  return { nodes: cleanNodes, edges: cleanEdges };
+}
+
+/* ============================================================
+ * EDITOR — wrapper com ReactFlowProvider
+ * ============================================================ */
+function FlowEditor({ id }: { id: string }) {
+  const { token } = useAuth();
+  const [automation, setAutomation] = useState<Automation | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [sidebar, setSidebar] = useState<"none" | "vars" | "config">("none");
+  const [showAddStep, setShowAddStep] = useState(false);
+  const [whatsappAccounts, setWhatsappAccounts] = useState<WhatsAppAccount[]>([]);
+  const [openStepId, setOpenStepId] = useState<string | null>(null);
+  const [focused, setFocused] = useState<FocusedField>(null);
+  const [confirm, setConfirm] = useState<{
+    title: string;
+    message: string;
+    onYes: () => void;
+  } | null>(null);
+
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+
+  const rf = useReactFlow();
+
+  /* ===== fetch ===== */
+  useEffect(() => {
+    if (!token) return;
+    Promise.all([
+      axios.get(`${API}/api/integrations/automations/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      axios
+        .get(`${API}/api/integrations/whatsapp-accounts`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .catch(() => null),
+    ])
+      .then(([r1, r2]) => {
+        if (r1.data?.success) {
+          const a = r1.data.data;
+          setAutomation({ ...a });
+          const flow = flowFromSteps(a.steps);
+          setNodes(flow.nodes);
+          setEdges(flow.edges.map((e) => ({ ...e, type: "flow" })));
+        }
+        if (r2?.data?.success) setWhatsappAccounts(r2.data.data || []);
+      })
+      .catch(() => toast.error("Erro ao carregar automação."))
+      .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, token]);
+
+  /* ===== Build node data com callbacks ===== */
+  const enrichedNodes = useMemo(() => {
+    return nodes.map((n) => {
+      if (n.type === "trigger") {
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            trigger: automation?.trigger,
+            productId: automation?.productId,
+            offerId: automation?.offerId,
+            onClickAlter: () => setSidebar("config"),
+          },
+        };
+      }
+      const stepId = (n.data as any)?.stepId || n.id;
+      const expanded = openStepId === stepId;
+      return {
+        ...n,
+        data: {
+          ...n.data,
+          expanded,
+          whatsappAccounts,
+          onClick: () => setOpenStepId((c) => (c === stepId ? null : stepId)),
+          onClose: () => setOpenStepId(null),
+          onChangeConfig: (cfg: StepConfig) => {
+            setNodes((nds) =>
+              nds.map((x) =>
+                x.id === n.id ? { ...x, data: { ...x.data, config: cfg } } : x
+              )
+            );
+          },
+          onRequestRemove: () => {
+            setConfirm({
+              title: "Remover esta etapa?",
+              message:
+                "Essa ação remove a etapa do fluxo. As conexões adjacentes serão desfeitas.",
+              onYes: () => {
+                setNodes((nds) => nds.filter((x) => x.id !== n.id));
+                setEdges((eds) =>
+                  eds.filter((e) => e.source !== n.id && e.target !== n.id)
+                );
+                if (openStepId === stepId) setOpenStepId(null);
+                if (focused?.stepId === stepId) setFocused(null);
+                setConfirm(null);
+                toast.success("Etapa removida.");
+              },
+            });
+          },
+          onFieldFocus: setFocused,
+        },
+      };
+    });
+  }, [
+    nodes,
+    automation,
+    openStepId,
+    whatsappAccounts,
+    focused?.stepId,
+    setNodes,
+    setEdges,
+  ]);
+
+  /* ===== Connect ===== */
+  const onConnect = useCallback(
+    (params: Connection) => {
+      // só uma edge a partir de cada source pra manter linearidade visual
+      setEdges((eds) =>
+        addEdge(
+          { ...params, type: "flow", id: `e-${params.source}-${params.target}` },
+          eds.filter((e) => e.source !== params.source)
+        )
+      );
+    },
+    [setEdges]
+  );
+
+  /* ===== Add step ===== */
+  function addStep(type: StepType) {
+    const id = `step-${Date.now()}`;
+    const lastX = Math.max(0, ...nodes.map((n) => n.position.x));
+    const newNode: Node = {
+      id,
+      type: "step",
+      position: { x: lastX + 380, y: 0 },
+      data: {
+        stepId: id,
+        stepType: type,
+        config:
+          type === "SEND_WHATSAPP"
+            ? { whatsappAccountId: "", mediaUrl: "", content: "" }
+            : type === "SEND_EMAIL"
+            ? { from: "no-reply@shadowpay.com.br", subject: "", content: "" }
+            : { delayValue: 5, delayUnit: "minutes" },
+      },
+    };
+    setNodes((nds) => [...nds, newNode]);
+    // conecta automaticamente ao último node se não houver edge a partir dele
+    const lastNode = [...nodes].sort((a, b) => b.position.x - a.position.x)[0];
+    if (lastNode) {
+      const hasEdge = edges.some((e) => e.source === lastNode.id);
+      if (!hasEdge) {
+        setEdges((eds) => [
+          ...eds,
+          {
+            id: `e-${lastNode.id}-${id}`,
+            source: lastNode.id,
+            target: id,
+            type: "flow",
+          },
+        ]);
+      }
+    }
+    setOpenStepId(id);
+    setShowAddStep(false);
+  }
+
+  /* ===== Save ===== */
+  async function save() {
+    if (!automation || !token) return;
+    setSaving(true);
+    try {
+      const flow = flowToSteps(nodes, edges);
+      const r = await axios.post(
+        `${API}/api/integrations/automations/${id}`,
+        {
+          name: automation.name,
+          trigger: automation.trigger,
+          productId: automation.productId,
+          offerId: automation.offerId,
+          steps: flow,
+          active: automation.active,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (r.data?.success) toast.success("Automação salva");
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || "Erro ao salvar.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  /* ===== Variable insert ===== */
+  function insertVariable(v: string) {
+    if (!focused) {
+      navigator.clipboard.writeText(v);
+      toast.success("Variável copiada.");
+      return;
+    }
+    setNodes((nds) =>
+      nds.map((n) => {
+        if (n.id === focused.stepId || (n.data as any)?.stepId === focused.stepId) {
+          const cfg = (n.data as any).config || {};
+          const cur = cfg[focused.field] || "";
+          return {
+            ...n,
+            data: { ...n.data, config: { ...cfg, [focused.field]: cur + v } },
+          };
+        }
+        return n;
+      })
+    );
+    toast.success("Variável inserida.");
+  }
+
+  const nodeTypes = useMemo(
+    () => ({ trigger: TriggerNode as any, step: StepCardNode as any }),
+    []
+  );
+  const edgeTypes = useMemo(() => ({ flow: FlowEdge as any }), []);
+
+  if (loading || !automation) {
+    return (
+      <div
+        className="flex h-screen items-center justify-center"
+        style={{ background: T.bg, color: T.text2 }}
+      >
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="relative flex h-screen flex-col"
+      style={{
+        background: T.bg,
+        color: T.text,
+        fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
+      }}
+    >
+      {/* TOPBAR */}
+      <header
+        className="flex h-14 shrink-0 items-center gap-3 px-4"
+        style={{ background: T.surface, borderBottom: `1px solid ${T.border}` }}
+      >
+        <Link
+          href="/v1/automation"
+          className="rounded-md p-1.5 hover:bg-slate-100"
+          style={{ color: T.text2 }}
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
+        <input
+          value={automation.name}
+          onChange={(e) => setAutomation({ ...automation, name: e.target.value })}
+          className="flex-1 bg-transparent text-[14px] font-semibold outline-none"
+          style={{ color: T.text }}
+        />
+        <button
+          onClick={() => setSidebar((s) => (s === "vars" ? "none" : "vars"))}
+          className="rounded-md p-2 hover:bg-slate-100"
+          style={{
+            background: sidebar === "vars" ? T.primarySoft : "transparent",
+            color: sidebar === "vars" ? T.primary : T.text2,
+          }}
+          title="Variáveis"
+        >
+          <Braces className="h-4 w-4" />
+        </button>
+        <button
+          onClick={() => setSidebar((s) => (s === "config" ? "none" : "config"))}
+          className="rounded-md p-2 hover:bg-slate-100"
+          style={{
+            background: sidebar === "config" ? T.primarySoft : "transparent",
+            color: sidebar === "config" ? T.primary : T.text2,
+          }}
+          title="Configurações"
+        >
+          <Settings className="h-4 w-4" />
+        </button>
+        <button
+          className="rounded-md p-2 hover:bg-slate-100"
+          style={{ color: T.text2 }}
+          title="Preview"
+        >
+          <Eye className="h-4 w-4" />
+        </button>
+        <div className="mx-2 h-6 w-px" style={{ background: T.border }} />
+        <button
+          onClick={() => setAutomation({ ...automation, active: !automation.active })}
+          className="flex items-center gap-2 text-[12px] font-semibold"
+        >
+          <span
+            className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
+            style={{ background: automation.active ? T.primary : "#E2E8F0" }}
+          >
+            <span
+              className="inline-block h-4 w-4 rounded-full bg-white shadow transition-transform"
+              style={{ transform: automation.active ? "translateX(18px)" : "translateX(2px)" }}
+            />
+          </span>
+          <span style={{ color: automation.active ? T.text : T.text2 }}>
+            {automation.active ? "Ativa" : "Pausada"}
+          </span>
+        </button>
+        <button
+          onClick={save}
+          disabled={saving}
+          className="inline-flex h-9 items-center gap-2 rounded-lg px-4 text-[12px] font-semibold text-white disabled:opacity-50"
+          style={{
+            background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
+            boxShadow: "0 8px 20px -8px rgba(124,58,237,0.45)",
+          }}
+        >
+          {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+          Salvar
+        </button>
+      </header>
+
+      {/* CANVAS */}
+      <div className="relative flex flex-1 overflow-hidden">
+        <div className="relative flex-1">
+          <ReactFlow
+            nodes={enrichedNodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
+            defaultEdgeOptions={{
+              type: "flow",
+              markerEnd: {
+                type: MarkerType.ArrowClosed,
+                color: T.primary,
+                width: 22,
+                height: 22,
+              },
+            }}
+            connectionLineStyle={{
+              stroke: T.primary,
+              strokeWidth: 2,
+              strokeDasharray: "5 4",
+            }}
+            fitView
+            fitViewOptions={{ padding: 0.2, maxZoom: 1 }}
+            minZoom={0.3}
+            maxZoom={2}
+            proOptions={{ hideAttribution: true }}
+            style={{ background: T.bg }}
+          >
+            <Background variant={"dots" as any} color={T.dot} gap={20} size={1.2} />
+          </ReactFlow>
+
+          {/* Botão adicionar etapa flutuante */}
+          <button
+            onClick={() => setShowAddStep(true)}
+            className="absolute right-6 top-6 z-10 inline-flex h-10 items-center gap-2 rounded-xl px-4 text-[12px] font-semibold text-white"
+            style={{
+              background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
+              boxShadow: "0 8px 20px -8px rgba(124,58,237,0.45)",
+            }}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Adicionar etapa
+          </button>
+
+          {/* Controles canvas (canto inferior esquerdo) */}
+          <div className="absolute bottom-6 left-4 z-10 flex flex-col gap-1.5">
+            {[
+              { icon: Plus, action: () => rf.zoomIn(), title: "Aproximar" },
+              { icon: Minus, action: () => rf.zoomOut(), title: "Afastar" },
+              { icon: Maximize, action: () => rf.fitView({ padding: 0.2 }), title: "Centralizar" },
+            ].map((b, i) => {
+              const Ic = b.icon;
+              return (
+                <button
+                  key={i}
+                  onClick={b.action}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-slate-50"
+                  style={{
+                    background: T.surface,
+                    border: `1px solid ${T.border}`,
+                    color: T.text2,
+                    boxShadow: "0 1px 2px rgba(15,23,42,0.04)",
+                  }}
+                  title={b.title}
+                >
+                  <Ic className="h-3.5 w-3.5" />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* SIDEBARS */}
+        {sidebar === "vars" && (
+          <VariablesPanel
+            onClose={() => setSidebar("none")}
+            onInsert={insertVariable}
+            hasFocused={!!focused}
+          />
+        )}
+        {sidebar === "config" && (
+          <ConfigPanel
+            automation={automation}
+            whatsappAccounts={whatsappAccounts}
+            onClose={() => setSidebar("none")}
+            onChange={(patch) => setAutomation({ ...automation, ...patch })}
+            onSave={save}
+            saving={saving}
+          />
+        )}
+      </div>
+
+      {/* MODALS */}
+      {showAddStep && (
+        <AddStepModal onClose={() => setShowAddStep(false)} onAdd={addStep} />
+      )}
+      <ConfirmDialog
+        open={!!confirm}
+        title={confirm?.title || ""}
+        message={confirm?.message || ""}
+        onConfirm={() => confirm?.onYes?.()}
+        onCancel={() => setConfirm(null)}
+      />
+    </div>
+  );
+}
+
 export default function EditorPage() {
   const router = useRouter();
   const { id } = router.query;
@@ -1444,7 +1632,9 @@ export default function EditorPage() {
       <Head>
         <title>ShadowPay — Editor de automação</title>
       </Head>
-      <EditorContent id={id} />
+      <ReactFlowProvider>
+        <FlowEditor id={id} />
+      </ReactFlowProvider>
     </ProtectedRoute>
   );
 }
