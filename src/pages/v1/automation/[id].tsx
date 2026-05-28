@@ -1,6 +1,8 @@
 "use client";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { LightShell } from "@/components/LightShell";
+import ShadowPanel from "@/components/ShadowPanel";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -965,6 +967,170 @@ function ConfigPanel({
 }
 
 /* ============================================================
+ * PREVIEW PANEL — Dados da automação (clica no olho)
+ * ============================================================ */
+function PreviewPanel({
+  automation,
+  onClose,
+}: {
+  automation: Automation;
+  onClose: () => void;
+}) {
+  const trigger = TRIGGERS.find((t) => t.value === automation.trigger);
+  return (
+    <aside
+      className="flex h-full w-80 shrink-0 flex-col"
+      style={{
+        background: T.surface,
+        borderLeft: `1px solid ${T.border}`,
+        boxShadow: "-12px 0 32px -16px rgba(15,23,42,0.10)",
+      }}
+    >
+      <div
+        className="flex items-center justify-between px-4 py-3"
+        style={{ borderBottom: `1px solid ${T.borderSoft}` }}
+      >
+        <h2 className="text-[14px] font-bold" style={{ color: T.text }}>
+          Dados da automação
+        </h2>
+        <button
+          onClick={onClose}
+          className="rounded p-1 hover:bg-slate-100"
+          style={{ color: T.text2 }}
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4">
+        {/* Nome + trigger */}
+        <div className="mb-5">
+          <h3 className="text-[15px] font-bold" style={{ color: T.text }}>
+            {automation.name}
+          </h3>
+          {trigger && (
+            <span
+              className="mt-2 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-semibold"
+              style={{
+                background: trigger.soft,
+                border: `1px solid ${trigger.color}33`,
+                color: T.text,
+              }}
+            >
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ background: trigger.color }}
+              />
+              {trigger.label}
+            </span>
+          )}
+        </div>
+
+        <div className="h-px" style={{ background: T.borderSoft }} />
+
+        {/* Conexão */}
+        <div className="my-4">
+          <p
+            className="mb-2 text-[11px] font-semibold uppercase tracking-wider"
+            style={{ color: T.text2 }}
+          >
+            Conexão
+          </p>
+          <div
+            className="flex items-center gap-3 rounded-xl p-3"
+            style={{
+              background: T.surfaceSoft,
+              border: `1px solid ${T.borderSoft}`,
+            }}
+          >
+            <span
+              className="flex h-10 w-10 items-center justify-center rounded-xl"
+              style={{ background: T.emailSoft, color: T.email }}
+            >
+              <Mail className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p
+                className="text-[13px] font-semibold"
+                style={{ color: T.text }}
+              >
+                SMTP conectado
+              </p>
+              <p
+                className="truncate text-[11px] font-mono"
+                style={{ color: T.text2 }}
+              >
+                no-reply@shadowpay.com.br
+              </p>
+            </div>
+            <span
+              className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+              style={{ background: T.primarySoft, color: T.primary }}
+            >
+              Ativo
+            </span>
+          </div>
+        </div>
+
+        <div className="h-px" style={{ background: T.borderSoft }} />
+
+        {/* Desempenho */}
+        <div className="mt-4">
+          <p
+            className="mb-2 text-[11px] font-semibold uppercase tracking-wider"
+            style={{ color: T.text2 }}
+          >
+            Desempenho
+          </p>
+          {automation.active ? (
+            <div className="space-y-2">
+              {[
+                { label: "Disparos", value: "—" },
+                { label: "Entregues", value: "—" },
+                { label: "Aberturas", value: "—" },
+                { label: "Conversões", value: "—" },
+              ].map((m) => (
+                <div
+                  key={m.label}
+                  className="flex items-center justify-between rounded-md px-3 py-2"
+                  style={{
+                    background: T.surfaceSoft,
+                    border: `1px solid ${T.borderSoft}`,
+                  }}
+                >
+                  <span className="text-[12px]" style={{ color: T.text2 }}>
+                    {m.label}
+                  </span>
+                  <span
+                    className="font-mono text-[13px] font-bold"
+                    style={{ color: T.text }}
+                  >
+                    {m.value}
+                  </span>
+                </div>
+              ))}
+              <p
+                className="mt-2 text-[11px]"
+                style={{ color: T.textMuted }}
+              >
+                Métricas vão aparecer assim que a automação for executada.
+              </p>
+            </div>
+          ) : (
+            <p
+              className="text-[12.5px] leading-relaxed"
+              style={{ color: T.text2 }}
+            >
+              Salve a automação para ver os dados de desempenho.
+            </p>
+          )}
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+/* ============================================================
  * Add Step Modal
  * ============================================================ */
 function AddStepModal({
@@ -1197,7 +1363,7 @@ function FlowEditor({ id }: { id: string }) {
   const [automation, setAutomation] = useState<Automation | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [sidebar, setSidebar] = useState<"none" | "vars" | "config">("none");
+  const [sidebar, setSidebar] = useState<"none" | "vars" | "config" | "preview">("none");
   const [showAddStep, setShowAddStep] = useState(false);
   const [whatsappAccounts, setWhatsappAccounts] = useState<WhatsAppAccount[]>([]);
   const [openStepId, setOpenStepId] = useState<string | null>(null);
@@ -1426,14 +1592,23 @@ function FlowEditor({ id }: { id: string }) {
 
   return (
     <div
-      className="relative flex h-screen flex-col"
+      className="relative flex flex-col"
       style={{
         background: T.bg,
         color: T.text,
         fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
+        // -8 = -32px (anula o padding-x do main do LightShell em md+)
+        // -mt-8 = anula py-8; -mb-24 = compensa pb-24 do mobile / -mb-8 desktop
+        marginLeft: "-2rem",
+        marginRight: "-2rem",
+        marginTop: "-2rem",
+        marginBottom: "-2rem",
+        height: "calc(100vh - 64px)", // 64px = topbar fixa do LightShell
+        overflow: "hidden",
+        borderRadius: 0,
       }}
     >
-      {/* TOPBAR */}
+      {/* TOPBAR DO EDITOR */}
       <header
         className="flex h-14 shrink-0 items-center gap-3 px-4"
         style={{ background: T.surface, borderBottom: `1px solid ${T.border}` }}
@@ -1474,9 +1649,13 @@ function FlowEditor({ id }: { id: string }) {
           <Settings className="h-4 w-4" />
         </button>
         <button
+          onClick={() => setSidebar((s) => (s === "preview" ? "none" : "preview"))}
           className="rounded-md p-2 hover:bg-slate-100"
-          style={{ color: T.text2 }}
-          title="Preview"
+          style={{
+            background: sidebar === "preview" ? T.primarySoft : "transparent",
+            color: sidebar === "preview" ? T.primary : T.text2,
+          }}
+          title="Dados da automação"
         >
           <Eye className="h-4 w-4" />
         </button>
@@ -1606,6 +1785,12 @@ function FlowEditor({ id }: { id: string }) {
             saving={saving}
           />
         )}
+        {sidebar === "preview" && (
+          <PreviewPanel
+            automation={automation}
+            onClose={() => setSidebar("none")}
+          />
+        )}
       </div>
 
       {/* MODALS */}
@@ -1632,9 +1817,12 @@ export default function EditorPage() {
       <Head>
         <title>ShadowPay — Editor de automação</title>
       </Head>
-      <ReactFlowProvider>
-        <FlowEditor id={id} />
-      </ReactFlowProvider>
+      <LightShell>
+        <ReactFlowProvider>
+          <FlowEditor id={id} />
+        </ReactFlowProvider>
+      </LightShell>
+      <ShadowPanel />
     </ProtectedRoute>
   );
 }
