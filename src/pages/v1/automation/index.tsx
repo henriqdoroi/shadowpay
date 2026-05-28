@@ -11,18 +11,36 @@ import axios from "axios";
 import {
   Plus,
   Lightbulb,
-  MessageCircle,
   Mail,
   CheckCircle2,
   Trash2,
   Loader2,
-  ChevronDown,
   X,
   Workflow,
   Smartphone,
   ArrowRight,
   Power,
+  ShoppingBag,
 } from "lucide-react";
+
+/* ============================================================
+ * SVG REAIS — WhatsApp e Pix oficiais (inline pra reaproveitar
+ * sem criar dependência externa)
+ * ============================================================ */
+function WhatsAppIcon({ size = 16, color = "#FFFFFF" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0 0 20.464 3.488" />
+    </svg>
+  );
+}
+function PixIcon({ size = 16, color = "#FFFFFF" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <path d="M19.295 13.567a3.78 3.78 0 0 1-2.689-1.114l-3.85-3.85a.738.738 0 0 0-1.018 0L7.875 12.46A3.78 3.78 0 0 1 5.186 13.57H4.43L9.292 8.71c1.493-1.493 3.916-1.493 5.41 0l3.864 3.864a.736.736 0 0 0 .526.219h.752ZM4.43 10.435h.756a3.78 3.78 0 0 1 2.69 1.115l3.863-3.864c1.493-1.493 3.916-1.493 5.41 0l3.864 3.864a.736.736 0 0 0 .527.219h.752l-4.864-4.864c-1.493-1.493-3.916-1.493-5.41 0L7.155 11.65A.738.738 0 0 1 6.63 11.87H4.43Zm0 5.13h2.2c.196 0 .388.078.527.219l3.864 3.864c1.493 1.493 3.916 1.493 5.41 0l4.864-4.864h-.752a.736.736 0 0 0-.527.219l-3.864 3.864c-1.493 1.493-3.916 1.493-5.41 0L6.876 14.78a3.78 3.78 0 0 0-2.69-1.114H4.43Z" />
+    </svg>
+  );
+}
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -78,9 +96,10 @@ const TEMPLATES = [
     title: "Recuperação Pix gerado — WhatsApp",
     description:
       "Lembre clientes que geraram um PIX e não finalizaram o pagamento via WhatsApp",
-    triggerIcon: <span className="text-base">💳</span>,
-    channelIcon: <MessageCircle className="h-4 w-4 text-white" />,
-    channelBg: "#16A34A",
+    triggerIcon: <PixIcon size={16} color="#32BCAD" />,
+    triggerBg: "rgba(50, 188, 173, 0.12)",
+    channelIcon: <WhatsAppIcon size={16} color="#25D366" />,
+    channelBg: "rgba(37, 211, 102, 0.12)",
     triggerType: "SALE_PENDING",
     channel: "WHATSAPP" as const,
     defaultSteps: [
@@ -90,7 +109,7 @@ const TEMPLATES = [
         config: {
           mediaUrl: "",
           content:
-            "Olá [NOME DO CLIENTE]! 👋\n\nVi que você gerou um Pix para o *[NOME DO PRODUTO]* mas ainda não finalizou.\n\nO valor é de *[VALOR]*. Copie o código Pix abaixo e finalize o pagamento:\n\n[PIX COPIA E COLA]\n\nOu acesse o link direto: [LINK DO CHECKOUT]",
+            "Olá [NOME DO CLIENTE]!\n\nVi que você gerou um Pix para o *[NOME DO PRODUTO]* mas ainda não finalizou.\n\nO valor é de *[VALOR]*. Copie o código Pix abaixo e finalize o pagamento:\n\n[PIX COPIA E COLA]\n\nOu acesse o link direto: [LINK DO CHECKOUT]",
         },
       },
     ],
@@ -100,9 +119,10 @@ const TEMPLATES = [
     title: "Recuperação Pix gerado — Email",
     description:
       "Lembre clientes que geraram um PIX e não finalizaram o pagamento via Email",
-    triggerIcon: <span className="text-base">💳</span>,
-    channelIcon: <Mail className="h-4 w-4 text-white" />,
-    channelBg: "#7C3AED",
+    triggerIcon: <PixIcon size={16} color="#32BCAD" />,
+    triggerBg: "rgba(50, 188, 173, 0.12)",
+    channelIcon: <Mail className="h-4 w-4" style={{ color: "#7C3AED" }} />,
+    channelBg: "rgba(124, 58, 237, 0.12)",
     triggerType: "SALE_PENDING",
     channel: "EMAIL" as const,
     defaultSteps: [
@@ -123,10 +143,10 @@ const TEMPLATES = [
     title: "Envio de entregável",
     description:
       "Envie automaticamente os arquivos ou links de acesso após a confirmação do pagamento",
-    triggerIcon: <CheckCircle2 className="h-4 w-4 text-white" />,
-    triggerBg: "#16A34A",
-    channelIcon: <Mail className="h-4 w-4 text-white" />,
-    channelBg: "#7C3AED",
+    triggerIcon: <ShoppingBag className="h-4 w-4" style={{ color: "#16A34A" }} />,
+    triggerBg: "rgba(22, 163, 74, 0.12)",
+    channelIcon: <Mail className="h-4 w-4" style={{ color: "#7C3AED" }} />,
+    channelBg: "rgba(124, 58, 237, 0.12)",
     triggerType: "SALE_APPROVED",
     channel: "EMAIL" as const,
     defaultSteps: [
@@ -323,8 +343,8 @@ function NewAutomationModal({
                     border: `1px dashed ${T.borderSoft}`,
                   }}
                 >
-                  <MessageCircle className="mb-1 h-4 w-4 text-slate-400" />
-                  Nenhum número conectado
+                  <WhatsAppIcon size={16} color="#94A3B8" />
+                  <span className="mt-1">Nenhum número conectado</span>
                 </div>
               ) : (
                 <select
@@ -606,18 +626,15 @@ function AutomationsTab({
             >
               <div className="mb-3 flex items-center gap-2">
                 <span
-                  className="flex h-8 w-8 items-center justify-center rounded-lg"
-                  style={{
-                    background: (tpl as any).triggerBg || "#F1F5F9",
-                    color: (tpl as any).triggerBg ? "#FFFFFF" : T.text2,
-                  }}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg"
+                  style={{ background: tpl.triggerBg }}
                 >
                   {tpl.triggerIcon}
                 </span>
                 <ArrowRight className="h-3 w-3 text-slate-400" />
                 <span
-                  className="flex h-8 w-8 items-center justify-center rounded-lg"
-                  style={{ background: tpl.channelBg, color: "#FFFFFF" }}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg"
+                  style={{ background: tpl.channelBg }}
                 >
                   {tpl.channelIcon}
                 </span>
@@ -767,10 +784,9 @@ function WhatsAppTab({
           className="rounded-2xl bg-white px-5 py-12 text-center"
           style={{ border: `1px solid ${T.borderSoft}` }}
         >
-          <MessageCircle
-            className="mx-auto mb-3 h-10 w-10"
-            style={{ color: T.textMuted }}
-          />
+          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center">
+            <WhatsAppIcon size={36} color={T.textMuted} />
+          </div>
           <p className="text-[14px] font-semibold text-slate-700">
             Nenhum número conectado
           </p>
@@ -792,10 +808,10 @@ function WhatsAppTab({
               }}
             >
               <div
-                className="flex h-10 w-10 items-center justify-center rounded-xl text-white"
-                style={{ background: "#16A34A" }}
+                className="flex h-10 w-10 items-center justify-center rounded-xl"
+                style={{ background: "rgba(37, 211, 102, 0.12)", color: "#25D366" }}
               >
-                <MessageCircle className="h-5 w-5" />
+                <WhatsAppIcon size={18} color="#25D366" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
