@@ -6,7 +6,7 @@ import ShadowPanel from "@/components/ShadowPanel";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import {
   Plus,
@@ -412,13 +412,15 @@ function ConnectWhatsAppModal({
   token: string;
 }) {
   const [label, setLabel] = useState("");
-  const [step, setStep] = useState<"label" | "qr" | "confirm">("label");
-  const [pairingToken, setPairingToken] = useState("");
+  const [step, setStep] = useState<"label" | "qr">("label");
+  const [qrPng, setQrPng] = useState<string | null>(null);
   const [accountId, setAccountId] = useState("");
-  const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
+  const [waiting, setWaiting] = useState(false);
+  const [connectedPhone, setConnectedPhone] = useState<string | null>(null);
+  const pollRef = useRef<any>(null);
 
-  async function generateQR(e: React.FormEvent) {
+  async function startConnection(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     try {
@@ -429,35 +431,50 @@ function ConnectWhatsAppModal({
       );
       if (r.data?.success) {
         setAccountId(r.data.data.id);
-        setPairingToken(r.data.pairing?.token || r.data.data.qrCode || "");
+        setQrPng(r.data.qrPng || null);
         setStep("qr");
+        setWaiting(true);
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Erro ao gerar QR.");
+      toast.error(err?.response?.data?.message || "Erro ao iniciar.");
     } finally {
       setSaving(false);
     }
   }
 
-  async function confirmConnection(e: React.FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      const r = await axios.post(
-        `${API}/api/integrations/whatsapp-accounts/${accountId}/confirm`,
-        { phoneNumber: phone },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (r.data?.success) {
-        toast.success("Conta WhatsApp conectada!");
-        onConnected();
+  // Polling status + QR
+  useEffect(() => {
+    if (step !== "qr" || !accountId) return;
+    let stopped = false;
+    async function tick() {
+      try {
+        const r = await axios.get(
+          `${API}/api/integrations/whatsapp-accounts/${accountId}/qr`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (r.data?.success) {
+          if (r.data.qrPng) setQrPng(r.data.qrPng);
+          if (r.data.status === "CONNECTED") {
+            stopped = true;
+            setConnectedPhone(r.data.phoneNumber || "—");
+            setWaiting(false);
+            toast.success("WhatsApp conectado!");
+            setTimeout(() => onConnected(), 1500);
+            return;
+          }
+        }
+      } catch {}
+      if (!stopped) {
+        pollRef.current = setTimeout(tick, 2500);
       }
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Erro ao confirmar.");
-    } finally {
-      setSaving(false);
     }
-  }
+    tick();
+    return () => {
+      stopped = true;
+      if (pollRef.current) clearTimeout(pollRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, accountId]);
 
   return (
     <div
@@ -483,7 +500,7 @@ function ConnectWhatsAppModal({
         </div>
 
         {step === "label" && (
-          <form onSubmit={generateQR} className="space-y-3">
+          <form onSubmit={startConnection} className="space-y-3">
             <div>
               <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                 Apelido (opcional)
@@ -495,6 +512,10 @@ function ConnectWhatsAppModal({
                 className="h-10 w-full rounded-lg bg-slate-50 px-3 text-[13px] outline-none"
                 style={{ border: `1px solid ${T.borderSoft}` }}
               />
+              <p className="mt-2 text-[11px] text-slate-500">
+                Você vai escanear um QR code com o app do WhatsApp pra conectar
+                este número à sua conta ShadowPay.
+              </p>
             </div>
             <button
               type="submit"
@@ -506,7 +527,9 @@ function ConnectWhatsAppModal({
               }}
             >
               {saving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Gerando QR…
+                </>
               ) : (
                 "Gerar QR Code"
               )}
@@ -515,71 +538,63 @@ function ConnectWhatsAppModal({
         )}
 
         {step === "qr" && (
-          <div className="space-y-4 text-center">
-            <p className="text-[13px] text-slate-600">
-              Abra o WhatsApp no celular → ⋮ → <b>Aparelhos conectados</b> →{" "}
-              <b>Conectar um aparelho</b> e aponte a câmera pra esse QR.
-            </p>
-            <div
-              className="mx-auto flex h-48 w-48 items-center justify-center rounded-xl"
-              style={{
-                background: "#F8FAFC",
-                border: `1px solid ${T.borderSoft}`,
-              }}
-            >
-              {/* QR placeholder — quando provider real estiver plugado vira PNG */}
-              <div className="text-center">
-                <Smartphone className="mx-auto mb-2 h-12 w-12 text-slate-300" />
-                <p className="break-all px-3 font-mono text-[9px] text-slate-400">
-                  {pairingToken}
+          <div className="space-y-3 text-center">
+            {!connectedPhone ? (
+              <>
+                <p className="text-[13px] text-slate-600">
+                  No celular: abra o <b>WhatsApp</b> → <b>⋮</b> →{" "}
+                  <b>Aparelhos conectados</b> → <b>Conectar um aparelho</b> e
+                  aponte a câmera pra esse QR.
+                </p>
+                <div
+                  className="mx-auto flex h-64 w-64 items-center justify-center rounded-xl bg-white"
+                  style={{ border: `1px solid ${T.borderSoft}` }}
+                >
+                  {qrPng ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={qrPng}
+                      alt="QR Code WhatsApp"
+                      className="h-60 w-60"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 text-slate-400">
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                      <p className="text-[11px]">Gerando QR code…</p>
+                    </div>
+                  )}
+                </div>
+                {waiting && (
+                  <p className="inline-flex items-center gap-1.5 text-[11px] text-slate-500">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Aguardando você escanear…
+                  </p>
+                )}
+                <p className="text-[10px] text-slate-400">
+                  O QR atualiza automaticamente a cada poucos segundos. Não
+                  feche essa janela.
+                </p>
+              </>
+            ) : (
+              <div className="space-y-3 py-4">
+                <div
+                  className="mx-auto flex h-14 w-14 items-center justify-center rounded-full"
+                  style={{ background: "rgba(22,163,74,0.12)", color: "#16A34A" }}
+                >
+                  <CheckCircle2 className="h-8 w-8" />
+                </div>
+                <h3 className="text-[16px] font-bold text-slate-900">
+                  Conectado!
+                </h3>
+                <p className="text-[13px] text-slate-600">
+                  Número conectado:{" "}
+                  <span className="font-mono font-semibold text-slate-900">
+                    +{connectedPhone}
+                  </span>
                 </p>
               </div>
-            </div>
-            <p className="text-[11px] text-slate-500">
-              Após escanear, informe o número conectado abaixo.
-            </p>
-            <button
-              onClick={() => setStep("confirm")}
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg text-[13px] font-semibold text-white"
-              style={{
-                background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
-              }}
-            >
-              Já escaneei
-            </button>
+            )}
           </div>
-        )}
-
-        {step === "confirm" && (
-          <form onSubmit={confirmConnection} className="space-y-3">
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                Número conectado (com DDD)
-              </label>
-              <input
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="(11) 99999-9999"
-                className="h-10 w-full rounded-lg bg-slate-50 px-3 font-mono text-[13px] outline-none"
-                style={{ border: `1px solid ${T.borderSoft}` }}
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg text-[13px] font-semibold text-white disabled:opacity-50"
-              style={{
-                background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
-              }}
-            >
-              {saving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Confirmar conexão"
-              )}
-            </button>
-          </form>
         )}
       </div>
     </div>
