@@ -75,57 +75,6 @@ const INTEGRATIONS: Integration[] = [
     ],
   },
   {
-    id: "redtrack",
-    providerCode: "REDTRACK",
-    name: "RedTrack",
-    category: "Trackeamento",
-    description: "Tracker enterprise pra mídia paga com S2S postback automático.",
-    logo: "RT",
-    logoBg: "linear-gradient(135deg, #DC2626, #B91C1C)",
-    fields: [
-      { key: "apiKey", label: "API Token", type: "password" },
-    ],
-  },
-  {
-    id: "voluum",
-    providerCode: "VOLUUM",
-    name: "Voluum",
-    category: "Trackeamento",
-    description: "Tracker premium pra afiliados — relatórios em tempo real e A/B testing.",
-    logo: "VO",
-    logoBg: "linear-gradient(135deg, #0EA5E9, #0284C7)",
-    fields: [
-      { key: "apiKey", label: "Access Key", type: "password" },
-      { key: "apiSecret", label: "Access Key ID" },
-    ],
-  },
-  {
-    id: "binom",
-    providerCode: "BINOM",
-    name: "Binom",
-    category: "Trackeamento",
-    description: "Tracker self-hosted ultra rápido — popular entre afiliados de iGaming.",
-    logo: "BN",
-    logoBg: "linear-gradient(135deg, #16A34A, #15803D)",
-    fields: [
-      { key: "apiKey", label: "API Key", type: "password" },
-      { key: "webhookUrl", label: "URL do tracker", placeholder: "https://t.seusite.com" },
-    ],
-  },
-  {
-    id: "keitaro",
-    providerCode: "KEITARO",
-    name: "Keitaro",
-    category: "Trackeamento",
-    description: "Tracker self-hosted com cloaking, redirect inteligente e proteção anti-bot.",
-    logo: "KT",
-    logoBg: "linear-gradient(135deg, #14B8A6, #0D9488)",
-    fields: [
-      { key: "apiKey", label: "API Key", type: "password" },
-      { key: "webhookUrl", label: "URL do tracker", placeholder: "https://k.seusite.com" },
-    ],
-  },
-  {
     id: "google-analytics",
     providerCode: "GA4",
     name: "Google Analytics 4",
@@ -146,18 +95,6 @@ const INTEGRATIONS: Integration[] = [
     logo: "WH",
     logoBg: "linear-gradient(135deg, #7C3AED, #6D28D9)",
     href: "/v1/configs/webhook",
-  },
-  {
-    id: "zapier",
-    providerCode: "ZAPIER",
-    name: "Zapier",
-    category: "Trackeamento",
-    description: "Disparo de Zaps a cada venda — conecte com 6000+ apps sem código.",
-    logo: "ZP",
-    logoBg: "linear-gradient(135deg, #FF4A00, #FF6B00)",
-    fields: [
-      { key: "webhookUrl", label: "Webhook URL do Zap", placeholder: "https://hooks.zapier.com/..." },
-    ],
   },
 ];
 
