@@ -36,41 +36,15 @@ function TrackingContent() {
 
   useEffect(() => {
     if (!token) return;
-    (async () => {
-      try {
-        // Endpoint real (será implementado no backend). Por enquanto, deriva
-        // dos pedidos pra mostrar dados reais agregando por utm_source.
-        const r = await axios.get(
-          `${API}/api/user/transactions-report?page=1&limit=500`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (r.data?.success) {
-          const txs = r.data.data.transactions || [];
-          const map = new Map<string, TrackingChannel>();
-          for (const t of txs) {
-            const src = (t.utmSource || t.utm_source || "direto").toLowerCase();
-            const isPaid = String(t.status).toUpperCase() === "PAID";
-            const cur = map.get(src) || {
-              source: src,
-              clicks: 0,
-              conversions: 0,
-              revenue: 0,
-            };
-            cur.clicks += 1;
-            if (isPaid) {
-              cur.conversions += 1;
-              cur.revenue += Number(t.grossAmount || 0);
-            }
-            map.set(src, cur);
-          }
-          setChannels(Array.from(map.values()).sort((a, b) => b.revenue - a.revenue));
-        }
-      } catch (e) {
-        console.error("tracking fetch", e);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    axios
+      .get(`${API}/api/tracking/channels?days=30`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((r) => {
+        if (r.data?.success) setChannels(r.data.data || []);
+      })
+      .catch((e) => console.error("tracking fetch", e))
+      .finally(() => setLoading(false));
   }, [token]);
 
   const totalClicks = channels.reduce((s, c) => s + c.clicks, 0);
