@@ -20,32 +20,13 @@ import {
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ShadowPanel from "@/components/ShadowPanel";
 import TwoFAModal from "./2faAuthentication";
+import { LightShell } from "@/components/LightShell";
 import { ShadowLogo } from "@/components/shadow/ShadowLogo";
 
 import {
-  Search,
-  Bell,
-  MessageCircle,
-  MessageSquare,
-  HelpCircle,
   ChevronDown,
-  LayoutDashboard,
-  Package,
-  Receipt,
-  ArrowDownToLine,
-  ArrowUpFromLine,
-  BarChart3,
-  Megaphone,
-  Workflow,
   Sparkles,
-  Webhook as WebhookIcon,
-  Code,
-  Target,
-  Globe,
-  UserCircle2,
-  Shield,
-  BellRing,
-  LifeBuoy,
+  MessageSquare,
   MoreHorizontal,
   Plus,
   Calendar,
@@ -64,8 +45,6 @@ import {
   RotateCcw,
   DollarSign,
   Zap,
-  PanelLeftClose,
-  PanelLeftOpen,
 } from "lucide-react";
 
 const API = "https://shadowpay-api-production.up.railway.app";
@@ -122,9 +101,6 @@ function DashboardContent() {
     "today" | "yesterday" | "7d" | "30d" | "lastMonth" | "max"
   >("today");
   const [refreshAt, setRefreshAt] = useState<Date>(new Date());
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const sidebarWidth = sidebarCollapsed ? 76 : 260;
 
   /* ---------- fetch user profile (2FA flags) ---------- */
   useEffect(() => {
@@ -315,61 +291,7 @@ function DashboardContent() {
   const greeting =
     hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
 
-  /* ---------- sidebar nav definition ---------- */
-  const nav = [
-    {
-      label: "Command Center",
-      items: [
-        { label: "Dashboard", href: "/v1/dashboard", icon: LayoutDashboard },
-        { label: "Produtos", href: "/v1/products", icon: Package },
-        { label: "Pedidos", href: "/v1/products/sales", icon: Receipt },
-        {
-          label: "Recebimentos",
-          href: "/v1/finance/recivements",
-          icon: ArrowDownToLine,
-        },
-        {
-          label: "Saques",
-          href: "/v1/finance/withdraw",
-          icon: ArrowUpFromLine,
-        },
-      ],
-    },
-    {
-      label: "Inteligência",
-      items: [
-        { label: "Relatórios", href: "/v1/reports", icon: BarChart3 },
-        { label: "Campanhas", href: "/v1/reports", icon: Megaphone },
-        { label: "Automação", href: "/v1/configs/webhook", icon: Workflow },
-        { label: "Shadow AI", href: "/shadow", icon: Sparkles },
-      ],
-    },
-    {
-      label: "Integrações",
-      items: [
-        { label: "Webhooks", href: "/v1/configs/webhook", icon: WebhookIcon },
-        { label: "API & Docs", href: "/v1/configs/apikey", icon: Code },
-        { label: "Pixels", href: "/v1/configs/apikey", icon: Target },
-        { label: "Domínios", href: "/v1/configs/profile", icon: Globe },
-      ],
-    },
-    {
-      label: "Configurações",
-      items: [
-        { label: "Conta", href: "/v1/configs/profile", icon: UserCircle2 },
-        { label: "Segurança", href: "/v1/configs/profile", icon: Shield },
-        {
-          label: "Notificações",
-          href: "/v1/configs/profile",
-          icon: BellRing,
-        },
-      ],
-    },
-  ];
-
   if (!user) return null;
-
-  const initial = (user?.companyName?.[0] || "S").toUpperCase();
 
   /* ---------- KPI data ---------- */
   const kpis = [
@@ -471,379 +393,7 @@ function DashboardContent() {
         <title>ShadowPay — Command Center</title>
       </Head>
 
-      <div
-        className="relative flex min-h-screen w-full"
-        style={{
-          background: "#F1F3F8",
-          color: T.text,
-          fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
-        }}
-      >
-        {/* ============================================================
-            SIDEBAR (LIGHT GRAY, STICKY, COLLAPSIBLE)
-            ============================================================ */}
-        <aside
-          className="sticky top-0 z-30 hidden h-screen shrink-0 flex-col md:flex"
-          style={{
-            width: sidebarWidth,
-            background: "#F1F3F8",
-            transition: "width 0.22s cubic-bezier(0.22, 1, 0.36, 1)",
-          }}
-        >
-          {/* Brand */}
-          <Link
-            href="/v1/dashboard"
-            className="relative flex flex-col items-center gap-2 px-4 py-5"
-            style={{ minHeight: 120 }}
-          >
-            <ShadowLogo size={sidebarCollapsed ? 56 : 110} />
-            {!sidebarCollapsed && (
-              <div className="text-center leading-tight">
-                <div
-                  className="text-[13px] font-bold tracking-[0.18em] text-slate-700"
-                  style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
-                >
-                  SHADOWPAY
-                </div>
-                <div className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.30em] text-slate-400">
-                  Financial OS
-                </div>
-              </div>
-            )}
-          </Link>
-
-          {/* Nav */}
-          <nav className="flex-1 overflow-y-auto px-3 py-2">
-            {nav.map((group) => (
-              <div key={group.label} className="mb-5 last:mb-0">
-                {!sidebarCollapsed && (
-                  <p
-                    className="px-3 pb-2 text-[9.5px] font-bold uppercase tracking-[0.20em]"
-                    style={{ color: T.textMuted }}
-                  >
-                    {group.label}
-                  </p>
-                )}
-                <ul className="space-y-0.5">
-                  {group.items.map((item) => {
-                    const Icon = item.icon;
-                    const active = router.pathname === item.href;
-                    return (
-                      <li key={`${group.label}-${item.label}`}>
-                        <Link
-                          href={item.href}
-                          title={sidebarCollapsed ? item.label : undefined}
-                          className="group flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-colors"
-                          style={{
-                            padding: sidebarCollapsed
-                              ? "10px"
-                              : "8px 12px",
-                            justifyContent: sidebarCollapsed
-                              ? "center"
-                              : "flex-start",
-                            background: active
-                              ? T.primaryBg
-                              : "transparent",
-                            color: active ? T.primary : T.text2,
-                          }}
-                        >
-                          <Icon
-                            className="h-4 w-4 shrink-0"
-                            style={{
-                              color: active ? T.primary : T.textMuted,
-                            }}
-                          />
-                          {!sidebarCollapsed && (
-                            <span className="flex-1 truncate">
-                              {item.label}
-                            </span>
-                          )}
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ))}
-          </nav>
-
-          {/* User card */}
-          <div className="px-3 pb-3">
-            {!sidebarCollapsed ? (
-              <>
-                <div
-                  className="rounded-xl p-3"
-                  style={{
-                    background: "#FFFFFF",
-                    border: "1px solid rgba(15,23,42,0.06)",
-                    boxShadow: "0 1px 2px rgba(15,23,42,0.04)",
-                  }}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-                      style={{
-                        background:
-                          "linear-gradient(135deg, #7C3AED 0%, #22D3EE 100%)",
-                      }}
-                    >
-                      {initial}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13px] font-semibold text-slate-900">
-                        {user?.companyName || "Operador"}
-                      </p>
-                      <p className="truncate text-[10px] text-slate-500">
-                        Seller Bronze
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-2 inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700">
-                    <ShieldCheck className="h-2.5 w-2.5" />
-                    KYC verificado
-                  </div>
-                  <p className="mt-2 text-[10px] text-slate-500">
-                    Próximo repasse{" "}
-                    <span className="font-semibold text-slate-700">
-                      25 Mai 2026
-                    </span>
-                  </p>
-                </div>
-
-                <a
-                  href="https://wa.me/559991519044?text=Ol%C3%A1%20preciso%20de%20ajuda%20com%20a%20ShadowPay."
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-2 flex items-center justify-center gap-1.5 rounded-lg py-2 text-[12px] font-medium text-slate-500 transition-colors hover:bg-white hover:text-slate-700"
-                >
-                  <LifeBuoy className="h-3.5 w-3.5" />
-                  Suporte 24/7
-                </a>
-              </>
-            ) : (
-              <div
-                className="flex h-10 w-10 mx-auto items-center justify-center rounded-full text-xs font-bold text-white"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #7C3AED 0%, #22D3EE 100%)",
-                }}
-                title={user?.companyName || "Operador"}
-              >
-                {initial}
-              </div>
-            )}
-          </div>
-        </aside>
-
-        {/* ============================================================
-            MAIN COLUMN (white, sticks next to sidebar with shadow)
-            ============================================================ */}
-        <div
-          className="relative flex min-h-screen min-w-0 flex-1 flex-col"
-          style={{
-            background: "#FFFFFF",
-            boxShadow:
-              "-12px 0 28px -16px rgba(15, 23, 42, 0.10), -2px 0 8px rgba(15, 23, 42, 0.05)",
-          }}
-        >
-          {/* Toggle button — sits on the divider between sidebar and main */}
-          <button
-            onClick={() => setSidebarCollapsed((v) => !v)}
-            className="absolute top-7 z-40 hidden h-7 w-7 items-center justify-center rounded-full transition-all hover:scale-110 md:flex"
-            style={{
-              left: -14,
-              background: "#FFFFFF",
-              border: "1px solid rgba(15,23,42,0.08)",
-              boxShadow: "0 2px 6px rgba(15,23,42,0.10)",
-              color: "#475569",
-            }}
-            aria-label={
-              sidebarCollapsed ? "Expandir menu" : "Recolher menu"
-            }
-          >
-            {sidebarCollapsed ? (
-              <PanelLeftOpen className="h-3.5 w-3.5" />
-            ) : (
-              <PanelLeftClose className="h-3.5 w-3.5" />
-            )}
-          </button>
-
-          <div className="flex min-w-0 flex-1 flex-col">
-            {/* ============================================================
-                TOPBAR (LIGHT)
-                ============================================================ */}
-            <header
-              className="sticky top-0 z-40 flex h-16 items-center gap-3 px-4 md:px-8"
-              style={{
-                background: "rgba(255, 255, 255, 0.85)",
-                backdropFilter: "blur(12px)",
-                borderBottom: `1px solid ${T.border}`,
-              }}
-            >
-              {/* Search */}
-              <div className="flex-1 max-w-2xl">
-                <div
-                  className="relative group flex h-10 items-center rounded-xl px-3"
-                  style={{
-                    background: "#F1F2F6",
-                    border: `1px solid ${T.border}`,
-                  }}
-                >
-                  <Search className="mr-2 h-4 w-4 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Pesquisar, criar produto, abrir checkout..."
-                    className="flex-1 bg-transparent text-[13px] text-slate-700 placeholder-slate-400 outline-none"
-                  />
-                  <kbd
-                    className="ml-2 hidden items-center gap-0.5 rounded-md px-1.5 py-0.5 font-mono text-[10px] sm:flex"
-                    style={{
-                      background: "white",
-                      border: `1px solid ${T.border}`,
-                      color: T.text2,
-                    }}
-                  >
-                    Ctrl K
-                  </kbd>
-                </div>
-              </div>
-
-              {/* Right cluster */}
-              <div className="ml-auto flex items-center gap-2">
-                {/* Shadow online */}
-                <Link
-                  href="/shadow"
-                  className="hidden h-9 items-center gap-2 rounded-xl px-3 text-[12px] font-semibold text-slate-700 transition-colors hover:bg-slate-50 sm:flex"
-                  style={{ border: `1px solid ${T.border}` }}
-                >
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  </span>
-                  Shadow online
-                  <svg
-                    width="44"
-                    height="14"
-                    viewBox="0 0 44 14"
-                    className="ml-1"
-                    fill="none"
-                  >
-                    <path
-                      d="M0 7 L8 7 L10 3 L14 11 L18 5 L22 9 L26 4 L30 8 L34 7 L44 7"
-                      stroke={T.primary}
-                      strokeWidth="1.3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </Link>
-
-                {/* Eye toggle */}
-                <button
-                  onClick={() => setValuesVisible((v) => !v)}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
-                  style={{ border: `1px solid ${T.border}` }}
-                  aria-label="Alternar valores"
-                >
-                  {valuesVisible ? (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-                  ) : (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
-                  )}
-                </button>
-
-                <a
-                  href="https://wa.me/559991519044?text=Ol%C3%A1%20preciso%20de%20ajuda%20com%20a%20ShadowPay."
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
-                  style={{ border: `1px solid ${T.border}` }}
-                >
-                  <MessageCircle className="h-4 w-4" />
-                </a>
-                <button
-                  className="relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
-                  style={{ border: `1px solid ${T.border}` }}
-                >
-                  <Bell className="h-4 w-4" />
-                  <span
-                    className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold text-white"
-                    style={{ background: T.primary }}
-                  >
-                    3
-                  </span>
-                </button>
-                <button
-                  className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
-                  style={{ border: `1px solid ${T.border}` }}
-                >
-                  <HelpCircle className="h-4 w-4" />
-                </button>
-
-                {/* Avatar */}
-                <div className="relative">
-                  <button
-                    onClick={() => setUserMenuOpen((v) => !v)}
-                    className="flex h-10 items-center gap-2 rounded-xl pl-1 pr-3 transition-colors hover:bg-slate-50"
-                    style={{ border: `1px solid ${T.border}` }}
-                  >
-                    <div
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold text-white"
-                      style={{
-                        background:
-                          "linear-gradient(135deg, #7C3AED 0%, #22D3EE 100%)",
-                      }}
-                    >
-                      {initial}
-                    </div>
-                    <div className="hidden text-left leading-tight md:block">
-                      <p className="text-[12px] font-semibold text-slate-800">
-                        {(user?.companyName || "Operador").slice(0, 16)}
-                      </p>
-                      <p className="text-[10px] text-slate-500">Seller Bronze</p>
-                    </div>
-                    <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
-                  </button>
-                  {userMenuOpen && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-30"
-                        onClick={() => setUserMenuOpen(false)}
-                      />
-                      <div
-                        className="absolute right-0 top-12 z-40 w-48 overflow-hidden rounded-xl bg-white p-1.5 shadow-xl"
-                        style={{ border: `1px solid ${T.border}` }}
-                      >
-                        <button
-                          onClick={() => {
-                            setUserMenuOpen(false);
-                            router.push("/v1/configs/profile");
-                          }}
-                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-slate-700 hover:bg-slate-50"
-                        >
-                          <UserCircle2 className="h-3.5 w-3.5" />
-                          Perfil
-                        </button>
-                        <button
-                          onClick={() => {
-                            setUserMenuOpen(false);
-                            logout();
-                          }}
-                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-rose-500 hover:bg-rose-50"
-                        >
-                          Sair
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </header>
-
-            {/* ============================================================
-                MAIN CONTENT
-                ============================================================ */}
-            <main className="px-4 py-6 md:px-8 md:py-8 pb-24 md:pb-8">
+      <LightShell valuesVisible={valuesVisible} onToggleValues={() => setValuesVisible((v) => !v)}>
               {/* HERO — banner art como background-image (sem <img>) */}
               <motion.section
                 initial={{ opacity: 0, y: 10 }}
@@ -1632,10 +1182,7 @@ function DashboardContent() {
               >
                 ShadowPay Financial OS © 2026 · Todos os direitos reservados.
               </p>
-            </main>
-          </div>
-        </div>
-      </div>
+      </LightShell>
 
       <ShadowPanel />
     </>
