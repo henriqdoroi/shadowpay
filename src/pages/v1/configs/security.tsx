@@ -140,7 +140,6 @@ function SecurityContent() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <ProfileTabs />
       <header className="mb-6">
         <h1
           className="text-[28px] font-bold tracking-tight text-slate-900"
@@ -422,6 +421,7 @@ export default function SecurityPage() {
         <title>ShadowPay — Segurança</title>
       </Head>
       <LightShell>
+        <ProfileTabs />
         <SecurityContent />
       </LightShell>
       <ShadowPanel />

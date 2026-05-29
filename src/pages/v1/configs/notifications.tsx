@@ -257,7 +257,6 @@ function NotificationsContent() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <ProfileTabs />
       <header className="mb-6">
         <h1
           className="text-[28px] font-bold tracking-tight text-slate-900"
@@ -336,6 +335,7 @@ export default function NotificationsPage() {
         <title>ShadowPay — Notificações</title>
       </Head>
       <LightShell>
+        <ProfileTabs />
         <NotificationsContent />
       </LightShell>
       <ShadowPanel />

@@ -24,10 +24,14 @@ export function ProfileTabs() {
     return matches?.some((m) => router.pathname.startsWith(m)) ?? false;
   };
 
+  // A barra é renderizada FORA de qualquer wrapper max-w da página pra
+  // que sua posição não dependa da largura do conteúdo. Ela ocupa a largura
+  // total do main do LightShell e centraliza o pill internamente — assim
+  // não "pula" pra esquerda quando troco de Perfil/Segurança/Notif./KYC.
   return (
-    <div className="mb-6 overflow-x-auto">
+    <div className="mb-6 flex w-full justify-center overflow-x-auto">
       <div
-        className="inline-flex min-w-full items-center gap-1 rounded-2xl p-1.5"
+        className="inline-flex items-center gap-1 rounded-2xl p-1.5"
         style={{
           background: "#FFFFFF",
           border: "1px solid rgba(15,23,42,0.06)",
@@ -42,7 +46,7 @@ export function ProfileTabs() {
             <Link
               key={t.href}
               href={t.href}
-              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-semibold transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl px-5 py-2 text-[13px] font-semibold transition-colors whitespace-nowrap"
               style={{
                 background: active ? "rgba(124,58,237,0.08)" : "transparent",
                 color: active ? "#7C3AED" : "#475569",
