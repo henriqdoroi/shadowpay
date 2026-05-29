@@ -97,9 +97,14 @@ function DashboardContent() {
     "NOT_STARTED" | "PENDING" | "APPROVED" | "BANNED"
   >("NOT_STARTED");
   const [is2FAModalOpen, setIs2FAModalOpen] = useState(false);
-  const [period, setPeriod] = useState<
-    "today" | "yesterday" | "7d" | "30d" | "lastMonth" | "max"
-  >("today");
+  type PeriodKey =
+    | "today"
+    | "yesterday"
+    | "7d"
+    | "30d"
+    | "lastMonth"
+    | "max";
+  const [period, setPeriod] = useState<PeriodKey>("today");
   const [refreshAt, setRefreshAt] = useState<Date>(new Date());
 
   /* ---------- fetch user profile (2FA flags) ---------- */
@@ -153,13 +158,17 @@ function DashboardContent() {
     })();
   }, [user, token]);
 
-  /* ---------- transactions ---------- */
+  /* ---------- transactions ----------
+   * limit alto pra manter histórico no front. O summary do backend
+   * agrega no banco inteiro, então mesmo passando do limit, "Máximo"
+   * exibe valor real (totalEntradas/totalSaidas).
+   */
   const fetchTransactions = async () => {
     if (!token) return;
     setIsLoading(true);
     try {
       const r = await axios.get(
-        `${API}/api/user/transactions-report?page=1&limit=200`,
+        `${API}/api/user/transactions-report?page=1&limit=1000`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (r.data?.success) {
@@ -186,6 +195,16 @@ function DashboardContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, token]);
 
+  /* refresh suave a cada 30s pra venda nova entrar no painel sem reload */
+  useEffect(() => {
+    if (!user || !token) return;
+    const id = setInterval(() => {
+      fetchTransactions();
+    }, 30_000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, token]);
+
   const fmt = (v: number) =>
     new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -194,60 +213,291 @@ function DashboardContent() {
   const num = (v: number) => new Intl.NumberFormat("pt-BR").format(v || 0);
   const hideable = (v: string) => (valuesVisible ? v : "••••••");
 
-  /* ---------- derived computations ---------- */
-  const txs = txData.transactions;
-  const paid = txs.filter((t) => String(t.status).toUpperCase() === "PAID");
-  const refunded = txs.filter((t) =>
-    ["REFUNDED", "CHARGEBACK"].includes(String(t.status).toUpperCase())
-  );
-  const pixGenerated = txs.filter(
-    (t) => String(t.method).toUpperCase() === "PIX"
-  );
-  const totalTx = txs.length;
-  const conv = totalTx > 0 ? (paid.length / totalTx) * 100 : 0;
-  const grossSum = paid.reduce(
-    (acc, t) => acc + Number(t.grossAmount || 0),
-    0
-  );
-  const netSum = paid.reduce((acc, t) => acc + Number(t.netAmount || 0), 0);
-  const avgTicket = paid.length > 0 ? grossSum / paid.length : 0;
-  const approvalRate = totalTx > 0 ? (paid.length / totalTx) * 100 : 0;
+  /* ---------- helpers de período ----------
+   * Cada período tem uma janela `[start, end)` real, e o "período
+   * anterior" tem o MESMO tamanho imediatamente antes — assim a delta
+   * é uma comparação justa.
+   */
+  type Range = { start: Date; end: Date };
 
-  /* ---------- group by hour for "today" chart ---------- */
-  const chartData = useMemo(() => {
+  const periodRanges = useMemo((): { curr: Range; prev: Range } => {
     const now = new Date();
-    const buckets = new Array(13).fill(null).map((_, i) => ({
-      label: `${String(i * 2).padStart(2, "0")}:00`,
-      hour: i * 2,
-      gross: 0,
-      paid: 0,
-      pix: 0,
-    }));
+    const startOfDay = (d: Date) =>
+      new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const endOfDay = (d: Date) =>
+      new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+
+    switch (period) {
+      case "today": {
+        const curr = { start: startOfDay(now), end: endOfDay(now) };
+        const yest = new Date(now); yest.setDate(yest.getDate() - 1);
+        const prev = { start: startOfDay(yest), end: endOfDay(yest) };
+        return { curr, prev };
+      }
+      case "yesterday": {
+        const yest = new Date(now); yest.setDate(yest.getDate() - 1);
+        const curr = { start: startOfDay(yest), end: endOfDay(yest) };
+        const before = new Date(now); before.setDate(before.getDate() - 2);
+        const prev = { start: startOfDay(before), end: endOfDay(before) };
+        return { curr, prev };
+      }
+      case "7d": {
+        const end = now;
+        const start = new Date(now); start.setDate(start.getDate() - 7);
+        const prevEnd = new Date(start);
+        const prevStart = new Date(start); prevStart.setDate(prevStart.getDate() - 7);
+        return { curr: { start, end }, prev: { start: prevStart, end: prevEnd } };
+      }
+      case "30d": {
+        // "Este mês" — calendário
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        const end = now;
+        const prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const prevEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+        return { curr: { start, end }, prev: { start: prevStart, end: prevEnd } };
+      }
+      case "lastMonth": {
+        const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+        const prevStart = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+        const prevEnd = new Date(now.getFullYear(), now.getMonth() - 1, 0, 23, 59, 59);
+        return { curr: { start, end }, prev: { start: prevStart, end: prevEnd } };
+      }
+      case "max":
+      default: {
+        // Tudo desde o início — não há "anterior"
+        const start = new Date(0);
+        return { curr: { start, end: now }, prev: { start, end: start } };
+      }
+    }
+  }, [period]);
+
+  const periodLabel: Record<PeriodKey, string> = {
+    today: "vs ontem",
+    yesterday: "vs anteontem",
+    "7d": "vs 7 dias antes",
+    "30d": "vs mês passado",
+    lastMonth: "vs mês anterior",
+    max: "histórico",
+  };
+
+  const inRange = (t: any, r: Range) => {
+    if (!t?.createdAt) return false;
+    const d = new Date(t.createdAt).getTime();
+    return d >= r.start.getTime() && d <= r.end.getTime();
+  };
+
+  /* ---------- derived computations (período-aware) ---------- */
+  const allTxs = txData.transactions;
+  const txs = useMemo(
+    () => allTxs.filter((t) => inRange(t, periodRanges.curr)),
+    [allTxs, periodRanges]
+  );
+  const prevTxs = useMemo(
+    () => allTxs.filter((t) => inRange(t, periodRanges.prev)),
+    [allTxs, periodRanges]
+  );
+
+  const isPaid = (t: any) => String(t.status).toUpperCase() === "PAID";
+  const isRefund = (t: any) =>
+    ["REFUNDED", "CHARGEBACK"].includes(String(t.status).toUpperCase());
+  const isPix = (t: any) => String(t.method).toUpperCase() === "PIX";
+
+  const computeBlock = (rows: any[]) => {
+    const paid = rows.filter(isPaid);
+    const refunded = rows.filter(isRefund);
+    const pix = rows.filter(isPix);
+    const grossSum = paid.reduce((a, t) => a + Number(t.grossAmount || 0), 0);
+    const netSum = paid.reduce((a, t) => a + Number(t.netAmount || 0), 0);
+    const conv = rows.length > 0 ? (paid.length / rows.length) * 100 : 0;
+    const avgTicket = paid.length > 0 ? grossSum / paid.length : 0;
+    return {
+      total: rows.length,
+      paid,
+      refunded,
+      pix,
+      grossSum,
+      netSum,
+      conv,
+      avgTicket,
+      paidCount: paid.length,
+      pixCount: pix.length,
+      refundCount: refunded.length,
+      approvalRate: conv,
+    };
+  };
+
+  const curr = useMemo(() => computeBlock(txs), [txs]);
+  const prev = useMemo(() => computeBlock(prevTxs), [prevTxs]);
+
+  /* No "Máximo" usamos os agregados do banco (independente do limit
+   * de transactions retornadas). */
+  const isMax = period === "max";
+  const grossSum = isMax ? Number(txData.totals.totalEntradas) || 0 : curr.grossSum;
+  const netSum = isMax
+    ? grossSum * 0.97 // sem agregado de netAmount no summary, mostra estimado
+    : curr.netSum;
+  const paid = curr.paid;
+  const refunded = curr.refunded;
+  const pixGenerated = curr.pix;
+  const totalTx = curr.total;
+  const conv = curr.conv;
+  const avgTicket = curr.avgTicket;
+  const approvalRate = curr.approvalRate;
+
+  /* ---------- delta real (atual vs anterior) ---------- */
+  function fmtDelta(
+    currentVal: number,
+    previousVal: number,
+    opts: { kind?: "pct" | "abs"; suffix?: "pp" } = {}
+  ): { text: string; direction: "up" | "down" | "flat" } | null {
+    if (isMax) return null; // "máximo" não tem baseline
+    if (previousVal === 0 && currentVal === 0) {
+      return { text: "—", direction: "flat" };
+    }
+    if (previousVal === 0) {
+      // novo
+      return currentVal > 0
+        ? { text: "novo", direction: "up" }
+        : { text: "—", direction: "flat" };
+    }
+    if (opts.kind === "abs") {
+      const diff = currentVal - previousVal;
+      return {
+        text: `${diff >= 0 ? "+" : ""}${diff.toFixed(1)}${opts.suffix ?? ""}`,
+        direction: diff > 0 ? "up" : diff < 0 ? "down" : "flat",
+      };
+    }
+    const pct = ((currentVal - previousVal) / previousVal) * 100;
+    return {
+      text: `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`,
+      direction: pct > 0 ? "up" : pct < 0 ? "down" : "flat",
+    };
+  }
+
+  const dGross = fmtDelta(grossSum, prev.grossSum);
+  const dNet = fmtDelta(netSum, prev.netSum);
+  const dConv = fmtDelta(conv, prev.conv, { kind: "abs", suffix: "pp" });
+  const dPaid = fmtDelta(curr.paidCount, prev.paidCount);
+  const dTotal = fmtDelta(curr.total, prev.total);
+  const dPix = fmtDelta(curr.pixCount, prev.pixCount);
+  const dRefund = fmtDelta(curr.refundCount, prev.refundCount);
+  const dTicket = fmtDelta(avgTicket, prev.avgTicket);
+  const dApproval = fmtDelta(approvalRate, prev.approvalRate, {
+    kind: "abs",
+    suffix: "pp",
+  });
+
+  /* "Próximo repasse" = D+1 útil (sex pula pra seg) */
+  const nextPayout = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+    return d.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  }, []);
+
+  /* ---------- buckets do gráfico — janela depende do período ----------
+   *  - today/yesterday  → 13 buckets de 2h
+   *  - 7d / 30d / mês   → buckets por dia
+   *  - máximo           → buckets por mês
+   */
+  type Bucket = { label: string; key: string; gross: number; paid: number; pix: number };
+
+  const chartData = useMemo<Bucket[]>(() => {
+    const buckets = new Map<string, Bucket>();
+
+    const isHourly = period === "today" || period === "yesterday";
+    const isMonthly = period === "max";
+
+    if (isHourly) {
+      for (let i = 0; i < 13; i++) {
+        const label = `${String(i * 2).padStart(2, "0")}:00`;
+        buckets.set(String(i), {
+          label,
+          key: String(i),
+          gross: 0,
+          paid: 0,
+          pix: 0,
+        });
+      }
+      for (const t of txs) {
+        if (!t.createdAt) continue;
+        const d = new Date(t.createdAt);
+        const idx = String(Math.min(12, Math.floor(d.getHours() / 2)));
+        const b = buckets.get(idx);
+        if (!b) continue;
+        b.gross += Number(t.grossAmount || 0);
+        if (isPaid(t)) b.paid += 1;
+        if (isPix(t)) b.pix += 1;
+      }
+      return Array.from(buckets.values());
+    }
+
+    if (isMonthly) {
+      // agrupa por mês (até 12 últimos)
+      const sourceRows = allTxs;
+      for (const t of sourceRows) {
+        if (!t.createdAt) continue;
+        const d = new Date(t.createdAt);
+        const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        if (!buckets.has(k)) {
+          buckets.set(k, {
+            key: k,
+            label: d.toLocaleDateString("pt-BR", { month: "short" }),
+            gross: 0,
+            paid: 0,
+            pix: 0,
+          });
+        }
+        const b = buckets.get(k)!;
+        b.gross += Number(t.grossAmount || 0);
+        if (isPaid(t)) b.paid += 1;
+        if (isPix(t)) b.pix += 1;
+      }
+      return Array.from(buckets.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .slice(-12)
+        .map(([, v]) => v);
+    }
+
+    // dia a dia (7d/este mês/mês passado)
+    const r = periodRanges.curr;
+    const dayMs = 24 * 60 * 60 * 1000;
+    const days = Math.max(
+      1,
+      Math.ceil((r.end.getTime() - r.start.getTime()) / dayMs)
+    );
+    for (let i = 0; i < days; i++) {
+      const d = new Date(r.start.getTime() + i * dayMs);
+      const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+        d.getDate()
+      ).padStart(2, "0")}`;
+      buckets.set(k, {
+        key: k,
+        label: d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+        gross: 0,
+        paid: 0,
+        pix: 0,
+      });
+    }
     for (const t of txs) {
       if (!t.createdAt) continue;
       const d = new Date(t.createdAt);
-      if (period === "today") {
-        if (
-          d.getFullYear() !== now.getFullYear() ||
-          d.getMonth() !== now.getMonth() ||
-          d.getDate() !== now.getDate()
-        )
-          continue;
-      }
-      const h = d.getHours();
-      const idx = Math.min(12, Math.floor(h / 2));
-      const bucket = buckets[idx];
-      if (!bucket) continue;
-      bucket.gross += Number(t.grossAmount || 0);
-      if (String(t.status).toUpperCase() === "PAID") {
-        bucket.paid += 1;
-      }
-      if (String(t.method).toUpperCase() === "PIX") {
-        bucket.pix += 1;
-      }
+      const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+        d.getDate()
+      ).padStart(2, "0")}`;
+      const b = buckets.get(k);
+      if (!b) continue;
+      b.gross += Number(t.grossAmount || 0);
+      if (isPaid(t)) b.paid += 1;
+      if (isPix(t)) b.pix += 1;
     }
-    return buckets;
-  }, [txs, period]);
+    return Array.from(buckets.values());
+  }, [txs, allTxs, period, periodRanges]);
 
   /* ---------- sparkline data (last N points per metric) ---------- */
   const sparkGross = chartData.map((b) => b.gross);
@@ -257,9 +507,9 @@ function DashboardContent() {
   );
   const sparkPaidCount = chartData.map((b) => b.paid);
 
-  /* ---------- live feed ---------- */
+  /* ---------- live feed (independente do período — atividade em si) ---------- */
   const liveFeed = useMemo(() => {
-    return [...txs]
+    return [...allTxs]
       .sort(
         (a, b) =>
           new Date(b.createdAt || 0).getTime() -
@@ -269,22 +519,22 @@ function DashboardContent() {
       .map((t) => {
         const status = String(t.status).toUpperCase();
         const method = String(t.method || "").toUpperCase();
-        const isPaid = status === "PAID";
+        const paidNow = status === "PAID";
         return {
           id: t.id,
-          title: isPaid
+          title: paidNow
             ? "Venda aprovada"
             : method === "PIX"
             ? "PIX gerado"
             : `Transação ${status}`,
-          name: t.customer?.name || "Cliente",
+          name: t.customer?.name || t.customerName || "Cliente",
           value: `+${fmt(Number(t.grossAmount || 0))}`,
           at: t.createdAt,
-          kind: isPaid ? "paid" : "pix",
-          color: isPaid ? T.primary : T.green,
+          kind: paidNow ? "paid" : "pix",
+          color: paidNow ? T.primary : T.green,
         };
       });
-  }, [txs]);
+  }, [allTxs]);
 
   /* ---------- greeting ---------- */
   const hour = new Date().getHours();
@@ -294,13 +544,25 @@ function DashboardContent() {
   if (!user) return null;
 
   /* ---------- KPI data ---------- */
-  const kpis = [
+  const deltaText = periodLabel[period];
+
+  type Kpi = {
+    label: string;
+    value: string;
+    delta: { text: string; direction: "up" | "down" | "flat" } | null;
+    deltaText: string;
+    icon: any;
+    color: string;
+    sparkColor: string;
+    sparkline: number[];
+  };
+
+  const kpis: Kpi[] = [
     {
       label: "Faturamento bruto",
       value: hideable(fmt(grossSum)),
-      delta: "+14,6%",
-      deltaText: "vs ontem",
-      deltaPositive: true,
+      delta: dGross,
+      deltaText,
       icon: <CircleDollarSign className="h-3.5 w-3.5" />,
       color: T.primary,
       sparkColor: T.primary,
@@ -309,20 +571,18 @@ function DashboardContent() {
     {
       label: "Faturamento líquido",
       value: hideable(fmt(netSum)),
-      delta: "+12,7%",
-      deltaText: "vs ontem",
-      deltaPositive: true,
+      delta: dNet,
+      deltaText,
       icon: <Wallet className="h-3.5 w-3.5" />,
       color: T.blue,
       sparkColor: T.blue,
-      sparkline: sparkGross.map((g) => g * 0.87),
+      sparkline: sparkGross.map((g) => g * 0.97),
     },
     {
       label: "Taxa de conversão",
       value: `${conv.toFixed(1)}%`,
-      delta: "+2,4pp",
-      deltaText: "vs ontem",
-      deltaPositive: true,
+      delta: dConv,
+      deltaText,
       icon: <Percent className="h-3.5 w-3.5" />,
       color: T.green,
       sparkColor: T.green,
@@ -331,9 +591,8 @@ function DashboardContent() {
     {
       label: "Pedidos pagos",
       value: num(paid.length),
-      delta: "+9,1%",
-      deltaText: "vs ontem",
-      deltaPositive: true,
+      delta: dPaid,
+      deltaText,
       icon: <CheckCircle2 className="h-3.5 w-3.5" />,
       color: T.orange,
       sparkColor: T.orange,
@@ -341,47 +600,57 @@ function DashboardContent() {
     },
   ];
 
-  const secondary = [
+  type Secondary = {
+    label: string;
+    value: string;
+    delta: { text: string; direction: "up" | "down" | "flat" } | null;
+    icon: any;
+    color: string;
+    /** quando true, "down" é bom (ex.: reembolsos caindo) */
+    negativeIsGood?: boolean;
+  };
+
+  const secondary: Secondary[] = [
     {
       label: "Pedidos totais",
       value: num(totalTx),
-      delta: "+14,1%",
+      delta: dTotal,
       icon: <ShoppingCart className="h-4 w-4" />,
       color: T.primary,
     },
     {
       label: "PIX gerados",
       value: num(pixGenerated.length),
-      delta: "+11,3%",
+      delta: dPix,
       icon: <Zap className="h-4 w-4" />,
       color: T.green,
     },
     {
       label: "Pedidos pagos",
       value: num(paid.length),
-      delta: "+9,1%",
+      delta: dPaid,
       icon: <CheckCircle2 className="h-4 w-4" />,
       color: T.blue,
     },
     {
       label: "Reembolsos",
       value: num(refunded.length),
-      delta: "-2,1%",
+      delta: dRefund,
       icon: <RotateCcw className="h-4 w-4" />,
       color: T.red,
-      negative: true,
+      negativeIsGood: true,
     },
     {
       label: "Ticket médio",
       value: hideable(fmt(avgTicket)),
-      delta: "+4,6%",
+      delta: dTicket,
       icon: <ReceiptText className="h-4 w-4" />,
       color: T.orange,
     },
     {
       label: "Aprovação",
       value: `${approvalRate.toFixed(1)}%`,
-      delta: "+3,2pp",
+      delta: dApproval,
       icon: <ShieldCheck className="h-4 w-4" />,
       color: T.green,
     },
@@ -655,15 +924,30 @@ function DashboardContent() {
                       {k.value}
                     </div>
                     <div className="mt-2.5 flex items-center gap-1.5">
-                      <span
-                        className="text-[12px] font-bold"
-                        style={{ color: k.deltaPositive ? T.green : T.red }}
-                      >
-                        {k.delta}
-                      </span>
-                      <span className="text-[11px] text-slate-500">
-                        {k.deltaText}
-                      </span>
+                      {k.delta ? (
+                        <>
+                          <span
+                            className="text-[12px] font-bold"
+                            style={{
+                              color:
+                                k.delta.direction === "up"
+                                  ? T.green
+                                  : k.delta.direction === "down"
+                                  ? T.red
+                                  : T.textMuted,
+                            }}
+                          >
+                            {k.delta.text}
+                          </span>
+                          <span className="text-[11px] text-slate-500">
+                            {k.deltaText}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-[11px] text-slate-400">
+                          {k.deltaText}
+                        </span>
+                      )}
                     </div>
                     {/* sparkline */}
                     <div className="mt-3 h-10">
@@ -733,7 +1017,7 @@ function DashboardContent() {
                     <div className="flex items-center justify-between text-[11px]">
                       <span className="text-slate-500">Próximo repasse</span>
                       <span className="font-semibold text-slate-700">
-                        25 Mai 2026
+                        {nextPayout}
                       </span>
                     </div>
                   </div>
@@ -1090,14 +1374,24 @@ function DashboardContent() {
                           >
                             {m.value}
                           </span>
-                          <span
-                            className="text-[11px] font-bold"
-                            style={{
-                              color: m.negative ? T.red : T.green,
-                            }}
-                          >
-                            {m.delta}
-                          </span>
+                          {m.delta && (
+                            <span
+                              className="text-[11px] font-bold"
+                              style={{
+                                color: (() => {
+                                  const d = m.delta!.direction;
+                                  if (d === "flat") return T.textMuted;
+                                  // pra reembolsos, "down" é bom
+                                  const goodDown = m.negativeIsGood;
+                                  if (goodDown)
+                                    return d === "down" ? T.green : T.red;
+                                  return d === "up" ? T.green : T.red;
+                                })(),
+                              }}
+                            >
+                              {m.delta.text}
+                            </span>
+                          )}
                         </div>
                       </div>
                     ))}
