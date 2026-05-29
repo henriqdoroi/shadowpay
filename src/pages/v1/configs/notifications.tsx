@@ -2,6 +2,7 @@
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { LightShell } from "@/components/LightShell";
+import { ProfileTabs } from "@/components/ProfileTabs";
 import ShadowPanel from "@/components/ShadowPanel";
 import Head from "next/head";
 import { useEffect, useState } from "react";
@@ -256,10 +257,8 @@ function NotificationsContent() {
 
   return (
     <div className="mx-auto max-w-4xl">
+      <ProfileTabs />
       <header className="mb-6">
-        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
-          CONFIGURAÇÕES
-        </p>
         <h1
           className="text-[28px] font-bold tracking-tight text-slate-900"
           style={{ letterSpacing: "-0.005em" }}

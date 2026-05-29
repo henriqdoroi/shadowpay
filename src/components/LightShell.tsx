@@ -68,6 +68,8 @@ type NavItem = {
     style?: React.CSSProperties;
   }>;
   children?: NavItem[];
+  /** rotas extras que também marcam esse item como ativo */
+  alsoMatches?: string[];
 };
 type NavGroup = { label: string; items: NavItem[] };
 
@@ -88,13 +90,10 @@ function buildNav(isAdmin: boolean): NavGroup[] {
           ],
         },
         {
+          // Financeiro virou página única (saque + taxas + histórico tudo junto).
           label: "Financeiro",
-          href: "/v1/finance/withdraw",
+          href: "/v1/finance",
           icon: Wallet,
-          children: [
-            { label: "Saques", href: "/v1/finance/withdraw", icon: ArrowUpFromLine },
-            { label: "Compliance", href: "/v1/finance/compliance", icon: ShieldAlert },
-          ],
         },
       ],
     },
@@ -118,16 +117,26 @@ function buildNav(isAdmin: boolean): NavGroup[] {
         { label: "Tracking", href: "/v1/tracking", icon: Megaphone },
         { label: "Automações", href: "/v1/automation", icon: Workflow },
         {
+          // Configurações agora só agrupa Perfil (que tem Segurança/Notif/KYC
+          // como abas internas) e API & Docs. Taxas saiu — virou parte do
+          // próprio Financeiro.
           label: "Configurações",
           href: "/v1/configs/profile",
           icon: Settings,
           children: [
-            { label: "Perfil", href: "/v1/configs/profile", icon: UserCircle2 },
-            { label: "Segurança", href: "/v1/configs/security", icon: Shield },
-            { label: "Notificações", href: "/v1/configs/notifications", icon: BellRing },
+            {
+              label: "Perfil",
+              href: "/v1/configs/profile",
+              icon: UserCircle2,
+              alsoMatches: [
+                "/v1/configs/security",
+                "/v1/configs/notifications",
+                "/v1/kyc",
+                "/v1/kyc/document-upload",
+                "/v1/kyc/selfie",
+              ],
+            },
             { label: "API & Docs", href: "/v1/configs/apikey", icon: Code },
-            { label: "Taxas", href: "/v1/configs/fee", icon: Percent },
-            { label: "KYC", href: "/v1/kyc", icon: IdCard },
           ],
         },
       ],
@@ -152,10 +161,15 @@ function buildNav(isAdmin: boolean): NavGroup[] {
 
 /* Active-state matcher: exact or descendant path (with /v1/products excluded
    from matching /v1/products/sales since they belong to different sections now). */
-function isActive(pathname: string, href: string): boolean {
+function isActive(pathname: string, href: string, alsoMatches: string[] = []): boolean {
   if (pathname === href) return true;
+  if (alsoMatches.some((p) => pathname === p || pathname.startsWith(p + "/"))) return true;
   if (href === "/v1/products") return false; // grupo Produtos NÃO casa com /v1/products/sales (Vendas)
   if (href === "/v1/dashboard") return false;
+  if (href === "/v1/finance") {
+    // /v1/finance/withdraw etc. ainda existe como redirect — marca o nav.
+    return pathname.startsWith("/v1/finance");
+  }
   return pathname.startsWith(href + "/");
 }
 
@@ -200,7 +214,10 @@ export function LightShell({
     let changed = false;
     nav.forEach((group) => {
       group.items.forEach((item) => {
-        if (item.children && item.children.some((c) => isActive(router.pathname, c.href))) {
+        if (
+          item.children &&
+          item.children.some((c) => isActive(router.pathname, c.href, c.alsoMatches))
+        ) {
           const key = `${group.label}-${item.label}`;
           if (!toOpen.has(key)) {
             toOpen.add(key);
@@ -300,10 +317,12 @@ export function LightShell({
                   const key = `${group.label}-${item.label}`;
                   const hasChildren = !!item.children?.length;
                   const expanded = expandedKeys.has(key);
-                  const selfActive = isActive(router.pathname, item.href);
+                  const selfActive = isActive(router.pathname, item.href, item.alsoMatches);
                   const childActive =
                     hasChildren &&
-                    item.children!.some((c) => isActive(router.pathname, c.href));
+                    item.children!.some((c) =>
+                      isActive(router.pathname, c.href, c.alsoMatches)
+                    );
                   const active = selfActive || childActive;
 
                   return (
@@ -359,7 +378,7 @@ export function LightShell({
                         <ul className="mt-0.5 space-y-0.5 pl-3">
                           {item.children!.map((child) => {
                             const ChildIcon = child.icon;
-                            const cActive = isActive(router.pathname, child.href);
+                            const cActive = isActive(router.pathname, child.href, child.alsoMatches);
                             return (
                               <li key={`${key}-${child.label}`}>
                                 <Link

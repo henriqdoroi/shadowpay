@@ -4,6 +4,8 @@ import { useRouter } from "next/router";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Head from "next/head";
 import { motion } from "framer-motion";
+import { LightShell } from "@/components/LightShell";
+import { ProfileTabs } from "@/components/ProfileTabs";
 
 const T = {
   bg: "#F1F3F8",
@@ -43,25 +45,9 @@ function KycContent() {
         <title>ShadowPay — Verificação KYC</title>
       </Head>
 
-      <div
-        className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden p-4"
-        style={{
-          background: T.bg,
-          color: T.text,
-          fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
-        }}
-      >
-        {/* Halo violeta sutil */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-[-10%] h-[600px] w-[800px] -translate-x-1/2 rounded-full"
-          style={{
-            background: "radial-gradient(circle, rgba(124,58,237,0.10) 0%, transparent 60%)",
-            filter: "blur(40px)",
-          }}
-        />
-
-        <div className="relative z-10 w-full max-w-2xl space-y-8">
+      <LightShell>
+        <ProfileTabs />
+        <div className="relative mx-auto w-full max-w-2xl space-y-8">
           {/* Brand */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -204,7 +190,7 @@ function KycContent() {
             Processo rápido e seguro · Geralmente leva menos de 2 minutos
           </motion.p>
         </div>
-      </div>
+      </LightShell>
     </>
   );
 }
