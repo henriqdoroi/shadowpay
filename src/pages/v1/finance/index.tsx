@@ -88,6 +88,8 @@ function FinanceContent() {
     salePercent: number;
     saleFixed: number;
     withdrawFixed: number;
+    acquirerName?: string;
+    acquirerSource?: "seller_acquirer" | "global" | "fallback";
   }>({ salePercent: 0, saleFixed: 0, withdrawFixed: 0 });
   const [withdraws, setWithdraws] = useState<WithdrawRow[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -177,11 +179,18 @@ function FinanceContent() {
         ]);
         if (feesR.data?.success) {
           const d = feesR.data.data;
+          const adq = d.adquerer || {};
+          // taxa POR VENDA vem da adquirente real (resolvida no backend
+          // com prioridade SellerAcquirer.customX > Acquirer.X > legado).
+          // Se o backend não devolveu adq.salePercent/saleFixed (versão
+          // antiga), cai no fees.pix do payload pra não quebrar.
           const pix: any = (d.fees as FeesShape)?.pix || {};
           setFees({
-            salePercent: Number(pix.percentual || 0),
-            saleFixed: Number(pix.fixo || 0),
-            withdrawFixed: Number(d.adquerer?.txCashOut || 10), // default R$10
+            salePercent: Number(adq.salePercent ?? pix.percentual ?? 0),
+            saleFixed: Number(adq.saleFixed ?? pix.fixo ?? 0),
+            withdrawFixed: Number(adq.txCashOut ?? 0),
+            acquirerName: adq.name,
+            acquirerSource: adq.source,
           });
         }
         if (profileR.data?.success && profileR.data.data) {
@@ -636,13 +645,49 @@ function FinanceContent() {
               "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
           }}
         >
-          <div className="mb-4">
-            <p className="text-[14px] font-bold text-slate-900">
-              Taxas da plataforma
-            </p>
-            <p className="mt-0.5 text-[12px] text-slate-500">
-              Entenda como são aplicadas as taxas.
-            </p>
+          <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-[14px] font-bold text-slate-900">
+                Taxas da plataforma
+              </p>
+              <p className="mt-0.5 text-[12px] text-slate-500">
+                Aplicadas em tempo real conforme a adquirente que processa
+                sua venda.
+              </p>
+            </div>
+            {fees.acquirerName && (
+              <div
+                className="inline-flex items-center gap-1.5 self-start rounded-lg px-2.5 py-1 text-[11px] font-semibold"
+                style={{
+                  background:
+                    fees.acquirerSource === "seller_acquirer"
+                      ? "rgba(124,58,237,0.10)"
+                      : "rgba(15,23,42,0.04)",
+                  color:
+                    fees.acquirerSource === "seller_acquirer"
+                      ? T.primary
+                      : T.text2,
+                  border: `1px solid ${T.borderSoft}`,
+                }}
+                title={
+                  fees.acquirerSource === "seller_acquirer"
+                    ? "Taxas customizadas para você"
+                    : "Taxas padrão da plataforma"
+                }
+              >
+                <span
+                  className="h-1.5 w-1.5 rounded-full"
+                  style={{
+                    background:
+                      fees.acquirerSource === "seller_acquirer"
+                        ? T.primary
+                        : T.textMuted,
+                  }}
+                />
+                {fees.acquirerName}
+                {fees.acquirerSource === "seller_acquirer" && " • personalizada"}
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <FeeCard
@@ -651,7 +696,11 @@ function FinanceContent() {
               iconBg={T.primaryBg}
               label="Taxa por venda"
               value={`${fees.salePercent.toFixed(2)}%`}
-              hint="Por venda realizada"
+              hint={
+                fees.acquirerName
+                  ? `Em cada venda ${fees.acquirerName}`
+                  : "Sobre o bruto de cada venda"
+              }
             />
             <FeeCard
               icon={<Banknote className="h-4 w-4" />}
@@ -659,7 +708,7 @@ function FinanceContent() {
               iconBg="rgba(245,158,11,0.10)"
               label="Taxa fixa por venda"
               value={fmt(fees.saleFixed)}
-              hint="Por venda realizada"
+              hint="Cobrada uma vez em cada venda"
             />
             <FeeCard
               icon={<ArrowDownToLine className="h-4 w-4" />}
@@ -667,9 +716,38 @@ function FinanceContent() {
               iconBg="rgba(16,185,129,0.10)"
               label="Taxa fixa por saque"
               value={fmt(fees.withdrawFixed)}
-              hint="Por saque solicitado"
+              hint="Descontada a cada saque solicitado"
             />
           </div>
+
+          {/* Exemplo de cálculo (mini educativo) */}
+          {(fees.salePercent > 0 || fees.saleFixed > 0) && (
+            <div
+              className="mt-4 rounded-xl p-3.5"
+              style={{
+                background: "#F8FAFC",
+                border: `1px solid ${T.borderSoft}`,
+              }}
+            >
+              <p className="mb-1 text-[10.5px] font-bold uppercase tracking-wider text-slate-500">
+                Exemplo prático
+              </p>
+              <p className="text-[12.5px] text-slate-700">
+                Numa venda de <b>R$ 100,00</b> você recebe{" "}
+                <b style={{ color: T.green }}>
+                  {fmt(
+                    Math.max(
+                      0,
+                      100 -
+                        (100 * fees.salePercent) / 100 -
+                        fees.saleFixed
+                    )
+                  )}
+                </b>
+                {" "}após {fees.salePercent.toFixed(2)}% + {fmt(fees.saleFixed)}.
+              </p>
+            </div>
+          )}
         </section>
 
         {/* HISTÓRICO DE SAQUES */}
