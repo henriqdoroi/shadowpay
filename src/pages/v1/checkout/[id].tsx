@@ -2346,22 +2346,106 @@ export default function CheckoutPage() {
                       </div>
                     </>
                   ) : (
-                    <>
-                      <div className="flex flex-col items-center justify-center h-64 transition-all duration-700 ease-out">
-                        <span className="text-green-500 text-6xl mb-4 animate-bounce">
-                          ✅
-                        </span>
-                        <h2 className="text-lg text-black font-bold mt-2">
-                          Pagamento aprovado com sucesso!
-                        </h2>
-                        <p className="text-sm text-gray-600 mt-2 text-center px-4">
-                          Estamos redirecionando você
-                        </p>
-                        <div className="mt-4">
-                          <div className="w-10 h-10 border-4 border-green-500 border-dashed rounded-full animate-spin"></div>
+                    <div className="flex flex-col items-center justify-center py-6 transition-all duration-700 ease-out">
+                      {/* Check com halo verde */}
+                      <div className="relative mb-5">
+                        <div className="absolute inset-0 rounded-full bg-green-500/20 blur-xl animate-pulse" />
+                        <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-lg shadow-green-500/30">
+                          <svg
+                            className="w-12 h-12 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
                         </div>
                       </div>
-                    </>
+
+                      <h2 className="text-2xl text-slate-900 font-bold mb-1 text-center">
+                        Pagamento confirmado!
+                      </h2>
+                      <p className="text-sm text-slate-600 text-center mb-4 px-4">
+                        Sua compra foi aprovada com sucesso.
+                      </p>
+
+                      {/* Card com detalhes do pedido */}
+                      <div className="w-full bg-slate-50 rounded-xl border border-slate-200 p-4 mb-4">
+                        <div className="flex flex-col gap-2">
+                          {formData?.name && (
+                            <div className="flex justify-between items-start gap-3">
+                              <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
+                                Produto
+                              </span>
+                              <span className="text-sm text-slate-900 font-semibold text-right">
+                                {formData.name}
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex justify-between items-center gap-3">
+                            <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
+                              Valor
+                            </span>
+                            <span className="text-base text-green-700 font-bold">
+                              R${" "}
+                              {(discountPercent > 0
+                                ? finalPrice
+                                : totalPrice
+                              )
+                                .toFixed(2)
+                                .replace(".", ",")}
+                            </span>
+                          </div>
+                          {saleId && (
+                            <div className="flex justify-between items-center gap-3">
+                              <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
+                                Pedido
+                              </span>
+                              <span className="text-xs text-slate-600 font-mono">
+                                #{String(saleId).slice(0, 8).toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Mensagem de suporte */}
+                      {(formData?.supportEmail || formData?.telefone) && (
+                        <div className="w-full bg-blue-50 rounded-xl border border-blue-100 p-3 mb-4 text-xs text-blue-900 text-center">
+                          <p className="font-semibold mb-1">
+                            Precisa de ajuda?
+                          </p>
+                          {formData?.supportEmail && (
+                            <p>{formData.supportEmail}</p>
+                          )}
+                          {formData?.telefone && (
+                            <p>{formData.telefone}</p>
+                          )}
+                        </div>
+                      )}
+
+                      <p className="text-xs text-slate-500 text-center mb-4 px-2">
+                        Você receberá os detalhes da compra no e-mail informado.
+                        Pode fechar esta janela com segurança.
+                      </p>
+
+                      <button
+                        onClick={() => {
+                          setShowPixModal(false);
+                          if (backRedirect) {
+                            window.location.assign(backRedirect);
+                          }
+                        }}
+                        className="w-full py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold text-sm hover:from-green-600 hover:to-green-700 transition-all shadow-lg shadow-green-500/30"
+                      >
+                        Concluir
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
