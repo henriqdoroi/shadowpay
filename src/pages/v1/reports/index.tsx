@@ -57,7 +57,7 @@ function ReportsContent() {
           blockedBalance: Number(s.blockedBalance) || 0,
           grossRevenue: Number(s.grossRevenue) || 0,
           netRevenue: Number(s.netRevenue) || 0,
-          totalPixGenerated: Number(s.totalPixGenerated?.id) || 0,
+          totalPixGenerated: Number(s.totalPixGenerated) || 0,
           totalSales: Number(s.totalSales) || 0,
           uniqueCustomers: Number(s.uniqueCustomers) || 0,
         });
