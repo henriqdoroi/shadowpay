@@ -309,6 +309,43 @@ export default function CheckoutPage() {
     }
   }, [isClientSide]);
 
+  /**
+   * Registra a VISITA real no backend assim que o produto carrega
+   * (com sellerId / productId resolvidos). Coleta UTM da URL e referrer.
+   */
+  const visitFiredRef = useRef(false);
+  useEffect(() => {
+    if (!isClientSide || !formData?.id || visitFiredRef.current) return;
+    visitFiredRef.current = true;
+
+    const url = new URL(window.location.href);
+    const q = (k: string) => url.searchParams.get(k) || undefined;
+    const stored: Record<string, any> = (() => {
+      try {
+        return JSON.parse(localStorage.getItem("utmParams") || "{}");
+      } catch {
+        return {};
+      }
+    })();
+
+    fetch("https://shadowpay-api-production.up.railway.app/api/tracking/visit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        productId: formData.id,
+        utm_source: q("utm_source") || stored.utm_source || null,
+        utm_medium: q("utm_medium") || stored.utm_medium || null,
+        utm_campaign: q("utm_campaign") || stored.utm_campaign || null,
+        utm_content: q("utm_content") || stored.utm_content || null,
+        utm_term: q("utm_term") || stored.utm_term || null,
+        fbclid: q("fbclid") || stored.fbclid || null,
+        src: q("src") || stored.src || null,
+        sck: q("sck") || stored.sck || null,
+        referrer: document.referrer || null,
+      }),
+    }).catch((e) => console.warn("tracking/visit fail:", e));
+  }, [isClientSide, formData?.id]);
+
   const waitForUtmify = (callback: () => void, attempts = 0) => {
     if (isClientSide && (window as any).utmify?.track) {
       callback();
@@ -528,6 +565,37 @@ export default function CheckoutPage() {
             contents: [{ id: productRef.current.id, quantity: 1 }],
             customer: customerRef.current,
           });
+        }
+
+        // Persiste o Purchase REAL no nosso backend (auditável + agregado
+        // por seller na página /v1/tracking).
+        try {
+          await fetch(
+            "https://shadowpay-api-production.up.railway.app/api/tracking/event",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                eventName: "Purchase",
+                transactionId: saleId,
+                productId: productId,
+                value: amountValue,
+                currency: "BRL",
+                utm_source: trackingParameters.utm_source,
+                utm_medium: trackingParameters.utm_medium,
+                utm_campaign: trackingParameters.utm_campaign,
+                utm_content: trackingParameters.utm_content,
+                utm_term: trackingParameters.utm_term,
+                fbclid: trackingParameters.fbclid,
+                payload: {
+                  product: productRef.current?.name,
+                  customer: customerRef.current?.email,
+                },
+              }),
+            }
+          );
+        } catch (err) {
+          console.warn("tracking/event purchase:", err);
         }
       } catch (err) {
         console.error("Erro ao checar pagamento:", err);

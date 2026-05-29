@@ -1,7 +1,22 @@
-// src/checkout/trackeamento.tsx
-import React, { useEffect } from "react";
+// src/pages/v1/checkout/trackeamento.tsx
+//
+// Página REAL de trackeamento. Não dispara mais nenhum `dummySale`.
+//
+// Como funciona:
+//  - Sem ?txId / ?productId → só monta o Pixel + UTMify e fica em pé,
+//    pronta pra receber. Não dispara nenhum evento.
+//  - Com ?txId=xxx → busca a venda real em /api/sales/public/:id,
+//    dispara Purchase com `value` real e atualiza UTMify/Pixel.
+//
+// Eventos exportados (trackUTMifyEvent, trackFacebookPixelEvent,
+// trackConversionEvent) também batem no backend em /api/tracking/event
+// pra persistir no DB.
+import React, { useEffect, useState } from "react";
 import Script from "next/script";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/router";
+
+const API = "https://shadowpay-api-production.up.railway.app";
 
 interface TrackEventData {
   value?: number;
@@ -20,7 +35,6 @@ declare global {
   }
 }
 
-// 🔹 Espera o UTMify carregar antes de disparar, com timeout de 5s
 const waitForUtmify = (): Promise<void> =>
   new Promise((resolve, reject) => {
     let attempts = 0;
@@ -33,7 +47,6 @@ const waitForUtmify = (): Promise<void> =>
     check();
   });
 
-// 🔹 Evento UTMify
 export const trackUTMifyEvent = async (
   eventName: string,
   data: TrackEventData
@@ -47,7 +60,6 @@ export const trackUTMifyEvent = async (
   }
 };
 
-// 🔹 Evento Facebook Pixel
 export const trackFacebookPixelEvent = (
   eventName: string,
   data: TrackEventData
@@ -61,49 +73,180 @@ export const trackFacebookPixelEvent = (
   }
 };
 
-// 🔹 Função única para eventos de conversão
+/**
+ * Dispara o evento em TODOS os canais (Pixel + UTMify + backend).
+ * Sem nenhum fallback dummy. Se `sale` não existir, não dispara.
+ */
 export const trackConversionEvent = async (
-  sale: any,
-  eventType: "purchase" | "CPA" | "CPC" | "CTR" | "CPM" | "IC",
-  utmParams: Record<string, string> = {}
+  sale:
+    | {
+        id: string;
+        transactionId?: string;
+        amount?: number;
+        totalPrice?: number;
+        productId?: string;
+        sellerId?: string;
+      }
+    | null,
+  eventType:
+    | "purchase"
+    | "Purchase"
+    | "InitiateCheckout"
+    | "AddPaymentInfo"
+    | "Lead"
+    | "ViewContent"
+    | "CPA"
+    | "CPC"
+    | "CTR"
+    | "CPM"
+    | "IC",
+  utmParams: Record<string, string | null | undefined> = {}
 ) => {
+  if (!sale || (!sale.id && !sale.transactionId)) {
+    console.warn("[tracking] sem sale real, não disparando evento.");
+    return;
+  }
+
+  const transactionId = sale.transactionId || sale.id;
+  const value = sale.totalPrice ?? sale.amount ?? 0;
+
   const eventData: TrackEventData = {
-    value: sale.totalPrice || sale.amount || 0,
+    value,
     currency: "BRL",
-    content_ids: [sale.id],
+    content_ids: [transactionId],
     content_type: "product",
     ...utmParams,
   };
 
   try {
     trackFacebookPixelEvent(eventType, eventData);
-    await trackUTMifyEvent(eventType.toLowerCase(), eventData);
+    await trackUTMifyEvent(String(eventType).toLowerCase(), eventData);
   } catch (err) {
-    console.error("Erro ao disparar eventos:", err);
+    console.error("Erro ao disparar eventos client-side:", err);
   }
 
-  // Log opcional no backend
-  fetch("/api/track-event", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ type: eventType, eventData }),
-  }).catch((err) => console.error("Erro ao enviar evento para backend:", err));
+  // Persiste no backend (canal real, indexado por sellerId + utm)
+  try {
+    await fetch(`${API}/api/tracking/event`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        eventName: String(eventType),
+        transactionId,
+        productId: sale.productId,
+        sellerId: sale.sellerId,
+        value,
+        currency: "BRL",
+        utm_source: utmParams.utm_source ?? null,
+        utm_medium: utmParams.utm_medium ?? null,
+        utm_campaign: utmParams.utm_campaign ?? null,
+        utm_content: utmParams.utm_content ?? null,
+        utm_term: utmParams.utm_term ?? null,
+        fbclid: utmParams.fbclid ?? null,
+        payload: eventData,
+      }),
+    });
+  } catch (err) {
+    console.warn("Erro ao enviar evento de tracking ao backend:", err);
+  }
 };
 
-// 🔹 Componente de Trackeamento (só client-side)
+/* ------------------------------------------------------------------
+ * Página visível em /v1/checkout/trackeamento
+ *
+ * Comportamento:
+ *   - Lê ?txId, ?productId, ?utm_* na URL.
+ *   - Se ?txId presente: chama /api/sales/public/:id, dispara Purchase.
+ *   - Se ausente: NÃO dispara nada. Apenas mostra "aguardando venda".
+ * ------------------------------------------------------------------ */
 const TrackeamentoPage: React.FC = () => {
+  const router = useRouter();
+  const [state, setState] = useState<
+    | { kind: "idle" }
+    | { kind: "loading" }
+    | { kind: "fired"; tx: any }
+    | { kind: "error"; msg: string }
+  >({ kind: "idle" });
+
   useEffect(() => {
-    const dummySale = { id: "12345", totalPrice: 99.9 };
-    const utmParams = { source: "newsletter" };
-    trackConversionEvent(dummySale, "purchase", utmParams);
-  }, []);
+    if (!router.isReady) return;
+    const { txId, productId, ...rest } = router.query as Record<string, string>;
+
+    if (!txId) {
+      setState({ kind: "idle" });
+      return;
+    }
+
+    setState({ kind: "loading" });
+    (async () => {
+      try {
+        const r = await fetch(`${API}/api/sales/public/${txId}`);
+        const j = await r.json();
+        if (!j?.success || !j?.data) {
+          setState({
+            kind: "error",
+            msg: "Venda não encontrada — nenhum evento disparado.",
+          });
+          return;
+        }
+        const tx = j.data;
+
+        // Só dispara Purchase se a venda foi de fato aprovada
+        if (String(tx.status).toLowerCase() !== "approved") {
+          setState({
+            kind: "error",
+            msg: `Venda ${txId} ainda não aprovada (status: ${tx.status}). Nada disparado.`,
+          });
+          return;
+        }
+
+        await trackConversionEvent(
+          {
+            id: tx.id,
+            transactionId: tx.id,
+            amount: Number(tx.amount ?? tx.grossAmount ?? 0),
+            productId: productId || tx.productId,
+            sellerId: tx.sellerId,
+          },
+          "Purchase",
+          {
+            utm_source: rest.utm_source,
+            utm_medium: rest.utm_medium,
+            utm_campaign: rest.utm_campaign,
+            utm_content: rest.utm_content,
+            utm_term: rest.utm_term,
+            fbclid: rest.fbclid,
+          }
+        );
+        setState({ kind: "fired", tx });
+      } catch (e: any) {
+        setState({ kind: "error", msg: e?.message || "Erro ao rastrear." });
+      }
+    })();
+  }, [router.isReady, router.query]);
 
   return (
-    <div style={{ padding: "2rem", textAlign: "center" }}>
-      <h1>Trackeamento de Compra</h1>
-      <p>Eventos de tracking estão sendo disparados.</p>
+    <div
+      style={{
+        padding: "2rem",
+        textAlign: "center",
+        fontFamily: "system-ui, sans-serif",
+      }}
+    >
+      <h1 style={{ fontSize: 20, fontWeight: 700, color: "#0F172A" }}>
+        Trackeamento ShadowPay
+      </h1>
+      <p style={{ marginTop: 8, color: "#64748B", fontSize: 14 }}>
+        {state.kind === "idle" &&
+          "Página pronta. Passe ?txId=<id-da-venda> para disparar Purchase."}
+        {state.kind === "loading" && "Buscando venda e disparando eventos…"}
+        {state.kind === "fired" &&
+          `Evento Purchase disparado para venda ${state.tx.id} — R$ ${Number(
+            state.tx.amount ?? 0
+          ).toFixed(2)}.`}
+        {state.kind === "error" && state.msg}
+      </p>
 
-      {/* 🔹 Meta Pixel Script */}
       <Script
         id="fb-pixel"
         strategy="afterInteractive"
@@ -129,11 +272,11 @@ const TrackeamentoPage: React.FC = () => {
           width="1"
           style={{ display: "none" }}
           src="https://www.facebook.com/tr?id=670782038702837&ev=PageView&noscript=1"
+          alt=""
         />
       </noscript>
     </div>
   );
 };
 
-// 🔹 Export com dynamic para rodar só no client
 export default dynamic(() => Promise.resolve(TrackeamentoPage), { ssr: false });
