@@ -825,54 +825,6 @@ function DashboardContent() {
                       className="flex flex-wrap items-center"
                       style={{ gap: 12 }}
                     >
-                      {/* Refresh */}
-                      <button
-                        onClick={() => fetchTransactions()}
-                        title="Atualizar"
-                        className="inline-flex items-center justify-center transition-all hover:bg-slate-50"
-                        style={{
-                          height: 40,
-                          width: 40,
-                          borderRadius: 12,
-                          background: "#FFFFFF",
-                          border: "1px solid #E5E7EB",
-                          color: "#475569",
-                        }}
-                      >
-                        <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-                      </button>
-
-                      {/* Filtros */}
-                      <button
-                        onClick={openFilters}
-                        className="relative inline-flex items-center gap-2 transition-all hover:bg-slate-50"
-                        style={{
-                          height: 40,
-                          padding: "0 16px",
-                          borderRadius: 12,
-                          background: "#FFFFFF",
-                          border: "1px solid #E5E7EB",
-                          fontSize: 13,
-                          fontWeight: 600,
-                          color: "#334155",
-                        }}
-                      >
-                        <Activity className="h-4 w-4" style={{ color: "#64748B" }} />
-                        Filtros
-                        {(statusFilter !== "all" ||
-                          (customRange.from && customRange.to)) && (
-                          <span
-                            className="ml-1 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-bold text-white"
-                            style={{ background: T.primary }}
-                          >
-                            {[
-                              statusFilter !== "all" ? 1 : 0,
-                              customRange.from && customRange.to ? 1 : 0,
-                            ].reduce((a, b) => a + b, 0)}
-                          </span>
-                        )}
-                      </button>
-
                       <button
                         onClick={() => router.push("/v1/products/create")}
                         className="inline-flex items-center gap-2 transition-all hover:bg-slate-50"
@@ -1010,6 +962,54 @@ function DashboardContent() {
                   />
                 </div>
               </motion.section>
+
+              {/* TOOLBAR — Refresh + Filtros (entre hero e KPIs, alinhado à direita) */}
+              <div className="mb-4 flex justify-end gap-2">
+                <button
+                  onClick={() => fetchTransactions()}
+                  title="Atualizar"
+                  className="inline-flex items-center justify-center transition-all hover:bg-slate-50"
+                  style={{
+                    height: 40,
+                    width: 40,
+                    borderRadius: 12,
+                    background: "#FFFFFF",
+                    border: "1px solid #E5E7EB",
+                    color: "#475569",
+                  }}
+                >
+                  <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+                </button>
+                <button
+                  onClick={openFilters}
+                  className="relative inline-flex items-center gap-2 transition-all hover:bg-slate-50"
+                  style={{
+                    height: 40,
+                    padding: "0 16px",
+                    borderRadius: 12,
+                    background: "#FFFFFF",
+                    border: "1px solid #E5E7EB",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#334155",
+                  }}
+                >
+                  <Activity className="h-4 w-4" style={{ color: "#64748B" }} />
+                  Filtros
+                  {(statusFilter !== "all" ||
+                    (customRange.from && customRange.to)) && (
+                    <span
+                      className="ml-1 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-bold text-white"
+                      style={{ background: T.primary }}
+                    >
+                      {[
+                        statusFilter !== "all" ? 1 : 0,
+                        customRange.from && customRange.to ? 1 : 0,
+                      ].reduce((a, b) => a + b, 0)}
+                    </span>
+                  )}
+                </button>
+              </div>
 
               {/* KPIs ROW */}
               <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
