@@ -11,6 +11,7 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
 import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
+import KycGate from "@/components/KycGate";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -73,7 +74,9 @@ function AppContent({ Component, pageProps }: AppProps) {
           Nada de NavBottom/SidebarMobile antigos — substituídos pelos
           ShadowMobileNav e ShadowTopbar dentro do ShadowShell. */}
       <main className="flex-grow">
-        <Component {...pageProps} />
+        <KycGate>
+          <Component {...pageProps} />
+        </KycGate>
       </main>
       <Toaster />
     </div>

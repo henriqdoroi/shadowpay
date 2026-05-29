@@ -360,6 +360,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setToken(null);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    // Invalida cache do KYC pra próxima sessão recarregar do backend.
+    if (typeof window !== "undefined") {
+      delete (window as any).__shadowKycStatus;
+    }
     router.push("/auth/jwt/login");
   };
 

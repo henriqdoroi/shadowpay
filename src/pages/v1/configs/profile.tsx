@@ -13,6 +13,8 @@ import {
   Eye,
   EyeOff,
   MessageSquare,
+  MapPin,
+  ShieldCheck,
 } from "lucide-react";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -32,6 +34,10 @@ interface UserProfile {
 
 function ProfileContent() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [kyc, setKyc] = useState<{
+    status: string;
+    endereco: any;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCurrent, setShowCurrent] = useState(false);
@@ -50,13 +56,31 @@ function ProfileContent() {
         setLoading(true);
         const token = localStorage.getItem("token");
         if (!token) throw new Error("Token não encontrado");
-        const r = await fetch(
-          "https://shadowpay-api-production.up.railway.app/api/user/profile",
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (!r.ok) throw new Error(`Erro: ${r.statusText}`);
-        const j = await r.json();
+
+        // Busca perfil + KYC em paralelo — endereço do KYC aprovado é
+        // exibido aqui (substitui o card "Endereço" antes só editado no KYC).
+        const [profileR, kycR] = await Promise.all([
+          fetch(
+            "https://shadowpay-api-production.up.railway.app/api/user/profile",
+            { headers: { Authorization: `Bearer ${token}` } }
+          ),
+          fetch(
+            "https://shadowpay-api-production.up.railway.app/api/user/kyc",
+            { headers: { Authorization: `Bearer ${token}` } }
+          ).catch(() => null),
+        ]);
+        if (!profileR.ok) throw new Error(`Erro: ${profileR.statusText}`);
+        const j = await profileR.json();
         setUserProfile(j.data);
+        if (kycR && kycR.ok) {
+          const kj = await kycR.json();
+          if (kj?.success) {
+            setKyc({
+              status: kj.data?.status || "NOT_STARTED",
+              endereco: kj.data?.endereco || {},
+            });
+          }
+        }
       } catch (e) {
         setError(e instanceof Error ? e.message : "Erro desconhecido");
       } finally {
@@ -240,6 +264,63 @@ function ProfileContent() {
                 </div>
               </div>
             </div>
+
+            {/* Endereço (só quando KYC aprovado) */}
+            {kyc?.status === "APPROVED" && kyc.endereco?.zip && (
+              <div
+                className="mb-6 rounded-2xl p-5"
+                style={{
+                  background: "#FFFFFF",
+                  border: "1px solid rgba(15,23,42,0.06)",
+                  boxShadow:
+                    "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+                }}
+              >
+                <div className="mb-4 flex items-center justify-between gap-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                      <MapPin className="h-4 w-4" />
+                    </span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      Endereço verificado
+                    </span>
+                  </div>
+                  <span
+                    className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                    style={{
+                      background: "rgba(16,185,129,0.10)",
+                      color: "#10B981",
+                    }}
+                  >
+                    <ShieldCheck className="h-2.5 w-2.5" />
+                    KYC aprovado
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  {field("CEP", kyc.endereco.zip || "—")}
+                  {field("Logradouro", kyc.endereco.street || "—")}
+                  {field("Número", kyc.endereco.number || "—")}
+                  {field(
+                    "Complemento",
+                    kyc.endereco.complement || "—"
+                  )}
+                  {field("Bairro", kyc.endereco.neighborhood || "—")}
+                  {field(
+                    "Cidade / Estado",
+                    `${kyc.endereco.city || "—"} / ${
+                      kyc.endereco.state || "—"
+                    }`
+                  )}
+                </div>
+                <div className="mt-4 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                  <p className="text-xs text-emerald-800">
+                    Endereço validado durante a verificação KYC. Para alterar,
+                    entre em contato com o suporte.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Senha */}
             <div

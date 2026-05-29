@@ -334,7 +334,7 @@ function FinanceContent() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ token: twoFACode }),
+        body: JSON.stringify({ code: twoFACode }),
       });
       const data = await res.json();
       if (data.success) {

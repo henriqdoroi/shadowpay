@@ -207,6 +207,12 @@ function KycContent() {
     );
   }
 
+  // Tela final permanente quando aprovado — sem stepper editável.
+  // O seller não consegue refazer o KYC depois de aprovado.
+  if (kycStatus === "APPROVED") {
+    return <KycApprovedScreen data={data} />;
+  }
+
   return (
     <>
       <ProfileTabs />
@@ -302,9 +308,7 @@ function KycContent() {
                     {status === "done"
                       ? s.helper.done
                       : status === "current"
-                      ? kycStatus === "APPROVED" && s.key === "revisao"
-                        ? "Aprovado"
-                        : s.helper.current
+                      ? s.helper.current
                       : s.helper.pending}
                   </p>
                 </div>
@@ -537,6 +541,15 @@ function EnderecoStep({
   onBack: () => void;
   onSaved: () => void;
 }) {
+  // Foi carregado pelo ViaCEP? Quando true, os campos não-editáveis ficam
+  // bloqueados. Só CEP, número e complemento ficam editáveis.
+  const initiallyLocked = !!(
+    endereco?.street &&
+    endereco?.neighborhood &&
+    endereco?.city &&
+    endereco?.state
+  );
+
   const [form, setForm] = useState({
     zip: endereco?.zip || "",
     street: endereco?.street || "",
@@ -546,31 +559,53 @@ function EnderecoStep({
     city: endereco?.city || "",
     state: endereco?.state || "",
   });
+  const [locked, setLocked] = useState(initiallyLocked);
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepError, setCepError] = useState<string | null>(null);
 
-  // ViaCEP — autopreenche ao digitar CEP de 8 dígitos
+  // ViaCEP — autopreenche ao digitar CEP de 8 dígitos e trava campos
   const lookupCep = async (raw: string) => {
     const cep = raw.replace(/\D/g, "");
     if (cep.length !== 8) return;
+    setCepLoading(true);
+    setCepError(null);
     try {
       const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
       const j = await r.json();
-      if (j && !j.erro) {
-        setForm((f) => ({
-          ...f,
-          street: j.logradouro || f.street,
-          neighborhood: j.bairro || f.neighborhood,
-          city: j.localidade || f.city,
-          state: j.uf || f.state,
-        }));
+      if (!j || j.erro) {
+        setCepError("CEP não encontrado.");
+        setLocked(false);
+        return;
       }
+      setForm((f) => ({
+        ...f,
+        street: j.logradouro || "",
+        neighborhood: j.bairro || "",
+        city: j.localidade || "",
+        state: j.uf || "",
+      }));
+      setLocked(true);
     } catch {
-      // silencioso
+      setCepError("Não foi possível consultar o CEP. Tente novamente.");
+      setLocked(false);
+    } finally {
+      setCepLoading(false);
     }
   };
 
   const submit = async () => {
-    if (!form.zip || !form.street || !form.number || !form.city || !form.state) {
-      toast.error("Preencha CEP, logradouro, número, cidade e estado.");
+    // Validação: CEP, número, bairro, cidade, estado obrigatórios.
+    // Logradouro vem do ViaCEP (não é obrigatório quando o CEP for de zona rural sem rua).
+    if (!form.zip || form.zip.replace(/\D/g, "").length !== 8) {
+      toast.error("Informe um CEP válido.");
+      return;
+    }
+    if (!form.number.trim()) {
+      toast.error("Informe o número.");
+      return;
+    }
+    if (!form.city || !form.state) {
+      toast.error("Endereço incompleto — digite o CEP novamente.");
       return;
     }
     setSaving(true);
@@ -593,6 +628,8 @@ function EnderecoStep({
 
   const inputCls =
     "h-11 w-full rounded-xl border bg-white px-3 text-[13.5px] text-slate-800 outline-none transition-colors focus:border-violet-300 focus:ring-2 focus:ring-violet-100";
+  const lockedCls =
+    "h-11 w-full rounded-xl border px-3 text-[13.5px] text-slate-700 outline-none cursor-not-allowed";
   const labelCls = "mb-1.5 block text-[12px] font-semibold text-slate-600";
 
   return (
@@ -602,14 +639,17 @@ function EnderecoStep({
           Endereço Residencial
         </h2>
         <p className="mt-0.5 text-[12.5px] text-slate-500">
-          Informe seu endereço residencial. Essa informação é obrigatória para
-          concluir sua verificação.
+          Digite o CEP e preencheremos automaticamente o endereço. Você só
+          precisa informar o número e (opcionalmente) o complemento.
         </p>
       </div>
 
       <div className="space-y-4">
+        {/* CEP — único editável que dispara o lookup */}
         <div>
-          <label className={labelCls}>CEP</label>
+          <label className={labelCls}>
+            CEP <span style={{ color: T.red }}>*</span>
+          </label>
           <div className="relative">
             <input
               value={form.zip}
@@ -618,96 +658,147 @@ function EnderecoStep({
                 const formatted =
                   v.length > 5 ? `${v.slice(0, 5)}-${v.slice(5)}` : v;
                 setForm({ ...form, zip: formatted });
-                if (v.length === 8) lookupCep(v);
+                if (v.length < 8) {
+                  setLocked(false);
+                  setCepError(null);
+                } else {
+                  lookupCep(v);
+                }
               }}
               className={inputCls}
               placeholder="00000-000"
+              inputMode="numeric"
               style={{ borderColor: T.border, paddingRight: 40 }}
             />
-            <Search
-              className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2"
+            <span
+              className="absolute right-3 top-1/2 -translate-y-1/2"
               style={{ color: T.textMuted }}
-            />
+            >
+              {cepLoading ? (
+                <span className="text-[11px] font-semibold">…</span>
+              ) : (
+                <Search className="h-4 w-4" />
+              )}
+            </span>
           </div>
+          {cepError && (
+            <p className="mt-1 text-[11.5px]" style={{ color: T.red }}>
+              {cepError}
+            </p>
+          )}
+          {locked && (
+            <p className="mt-1.5 text-[11.5px]" style={{ color: T.green }}>
+              ✓ Endereço encontrado. Apague o CEP para alterar.
+            </p>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_140px]">
+        {/* Logradouro + Número */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_160px]">
           <div>
             <label className={labelCls}>Logradouro</label>
             <input
               value={form.street}
-              onChange={(e) => setForm({ ...form, street: e.target.value })}
-              className={inputCls}
-              style={{ borderColor: T.border }}
-              placeholder="Rua / Av."
+              readOnly
+              tabIndex={-1}
+              className={locked ? lockedCls : inputCls}
+              style={{
+                borderColor: T.border,
+                background: locked ? "#F8FAFC" : "#FFFFFF",
+                color: locked ? T.text : T.textMuted,
+              }}
+              placeholder={locked ? "" : "Digite o CEP primeiro"}
             />
           </div>
           <div>
-            <label className={labelCls}>Número</label>
+            <label className={labelCls}>
+              Número <span style={{ color: T.red }}>*</span>
+            </label>
             <input
               value={form.number}
-              onChange={(e) => setForm({ ...form, number: e.target.value })}
-              className={inputCls}
-              style={{ borderColor: T.border }}
+              onChange={(e) =>
+                setForm({ ...form, number: e.target.value.slice(0, 20) })
+              }
+              disabled={!locked}
+              className={!locked ? lockedCls : inputCls}
+              style={{
+                borderColor: T.border,
+                background: !locked ? "#F8FAFC" : "#FFFFFF",
+              }}
               placeholder="000"
             />
           </div>
         </div>
 
+        {/* Complemento (opcional) */}
         <div>
-          <label className={labelCls}>Complemento</label>
+          <label className={labelCls}>
+            Complemento{" "}
+            <span style={{ color: T.textMuted }}>(opcional)</span>
+          </label>
           <input
             value={form.complement}
-            onChange={(e) => setForm({ ...form, complement: e.target.value })}
-            className={inputCls}
-            style={{ borderColor: T.border }}
-            placeholder="Apto 12 (Opcional)"
+            onChange={(e) =>
+              setForm({ ...form, complement: e.target.value.slice(0, 100) })
+            }
+            disabled={!locked}
+            className={!locked ? lockedCls : inputCls}
+            style={{
+              borderColor: T.border,
+              background: !locked ? "#F8FAFC" : "#FFFFFF",
+            }}
+            placeholder="Apto 12, Bloco B…"
           />
         </div>
 
+        {/* Bairro */}
         <div>
           <label className={labelCls}>Bairro</label>
           <input
             value={form.neighborhood}
-            onChange={(e) =>
-              setForm({ ...form, neighborhood: e.target.value })
-            }
-            className={inputCls}
-            style={{ borderColor: T.border }}
+            readOnly
+            tabIndex={-1}
+            className={lockedCls}
+            style={{
+              borderColor: T.border,
+              background: "#F8FAFC",
+              color: locked ? T.text : T.textMuted,
+            }}
+            placeholder={locked ? "" : "Digite o CEP primeiro"}
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_140px]">
+        {/* Cidade + Estado */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_120px]">
           <div>
             <label className={labelCls}>Cidade</label>
             <input
               value={form.city}
-              onChange={(e) => setForm({ ...form, city: e.target.value })}
-              className={inputCls}
-              style={{ borderColor: T.border }}
+              readOnly
+              tabIndex={-1}
+              className={lockedCls}
+              style={{
+                borderColor: T.border,
+                background: "#F8FAFC",
+                color: locked ? T.text : T.textMuted,
+              }}
+              placeholder={locked ? "" : "—"}
             />
           </div>
           <div>
             <label className={labelCls}>Estado</label>
-            <select
+            <input
               value={form.state}
-              onChange={(e) =>
-                setForm({ ...form, state: e.target.value.toUpperCase() })
-              }
-              className={inputCls}
-              style={{ borderColor: T.border }}
-            >
-              <option value="">UF</option>
-              {[
-                "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT",
-                "MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO",
-                "RR","SC","SP","SE","TO",
-              ].map((uf) => (
-                <option key={uf} value={uf}>
-                  {uf}
-                </option>
-              ))}
-            </select>
+              readOnly
+              tabIndex={-1}
+              className={lockedCls}
+              style={{
+                borderColor: T.border,
+                background: "#F8FAFC",
+                color: locked ? T.text : T.textMuted,
+              }}
+              placeholder={locked ? "" : "—"}
+            />
           </div>
         </div>
       </div>
@@ -723,8 +814,8 @@ function EnderecoStep({
         </button>
         <button
           onClick={submit}
-          disabled={saving}
-          className="inline-flex h-10 items-center gap-2 rounded-xl px-5 text-[13px] font-bold text-white transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+          disabled={saving || !locked || !form.number.trim()}
+          className="inline-flex h-10 items-center gap-2 rounded-xl px-5 text-[13px] font-bold text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
           style={{
             background: T.primary,
             boxShadow: "0 8px 20px -8px rgba(124,58,237,0.55)",
@@ -944,6 +1035,221 @@ function UploadCard({
         onChange={(e) => onFile(e.target.files?.[0] || null)}
       />
     </div>
+  );
+}
+
+/* ==============================================================
+ * KYC APROVADO — tela final permanente (não permite refazer)
+ * ============================================================ */
+
+function KycApprovedScreen({ data }: { data: any }) {
+  const router = useRouter();
+  const docs = data.documentos || {};
+  const items = [
+    { key: "documentFrontUrl", label: "Documento (Frente)" },
+    { key: "documentBackUrl", label: "Documento (Verso)" },
+    { key: "selfieUrl", label: "Selfie segurando o documento" },
+    { key: "contratoSocialUrl", label: "Contrato Social / Estatuto" },
+  ];
+  const e = data.endereco || {};
+  const fullAddress = [
+    e.street,
+    e.number && `nº ${e.number}`,
+    e.complement,
+    e.neighborhood,
+    e.city && e.state && `${e.city} — ${e.state}`,
+    e.zip && `CEP ${e.zip}`,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  return (
+    <>
+      <ProfileTabs />
+
+      <header className="mb-6">
+        <h1
+          className="text-[28px] font-bold tracking-tight text-slate-900"
+          style={{ letterSpacing: "-0.005em" }}
+        >
+          KYC — Verificação da Conta
+        </h1>
+        <p className="mt-1 text-[13.5px] text-slate-500">
+          Sua verificação está concluída e todas as funcionalidades estão
+          liberadas.
+        </p>
+      </header>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {/* Card 1 — Status da Verificação */}
+        <div
+          className="rounded-2xl p-6"
+          style={{
+            background: T.card,
+            border: `1px solid ${T.borderSoft}`,
+            boxShadow:
+              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+          }}
+        >
+          <div className="mb-4 flex items-center gap-3">
+            <div
+              className="flex h-10 w-10 items-center justify-center rounded-full"
+              style={{ background: T.green, color: "#FFFFFF" }}
+            >
+              <Check className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-[16px] font-bold text-slate-900">
+                Status da Verificação
+              </p>
+              <span
+                className="mt-0.5 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wider"
+                style={{ background: T.greenSoft, color: T.green }}
+              >
+                Aprovado
+              </span>
+            </div>
+          </div>
+          <div
+            className="my-4 h-px w-full"
+            style={{ background: T.borderSoft }}
+          />
+          <p className="text-[13px] text-slate-700">
+            Seus documentos foram aprovados! Todas as funcionalidades estão
+            liberadas.
+          </p>
+          {data.reviewedAt && (
+            <p className="mt-2 flex items-center gap-1.5 text-[11.5px] text-slate-500">
+              <Info className="h-3.5 w-3.5" style={{ color: T.primary }} />
+              Aprovado em{" "}
+              {new Date(data.reviewedAt).toLocaleDateString("pt-BR", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })}
+              .
+            </p>
+          )}
+
+          {fullAddress && (
+            <div
+              className="mt-4 rounded-xl p-3"
+              style={{
+                background: "#F8FAFC",
+                border: `1px solid ${T.borderSoft}`,
+              }}
+            >
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                Endereço verificado
+              </p>
+              <p className="mt-1 text-[12.5px] text-slate-700">
+                {fullAddress}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Card 2 — Upload de Documentos */}
+        <div
+          className="rounded-2xl p-6"
+          style={{
+            background: T.card,
+            border: `1px solid ${T.borderSoft}`,
+            boxShadow:
+              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+          }}
+        >
+          <div className="mb-4 flex items-center gap-3">
+            <div
+              className="flex h-10 w-10 items-center justify-center rounded-full"
+              style={{ background: T.primarySoft, color: T.primary }}
+            >
+              <Upload className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-[16px] font-bold text-slate-900">
+                Upload de Documentos
+              </p>
+              <p className="text-[11.5px] text-slate-500">
+                Documentos enviados e aprovados pela equipe.
+              </p>
+            </div>
+          </div>
+
+          <div
+            className="flex flex-col items-center justify-center rounded-2xl py-6"
+            style={{ background: T.greenSoft }}
+          >
+            <div
+              className="mb-2 flex h-12 w-12 items-center justify-center rounded-full"
+              style={{ background: T.green, color: "#FFFFFF" }}
+            >
+              <Check className="h-6 w-6" />
+            </div>
+            <p
+              className="text-[18px] font-bold"
+              style={{ color: T.green }}
+            >
+              Aprovado
+            </p>
+            <p className="mt-1 text-[12px] text-slate-600">
+              Todas as funcionalidades estão liberadas.
+            </p>
+          </div>
+
+          <ul className="mt-4 space-y-2">
+            {items.map((it) => {
+              const sent = !!docs[it.key];
+              return (
+                <li
+                  key={it.key}
+                  className="flex items-center justify-between rounded-lg px-3 py-2"
+                  style={{ background: "#F8FAFC" }}
+                >
+                  <span className="flex items-center gap-2 text-[12.5px] text-slate-700">
+                    <FileText
+                      className="h-3.5 w-3.5"
+                      style={{ color: T.textMuted }}
+                    />
+                    {it.label}
+                  </span>
+                  <span
+                    className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wider"
+                    style={{
+                      background: sent ? T.greenSoft : "rgba(15,23,42,0.04)",
+                      color: sent ? T.green : T.textMuted,
+                    }}
+                  >
+                    {sent ? (
+                      <>
+                        <Check className="h-3 w-3" />
+                        Aprovado
+                      </>
+                    ) : (
+                      "—"
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
+
+      <div className="mt-6 flex justify-end">
+        <button
+          onClick={() => router.push("/v1/dashboard")}
+          className="inline-flex h-11 items-center gap-2 rounded-xl px-5 text-[13.5px] font-bold text-white transition-transform hover:-translate-y-0.5"
+          style={{
+            background: T.primary,
+            boxShadow: "0 8px 20px -8px rgba(124,58,237,0.55)",
+          }}
+        >
+          Ir para o Dashboard
+          <ArrowRight className="h-4 w-4" />
+        </button>
+      </div>
+    </>
   );
 }
 

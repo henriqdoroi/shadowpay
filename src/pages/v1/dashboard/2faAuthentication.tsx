@@ -57,7 +57,7 @@ export default function TwoFAModal({
     try {
       const res = await axios.post(
         "https://shadowpay-api-production.up.railway.app/api/pages/2fa/verify",
-        { token: userToken },
+        { code: userToken },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
