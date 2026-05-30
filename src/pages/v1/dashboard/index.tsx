@@ -747,33 +747,52 @@ function DashboardContent() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                className="relative mb-6 overflow-hidden"
+                className="relative mb-6 overflow-hidden p-5 sm:p-7 md:p-9"
                 style={{
-                  // Banner art "embutido" no card — aparece no DevTools como
-                  // background-image num div, não como <img>.
                   backgroundColor: "#FFFFFF",
-                  backgroundImage: "url('/shadow-hero-bg.png')",
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "left center",
-                  backgroundSize: "auto 100%",
                   border: "1px solid rgba(15, 23, 42, 0.08)",
                   borderRadius: 24,
                   boxShadow: "0 18px 45px rgba(15, 23, 42, 0.06)",
-                  padding: "32px 36px",
                 }}
               >
-                {/* Content area — offset right da arte */}
+                {/* Mascote responsivo:
+                    - Mobile (< md): ficamos com a pantera atrás no canto sup. direito
+                      em opacidade reduzida (~25%) só pra decorar, sem cobrir o texto.
+                    - Desktop (md+): pantera ocupa toda a coluna esquerda em altura 100%.
+                */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    backgroundImage: "url('/shadow-hero-bg.png')",
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "right -40px center",
+                    backgroundSize: "auto 130%",
+                    opacity: 0.18,
+                  }}
+                />
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 hidden md:block"
+                  style={{
+                    backgroundImage: "url('/shadow-hero-bg.png')",
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "left center",
+                    backgroundSize: "auto 100%",
+                    opacity: 1,
+                  }}
+                />
+
+                {/* Content area — offset right da arte (só em desktop) */}
                 <div className="relative md:pl-[210px]">
                   {/* top row: greeting + buttons */}
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div className="min-w-0 flex-1">
                       <h1
-                        className="flex flex-wrap items-center gap-x-3 gap-y-1"
+                        className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[22px] leading-[1.15] sm:text-[24px] md:text-[28px]"
                         style={{
                           fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
-                          fontSize: 28,
                           fontWeight: 700,
-                          lineHeight: 1.15,
                           color: "#0F172A",
                           letterSpacing: "-0.005em",
                           fontFeatureSettings: '"calt" 1, "kern" 1',
@@ -785,27 +804,25 @@ function DashboardContent() {
                           {greeting}, {user?.companyName || "Operador"}.
                         </span>
                         <span
-                          className="inline-block"
+                          className="inline-block text-[20px] sm:text-[22px] md:text-[24px]"
                           style={{
                             fontFamily: "system-ui, sans-serif",
-                            fontSize: 24,
                           }}
                         >
                           👋
                         </span>
                       </h1>
                       <p
+                        className="mt-2 text-[12.5px] sm:text-[13px] md:text-[14px]"
                         style={{
-                          marginTop: 8,
-                          fontSize: 14,
-                          color: "#64748B",
+                          color: "#475569",
                         }}
                       >
                         Operação sincronizada. Última atualização há{" "}
                         <span
                           style={{
                             fontWeight: 600,
-                            color: "#334155",
+                            color: "#1E293B",
                           }}
                         >
                           {Math.max(
@@ -822,8 +839,7 @@ function DashboardContent() {
 
                     {/* Buttons — top right */}
                     <div
-                      className="flex flex-wrap items-center"
-                      style={{ gap: 12 }}
+                      className="flex flex-wrap items-center gap-2 sm:gap-3"
                     >
                       <button
                         onClick={() => router.push("/v1/products/create")}
@@ -886,17 +902,16 @@ function DashboardContent() {
                   {localUser &&
                     !(localUser.twofaEnabled && localUser.twofaConfirmed) && (
                       <div
-                        className="flex items-center justify-between"
+                        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
                         style={{
-                          marginTop: 28,
-                          height: 64,
+                          marginTop: 24,
                           borderRadius: 16,
-                          background: "transparent",
+                          background: "rgba(255, 255, 255, 0.85)",
                           border: "1px solid rgba(15, 23, 42, 0.06)",
-                          padding: "0 18px",
+                          padding: "12px 16px",
                         }}
                       >
-                        <div className="flex items-center" style={{ gap: 14 }}>
+                        <div className="flex items-center gap-3 sm:gap-3.5">
                           <div
                             className="flex items-center justify-center"
                             style={{
@@ -936,16 +951,17 @@ function DashboardContent() {
                         </div>
                         <button
                           onClick={() => setIs2FAModalOpen(true)}
-                          className="inline-flex items-center transition-colors hover:bg-slate-50"
+                          className="inline-flex shrink-0 items-center justify-center self-stretch transition-colors hover:bg-slate-50 sm:self-auto"
                           style={{
                             height: 36,
-                            padding: "0 16px",
+                            padding: "0 18px",
                             borderRadius: 10,
                             background: "#FFFFFF",
                             border: "1px solid #E5E7EB",
                             fontSize: 12,
                             fontWeight: 600,
                             color: "#334155",
+                            whiteSpace: "nowrap",
                           }}
                         >
                           Ativar agora
