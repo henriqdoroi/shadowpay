@@ -48,7 +48,7 @@ declare global {
 }
 
 export default function KycGate({ children }: { children: React.ReactNode }) {
-  const { user, token } = useAuth();
+  const { user, token, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [kycStatus, setKycStatus] = useState<string | null>(
     typeof window !== "undefined"
@@ -60,8 +60,14 @@ export default function KycGate({ children }: { children: React.ReactNode }) {
   // Admin não é bloqueado
   const isAdmin = !!(user as any)?.isAdministrator;
 
-  // Carrega status do KYC uma vez por sessão
+  // Carrega status do KYC uma vez por sessão.
+  // ⚠️ ESPERA o AuthContext terminar de ler localStorage antes de
+  // qualquer coisa. Sem isso, em HARD REFRESH a gente vê token=null,
+  // marca checked=true com kycStatus=null, e o segundo effect dispara
+  // o redirect pra /v1/kyc (bug que tirava o seller da pagina dele
+  // toda vez que apertava F5).
   useEffect(() => {
+    if (authLoading) return;
     if (!token || isAdmin) {
       setChecked(true);
       return;
@@ -87,21 +93,30 @@ export default function KycGate({ children }: { children: React.ReactNode }) {
         setChecked(true);
       }
     })();
-  }, [token, isAdmin]);
+  }, [authLoading, token, isAdmin]);
 
   // Redirects:
   //  - KYC não aprovado + fora da whitelist → vai pra /v1/kyc.
   //  Quando aprovado, deixa o seller navegar livremente (incl. /v1/kyc
   //  pra ver a tela "Aprovado").
+  //
+  // Importante: NAO redireciona enquanto authLoading=true OU enquanto
+  // token=null — quem cuida disso eh o ProtectedRoute de cada pagina,
+  // que manda pro /auth/jwt/login.
   useEffect(() => {
+    if (authLoading) return;
+    if (!token) return;
     if (!checked || isAdmin) return;
     if (kycStatus === "APPROVED") return;
     if (isWhitelisted(router.pathname)) return;
     router.replace("/v1/kyc");
-  }, [checked, kycStatus, isAdmin, router]);
+  }, [authLoading, token, checked, kycStatus, isAdmin, router]);
 
-  // Tela de bloqueio elegante enquanto resolve / redireciona
+  // Tela de bloqueio elegante enquanto resolve / redireciona.
+  // Mesma guarda: so mostra se auth ja terminou e tem token.
   if (
+    !authLoading &&
+    !!token &&
     !isAdmin &&
     checked &&
     kycStatus !== "APPROVED" &&
