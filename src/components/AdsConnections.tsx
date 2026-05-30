@@ -21,9 +21,12 @@ import {
   ExternalLink,
   Copy,
   ChevronDown,
+  ChevronRight,
   CheckCircle2,
   AlertTriangle,
   Info,
+  MoreVertical,
+  Check,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -203,7 +206,7 @@ export default function AdsConnections() {
     fetchAll();
   }, [fetchAll]);
 
-  // Lê ?connected= / ?error= ao voltar do OAuth
+  // Lê ?connected= / ?error= ao voltar do OAuth (fallback sem popup)
   useEffect(() => {
     if (typeof window === "undefined") return;
     const q = new URLSearchParams(window.location.search);
@@ -225,6 +228,28 @@ export default function AdsConnections() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Recebe o aviso do POPUP de OAuth (postMessage) → fecha e atualiza
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    function onMsg(e: MessageEvent) {
+      if (e.origin !== window.location.origin) return;
+      if (e.data?.type !== "ads-oauth") return;
+      const { connected, error } = e.data;
+      setOauthModal(null);
+      setPendingKwaiCid(null);
+      if (connected) {
+        toast.success(`${String(connected).toUpperCase()} conectado com sucesso!`);
+        setExpanded(String(connected).toUpperCase() as ProviderCode);
+        fetchAll();
+      } else if (error) {
+        toast.error(`Falha ao conectar: ${error}`);
+      }
+    }
+    window.addEventListener("message", onMsg);
+    return () => window.removeEventListener("message", onMsg);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const connectionsFor = (code: string) =>
     connections.filter((c) => c.provider === code);
 
@@ -235,7 +260,7 @@ export default function AdsConnections() {
 
   const getAuthUrl = async (p: ProviderUI): Promise<string | null> => {
     if (!token) return null;
-    const ret = `${window.location.origin}/v1/tracking?tab=ads`;
+    const ret = `${window.location.origin}/oauth-ads`;
     const params: Record<string, string> = { return: ret };
     if (p.code === "KWAI" && pendingKwaiCid) params.cid = pendingKwaiCid;
     try {
@@ -260,13 +285,32 @@ export default function AdsConnections() {
     }
   };
 
+  // Abre a autorização num POPUP centralizado (não em aba nova)
+  const openPopup = (url: string) => {
+    const w = 520;
+    const h = 680;
+    const left = window.screenX + Math.max(0, (window.outerWidth - w) / 2);
+    const top = window.screenY + Math.max(0, (window.outerHeight - h) / 2);
+    const popup = window.open(
+      url,
+      "shadowpay_ads_oauth",
+      `width=${w},height=${h},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`
+    );
+    if (!popup) {
+      // bloqueio de popup → cai pra aba nova
+      window.open(url, "_blank", "noopener,noreferrer");
+    } else {
+      popup.focus();
+    }
+  };
+
   const continueInBrowser = async (p: ProviderUI) => {
     setBusy(p.code);
     const url = await getAuthUrl(p);
     setBusy(null);
     if (url) {
-      window.open(url, "_blank", "noopener,noreferrer");
-      setOauthModal(null);
+      openPopup(url);
+      // mantém o modal pra mostrar feedback até o popup avisar (postMessage)
     }
   };
 
@@ -331,59 +375,28 @@ export default function AdsConnections() {
             {/* Corpo expandido */}
             {open && (
               <div
-                className="px-4 pb-4 pt-1"
+                className="px-4 pb-4 pt-3"
                 style={{ borderTop: "1px solid rgba(15,23,42,0.06)" }}
               >
-                {/* Contas conectadas */}
-                {loading ? null : conns.length > 0 ? (
-                  <div className="mb-3 mt-3 space-y-2">
-                    {conns.map((c) => (
-                      <div
-                        key={c.id}
-                        className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5"
-                        style={{ background: "#F8FAFC", border: "1px solid rgba(15,23,42,0.06)" }}
-                      >
-                        <div className="flex min-w-0 items-center gap-2.5">
-                          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
-                          <div className="min-w-0">
-                            <p className="truncate text-[13px] font-semibold text-slate-800">
-                              {c.name || c.externalId || "Conta conectada"}
-                            </p>
-                            <p className="text-[11px] text-slate-400">
-                              {c.provider === "KWAI" && c.meta
-                                ? `${
-                                    c.meta.accountType === "AD_ACCOUNT"
-                                      ? "Conta de Anúncio"
-                                      : "Agência"
-                                  } · ID ${c.meta.agencyId}${
-                                    c.meta.adAccountIds?.length
-                                      ? ` · ${c.meta.adAccountIds.length} conta(s)`
-                                      : ""
-                                  }`
-                                : `Conectado em ${new Date(
-                                    c.connectedAt
-                                  ).toLocaleDateString("pt-BR")}`}
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => disconnect(c.id)}
-                          className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-medium text-rose-600 hover:bg-rose-50"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          Remover
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-
-                {/* Adicionar */}
-                <p className="mb-2 mt-3 text-[13px] text-slate-500">
+                {/* Conecte seus perfis */}
+                <p className="mb-2 text-[13px] text-slate-500">
                   {p.kind === "kwai"
                     ? "Conecte sua conta Kwai por aqui:"
                     : "Conecte seus perfis por aqui:"}
                 </p>
+
+                {conns.length > 0 && (
+                  <div className="mb-3 space-y-2">
+                    {conns.map((c) => (
+                      <ProfileRow
+                        key={c.id}
+                        connection={c}
+                        onRemove={() => disconnect(c.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+
                 <button
                   onClick={() => openConnect(p)}
                   className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
@@ -393,16 +406,49 @@ export default function AdsConnections() {
                   {p.cta}
                 </button>
 
-                {/* Nota */}
-                <div
-                  className="mt-3 flex items-start gap-2 rounded-xl px-3 py-2"
-                  style={{ background: AMBER.bg, border: `1px solid ${AMBER.border}` }}
-                >
-                  <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
-                  <p className="text-[11.5px] leading-relaxed text-amber-700">
-                    {p.note}
-                  </p>
-                </div>
+                {/* Nota — só quando ainda não conectou */}
+                {conns.length === 0 && (
+                  <div
+                    className="mt-3 flex items-start gap-2 rounded-xl px-3 py-2"
+                    style={{ background: AMBER.bg, border: `1px solid ${AMBER.border}` }}
+                  >
+                    <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
+                    <p className="text-[11.5px] leading-relaxed text-amber-700">
+                      {p.note}
+                    </p>
+                  </div>
+                )}
+
+                {/* Contas de Anúncio — quando há perfil conectado */}
+                {conns.length > 0 && token && (
+                  <div
+                    className="mt-4 overflow-hidden rounded-xl"
+                    style={{ background: "#F8FAFC", border: "1px solid rgba(15,23,42,0.06)" }}
+                  >
+                    <div
+                      className="flex items-center gap-2 px-3 py-2.5"
+                      style={{ borderBottom: "1px solid rgba(15,23,42,0.06)" }}
+                    >
+                      <h4 className="text-[14px] font-bold text-slate-900">
+                        Contas de Anúncio ({p.name.replace(" Ads", "")})
+                      </h4>
+                    </div>
+                    <div className="p-3">
+                      <p className="mb-2 text-[12px] text-slate-500">
+                        Escolha suas contas de anúncio:
+                      </p>
+                      <div className="space-y-2">
+                        {conns.map((c) => (
+                          <ProfileAccounts
+                            key={c.id}
+                            connection={c}
+                            token={token}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -757,6 +803,185 @@ function KwaiModal({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ===================== Perfil conectado (com menu ⋮) ===================== */
+function ProfileRow({
+  connection,
+  onRemove,
+}: {
+  connection: Connection;
+  onRemove: () => void;
+}) {
+  const [menu, setMenu] = useState(false);
+  return (
+    <div
+      className="relative flex items-center justify-between gap-3 rounded-xl px-3 py-2.5"
+      style={{ background: "#F8FAFC", border: "1px solid rgba(15,23,42,0.06)" }}
+    >
+      <div className="flex min-w-0 items-center gap-2.5">
+        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+        <span className="truncate text-[13px] font-semibold text-slate-800">
+          {connection.name || connection.externalId || "Conta conectada"}
+        </span>
+      </div>
+      <div className="relative shrink-0">
+        <button
+          onClick={() => setMenu((m) => !m)}
+          className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200/60"
+        >
+          <MoreVertical className="h-4 w-4" />
+        </button>
+        {menu && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setMenu(false)} />
+            <div
+              className="absolute right-0 top-8 z-20 w-32 overflow-hidden rounded-lg bg-white py-1"
+              style={{
+                border: "1px solid rgba(15,23,42,0.08)",
+                boxShadow: "0 12px 32px -12px rgba(15,23,42,0.25)",
+              }}
+            >
+              <button
+                onClick={() => {
+                  setMenu(false);
+                  onRemove();
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] font-medium text-rose-600 hover:bg-rose-50"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Remover
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* =============== Contas de anúncio de um perfil (fetch real) =============== */
+function ProfileAccounts({
+  connection,
+  token,
+}: {
+  connection: Connection;
+  token: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [accounts, setAccounts] = useState<{ id: string; name: string }[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [note, setNote] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const r = await axios.get(
+        `${API}/api/ads/connections/${connection.id}/accounts`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setAccounts(r.data?.data || []);
+      setSelected(r.data?.selected || []);
+      setNote(r.data?.note || null);
+    } catch {
+      setNote("fetch_failed");
+    } finally {
+      setLoading(false);
+      setLoaded(true);
+    }
+  };
+
+  const toggle = () => {
+    const n = !open;
+    setOpen(n);
+    if (n && !loaded) load();
+  };
+
+  const toggleAccount = async (id: string) => {
+    const next = selected.includes(id)
+      ? selected.filter((x) => x !== id)
+      : [...selected, id];
+    setSelected(next);
+    try {
+      await axios.post(
+        `${API}/api/ads/connections/${connection.id}/accounts`,
+        { selected: next },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } catch {
+      toast.error("Erro ao salvar seleção.");
+    }
+  };
+
+  return (
+    <div
+      className="overflow-hidden rounded-xl bg-white"
+      style={{ border: "1px solid rgba(15,23,42,0.08)" }}
+    >
+      <button
+        onClick={toggle}
+        className="flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-slate-50"
+      >
+        <span className="text-[13px] font-semibold text-slate-800">
+          {connection.name || connection.externalId}
+          <span className="ml-1.5 font-normal text-slate-400">
+            ({selected.length})
+          </span>
+        </span>
+        <ChevronRight
+          className="h-4 w-4 text-slate-400 transition-transform"
+          style={{ transform: open ? "rotate(90deg)" : "none" }}
+        />
+      </button>
+      {open && (
+        <div
+          className="px-3 py-2"
+          style={{ borderTop: "1px solid rgba(15,23,42,0.06)" }}
+        >
+          {loading ? (
+            <div className="flex justify-center py-3 text-slate-400">
+              <Loader2 className="h-4 w-4 animate-spin" />
+            </div>
+          ) : accounts.length === 0 ? (
+            <p className="py-2 text-[12px] leading-relaxed text-slate-400">
+              {note === "missing_token"
+                ? "Conecte o perfil primeiro pra listar as contas."
+                : note
+                ? "Nenhuma conta encontrada ainda. Se você acabou de criar o token de desenvolvedor, pode ser que ele precise de “acesso básico” aprovado pelo Google."
+                : "Nenhuma conta de anúncio encontrada."}
+            </p>
+          ) : (
+            <div className="space-y-1">
+              {accounts.map((a) => {
+                const on = selected.includes(a.id);
+                return (
+                  <button
+                    key={a.id}
+                    onClick={() => toggleAccount(a.id)}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left hover:bg-slate-50"
+                  >
+                    <span
+                      className="flex h-4 w-4 shrink-0 items-center justify-center rounded"
+                      style={{
+                        background: on ? "#2563EB" : "#FFFFFF",
+                        border: `1px solid ${on ? "#2563EB" : "rgba(15,23,42,0.20)"}`,
+                      }}
+                    >
+                      {on && <Check className="h-3 w-3 text-white" />}
+                    </span>
+                    <span className="font-mono text-[12.5px] text-slate-700">
+                      {a.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

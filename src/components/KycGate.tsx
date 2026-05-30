@@ -29,6 +29,7 @@ const WHITELIST_PREFIXES = [
   "/v1/kyc",
   "/auth",
   "/shadow",
+  "/oauth-ads",
   "/v2/manager",
   // Páginas de "Perfil" — o seller pode navegar entre as tabs do perfil
   // mesmo com KYC pendente (precisa preencher endereço, conferir dados…)
