@@ -30,7 +30,13 @@ const WHITELIST_PREFIXES = [
   "/auth",
   "/shadow",
   "/v2/manager",
-  "/v1/configs/profile", // pra ver dados do KYC aprovado
+  // Páginas de "Perfil" — o seller pode navegar entre as tabs do perfil
+  // mesmo com KYC pendente (precisa preencher endereço, conferir dados…)
+  "/v1/configs/profile",
+  "/v1/configs/security",
+  "/v1/configs/notifications",
+  "/v1/configs/integrations",
+  "/v1/configs/split",
 ];
 
 const isWhitelisted = (path: string) =>
