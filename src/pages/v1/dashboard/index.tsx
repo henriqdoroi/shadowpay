@@ -742,14 +742,15 @@ function DashboardContent() {
       </Head>
 
       <LightShell valuesVisible={valuesVisible} onToggleValues={() => setValuesVisible((v) => !v)}>
-              {/* HERO — banner sempre HORIZONTAL ("deitado"), com pantera
-                  à esquerda em todos os tamanhos. No mobile a pantera fica
-                  proporcionalmente menor (não ocupa altura desnecessária). */}
+              {/* HERO — banner publicitário deitado no estilo do mockup.
+                  Mobile: aspect ratio compacto tipo 5:1, SEM botões (só
+                  título com nome do seller + pantera de fundo).
+                  Desktop: mantém os botões à direita. */}
               <motion.section
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                className="relative mb-6 overflow-hidden p-4 sm:p-6 md:p-8"
+                className="relative mb-6 flex items-center overflow-hidden px-4 py-3 sm:px-6 sm:py-5 md:px-8 md:py-7"
                 style={{
                   backgroundColor: "#FFFFFF",
                   border: "1px solid rgba(15, 23, 42, 0.08)",
@@ -757,10 +758,10 @@ function DashboardContent() {
                   boxShadow: "0 18px 45px rgba(15, 23, 42, 0.06)",
                 }}
               >
-                {/* Pantera "deitada" à esquerda — escala suave entre breakpoints */}
+                {/* Pantera deitada à esquerda — escala suave */}
                 <div
                   aria-hidden
-                  className="pointer-events-none absolute inset-y-0 left-0 w-[120px] sm:w-[160px] md:w-[210px]"
+                  className="pointer-events-none absolute inset-y-0 left-0 w-[100px] sm:w-[150px] md:w-[210px]"
                   style={{
                     backgroundImage: "url('/shadow-hero-bg.png')",
                     backgroundRepeat: "no-repeat",
@@ -769,14 +770,12 @@ function DashboardContent() {
                   }}
                 />
 
-                {/* Content area — offset proporcional pra não cobrir a pantera */}
-                <div className="relative pl-[110px] sm:pl-[150px] md:pl-[210px]">
-                  {/* top row: greeting + buttons sempre lado a lado.
-                      Em mobile os botões ficam compactos abaixo se não couberem. */}
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                {/* Content — offset pra não cobrir a pantera */}
+                <div className="relative w-full pl-[90px] sm:pl-[140px] md:pl-[210px]">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                     <div className="min-w-0 flex-1">
                       <h1
-                        className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[16px] leading-[1.15] sm:text-[20px] md:text-[28px]"
+                        className="flex flex-wrap items-center gap-x-2 gap-y-0 text-[15px] leading-[1.2] sm:text-[20px] md:text-[28px]"
                         style={{
                           fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                           fontWeight: 700,
@@ -791,7 +790,7 @@ function DashboardContent() {
                           {greeting}, {user?.companyName || "Operador"}.
                         </span>
                         <span
-                          className="inline-block text-[20px] sm:text-[22px] md:text-[24px]"
+                          className="inline-block text-[16px] sm:text-[22px] md:text-[24px]"
                           style={{
                             fontFamily: "system-ui, sans-serif",
                           }}
@@ -799,16 +798,14 @@ function DashboardContent() {
                           👋
                         </span>
                       </h1>
+                      {/* subtítulo só em sm+ — mobile fica clean */}
                       <p
-                        className="mt-1 line-clamp-2 text-[11px] leading-tight sm:mt-2 sm:text-[13px] md:text-[14px]"
+                        className="mt-1 hidden text-[13px] leading-tight sm:mt-2 sm:block md:text-[14px]"
                         style={{
                           color: "#475569",
                         }}
                       >
-                        <span className="hidden sm:inline">
-                          Operação sincronizada. Última atualização há{" "}
-                        </span>
-                        <span className="sm:hidden">Última atualização há </span>
+                        Operação sincronizada. Última atualização há{" "}
                         <span
                           style={{
                             fontWeight: 600,
@@ -821,74 +818,68 @@ function DashboardContent() {
                               (Date.now() - refreshAt.getTime()) / 1000
                             )
                           )}{" "}
-                          seg
+                          segundos
                         </span>
-                        <span className="hidden sm:inline">undos</span>
                         .
                       </p>
                     </div>
 
-                    {/* Buttons — top right (compactos em mobile) */}
+                    {/* Buttons — só desktop (sm+). Mobile fica só com título. */}
                     <div
-                      className="flex flex-wrap items-center gap-1.5 sm:gap-3"
+                      className="hidden flex-wrap items-center gap-2 sm:flex sm:gap-3"
                     >
                       <button
                         onClick={() => router.push("/v1/products/create")}
-                        title="Novo produto"
-                        className="inline-flex items-center gap-1.5 transition-all hover:bg-slate-50 sm:gap-2"
+                        className="inline-flex items-center gap-2 transition-all hover:bg-slate-50"
                         style={{
-                          height: 34,
-                          padding: "0 10px",
-                          borderRadius: 10,
+                          height: 40,
+                          padding: "0 16px",
+                          borderRadius: 12,
                           background: "#FFFFFF",
                           border: "1px solid #E5E7EB",
-                          fontSize: 11.5,
+                          fontSize: 13,
                           fontWeight: 600,
                           color: "#334155",
                         }}
                       >
-                        <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" style={{ color: "#64748B" }} />
-                        <span className="hidden sm:inline">Novo produto</span>
-                        <span className="sm:hidden">Novo</span>
+                        <Plus className="h-4 w-4" style={{ color: "#64748B" }} />
+                        Novo produto
                       </button>
                       <button
                         onClick={() => router.push("/v1/products/create")}
-                        title="Criar checkout"
-                        className="hidden items-center gap-2 transition-all hover:bg-slate-50 sm:inline-flex"
+                        className="hidden items-center gap-2 transition-all hover:bg-slate-50 md:inline-flex"
                         style={{
-                          height: 34,
-                          padding: "0 12px",
-                          borderRadius: 10,
+                          height: 40,
+                          padding: "0 16px",
+                          borderRadius: 12,
                           background: "#FFFFFF",
                           border: "1px solid #E5E7EB",
-                          fontSize: 11.5,
+                          fontSize: 13,
                           fontWeight: 600,
                           color: "#334155",
                         }}
                       >
                         <MessageSquare
-                          className="h-3.5 w-3.5 sm:h-4 sm:w-4"
+                          className="h-4 w-4"
                           style={{ color: "#64748B" }}
                         />
-                        <span className="hidden md:inline">Criar checkout</span>
-                        <span className="md:hidden">Checkout</span>
+                        Criar checkout
                       </button>
                       <button
                         onClick={() => router.push("/v1/finance/withdraw")}
-                        title="Sacar"
-                        className="inline-flex items-center gap-1.5 transition-transform hover:-translate-y-0.5 sm:gap-2"
+                        className="inline-flex items-center gap-2 transition-transform hover:-translate-y-0.5"
                         style={{
-                          height: 34,
-                          padding: "0 12px",
-                          borderRadius: 10,
+                          height: 40,
+                          padding: "0 18px",
+                          borderRadius: 12,
                           background: "#7C3AED",
                           boxShadow: "0 8px 20px -8px rgba(124, 58, 237, 0.55)",
-                          fontSize: 11.5,
+                          fontSize: 13,
                           fontWeight: 600,
                           color: "#FFFFFF",
                         }}
                       >
-                        <DollarSign className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        <DollarSign className="h-4 w-4" />
                         Sacar
                       </button>
                     </div>
@@ -898,9 +889,8 @@ function DashboardContent() {
                   {localUser &&
                     !(localUser.twofaEnabled && localUser.twofaConfirmed) && (
                       <div
-                        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                        className="hidden flex-col gap-3 sm:mt-6 sm:flex sm:flex-row sm:items-center sm:justify-between"
                         style={{
-                          marginTop: 24,
                           borderRadius: 16,
                           background: "rgba(255, 255, 255, 0.85)",
                           border: "1px solid rgba(15, 23, 42, 0.06)",
