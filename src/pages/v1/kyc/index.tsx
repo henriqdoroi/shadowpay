@@ -1,12 +1,13 @@
 "use client";
 
 /**
- * /v1/kyc — Documentos / Verificação KYC (tema dark glassy violeta)
+ * /v1/kyc — Verificação tema light.
  *
  * 3 estados visuais:
- *  1. APPROVED → Status Verificação (verde) + Upload (Aprovado verde)
- *  2. PENDING/NOT_STARTED + endereço incompleto → "Preencha endereço"
- *  3. PENDING/NOT_STARTED + endereço OK → wizard de upload dos 4 docs
+ *  1. APPROVED → Status (Aprovado verde) + Upload (Aprovado check verde gigante)
+ *  2. PENDING/NOT_STARTED + endereço incompleto → "Preencha endereço" amarelo
+ *  3. Endereço completo + ainda não enviou docs → wizard de upload dos 4 docs
+ *  4. PENDING (já enviou docs) → "Em análise" azul
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -21,8 +22,8 @@ import {
   AlertTriangle,
   Info,
   Pencil,
-  ArrowRight,
   Upload,
+  Clock,
 } from "lucide-react";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -30,15 +31,66 @@ import { LightShell } from "@/components/LightShell";
 import { ProfileTabs } from "@/components/ProfileTabs";
 import ShadowPanel from "@/components/ShadowPanel";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  DarkConfigShell,
-  DarkCard,
-  SectionHeader,
-  DARK_T,
-  StatusPill,
-} from "@/components/DarkConfigShell";
 
 const API = "https://shadowpay-api-production.up.railway.app";
+
+const T = {
+  card: "#FFFFFF",
+  borderSoft: "rgba(15,23,42,0.06)",
+  text: "#0F172A",
+  text2: "#475569",
+  textMuted: "#94A3B8",
+  primary: "#7C3AED",
+  primarySoft: "rgba(124,58,237,0.10)",
+  green: "#10B981",
+  greenSoft: "rgba(16,185,129,0.12)",
+  blue: "#06B6D4",
+  blueSoft: "rgba(6,182,212,0.12)",
+  amber: "#F59E0B",
+  amberSoft: "rgba(245,158,11,0.12)",
+};
+
+function StatusPill({
+  label,
+  variant,
+}: {
+  label: string;
+  variant: "green" | "amber" | "blue";
+}) {
+  const map = {
+    green: { bg: T.greenSoft, color: T.green },
+    amber: { bg: T.amberSoft, color: T.amber },
+    blue: { bg: T.blueSoft, color: T.blue },
+  };
+  const cfg = map[variant];
+  return (
+    <span
+      className="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider"
+      style={{ background: cfg.bg, color: cfg.color }}
+    >
+      {label}
+    </span>
+  );
+}
+
+function SectionIcon({
+  children,
+  bg,
+  color,
+}: {
+  children: React.ReactNode;
+  bg: string;
+  color: string;
+}) {
+  return (
+    <div
+      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
+      style={{ background: bg, color }}
+    >
+      {children}
+    </div>
+  );
+}
 
 function KycContent() {
   const router = useRouter();
@@ -73,37 +125,51 @@ function KycContent() {
     | "BANNED"
     | undefined;
   const endereco = data?.endereco;
+  const docs = data?.documentos || {};
   const addressComplete =
     !!endereco?.zip &&
     !!endereco?.number &&
     !!endereco?.city &&
     !!endereco?.state;
+  const allDocsUploaded =
+    !!docs.documentFrontUrl &&
+    !!docs.documentBackUrl &&
+    !!docs.selfieUrl &&
+    !!docs.contratoSocialUrl;
+
+  const body = (() => {
+    if (loading) {
+      return (
+        <div
+          className="rounded-2xl p-10 text-center text-sm text-slate-500"
+          style={{
+            background: T.card,
+            border: `1px solid ${T.borderSoft}`,
+          }}
+        >
+          Carregando…
+        </div>
+      );
+    }
+    if (status === "APPROVED") return <ApprovedView />;
+    if (!addressComplete)
+      return (
+        <AddressIncompleteView
+          onGoToProfile={() => router.push("/v1/configs/profile")}
+        />
+      );
+    if (status === "PENDING" && allDocsUploaded) return <UnderReviewView />;
+    return <UploadView data={data} token={token!} onReload={fetchKyc} />;
+  })();
 
   return (
     <>
       <Head>
-        <title>ShadowPay — Documentos</title>
+        <title>ShadowPay — KYC</title>
       </Head>
       <LightShell>
-        <DarkConfigShell>
-          <ProfileTabs />
-
-          {loading ? (
-            <DarkCard className="p-10 text-center" style={{ color: DARK_T.textMuted }}>
-              Carregando…
-            </DarkCard>
-          ) : status === "APPROVED" ? (
-            <ApprovedView data={data} />
-          ) : !addressComplete ? (
-            <AddressIncompleteView onGoToProfile={() => router.push("/v1/configs/profile")} />
-          ) : (
-            <UploadView
-              data={data}
-              token={token!}
-              onReload={fetchKyc}
-            />
-          )}
-        </DarkConfigShell>
+        <ProfileTabs />
+        {body}
       </LightShell>
       <ShadowPanel />
     </>
@@ -111,87 +177,92 @@ function KycContent() {
 }
 
 /* ==============================================================
- * APROVADO — 2 cards
+ * APROVADO
  * ============================================================ */
 
-function ApprovedView({ data }: { data: any }) {
+function ApprovedView() {
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-      {/* Status da Verificação */}
-      <DarkCard className="p-6">
-        <SectionHeader
-          icon={<Check className="h-5 w-5" />}
-          iconBg={DARK_T.greenSoft}
-          iconColor={DARK_T.green}
-          title="Status da Verificação"
-          right={<StatusPill label="Aprovado" variant="green" />}
-        />
-        <p
-          className="mb-3 text-[13.5px]"
-          style={{ color: DARK_T.text }}
-        >
+      <Card>
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <SectionIcon bg={T.greenSoft} color={T.green}>
+              <Check className="h-5 w-5" />
+            </SectionIcon>
+            <div>
+              <p className="text-[16px] font-bold text-slate-900">
+                Status da Verificação
+              </p>
+              <div className="mt-1">
+                <StatusPill label="Aprovado" variant="green" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <p className="mb-3 text-[13.5px] text-slate-700">
           Seus documentos foram aprovados! Todas as funcionalidades estão
           liberadas.
         </p>
-
         <div
           className="mt-4 flex items-start gap-2 rounded-xl p-3"
           style={{
-            background: DARK_T.blueSoft,
+            background: T.blueSoft,
             border: `1px solid rgba(6,182,212,0.25)`,
           }}
         >
           <Info
             className="mt-0.5 h-4 w-4 shrink-0"
-            style={{ color: DARK_T.blue }}
+            style={{ color: T.blue }}
           />
-          <span className="text-[12px]" style={{ color: DARK_T.text2 }}>
-            Sua identidade foi verificada com sucesso. Para alterar dados
-            cadastrais, entre em contato com o suporte.
+          <span className="text-[12px] text-slate-700">
+            Sua identidade foi verificada. Para alterar dados cadastrais,
+            entre em contato com o suporte.
           </span>
         </div>
-      </DarkCard>
+      </Card>
 
-      {/* Upload Documentos — Aprovado */}
-      <DarkCard className="p-6">
-        <SectionHeader
-          icon={<CloudUpload className="h-5 w-5" />}
-          title="Upload de Documentos"
-          subtitle="Envie seus documentos para liberar todas as funcionalidades da plataforma."
-        />
+      <Card>
+        <div className="mb-4 flex items-center gap-3">
+          <SectionIcon bg={T.primarySoft} color={T.primary}>
+            <CloudUpload className="h-5 w-5" />
+          </SectionIcon>
+          <div>
+            <p className="text-[16px] font-bold text-slate-900">
+              Upload de Documentos
+            </p>
+            <p className="text-[12px] text-slate-500">
+              Envie seus documentos para liberar todas as funcionalidades da
+              plataforma.
+            </p>
+          </div>
+        </div>
 
         <div className="flex flex-col items-center justify-center py-8">
           <div
             className="mb-3 flex h-20 w-20 items-center justify-center rounded-full"
             style={{
-              background: DARK_T.greenSoft,
-              border: `2px solid ${DARK_T.green}`,
-              boxShadow: `0 0 32px ${DARK_T.greenSoft}`,
+              background: T.greenSoft,
+              border: `2px solid ${T.green}`,
+              boxShadow: `0 8px 24px ${T.greenSoft}`,
             }}
           >
-            <Check className="h-10 w-10" style={{ color: DARK_T.green }} />
+            <Check className="h-10 w-10" style={{ color: T.green }} />
           </div>
-          <p
-            className="text-[20px] font-bold"
-            style={{ color: DARK_T.green }}
-          >
+          <p className="text-[20px] font-bold" style={{ color: T.green }}>
             Aprovado
           </p>
-          <p
-            className="mt-1 max-w-[320px] text-center text-[12.5px]"
-            style={{ color: DARK_T.text2 }}
-          >
+          <p className="mt-1 max-w-[320px] text-center text-[12.5px] text-slate-600">
             Seus documentos foram aprovados! Todas as funcionalidades estão
             liberadas.
           </p>
         </div>
-      </DarkCard>
+      </Card>
     </div>
   );
 }
 
 /* ==============================================================
- * ENDEREÇO INCOMPLETO — 2 cards
+ * ENDEREÇO INCOMPLETO
  * ============================================================ */
 
 function AddressIncompleteView({
@@ -201,107 +272,194 @@ function AddressIncompleteView({
 }) {
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-      {/* Status pendente */}
-      <DarkCard className="p-6">
-        <SectionHeader
-          icon={<FileText className="h-5 w-5" />}
-          iconBg={DARK_T.blueSoft}
-          iconColor={DARK_T.blue}
-          title="Status da Verificação"
-          right={<StatusPill label="Pendente" variant="blue" />}
-        />
-
-        <p
-          className="mb-4 text-[13.5px]"
-          style={{ color: DARK_T.text }}
-        >
+      <Card>
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <SectionIcon bg={T.blueSoft} color={T.blue}>
+              <FileText className="h-5 w-5" />
+            </SectionIcon>
+            <div>
+              <p className="text-[16px] font-bold text-slate-900">
+                Status da Verificação
+              </p>
+              <div className="mt-1">
+                <StatusPill label="Pendente" variant="blue" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <p className="mb-4 text-[13.5px] text-slate-700">
           Envie seus documentos para análise.
         </p>
 
         <div
           className="rounded-xl p-4"
           style={{
-            background: DARK_T.amberSoft,
+            background: T.amberSoft,
             border: `1px solid rgba(245,158,11,0.30)`,
           }}
         >
           <div className="mb-2 flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4" style={{ color: DARK_T.amber }} />
+            <AlertTriangle
+              className="h-4 w-4 shrink-0"
+              style={{ color: T.amber }}
+            />
             <p
               className="text-[13px] font-bold"
-              style={{ color: DARK_T.amber }}
+              style={{ color: "#B45309" }}
             >
               Endereço incompleto
             </p>
           </div>
-          <p
-            className="mb-3 text-[12.5px]"
-            style={{ color: DARK_T.text2 }}
-          >
+          <p className="mb-3 text-[12.5px] text-slate-700">
             Para enviar seus documentos, você precisa primeiro preencher seu
             endereço completo.
           </p>
           <button
             onClick={onGoToProfile}
-            className="inline-flex h-9 items-center gap-2 rounded-lg px-3 text-[11px] font-bold uppercase tracking-wider text-slate-900"
+            className="inline-flex h-9 items-center gap-2 rounded-lg px-3 text-[11px] font-bold uppercase tracking-wider text-white"
             style={{
-              background: DARK_T.amber,
-              boxShadow: `0 8px 20px -8px ${DARK_T.amber}`,
+              background: T.amber,
+              boxShadow: `0 8px 20px -8px ${T.amber}`,
             }}
           >
             <Pencil className="h-3.5 w-3.5" />
             Preencher Endereço
           </button>
         </div>
-      </DarkCard>
+      </Card>
 
-      {/* Upload bloqueado */}
-      <DarkCard className="p-6">
-        <SectionHeader
-          icon={<CloudUpload className="h-5 w-5" />}
-          title="Upload de Documentos"
-          subtitle="Envie seus documentos para liberar todas as funcionalidades da plataforma."
-        />
+      <Card>
+        <div className="mb-4 flex items-center gap-3">
+          <SectionIcon bg={T.primarySoft} color={T.primary}>
+            <CloudUpload className="h-5 w-5" />
+          </SectionIcon>
+          <div>
+            <p className="text-[16px] font-bold text-slate-900">
+              Upload de Documentos
+            </p>
+            <p className="text-[12px] text-slate-500">
+              Envie seus documentos para liberar todas as funcionalidades da
+              plataforma.
+            </p>
+          </div>
+        </div>
 
         <div className="flex flex-col items-center justify-center py-6">
           <div
             className="mb-3 flex h-16 w-16 items-center justify-center"
-            style={{ color: DARK_T.amber }}
+            style={{ color: T.amber }}
           >
             <AlertTriangle className="h-12 w-12" />
           </div>
-          <p
-            className="text-[18px] font-bold"
-            style={{ color: DARK_T.text }}
-          >
+          <p className="text-[18px] font-bold text-slate-900">
             Preencha seu endereço
           </p>
-          <p
-            className="mt-1 mb-4 max-w-[360px] text-center text-[12.5px]"
-            style={{ color: DARK_T.text2 }}
-          >
+          <p className="mb-4 mt-1 max-w-[360px] text-center text-[12.5px] text-slate-600">
             Para enviar seus documentos, você precisa primeiro completar seu
             cadastro de endereço.
           </p>
           <button
             onClick={onGoToProfile}
-            className="inline-flex h-11 items-center gap-2 rounded-xl px-5 text-[12px] font-bold uppercase tracking-[0.1em] text-white transition-transform hover:-translate-y-0.5"
+            className="inline-flex h-11 items-center gap-2 rounded-xl px-5 text-[12px] font-bold uppercase tracking-wider text-white transition-transform hover:-translate-y-0.5"
             style={{
-              background: `linear-gradient(135deg, ${DARK_T.primary} 0%, ${DARK_T.primaryStrong} 100%)`,
-              boxShadow: `0 12px 28px -10px ${DARK_T.primaryGlow}`,
+              background: T.primary,
+              boxShadow: "0 8px 20px -8px rgba(124,58,237,0.55)",
             }}
           >
             <Pencil className="h-4 w-4" />
             Ir para Minha Conta
           </button>
         </div>
-      </DarkCard>
+      </Card>
     </div>
   );
 }
 
 /* ==============================================================
- * UPLOAD (endereço completo) — 4 dropzones
+ * EM ANÁLISE (já enviou docs)
+ * ============================================================ */
+
+function UnderReviewView() {
+  return (
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      <Card>
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <SectionIcon bg={T.blueSoft} color={T.blue}>
+              <FileText className="h-5 w-5" />
+            </SectionIcon>
+            <div>
+              <p className="text-[16px] font-bold text-slate-900">
+                Status da Verificação
+              </p>
+              <div className="mt-1">
+                <StatusPill label="Em análise" variant="blue" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <p className="text-[13.5px] text-slate-700">
+          Sua verificação está em andamento. Nossa equipe está analisando seus
+          documentos.
+        </p>
+        <div
+          className="mt-4 flex items-start gap-2 rounded-xl p-3"
+          style={{
+            background: T.blueSoft,
+            border: `1px solid rgba(6,182,212,0.25)`,
+          }}
+        >
+          <Info
+            className="mt-0.5 h-4 w-4 shrink-0"
+            style={{ color: T.blue }}
+          />
+          <span className="text-[12px] text-slate-700">
+            Você será notificado por e-mail assim que a análise for concluída.
+            Geralmente leva até 24h úteis.
+          </span>
+        </div>
+      </Card>
+
+      <Card>
+        <div className="mb-4 flex items-center gap-3">
+          <SectionIcon bg={T.primarySoft} color={T.primary}>
+            <CloudUpload className="h-5 w-5" />
+          </SectionIcon>
+          <div>
+            <p className="text-[16px] font-bold text-slate-900">
+              Upload de Documentos
+            </p>
+            <p className="text-[12px] text-slate-500">
+              Documentos enviados aguardando análise.
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-center py-8">
+          <div
+            className="mb-3 flex h-20 w-20 items-center justify-center rounded-full"
+            style={{
+              background: T.blueSoft,
+              border: `2px solid ${T.blue}`,
+            }}
+          >
+            <Clock className="h-10 w-10" style={{ color: T.blue }} />
+          </div>
+          <p className="text-[20px] font-bold" style={{ color: T.blue }}>
+            Em análise
+          </p>
+          <p className="mt-1 max-w-[320px] text-center text-[12.5px] text-slate-600">
+            Nossa equipe está analisando seus documentos. Aguarde a aprovação
+            para liberar todas as funcionalidades.
+          </p>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+/* ==============================================================
+ * UPLOAD (endereço completo, ainda não enviou tudo)
  * ============================================================ */
 
 function UploadView({
@@ -358,7 +516,7 @@ function UploadView({
     }
   };
 
-  const allSelected =
+  const ready =
     (files.documentFrontImage || docs.documentFrontUrl) &&
     (files.documentBackImage || docs.documentBackUrl) &&
     (files.selfieImage || docs.selfieUrl) &&
@@ -366,34 +524,58 @@ function UploadView({
 
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-      {/* Status pendente */}
-      <DarkCard className="p-6">
-        <SectionHeader
-          icon={<FileText className="h-5 w-5" />}
-          iconBg={DARK_T.blueSoft}
-          iconColor={DARK_T.blue}
-          title="Status da Verificação"
-          right={
-            <StatusPill
-              label={data?.status === "PENDING" ? "Em Análise" : "Pendente"}
-              variant="blue"
-            />
-          }
-        />
-        <p className="text-[13.5px]" style={{ color: DARK_T.text }}>
-          {data?.status === "PENDING"
-            ? "Sua verificação está em análise. Você será notificado por e-mail."
-            : "Envie seus documentos para análise."}
+      <Card>
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <SectionIcon bg={T.blueSoft} color={T.blue}>
+              <FileText className="h-5 w-5" />
+            </SectionIcon>
+            <div>
+              <p className="text-[16px] font-bold text-slate-900">
+                Status da Verificação
+              </p>
+              <div className="mt-1">
+                <StatusPill label="Pendente" variant="blue" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <p className="text-[13.5px] text-slate-700">
+          Envie seus documentos para análise.
         </p>
-      </DarkCard>
+        <div
+          className="mt-4 flex items-start gap-2 rounded-xl p-3"
+          style={{
+            background: T.amberSoft,
+            border: `1px solid rgba(245,158,11,0.25)`,
+          }}
+        >
+          <Info
+            className="mt-0.5 h-4 w-4 shrink-0"
+            style={{ color: T.amber }}
+          />
+          <span className="text-[12px] text-slate-700">
+            Envie os 4 documentos no card ao lado. Após o envio, sua
+            verificação entra em análise.
+          </span>
+        </div>
+      </Card>
 
-      {/* Upload */}
-      <DarkCard className="p-6">
-        <SectionHeader
-          icon={<CloudUpload className="h-5 w-5" />}
-          title="Upload de Documentos"
-          subtitle="Envie seus documentos para liberar todas as funcionalidades da plataforma."
-        />
+      <Card>
+        <div className="mb-4 flex items-center gap-3">
+          <SectionIcon bg={T.primarySoft} color={T.primary}>
+            <CloudUpload className="h-5 w-5" />
+          </SectionIcon>
+          <div>
+            <p className="text-[16px] font-bold text-slate-900">
+              Upload de Documentos
+            </p>
+            <p className="text-[12px] text-slate-500">
+              Envie seus documentos para liberar todas as funcionalidades da
+              plataforma.
+            </p>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Dropzone
@@ -425,17 +607,17 @@ function UploadView({
 
         <button
           onClick={submit}
-          disabled={saving || !allSelected}
-          className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-[12px] font-bold uppercase tracking-[0.1em] text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+          disabled={saving || !ready}
+          className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-[12px] font-bold uppercase tracking-wider text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
           style={{
-            background: `linear-gradient(135deg, ${DARK_T.primary} 0%, ${DARK_T.primaryStrong} 100%)`,
-            boxShadow: `0 12px 28px -10px ${DARK_T.primaryGlow}`,
+            background: T.primary,
+            boxShadow: "0 8px 20px -8px rgba(124,58,237,0.55)",
           }}
         >
           <Upload className="h-4 w-4" />
           {saving ? "Enviando…" : "Enviar Documentos"}
         </button>
-      </DarkCard>
+      </Card>
     </div>
   );
 }
@@ -458,22 +640,23 @@ function Dropzone({
 
   return (
     <div>
-      <p
-        className="mb-1.5 text-[12px] font-semibold"
-        style={{ color: DARK_T.text2 }}
-      >
+      <p className="mb-1.5 text-[12px] font-semibold text-slate-700">
         {title}
       </p>
       <button
         onClick={() => inputRef.current?.click()}
-        className="flex w-full flex-col items-center justify-center rounded-xl px-3 py-5 transition-colors hover:bg-violet-500/10"
+        className="flex w-full flex-col items-center justify-center rounded-xl px-3 py-5 transition-colors hover:bg-violet-50"
         style={{
-          background: has ? DARK_T.greenSoft : "rgba(139,92,246,0.06)",
-          border: `1.5px dashed ${has ? DARK_T.green : "rgba(139,92,246,0.5)"}`,
-          color: has ? DARK_T.green : DARK_T.primary,
+          background: has ? T.greenSoft : T.primarySoft,
+          border: `1.5px dashed ${has ? T.green : T.primary}`,
+          color: has ? T.green : T.primary,
         }}
       >
-        {has ? <Check className="mb-1 h-6 w-6" /> : <Upload className="mb-1 h-6 w-6" />}
+        {has ? (
+          <Check className="mb-1 h-6 w-6" />
+        ) : (
+          <Upload className="mb-1 h-6 w-6" />
+        )}
         <p className="text-[12px] font-bold">
           {has
             ? file
@@ -492,6 +675,26 @@ function Dropzone({
         className="hidden"
         onChange={(e) => onFile(e.target.files?.[0] || null)}
       />
+    </div>
+  );
+}
+
+/* ==============================================================
+ * Card primitive
+ * ============================================================ */
+
+function Card({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="rounded-2xl p-6"
+      style={{
+        background: T.card,
+        border: `1px solid ${T.borderSoft}`,
+        boxShadow:
+          "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+      }}
+    >
+      {children}
     </div>
   );
 }

@@ -35,8 +35,6 @@ const WHITELIST_PREFIXES = [
   "/v1/configs/profile",
   "/v1/configs/security",
   "/v1/configs/notifications",
-  "/v1/configs/integrations",
-  "/v1/configs/split",
 ];
 
 const isWhitelisted = (path: string) =>

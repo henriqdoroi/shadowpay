@@ -742,12 +742,14 @@ function DashboardContent() {
       </Head>
 
       <LightShell valuesVisible={valuesVisible} onToggleValues={() => setValuesVisible((v) => !v)}>
-              {/* HERO — banner art como background-image (sem <img>) */}
+              {/* HERO — banner sempre HORIZONTAL ("deitado"), com pantera
+                  à esquerda em todos os tamanhos. No mobile a pantera fica
+                  proporcionalmente menor (não ocupa altura desnecessária). */}
               <motion.section
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                className="relative mb-6 overflow-hidden p-5 sm:p-7 md:p-9"
+                className="relative mb-6 overflow-hidden p-4 sm:p-6 md:p-8"
                 style={{
                   backgroundColor: "#FFFFFF",
                   border: "1px solid rgba(15, 23, 42, 0.08)",
@@ -755,41 +757,26 @@ function DashboardContent() {
                   boxShadow: "0 18px 45px rgba(15, 23, 42, 0.06)",
                 }}
               >
-                {/* Mascote responsivo:
-                    - Mobile (< md): ficamos com a pantera atrás no canto sup. direito
-                      em opacidade reduzida (~25%) só pra decorar, sem cobrir o texto.
-                    - Desktop (md+): pantera ocupa toda a coluna esquerda em altura 100%.
-                */}
+                {/* Pantera "deitada" à esquerda — escala suave entre breakpoints */}
                 <div
                   aria-hidden
-                  className="pointer-events-none absolute inset-0"
-                  style={{
-                    backgroundImage: "url('/shadow-hero-bg.png')",
-                    backgroundRepeat: "no-repeat",
-                    backgroundPosition: "right -40px center",
-                    backgroundSize: "auto 130%",
-                    opacity: 0.18,
-                  }}
-                />
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute inset-0 hidden md:block"
+                  className="pointer-events-none absolute inset-y-0 left-0 w-[120px] sm:w-[160px] md:w-[210px]"
                   style={{
                     backgroundImage: "url('/shadow-hero-bg.png')",
                     backgroundRepeat: "no-repeat",
                     backgroundPosition: "left center",
                     backgroundSize: "auto 100%",
-                    opacity: 1,
                   }}
                 />
 
-                {/* Content area — offset right da arte (só em desktop) */}
-                <div className="relative md:pl-[210px]">
-                  {/* top row: greeting + buttons */}
-                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                {/* Content area — offset proporcional pra não cobrir a pantera */}
+                <div className="relative pl-[110px] sm:pl-[150px] md:pl-[210px]">
+                  {/* top row: greeting + buttons sempre lado a lado.
+                      Em mobile os botões ficam compactos abaixo se não couberem. */}
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                     <div className="min-w-0 flex-1">
                       <h1
-                        className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[22px] leading-[1.15] sm:text-[24px] md:text-[28px]"
+                        className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[16px] leading-[1.15] sm:text-[20px] md:text-[28px]"
                         style={{
                           fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                           fontWeight: 700,
@@ -813,12 +800,15 @@ function DashboardContent() {
                         </span>
                       </h1>
                       <p
-                        className="mt-2 text-[12.5px] sm:text-[13px] md:text-[14px]"
+                        className="mt-1 line-clamp-2 text-[11px] leading-tight sm:mt-2 sm:text-[13px] md:text-[14px]"
                         style={{
                           color: "#475569",
                         }}
                       >
-                        Operação sincronizada. Última atualização há{" "}
+                        <span className="hidden sm:inline">
+                          Operação sincronizada. Última atualização há{" "}
+                        </span>
+                        <span className="sm:hidden">Última atualização há </span>
                         <span
                           style={{
                             fontWeight: 600,
@@ -831,68 +821,74 @@ function DashboardContent() {
                               (Date.now() - refreshAt.getTime()) / 1000
                             )
                           )}{" "}
-                          segundos
+                          seg
                         </span>
+                        <span className="hidden sm:inline">undos</span>
                         .
                       </p>
                     </div>
 
-                    {/* Buttons — top right */}
+                    {/* Buttons — top right (compactos em mobile) */}
                     <div
-                      className="flex flex-wrap items-center gap-2 sm:gap-3"
+                      className="flex flex-wrap items-center gap-1.5 sm:gap-3"
                     >
                       <button
                         onClick={() => router.push("/v1/products/create")}
-                        className="inline-flex items-center gap-2 transition-all hover:bg-slate-50"
+                        title="Novo produto"
+                        className="inline-flex items-center gap-1.5 transition-all hover:bg-slate-50 sm:gap-2"
                         style={{
-                          height: 40,
-                          padding: "0 16px",
-                          borderRadius: 12,
+                          height: 34,
+                          padding: "0 10px",
+                          borderRadius: 10,
                           background: "#FFFFFF",
                           border: "1px solid #E5E7EB",
-                          fontSize: 13,
+                          fontSize: 11.5,
                           fontWeight: 600,
                           color: "#334155",
                         }}
                       >
-                        <Plus className="h-4 w-4" style={{ color: "#64748B" }} />
-                        Novo produto
+                        <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" style={{ color: "#64748B" }} />
+                        <span className="hidden sm:inline">Novo produto</span>
+                        <span className="sm:hidden">Novo</span>
                       </button>
                       <button
                         onClick={() => router.push("/v1/products/create")}
-                        className="inline-flex items-center gap-2 transition-all hover:bg-slate-50"
+                        title="Criar checkout"
+                        className="hidden items-center gap-2 transition-all hover:bg-slate-50 sm:inline-flex"
                         style={{
-                          height: 40,
-                          padding: "0 16px",
-                          borderRadius: 12,
+                          height: 34,
+                          padding: "0 12px",
+                          borderRadius: 10,
                           background: "#FFFFFF",
                           border: "1px solid #E5E7EB",
-                          fontSize: 13,
+                          fontSize: 11.5,
                           fontWeight: 600,
                           color: "#334155",
                         }}
                       >
                         <MessageSquare
-                          className="h-4 w-4"
+                          className="h-3.5 w-3.5 sm:h-4 sm:w-4"
                           style={{ color: "#64748B" }}
                         />
-                        Criar checkout
+                        <span className="hidden md:inline">Criar checkout</span>
+                        <span className="md:hidden">Checkout</span>
                       </button>
                       <button
                         onClick={() => router.push("/v1/finance/withdraw")}
-                        className="inline-flex items-center gap-2 transition-transform hover:-translate-y-0.5"
+                        title="Sacar"
+                        className="inline-flex items-center gap-1.5 transition-transform hover:-translate-y-0.5 sm:gap-2"
                         style={{
-                          height: 40,
-                          padding: "0 18px",
-                          borderRadius: 12,
+                          height: 34,
+                          padding: "0 12px",
+                          borderRadius: 10,
                           background: "#7C3AED",
                           boxShadow: "0 8px 20px -8px rgba(124, 58, 237, 0.55)",
-                          fontSize: 13,
+                          fontSize: 11.5,
                           fontWeight: 600,
                           color: "#FFFFFF",
                         }}
                       >
-                        <DollarSign className="h-4 w-4" />
+                        <DollarSign className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         Sacar
                       </button>
                     </div>
