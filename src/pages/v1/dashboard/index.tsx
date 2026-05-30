@@ -750,18 +750,19 @@ function DashboardContent() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                className="relative mb-6 flex items-center overflow-hidden px-4 py-3 sm:px-6 sm:py-5 md:px-8 md:py-7"
+                className="relative mb-6 flex items-center overflow-hidden px-5 py-6 sm:px-6 sm:py-5 md:px-8 md:py-7"
                 style={{
                   backgroundColor: "#FFFFFF",
                   border: "1px solid rgba(15, 23, 42, 0.08)",
                   borderRadius: 24,
                   boxShadow: "0 18px 45px rgba(15, 23, 42, 0.06)",
+                  minHeight: 120,
                 }}
               >
                 {/* Pantera deitada à esquerda — escala suave */}
                 <div
                   aria-hidden
-                  className="pointer-events-none absolute inset-y-0 left-0 w-[100px] sm:w-[150px] md:w-[210px]"
+                  className="pointer-events-none absolute inset-y-0 left-0 w-[140px] sm:w-[150px] md:w-[210px]"
                   style={{
                     backgroundImage: "url('/shadow-hero-bg.png')",
                     backgroundRepeat: "no-repeat",
@@ -771,16 +772,16 @@ function DashboardContent() {
                 />
 
                 {/* Content — offset pra não cobrir a pantera */}
-                <div className="relative w-full pl-[90px] sm:pl-[140px] md:pl-[210px]">
+                <div className="relative w-full pl-[120px] sm:pl-[140px] md:pl-[210px]">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                     <div className="min-w-0 flex-1">
                       <h1
-                        className="flex flex-wrap items-center gap-x-2 gap-y-0 text-[15px] leading-[1.2] sm:text-[20px] md:text-[28px]"
+                        className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[18px] leading-[1.2] sm:text-[20px] md:text-[28px]"
                         style={{
                           fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                           fontWeight: 700,
                           color: "#0F172A",
-                          letterSpacing: "-0.005em",
+                          letterSpacing: "-0.01em",
                           fontFeatureSettings: '"calt" 1, "kern" 1',
                           wordSpacing: "0.05em",
                           margin: 0,
@@ -790,7 +791,7 @@ function DashboardContent() {
                           {greeting}, {user?.companyName || "Operador"}.
                         </span>
                         <span
-                          className="inline-block text-[16px] sm:text-[22px] md:text-[24px]"
+                          className="inline-block text-[18px] sm:text-[22px] md:text-[24px]"
                           style={{
                             fontFamily: "system-ui, sans-serif",
                           }}
@@ -798,14 +799,17 @@ function DashboardContent() {
                           👋
                         </span>
                       </h1>
-                      {/* subtítulo só em sm+ — mobile fica clean */}
+                      {/* subtítulo curto em mobile, completo em sm+ */}
                       <p
-                        className="mt-1 hidden text-[13px] leading-tight sm:mt-2 sm:block md:text-[14px]"
+                        className="mt-1.5 text-[12px] leading-snug sm:mt-2 sm:text-[13px] md:text-[14px]"
                         style={{
-                          color: "#475569",
+                          color: "#64748B",
                         }}
                       >
-                        Operação sincronizada. Última atualização há{" "}
+                        <span className="hidden sm:inline">
+                          Operação sincronizada. Última atualização há{" "}
+                        </span>
+                        <span className="sm:hidden">Atualizado há </span>
                         <span
                           style={{
                             fontWeight: 600,
@@ -818,9 +822,9 @@ function DashboardContent() {
                               (Date.now() - refreshAt.getTime()) / 1000
                             )
                           )}{" "}
-                          segundos
+                          seg
                         </span>
-                        .
+                        <span className="hidden sm:inline">undos</span>.
                       </p>
                     </div>
 
