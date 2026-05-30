@@ -423,33 +423,11 @@ export default function AdsConnections() {
 
                 {/* Contas de Anúncio — quando há perfil conectado */}
                 {conns.length > 0 && token && (
-                  <div
-                    className="mt-4 overflow-hidden rounded-xl"
-                    style={{ background: "#F8FAFC", border: "1px solid rgba(15,23,42,0.06)" }}
-                  >
-                    <div
-                      className="flex items-center gap-2 px-3 py-2.5"
-                      style={{ borderBottom: "1px solid rgba(15,23,42,0.06)" }}
-                    >
-                      <h4 className="text-[14px] font-bold text-slate-900">
-                        Contas de Anúncio ({p.name.replace(" Ads", "")})
-                      </h4>
-                    </div>
-                    <div className="p-3">
-                      <p className="mb-2 text-[12px] text-slate-500">
-                        Escolha suas contas de anúncio:
-                      </p>
-                      <div className="space-y-2">
-                        {conns.map((c) => (
-                          <ProfileAccounts
-                            key={c.id}
-                            connection={c}
-                            token={token}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                  <AdAccountsSection
+                    providerName={p.name}
+                    connections={conns}
+                    token={token}
+                  />
                 )}
               </div>
             )}
@@ -864,43 +842,103 @@ function ProfileRow({
 }
 
 /* =============== Contas de anúncio de um perfil (fetch real) =============== */
+/* ====== Seção "Contas de Anúncio (Provider)" com Expandir tudo ====== */
+function AdAccountsSection({
+  providerName,
+  connections,
+  token,
+}: {
+  providerName: string;
+  connections: Connection[];
+  token: string;
+}) {
+  const [expandAll, setExpandAll] = useState(false);
+  return (
+    <div
+      className="mt-4 overflow-hidden rounded-xl"
+      style={{ background: "#F8FAFC", border: "1px solid rgba(15,23,42,0.06)" }}
+    >
+      <div
+        className="flex items-center justify-between gap-2 px-3 py-2.5"
+        style={{ borderBottom: "1px solid rgba(15,23,42,0.06)" }}
+      >
+        <h4 className="text-[14px] font-bold text-slate-900">
+          Contas de Anúncio ({providerName.replace(" Ads", "")})
+        </h4>
+        <button
+          onClick={() => setExpandAll((v) => !v)}
+          className="inline-flex items-center gap-1 text-[12px] font-semibold text-slate-500 hover:text-slate-700"
+        >
+          {expandAll ? "Recolher tudo" : "Expandir tudo"}
+          <ChevronRight
+            className="h-3.5 w-3.5 transition-transform"
+            style={{ transform: expandAll ? "rotate(90deg)" : "none" }}
+          />
+        </button>
+      </div>
+      <div className="p-3">
+        <p className="mb-2 text-[12px] text-slate-500">
+          Escolha suas contas de anúncio:
+        </p>
+        <div className="space-y-2">
+          {connections.map((c) => (
+            <ProfileAccounts
+              key={c.id}
+              connection={c}
+              token={token}
+              forceOpen={expandAll}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ProfileAccounts({
   connection,
   token,
+  forceOpen,
 }: {
   connection: Connection;
   token: string;
+  forceOpen?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [accounts, setAccounts] = useState<{ id: string; name: string }[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [note, setNote] = useState<string | null>(null);
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const r = await axios.get(
-        `${API}/api/ads/connections/${connection.id}/accounts`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setAccounts(r.data?.data || []);
-      setSelected(r.data?.selected || []);
-      setNote(r.data?.note || null);
-    } catch {
-      setNote("fetch_failed");
-    } finally {
-      setLoading(false);
-      setLoaded(true);
-    }
-  };
+  // Busca as contas JÁ na montagem (pra a contagem aparecer, tipo "(15)")
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const r = await axios.get(
+          `${API}/api/ads/connections/${connection.id}/accounts`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!alive) return;
+        setAccounts(r.data?.data || []);
+        setSelected(r.data?.selected || []);
+        setNote(r.data?.note || null);
+      } catch {
+        if (alive) setNote("fetch_failed");
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const toggle = () => {
-    const n = !open;
-    setOpen(n);
-    if (n && !loaded) load();
-  };
+  // "Expandir tudo" abre todos
+  useEffect(() => {
+    if (forceOpen) setOpen(true);
+  }, [forceOpen]);
 
   const toggleAccount = async (id: string) => {
     const next = selected.includes(id)
@@ -924,13 +962,13 @@ function ProfileAccounts({
       style={{ border: "1px solid rgba(15,23,42,0.08)" }}
     >
       <button
-        onClick={toggle}
+        onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-slate-50"
       >
         <span className="text-[13px] font-semibold text-slate-800">
           {connection.name || connection.externalId}
           <span className="ml-1.5 font-normal text-slate-400">
-            ({selected.length})
+            ({loading ? "…" : accounts.length})
           </span>
         </span>
         <ChevronRight
@@ -952,11 +990,11 @@ function ProfileAccounts({
               {note === "missing_token"
                 ? "Conecte o perfil primeiro pra listar as contas."
                 : note
-                ? "Nenhuma conta encontrada ainda. Se você acabou de criar o token de desenvolvedor, pode ser que ele precise de “acesso básico” aprovado pelo Google."
+                ? "Nenhuma conta encontrada ainda. Se você acabou de criar o token de desenvolvedor do Google, pode ser que ele precise de “acesso básico” aprovado."
                 : "Nenhuma conta de anúncio encontrada."}
             </p>
           ) : (
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               {accounts.map((a) => {
                 const on = selected.includes(a.id);
                 return (
@@ -974,8 +1012,13 @@ function ProfileAccounts({
                     >
                       {on && <Check className="h-3 w-3 text-white" />}
                     </span>
-                    <span className="font-mono text-[12.5px] text-slate-700">
-                      {a.name}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[13px] font-medium text-slate-800">
+                        {a.name}
+                      </span>
+                      <span className="block font-mono text-[10.5px] text-slate-400">
+                        {a.id}
+                      </span>
                     </span>
                   </button>
                 );
