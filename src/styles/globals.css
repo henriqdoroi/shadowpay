@@ -118,9 +118,11 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  /* Drawer lateral (Filtros, etc.) ocupa largura total no mobile */
-  .fixed.inset-0.z-50.flex.justify-end > aside,
-  .fixed.inset-0.z-50.flex > aside {
+  /* Drawer lateral DIREITO (Filtros, etc., justify-end) ocupa
+     largura total no mobile. NAO atinge o sidebar principal
+     (esquerdo) que precisa ficar com w-72 mostrando parte da
+     pagina por baixo. */
+  .fixed.inset-0.z-50.flex.justify-end > aside {
     max-width: 100%;
     width: 100%;
   }
