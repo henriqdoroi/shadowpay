@@ -326,6 +326,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         localStorage.setItem("token", authToken);
         localStorage.setItem("user", JSON.stringify(seller));
 
+        // Invalida cache do KYC pro KycGate re-checar com este novo seller.
+        if (typeof window !== "undefined") {
+          delete (window as any).__shadowKycStatus;
+        }
+
         // Após login, inscreve o usuário no push
         subscribeUserToPush(authToken);
 

@@ -44,6 +44,16 @@ function AppContent({ Component, pageProps }: AppProps) {
     return () => window.removeEventListener("resize", handleResize);
   }, [setOpenMobile]);
 
+  // Registra o Service Worker da PWA (silencioso — push só é ativado
+  // quando o seller pede em /v1/configs/notifications).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!("serviceWorker" in navigator)) return;
+    navigator.serviceWorker
+      .register("/sw.js", { scope: "/" })
+      .catch((e) => console.warn("SW register failed:", e));
+  }, []);
+
   useEffect(() => {
     if (isLoading || !user) return;
 
@@ -138,8 +148,15 @@ export default function App(props: AppProps) {
           content="black-translucent"
         />
 
-        {/* Cor da barra de status no Android e iOS */}
-        <meta name="theme-color" content="#0F172A" />
+        {/* Cor da barra de status no Android e iOS — usa violeta da marca */}
+        <meta name="theme-color" content="#7C3AED" />
+
+        {/* PWA install — força nome curto e cor no iOS */}
+        <meta name="apple-mobile-web-app-title" content="ShadowPay" />
+        <meta name="application-name" content="ShadowPay" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <link rel="apple-touch-icon" href="/shadow-panther.png" />
       </Head>
       <ThemeProvider
         attribute="class"

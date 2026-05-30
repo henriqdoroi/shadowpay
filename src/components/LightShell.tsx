@@ -42,6 +42,8 @@ import {
   PanelLeftOpen,
   Users,
   Activity,
+  Menu,
+  X,
 } from "lucide-react";
 
 const T = {
@@ -181,10 +183,16 @@ export function LightShell({
   const router = useRouter();
   const { user, logout } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [now, setNow] = useState<Date | null>(null);
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
   const sidebarWidth = sidebarCollapsed ? 76 : 260;
+
+  // Fecha o drawer mobile quando troca de rota
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [router.pathname]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -479,6 +487,179 @@ export function LightShell({
       </aside>
 
       {/* ============================================================
+          DRAWER MOBILE — mesma sidebar mas como overlay (slide da esquerda)
+          ============================================================ */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-50 flex md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+          style={{ background: "rgba(15,23,42,0.45)", backdropFilter: "blur(2px)" }}
+        >
+          <aside
+            onClick={(e) => e.stopPropagation()}
+            className="flex h-full w-72 flex-col"
+            style={{
+              background: "#F1F3F8",
+              boxShadow: "12px 0 32px rgba(15,23,42,0.15)",
+            }}
+          >
+            {/* Header drawer */}
+            <div className="flex items-center justify-between px-4 py-4">
+              <Link
+                href="/v1/dashboard"
+                className="flex items-center gap-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <ShadowLogo size={36} />
+                <div>
+                  <div className="text-[12px] font-bold tracking-[0.18em] text-slate-700">
+                    SHADOWPAY
+                  </div>
+                  <div className="text-[8.5px] font-semibold uppercase tracking-[0.30em] text-slate-400">
+                    Financial OS
+                  </div>
+                </div>
+              </Link>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100"
+                aria-label="Fechar"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <nav className="flex-1 overflow-y-auto px-3 pb-4">
+              {nav.map((group) => (
+                <div key={group.label} className="mb-5 last:mb-0">
+                  <p
+                    className="px-3 pb-2 text-[9.5px] font-bold uppercase tracking-[0.20em]"
+                    style={{ color: T.textMuted }}
+                  >
+                    {group.label}
+                  </p>
+                  <ul className="space-y-0.5">
+                    {group.items.map((item) => {
+                      const Icon = item.icon;
+                      const key = `mobile-${group.label}-${item.label}`;
+                      const hasChildren = !!item.children?.length;
+                      const expanded = expandedKeys.has(key);
+                      const selfActive = isActive(
+                        router.pathname,
+                        item.href,
+                        item.alsoMatches
+                      );
+                      const childActive =
+                        hasChildren &&
+                        item.children!.some((c) =>
+                          isActive(router.pathname, c.href, c.alsoMatches)
+                        );
+                      const active = selfActive || childActive;
+
+                      return (
+                        <li key={key}>
+                          {hasChildren ? (
+                            <button
+                              onClick={() => toggleExpanded(key)}
+                              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13.5px] font-medium"
+                              style={{
+                                background: active ? T.primaryBg : "transparent",
+                                color: active ? T.primary : T.text2,
+                              }}
+                            >
+                              <Icon
+                                className="h-4 w-4 shrink-0"
+                                style={{ color: active ? T.primary : T.textMuted }}
+                              />
+                              <span className="flex-1 truncate text-left">
+                                {item.label}
+                              </span>
+                              <ChevronRight
+                                className="h-3.5 w-3.5 shrink-0 transition-transform"
+                                style={{
+                                  color: active ? T.primary : T.textMuted,
+                                  transform: expanded ? "rotate(90deg)" : "none",
+                                }}
+                              />
+                            </button>
+                          ) : (
+                            <Link
+                              href={item.href}
+                              onClick={() => setMobileMenuOpen(false)}
+                              className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13.5px] font-medium"
+                              style={{
+                                background: active ? T.primaryBg : "transparent",
+                                color: active ? T.primary : T.text2,
+                              }}
+                            >
+                              <Icon
+                                className="h-4 w-4 shrink-0"
+                                style={{ color: active ? T.primary : T.textMuted }}
+                              />
+                              <span className="flex-1 truncate">{item.label}</span>
+                            </Link>
+                          )}
+
+                          {hasChildren && expanded && (
+                            <ul className="mt-0.5 space-y-0.5 pl-3">
+                              {item.children!.map((child) => {
+                                const ChildIcon = child.icon;
+                                const cActive = isActive(
+                                  router.pathname,
+                                  child.href,
+                                  child.alsoMatches
+                                );
+                                return (
+                                  <li key={`${key}-${child.label}`}>
+                                    <Link
+                                      href={child.href}
+                                      onClick={() => setMobileMenuOpen(false)}
+                                      className="flex items-center gap-2 rounded-lg py-2 pl-4 pr-3 text-[12.5px] font-medium"
+                                      style={{
+                                        background: cActive ? T.primaryBg : "transparent",
+                                        color: cActive ? T.primary : T.text2,
+                                        borderLeft: cActive
+                                          ? `2px solid ${T.primary}`
+                                          : `2px solid transparent`,
+                                      }}
+                                    >
+                                      <ChildIcon
+                                        className="h-3.5 w-3.5 shrink-0"
+                                        style={{ color: cActive ? T.primary : T.textMuted }}
+                                      />
+                                      <span className="flex-1 truncate">{child.label}</span>
+                                    </Link>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </nav>
+
+            {/* footer logout */}
+            <div className="border-t px-3 py-3" style={{ borderColor: T.border }}>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  logout();
+                }}
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-semibold text-rose-500 hover:bg-rose-50"
+              >
+                <LogOut className="h-4 w-4" />
+                Sair
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* ============================================================
           MAIN COLUMN — shifts pra direita da sidebar fixa
           ============================================================ */}
       <div
@@ -518,14 +699,24 @@ export function LightShell({
               TOPBAR
               ============================================================ */}
           <header
-            className="sticky top-0 z-40 flex h-16 items-center gap-3 px-4 md:px-8"
+            className="sticky top-0 z-40 flex h-16 items-center gap-3 px-3 md:px-8"
             style={{
               background: "rgba(255, 255, 255, 0.85)",
               backdropFilter: "blur(12px)",
               borderBottom: `1px solid ${T.border}`,
             }}
           >
-            <div className="max-w-2xl flex-1">
+            {/* Hamburger mobile */}
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-600 transition-colors hover:bg-slate-100 md:hidden"
+              style={{ border: `1px solid ${T.border}` }}
+              aria-label="Abrir menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+
+            <div className="hidden max-w-2xl flex-1 sm:block">
               <div
                 className="group relative flex h-10 items-center rounded-xl px-3"
                 style={{
@@ -670,7 +861,7 @@ export function LightShell({
           {/* ============================================================
               MAIN
               ============================================================ */}
-          <main className="px-4 py-6 md:px-8 md:py-8 pb-24 md:pb-8">
+          <main className="px-3 py-5 sm:px-4 sm:py-6 md:px-8 md:py-8 pb-24 md:pb-8">
             {children}
           </main>
         </div>

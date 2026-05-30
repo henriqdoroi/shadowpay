@@ -4,6 +4,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { LightShell } from "@/components/LightShell";
 import { ProfileTabs } from "@/components/ProfileTabs";
 import ShadowPanel from "@/components/ShadowPanel";
+import { PushEnableCard } from "@/components/PushEnableCard";
 import Head from "next/head";
 import { useEffect, useState } from "react";
 import axios from "axios";
@@ -288,11 +289,13 @@ function NotificationsContent() {
           saving={saving}
         />
 
+        <PushEnableCard />
+
         <Section
           icon={<BellRing className="h-5 w-5" />}
           iconBg="rgba(6, 182, 212, 0.10)"
           iconColor="#06B6D4"
-          title="Push (navegador)"
+          title="Push (navegador / app)"
           subtitle="Notificações em tempo real via service worker"
           rows={PUSH_ROWS}
           prefs={prefs}
