@@ -8,9 +8,90 @@
 }
 
 /* ==========================================================
- * Responsive helpers — mobile global tweaks pra evitar overflow
- * e elementos gigantes em telas pequenas.
+ * MOBILE RESCUE — fix global pra travar horizontal overflow
+ * em todas as paginas. Tudo abaixo de 768px (mobile e tablet
+ * pequeno) ganha esses defaults.
  * ========================================================== */
+@media (max-width: 767px) {
+  /* Trava scroll horizontal da pagina inteira. Tabelas e listas
+     mantem scroll interno via wrapper .overflow-x-auto. */
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  main {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  /* Cards/sections nunca podem ultrapassar a largura do viewport */
+  main .rounded-2xl,
+  main .rounded-3xl,
+  main [class*="rounded-2xl"],
+  main [class*="rounded-3xl"] {
+    max-width: 100%;
+  }
+
+  /* Inputs em flex (ex: API key + botao copiar) precisam de
+     min-width: 0 pra encolher direito */
+  main .flex > input,
+  main .flex > input[readonly] {
+    min-width: 0;
+    text-overflow: ellipsis;
+  }
+
+  /* Tabela bleeded: scroll horizontal isolado, sem causar
+     scroll no body */
+  .overflow-x-auto {
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Tabelas dentro de .overflow-x-auto podem ter min-width grande,
+     o scroll fica no wrapper */
+  .overflow-x-auto > table {
+    min-width: 600px;
+  }
+  /* Celulas com UUIDs/emails gigantes (admin/sellers/transactions/
+     withdraw) — limita largura e mostra ellipsis */
+  table td {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* Quando precisa quebrar linha em celula (nomes longos com
+     whitespace-normal explicito) */
+  table td.whitespace-normal,
+  table td .whitespace-normal {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  /* Tabs/pill rows com botoes que estouram (Automations:
+     Automacoes | Contas WhatsApp | + Criar) — viram scroll
+     horizontal interno */
+  main header > .flex.items-center.gap-2:has(button),
+  main header > div > .inline-flex.rounded-xl.p-1 {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    max-width: 100%;
+  }
+
+  /* Headers tipo "Automations" — flex-row com botoes a direita
+     viram flex-col automaticamente */
+  main header.flex.items-start.justify-between:not([class*="flex-col"]) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  main header.flex.items-start.justify-between > div:last-child {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+}
+
 @media (max-width: 639px) {
   /* Tabelas dentro de cards: scroll horizontal automático */
   .overflow-x-auto > table,

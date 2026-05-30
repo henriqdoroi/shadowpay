@@ -982,7 +982,7 @@ function AutomationContent() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <header className="mb-6 flex items-start justify-between gap-4">
+      <header className="mb-6 flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-start sm:gap-4">
         <div>
           <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
             AVANÇADO
@@ -994,10 +994,10 @@ function AutomationContent() {
             Automations
           </h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 sm:overflow-visible">
           {/* Tabs */}
           <div
-            className="inline-flex rounded-xl p-1"
+            className="inline-flex shrink-0 rounded-xl p-1"
             style={{ background: "#F1F5F9" }}
           >
             {(["automations", "whatsapp"] as const).map((t) => {
@@ -1020,7 +1020,7 @@ function AutomationContent() {
           {tab === "automations" && (
             <button
               onClick={() => setShowNew(true)}
-              className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-[13px] font-semibold text-white"
+              className="inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-4 text-[13px] font-semibold text-white"
               style={{
                 background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
                 boxShadow: "0 8px 20px -8px rgba(124,58,237,0.45)",
