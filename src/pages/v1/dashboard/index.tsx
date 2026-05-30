@@ -742,7 +742,210 @@ function DashboardContent() {
       </Head>
 
       <LightShell valuesVisible={valuesVisible} onToggleValues={() => setValuesVisible((v) => !v)}>
-              {/* 2FA modal (controlado pelo banner que está agora na topbar) */}
+              {/* HERO — só desktop (md+). Mobile fica sem hero,
+                  começa direto pela toolbar de Refresh + Filtros. */}
+              <motion.section
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                className="relative mb-6 hidden items-center overflow-hidden md:flex md:px-8 md:py-7"
+                style={{
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid rgba(15, 23, 42, 0.08)",
+                  borderRadius: 24,
+                  boxShadow: "0 18px 45px rgba(15, 23, 42, 0.06)",
+                  minHeight: 120,
+                }}
+              >
+                {/* Pantera à esquerda */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-y-0 left-0 w-[210px]"
+                  style={{
+                    backgroundImage: "url('/shadow-hero-bg.png')",
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "left center",
+                    backgroundSize: "auto 100%",
+                  }}
+                />
+
+                <div className="relative w-full pl-[210px]">
+                  <div className="flex flex-row items-center justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <h1
+                        className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[28px] leading-[1.2]"
+                        style={{
+                          fontFamily:
+                            "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
+                          fontWeight: 700,
+                          color: "#0F172A",
+                          letterSpacing: "-0.01em",
+                          margin: 0,
+                        }}
+                      >
+                        <span className="break-words">
+                          {greeting}, {user?.companyName || "Operador"}.
+                        </span>
+                        <span
+                          className="inline-block text-[24px]"
+                          style={{ fontFamily: "system-ui, sans-serif" }}
+                        >
+                          👋
+                        </span>
+                      </h1>
+                      <p
+                        className="mt-2 text-[14px]"
+                        style={{ color: "#64748B" }}
+                      >
+                        Operação sincronizada. Última atualização há{" "}
+                        <span style={{ fontWeight: 600, color: "#1E293B" }}>
+                          {Math.max(
+                            1,
+                            Math.floor(
+                              (Date.now() - refreshAt.getTime()) / 1000
+                            )
+                          )}{" "}
+                          segundos
+                        </span>
+                        .
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        onClick={() => router.push("/v1/products/create")}
+                        className="inline-flex items-center gap-2 transition-all hover:bg-slate-50"
+                        style={{
+                          height: 40,
+                          padding: "0 16px",
+                          borderRadius: 12,
+                          background: "#FFFFFF",
+                          border: "1px solid #E5E7EB",
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "#334155",
+                        }}
+                      >
+                        <Plus
+                          className="h-4 w-4"
+                          style={{ color: "#64748B" }}
+                        />
+                        Novo produto
+                      </button>
+                      <button
+                        onClick={() => router.push("/v1/products/create")}
+                        className="inline-flex items-center gap-2 transition-all hover:bg-slate-50"
+                        style={{
+                          height: 40,
+                          padding: "0 16px",
+                          borderRadius: 12,
+                          background: "#FFFFFF",
+                          border: "1px solid #E5E7EB",
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "#334155",
+                        }}
+                      >
+                        <MessageSquare
+                          className="h-4 w-4"
+                          style={{ color: "#64748B" }}
+                        />
+                        Criar checkout
+                      </button>
+                      <button
+                        onClick={() => router.push("/v1/finance/withdraw")}
+                        className="inline-flex items-center gap-2 transition-transform hover:-translate-y-0.5"
+                        style={{
+                          height: 40,
+                          padding: "0 18px",
+                          borderRadius: 12,
+                          background: "#7C3AED",
+                          boxShadow:
+                            "0 8px 20px -8px rgba(124, 58, 237, 0.55)",
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "#FFFFFF",
+                        }}
+                      >
+                        <DollarSign className="h-4 w-4" />
+                        Sacar
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 2FA alert — só aparece se pendente */}
+                  {localUser &&
+                    !(localUser.twofaEnabled && localUser.twofaConfirmed) && (
+                      <div
+                        className="mt-6 flex flex-row items-center justify-between gap-3"
+                        style={{
+                          borderRadius: 16,
+                          background: "rgba(255, 255, 255, 0.85)",
+                          border: "1px solid rgba(15, 23, 42, 0.06)",
+                          padding: "12px 16px",
+                        }}
+                      >
+                        <div className="flex items-center gap-3.5">
+                          <div
+                            className="flex items-center justify-center"
+                            style={{
+                              width: 36,
+                              height: 36,
+                              borderRadius: 10,
+                              background: "rgba(255, 255, 255, 0.55)",
+                              border: "1px solid rgba(15, 23, 42, 0.05)",
+                              color: "#475569",
+                              backdropFilter: "blur(4px)",
+                              flexShrink: 0,
+                            }}
+                          >
+                            <ShieldCheck className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p
+                              style={{
+                                fontSize: 13,
+                                fontWeight: 600,
+                                color: "#1E293B",
+                                margin: 0,
+                              }}
+                            >
+                              Autenticação em duas etapas pendente
+                            </p>
+                            <p
+                              style={{
+                                fontSize: 12,
+                                color: "#64748B",
+                                margin: 0,
+                              }}
+                            >
+                              Proteja saques, API keys e alterações sensíveis.
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setIs2FAModalOpen(true)}
+                          className="inline-flex shrink-0 items-center justify-center transition-colors hover:bg-slate-50"
+                          style={{
+                            height: 36,
+                            padding: "0 18px",
+                            borderRadius: 10,
+                            background: "#FFFFFF",
+                            border: "1px solid #E5E7EB",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: "#334155",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          Ativar agora
+                        </button>
+                      </div>
+                    )}
+                </div>
+              </motion.section>
+
+              {/* 2FA modal (controlado pelo banner do hero) */}
               <TwoFAModal
                 isOpen={is2FAModalOpen}
                 onClose={() => setIs2FAModalOpen(false)}
