@@ -28,9 +28,9 @@ export function ProfileTabs() {
   };
 
   return (
-    <div className="mb-6 -mx-3 flex w-[calc(100%+1.5rem)] overflow-x-auto px-3 sm:mx-0 sm:w-full sm:justify-center sm:px-0">
+    <div className="mb-6 w-full sm:flex sm:justify-center">
       <div
-        className="inline-flex shrink-0 items-center gap-0.5 rounded-2xl p-1 sm:gap-1 sm:p-1.5"
+        className="grid w-full grid-cols-4 gap-0.5 rounded-2xl p-1 sm:inline-flex sm:w-auto sm:items-center sm:gap-1 sm:p-1.5"
         style={{
           background: "#FFFFFF",
           border: "1px solid rgba(15,23,42,0.06)",
@@ -45,14 +45,14 @@ export function ProfileTabs() {
             <Link
               key={t.href}
               href={t.href}
-              className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[11.5px] font-semibold transition-colors whitespace-nowrap sm:gap-2 sm:px-5 sm:py-2 sm:text-[13px]"
+              className="flex min-w-0 items-center justify-center gap-1 overflow-hidden rounded-xl px-1.5 py-2 text-[11px] font-semibold transition-colors sm:gap-2 sm:px-5 sm:text-[13px]"
               style={{
                 background: active ? "rgba(124,58,237,0.08)" : "transparent",
                 color: active ? "#7C3AED" : "#475569",
               }}
             >
-              <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              {t.label}
+              <Icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
+              <span className="truncate">{t.label}</span>
             </Link>
           );
         })}
