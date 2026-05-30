@@ -285,33 +285,35 @@ export default function AdsConnections() {
     }
   };
 
-  // Abre a autorização num POPUP centralizado (não em aba nova)
-  const openPopup = (url: string) => {
+  const continueInBrowser = async (p: ProviderUI) => {
+    // Abre o popup JÁ (síncrono com o clique) — senão o navegador bloqueia
+    // por causa do await. Depois aponta ele pra URL de autorização.
     const w = 520;
     const h = 680;
     const left = window.screenX + Math.max(0, (window.outerWidth - w) / 2);
     const top = window.screenY + Math.max(0, (window.outerHeight - h) / 2);
     const popup = window.open(
-      url,
+      "about:blank",
       "shadowpay_ads_oauth",
       `width=${w},height=${h},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`
     );
-    if (!popup) {
-      // bloqueio de popup → cai pra aba nova
-      window.open(url, "_blank", "noopener,noreferrer");
-    } else {
-      popup.focus();
-    }
-  };
 
-  const continueInBrowser = async (p: ProviderUI) => {
     setBusy(p.code);
     const url = await getAuthUrl(p);
     setBusy(null);
-    if (url) {
-      openPopup(url);
-      // mantém o modal pra mostrar feedback até o popup avisar (postMessage)
+
+    if (!url) {
+      if (popup) popup.close();
+      return;
     }
+    if (popup && !popup.closed) {
+      popup.location.href = url;
+      popup.focus();
+    } else {
+      // popup bloqueado → cai pra aba nova
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+    // mantém o modal pra feedback até o popup avisar (postMessage)
   };
 
   const copyAuthLink = async (p: ProviderUI) => {
