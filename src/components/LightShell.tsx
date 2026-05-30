@@ -44,7 +44,10 @@ import {
   Activity,
   Menu,
   X,
+  Sun,
+  Moon,
 } from "lucide-react";
+import { useTheme } from "next-themes";
 
 const T = {
   text: "#0F172A",
@@ -182,12 +185,18 @@ export function LightShell({
 }: LightShellProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [now, setNow] = useState<Date | null>(null);
+  const [mounted, setMounted] = useState(false);
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
   const sidebarWidth = sidebarCollapsed ? 76 : 260;
+
+  // Evita mismatch hidratação no botão de tema
+  useEffect(() => setMounted(true), []);
+  const isDark = mounted && (resolvedTheme || theme) === "dark";
 
   // Fecha o drawer mobile quando troca de rota
   useEffect(() => {
@@ -785,6 +794,20 @@ export function LightShell({
                 style={{ border: `1px solid ${T.border}` }}
               >
                 <HelpCircle className="h-4 w-4" />
+              </button>
+
+              {/* Toggle tema (sol/lua) */}
+              <button
+                onClick={() => setTheme(isDark ? "light" : "dark")}
+                className="flex h-9 w-9 items-center justify-center rounded-xl transition-colors hover:bg-slate-50"
+                style={{
+                  border: `1px solid ${T.border}`,
+                  color: isDark ? "#94A3B8" : "#F59E0B",
+                }}
+                aria-label="Alternar tema"
+                title={isDark ? "Mudar para claro" : "Mudar para escuro"}
+              >
+                {isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
               </button>
 
               <div className="relative">

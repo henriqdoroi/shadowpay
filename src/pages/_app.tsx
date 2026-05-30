@@ -161,7 +161,6 @@ export default function App(props: AppProps) {
       <ThemeProvider
         attribute="class"
         defaultTheme="light"
-        forcedTheme="light"
         enableSystem={false}
         disableTransitionOnChange
       >
