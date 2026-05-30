@@ -759,10 +759,22 @@ function DashboardContent() {
                   minHeight: 120,
                 }}
               >
-                {/* Pantera deitada à esquerda — escala suave */}
+                {/* Mobile: banner pronto com pantera já embutida (shadow-hero-mobile.png) */}
                 <div
                   aria-hidden
-                  className="pointer-events-none absolute inset-y-0 left-0 w-[140px] sm:w-[150px] md:w-[210px]"
+                  className="pointer-events-none absolute inset-0 sm:hidden"
+                  style={{
+                    backgroundImage: "url('/shadow-hero-mobile.png')",
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "center",
+                    backgroundSize: "cover",
+                  }}
+                />
+
+                {/* Desktop (sm+): pantera separada à esquerda */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-y-0 left-0 hidden w-[150px] sm:block md:w-[210px]"
                   style={{
                     backgroundImage: "url('/shadow-hero-bg.png')",
                     backgroundRepeat: "no-repeat",
