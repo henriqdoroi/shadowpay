@@ -228,13 +228,16 @@ export default function AdsConnections() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Recebe o aviso do POPUP de OAuth (postMessage) → fecha e atualiza
+  // Recebe o aviso do POPUP de OAuth por TODOS os canais (postMessage +
+  // BroadcastChannel + localStorage), porque o opener pode ser cortado
+  // por COOP. Qualquer um que chegar fecha o modal e atualiza a lista.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    function onMsg(e: MessageEvent) {
-      if (e.origin !== window.location.origin) return;
-      if (e.data?.type !== "ads-oauth") return;
-      const { connected, error } = e.data;
+    let lastHandled = "";
+    const handle = (connected?: string | null, error?: string | null) => {
+      const key = `${connected || ""}|${error || ""}`;
+      if (key === lastHandled) return; // dedup (vários canais)
+      lastHandled = key;
       setOauthModal(null);
       setPendingKwaiCid(null);
       if (connected) {
@@ -244,9 +247,41 @@ export default function AdsConnections() {
       } else if (error) {
         toast.error(`Falha ao conectar: ${error}`);
       }
+    };
+
+    function onMsg(e: MessageEvent) {
+      if (e.origin !== window.location.origin) return;
+      if (e.data?.type !== "ads-oauth") return;
+      handle(e.data.connected, e.data.error);
     }
     window.addEventListener("message", onMsg);
-    return () => window.removeEventListener("message", onMsg);
+
+    let bc: BroadcastChannel | null = null;
+    try {
+      bc = new BroadcastChannel("shadowpay-ads");
+      bc.onmessage = (e) => {
+        if (e.data?.type === "ads-oauth") handle(e.data.connected, e.data.error);
+      };
+    } catch {
+      /* sem BroadcastChannel */
+    }
+
+    function onStorage(e: StorageEvent) {
+      if (e.key !== "shadowpay-ads-oauth" || !e.newValue) return;
+      try {
+        const d = JSON.parse(e.newValue);
+        if (d?.type === "ads-oauth") handle(d.connected, d.error);
+      } catch {
+        /* ignore */
+      }
+    }
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      window.removeEventListener("message", onMsg);
+      window.removeEventListener("storage", onStorage);
+      if (bc) bc.close();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

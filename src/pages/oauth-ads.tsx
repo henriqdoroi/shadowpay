@@ -1,11 +1,13 @@
 "use client";
 
 /**
- * /oauth-ads — página de retorno do OAuth de Ads.
+ * /oauth-ads — página de retorno do OAuth de Ads (carrega DENTRO do popup).
  *
- * O backend redireciona o POPUP pra cá com ?connected= ou ?error=.
- * Aqui a gente avisa a janela principal (postMessage) e fecha o popup.
- * Se não for popup (sem opener), cai de volta no /v1/tracking?tab=ads.
+ * Depois do login no Google/Meta/etc., o navegador às vezes corta o
+ * window.opener (COOP). Por isso avisamos a janela principal por TODOS
+ * os canais possíveis (postMessage + BroadcastChannel + localStorage) e
+ * SEMPRE tentamos fechar o popup. Só caímos pro painel se de fato não
+ * for um popup (window.close não fechou).
  */
 
 import { useEffect, useState } from "react";
@@ -18,32 +20,51 @@ export default function OauthAdsReturn() {
     const q = new URLSearchParams(window.location.search);
     const connected = q.get("connected");
     const error = q.get("error");
+    const payload = { type: "ads-oauth", connected, error };
 
-    const isPopup = !!window.opener && window.opener !== window;
-
-    if (isPopup) {
-      try {
-        window.opener.postMessage(
-          { type: "ads-oauth", connected, error },
-          window.location.origin
-        );
-      } catch {
-        // ignore
+    // 1) Avisa a janela principal por todos os canais
+    try {
+      if (window.opener && window.opener !== window) {
+        window.opener.postMessage(payload, window.location.origin);
       }
-      setMsg(
-        error
-          ? "Falha na conexão. Pode fechar esta janela."
-          : "Conta conectada! Fechando…"
-      );
-      setTimeout(() => window.close(), 600);
-    } else {
-      // Não é popup — volta pro painel com os params
-      const params = new URLSearchParams();
-      params.set("tab", "ads");
-      if (connected) params.set("connected", connected);
-      if (error) params.set("error", error);
-      window.location.replace(`/v1/tracking?${params.toString()}`);
+    } catch {
+      /* opener cortado por COOP — segue pros outros canais */
     }
+    try {
+      const bc = new BroadcastChannel("shadowpay-ads");
+      bc.postMessage(payload);
+      bc.close();
+    } catch {
+      /* navegador sem BroadcastChannel */
+    }
+    try {
+      localStorage.setItem(
+        "shadowpay-ads-oauth",
+        JSON.stringify({ ...payload, t: Date.now() })
+      );
+    } catch {
+      /* ignore */
+    }
+
+    setMsg(error ? "Falha na conexão. Fechando…" : "Conta conectada! Fechando…");
+
+    // 2) Sempre tenta fechar o popup
+    const t1 = setTimeout(() => {
+      window.close();
+      // 3) Se NÃO fechou (não era popup de verdade), aí volta pro painel
+      const t2 = setTimeout(() => {
+        if (!window.closed) {
+          const params = new URLSearchParams();
+          params.set("tab", "ads");
+          if (connected) params.set("connected", connected);
+          if (error) params.set("error", error);
+          window.location.replace(`/v1/tracking?${params.toString()}`);
+        }
+      }, 500);
+      return () => clearTimeout(t2);
+    }, 250);
+
+    return () => clearTimeout(t1);
   }, []);
 
   return (
