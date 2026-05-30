@@ -287,7 +287,7 @@ function SalesContent() {
 
       <LightShell>
         {/* HEADER */}
-        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <header className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:gap-4 sm:items-end sm:justify-between">
           <div>
             <h1
               className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
@@ -379,9 +379,9 @@ function SalesContent() {
               "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
           }}
         >
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-            {/* Busca */}
-            <div className="flex-1">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-[2fr_1fr_1fr_1fr_auto] lg:items-end">
+            {/* Busca — full em mobile */}
+            <div className="col-span-1 sm:col-span-2 lg:col-span-1">
               <label className="mb-1 block text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
                 Buscar
               </label>
@@ -403,7 +403,7 @@ function SalesContent() {
               </div>
             </div>
             {/* Status */}
-            <div className="lg:w-44">
+            <div>
               <label className="mb-1 block text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
                 Status
               </label>
@@ -422,7 +422,7 @@ function SalesContent() {
               </select>
             </div>
             {/* Método */}
-            <div className="lg:w-44">
+            <div>
               <label className="mb-1 block text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
                 Método
               </label>
@@ -440,7 +440,7 @@ function SalesContent() {
               </select>
             </div>
             {/* Período rápido */}
-            <div className="lg:w-44">
+            <div>
               <label className="mb-1 block text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
                 Período
               </label>
@@ -480,7 +480,7 @@ function SalesContent() {
               "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
           }}
         >
-          <div className="overflow-x-auto">
+          <div className="-mx-3 overflow-x-auto sm:mx-0">
             <table className="w-full text-[13px]">
               <thead>
                 <tr

@@ -90,20 +90,12 @@ export default function KycGate({ children }: { children: React.ReactNode }) {
   }, [token, isAdmin]);
 
   // Redirects:
-  //  - KYC aprovado + está em /v1/kyc → vai pra dashboard (não faz sentido
-  //    o seller "voltar" pra tela de verificação depois de aprovado).
   //  - KYC não aprovado + fora da whitelist → vai pra /v1/kyc.
+  //  Quando aprovado, deixa o seller navegar livremente (incl. /v1/kyc
+  //  pra ver a tela "Aprovado").
   useEffect(() => {
     if (!checked || isAdmin) return;
-
-    if (kycStatus === "APPROVED") {
-      // Se acabou de logar e foi parar em /v1/kyc, manda pra dashboard.
-      if (router.pathname.startsWith("/v1/kyc")) {
-        router.replace("/v1/dashboard");
-      }
-      return;
-    }
-
+    if (kycStatus === "APPROVED") return;
     if (isWhitelisted(router.pathname)) return;
     router.replace("/v1/kyc");
   }, [checked, kycStatus, isAdmin, router]);

@@ -408,7 +408,7 @@ function ManagerDashboardContent() {
         valuesVisible={visible}
         onToggleValues={() => setVisible((v) => !v)}
       >
-        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <header className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:gap-4 sm:items-end sm:justify-between">
           <div>
             <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
               Admin
@@ -454,7 +454,7 @@ function ManagerDashboardContent() {
           <div className="mb-4 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
             <Filter className="h-3.5 w-3.5" /> Filtrar dados
           </div>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <div>
               <label className="mb-1.5 block text-xs text-slate-500">
                 Seller
@@ -562,7 +562,7 @@ function ManagerDashboardContent() {
               {metrics.map((m) => (
                 <div
                   key={m.id}
-                  className="rounded-2xl p-4 sm:p-5"
+                  className="rounded-2xl p-3 sm:p-4 md:p-5"
                   style={{
                     background: "#FFFFFF",
                     border: "1px solid rgba(15,23,42,0.06)",
@@ -592,7 +592,7 @@ function ManagerDashboardContent() {
 
               {/* Card saldo com filtro */}
               <div
-                className="rounded-2xl p-4 sm:p-5"
+                className="rounded-2xl p-3 sm:p-4 md:p-5"
                 style={{
                   background: "#FFFFFF",
                   border: "1px solid rgba(15,23,42,0.06)",
@@ -741,7 +741,7 @@ function ManagerDashboardContent() {
               ].map((sec) => (
                 <div
                   key={sec.title}
-                  className="rounded-2xl p-4 sm:p-5"
+                  className="rounded-2xl p-3 sm:p-4 md:p-5"
                   style={{
                     background: "#FFFFFF",
                     border: "1px solid rgba(15,23,42,0.06)",

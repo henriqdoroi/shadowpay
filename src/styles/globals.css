@@ -18,10 +18,9 @@
     min-width: 600px;
   }
 
-  /* Cards muito grandes (padding p-6/p-5/p-7) ficam compactos */
-  main > section,
-  main > div > section {
-    /* mantém respiração mas reduz padding em telas pequenas */
+  /* Tabela bleeded: tira border-radius do wrapper pro scroll funcionar */
+  .-mx-3.overflow-x-auto {
+    border-radius: 0;
   }
 
   /* Headers <h1> com 28px ficam menores em mobile */
@@ -30,15 +29,56 @@
     line-height: 1.2 !important;
   }
 
-  /* Grid de KPIs com lg:grid-cols-4 sem definição sm: vira 2 colunas em mobile */
-  .grid.grid-cols-1.lg\:grid-cols-4:not(.sm\:grid-cols-2) {
+  /* Grids fixos sem mobile breakpoint viram 2 cols ou 1 col */
+  .grid.grid-cols-1.lg\:grid-cols-4:not([class*="sm:grid-cols"]),
+  .grid.grid-cols-1.md\:grid-cols-4:not([class*="sm:grid-cols"]),
+  .grid.grid-cols-1.lg\:grid-cols-5:not([class*="sm:grid-cols"]),
+  .grid.grid-cols-1.md\:grid-cols-5:not([class*="sm:grid-cols"]) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   /* Drawer lateral (Filtros, etc.) ocupa largura total no mobile */
-  .fixed.inset-0.z-50.flex.justify-end > aside {
+  .fixed.inset-0.z-50.flex.justify-end > aside,
+  .fixed.inset-0.z-50.flex > aside {
     max-width: 100%;
     width: 100%;
+  }
+
+  /* Modais de detalhe (max-w-md/lg/xl) garantem padding nas bordas */
+  .max-w-md,
+  .max-w-lg,
+  .max-w-xl,
+  .max-w-2xl {
+    max-width: calc(100vw - 24px);
+  }
+
+  /* Sections com padding p-5 / p-6 ficam compactos */
+  section.rounded-2xl.p-6,
+  section.rounded-2xl.p-5,
+  div.rounded-2xl.p-6:not([class*="sm:p-"]):not([class*="md:p-"]),
+  div.rounded-2xl.p-5:not([class*="sm:p-"]):not([class*="md:p-"]) {
+    padding: 1rem;
+  }
+
+  /* Headers que ainda estão flex-row sem flex-col em mobile */
+  header.flex.flex-row:not([class*="flex-col"]) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  /* Search/topbar no LightShell encolhe certinho */
+  .max-w-2xl.flex-1 {
+    max-width: 100%;
+  }
+}
+
+/* ==========================================================
+ * Tablet médio (640-767) — entre mobile e desktop
+ * ========================================================== */
+@media (min-width: 640px) and (max-width: 767px) {
+  .lg\:grid-cols-5:not([class*="sm:grid-cols"]) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

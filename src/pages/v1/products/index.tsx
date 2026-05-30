@@ -390,7 +390,7 @@ function ProductsContent() {
               "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
           }}
         >
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+          <div className="flex flex-col gap-2 sm:gap-3 md:flex-row md:items-end">
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input

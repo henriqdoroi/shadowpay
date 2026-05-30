@@ -237,7 +237,7 @@ function WithdrawAdminContent() {
           {kpis.map((k) => (
             <div
               key={k.label}
-              className="rounded-2xl p-4 sm:p-5"
+              className="rounded-2xl p-3 sm:p-4 md:p-5"
               style={{
                 background: "#FFFFFF",
                 border: "1px solid rgba(15,23,42,0.06)",

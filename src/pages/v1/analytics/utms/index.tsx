@@ -353,7 +353,7 @@ function UtmsContent() {
               "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
           }}
         >
-          <div className="overflow-x-auto">
+          <div className="-mx-3 overflow-x-auto sm:mx-0">
             <table className="w-full text-[13px]">
               <thead>
                 <tr

@@ -52,7 +52,7 @@ function TrackingContent() {
   const totalRev = channels.reduce((s, c) => s + c.revenue, 0);
 
   return (
-    <div className="mx-auto max-w-7xl">
+    <div className="mx-auto w-full max-w-7xl">
       {/* Header */}
       <header className="mb-6">
         <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
@@ -99,7 +99,7 @@ function TrackingContent() {
           return (
             <div
               key={m.label}
-              className="rounded-2xl p-4 sm:p-5"
+              className="rounded-2xl p-3 sm:p-4 md:p-5"
               style={{
                 background: "#FFFFFF",
                 border: `1px solid ${T.borderSoft}`,
@@ -178,7 +178,7 @@ function TrackingContent() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="-mx-3 overflow-x-auto sm:mx-0">
             <table className="w-full text-[13px]">
               <thead>
                 <tr

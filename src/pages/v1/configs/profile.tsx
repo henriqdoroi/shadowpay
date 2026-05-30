@@ -311,7 +311,7 @@ function ProfileContent() {
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             {/* ============ ESQUERDA — Minha Conta ============ */}
             <div
-              className="rounded-2xl p-4 sm:p-6"
+              className="rounded-2xl p-3 sm:p-4 md:p-6"
               style={{
                 background: T.card,
                 border: `1px solid ${T.borderSoft}`,
@@ -393,7 +393,7 @@ function ProfileContent() {
 
             {/* ============ DIREITA — Dados Cadastrais ============ */}
             <div
-              className="rounded-2xl p-4 sm:p-6"
+              className="rounded-2xl p-3 sm:p-4 md:p-6"
               style={{
                 background: T.card,
                 border: `1px solid ${T.borderSoft}`,

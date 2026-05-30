@@ -176,7 +176,7 @@ function ReportsContent() {
         <title>ShadowPay — Relatórios</title>
       </Head>
       <LightShell>
-        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <header className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:gap-4 sm:items-end sm:justify-between">
           <div>
             <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
               Inteligência
@@ -258,7 +258,7 @@ function ReportsContent() {
           {cards.map((c) => (
             <div
               key={c.title}
-              className="rounded-2xl p-4 sm:p-5"
+              className="rounded-2xl p-3 sm:p-4 md:p-5"
               style={{
                 background: "#FFFFFF",
                 border: "1px solid rgba(15,23,42,0.06)",
