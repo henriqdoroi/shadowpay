@@ -142,7 +142,7 @@ function DomainsContent() {
             NEGÓCIOS · PRODUTOS
           </p>
           <h1
-            className="text-[28px] font-bold tracking-tight text-slate-900"
+            className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
             style={{ letterSpacing: "-0.005em" }}
           >
             Domínios
@@ -234,7 +234,7 @@ function DomainsContent() {
           {list.map((d) => (
             <div
               key={d.id}
-              className="rounded-2xl p-5"
+              className="rounded-2xl p-4 sm:p-5"
               style={{
                 background: "#FFFFFF",
                 border: `1px solid ${T.borderSoft}`,

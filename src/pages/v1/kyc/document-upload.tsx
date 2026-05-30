@@ -497,7 +497,7 @@ function DocumentUploadContent() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.08 }}
-            className="rounded-2xl p-5"
+            className="rounded-2xl p-4 sm:p-5"
             style={{
               background: T.surface,
               border: `1px solid ${T.border}`,

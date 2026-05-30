@@ -260,7 +260,7 @@ function NotificationsContent() {
     <div className="mx-auto max-w-4xl">
       <header className="mb-6">
         <h1
-          className="text-[28px] font-bold tracking-tight text-slate-900"
+          className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
           style={{ letterSpacing: "-0.005em" }}
         >
           Notificações

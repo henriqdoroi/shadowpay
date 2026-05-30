@@ -1041,7 +1041,7 @@ function DashboardContent() {
                       delay: i * 0.05,
                       ease: [0.22, 1, 0.36, 1],
                     }}
-                    className="rounded-2xl p-5"
+                    className="rounded-2xl p-4 sm:p-5"
                     style={{
                       background: T.card,
                       border: `1px solid ${T.border}`,
@@ -1125,7 +1125,7 @@ function DashboardContent() {
                     delay: 0.25,
                     ease: [0.22, 1, 0.36, 1],
                   }}
-                  className="rounded-2xl p-5"
+                  className="rounded-2xl p-4 sm:p-5"
                   style={{
                     background: T.card,
                     border: `1px solid ${T.border}`,
@@ -1184,7 +1184,7 @@ function DashboardContent() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.1 }}
-                  className="rounded-2xl p-5"
+                  className="rounded-2xl p-4 sm:p-5"
                   style={{
                     background: T.card,
                     border: `1px solid ${T.border}`,
@@ -1383,7 +1383,7 @@ function DashboardContent() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.15 }}
-                  className="rounded-2xl p-5"
+                  className="rounded-2xl p-4 sm:p-5"
                   style={{
                     background: T.card,
                     border: `1px solid ${T.border}`,
@@ -1486,7 +1486,7 @@ function DashboardContent() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.2 }}
-                  className="rounded-2xl p-5"
+                  className="rounded-2xl p-4 sm:p-5"
                   style={{
                     background: T.card,
                     border: `1px solid ${T.border}`,

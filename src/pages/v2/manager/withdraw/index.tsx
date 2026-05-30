@@ -220,7 +220,7 @@ function WithdrawAdminContent() {
             Admin
           </p>
           <h1
-            className="text-[28px] font-bold tracking-tight text-slate-900"
+            className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
             style={{
               fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
               letterSpacing: "-0.005em",
@@ -237,7 +237,7 @@ function WithdrawAdminContent() {
           {kpis.map((k) => (
             <div
               key={k.label}
-              className="rounded-2xl p-5"
+              className="rounded-2xl p-4 sm:p-5"
               style={{
                 background: "#FFFFFF",
                 border: "1px solid rgba(15,23,42,0.06)",

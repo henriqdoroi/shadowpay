@@ -290,7 +290,7 @@ function SalesContent() {
         <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1
-              className="text-[28px] font-bold tracking-tight text-slate-900"
+              className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
               style={{ letterSpacing: "-0.005em" }}
             >
               Vendas

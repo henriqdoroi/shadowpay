@@ -686,7 +686,7 @@ function Dropzone({
 function Card({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="rounded-2xl p-6"
+      className="rounded-2xl p-4 sm:p-6"
       style={{
         background: T.card,
         border: `1px solid ${T.borderSoft}`,

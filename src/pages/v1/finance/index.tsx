@@ -398,7 +398,7 @@ function FinanceContent() {
         <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1
-              className="text-[28px] font-bold tracking-tight text-slate-900"
+              className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
               style={{ letterSpacing: "-0.005em" }}
             >
               Financeiro
@@ -528,7 +528,7 @@ function FinanceContent() {
 
           {/* ----- Simulador de saque (direita) ----- */}
           <div
-            className="rounded-2xl p-5"
+            className="rounded-2xl p-4 sm:p-5"
             style={{
               background: T.card,
               border: `1px solid ${T.borderSoft}`,

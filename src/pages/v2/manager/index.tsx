@@ -414,7 +414,7 @@ function ManagerDashboardContent() {
               Admin
             </p>
             <h1
-              className="text-[28px] font-bold tracking-tight text-slate-900"
+              className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
               style={{
                 fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                 letterSpacing: "-0.005em",
@@ -558,11 +558,11 @@ function ManagerDashboardContent() {
           </div>
         ) : (
           <>
-            <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
               {metrics.map((m) => (
                 <div
                   key={m.id}
-                  className="rounded-2xl p-5"
+                  className="rounded-2xl p-4 sm:p-5"
                   style={{
                     background: "#FFFFFF",
                     border: "1px solid rgba(15,23,42,0.06)",
@@ -592,7 +592,7 @@ function ManagerDashboardContent() {
 
               {/* Card saldo com filtro */}
               <div
-                className="rounded-2xl p-5"
+                className="rounded-2xl p-4 sm:p-5"
                 style={{
                   background: "#FFFFFF",
                   border: "1px solid rgba(15,23,42,0.06)",
@@ -741,7 +741,7 @@ function ManagerDashboardContent() {
               ].map((sec) => (
                 <div
                   key={sec.title}
-                  className="rounded-2xl p-5"
+                  className="rounded-2xl p-4 sm:p-5"
                   style={{
                     background: "#FFFFFF",
                     border: "1px solid rgba(15,23,42,0.06)",

@@ -7,6 +7,41 @@
   height: 100vh;
 }
 
+/* ==========================================================
+ * Responsive helpers — mobile global tweaks pra evitar overflow
+ * e elementos gigantes em telas pequenas.
+ * ========================================================== */
+@media (max-width: 639px) {
+  /* Tabelas dentro de cards: scroll horizontal automático */
+  .overflow-x-auto > table,
+  table {
+    min-width: 600px;
+  }
+
+  /* Cards muito grandes (padding p-6/p-5/p-7) ficam compactos */
+  main > section,
+  main > div > section {
+    /* mantém respiração mas reduz padding em telas pequenas */
+  }
+
+  /* Headers <h1> com 28px ficam menores em mobile */
+  h1.text-\[28px\] {
+    font-size: 22px !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Grid de KPIs com lg:grid-cols-4 sem definição sm: vira 2 colunas em mobile */
+  .grid.grid-cols-1.lg\:grid-cols-4:not(.sm\:grid-cols-2) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Drawer lateral (Filtros, etc.) ocupa largura total no mobile */
+  .fixed.inset-0.z-50.flex.justify-end > aside {
+    max-width: 100%;
+    width: 100%;
+  }
+}
+
 :root {
   /* ShadowPay LIGHT design tokens — paleta white oficial */
   --bg-base: #FFFFFF;

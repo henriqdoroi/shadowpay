@@ -161,7 +161,7 @@ function ApiKeyContent() {
             Integrações
           </p>
           <h1
-            className="text-[28px] font-bold tracking-tight text-slate-900"
+            className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
             style={{
               fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
               letterSpacing: "-0.005em",
