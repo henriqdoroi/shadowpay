@@ -1,12 +1,12 @@
 "use client";
 
 /**
- * AdsConnections — conexões de plataformas de Ads (Meta, TikTok, Kwai,
- * Google, X) pra trackear campanhas de tráfego pago.
+ * AdsConnections — conexões de plataformas de Ads (Meta, Google, TikTok,
+ * Kwai, X) pra trackear campanhas de tráfego pago. Tema white.
  *
- * Tema white (gateway oficial). OAuth pra Meta/TikTok/Google/X e token
- * direto pro Kwai. O modal de conexão replica o fluxo "neste navegador"
- * vs "copiar link pra multilogin".
+ * Layout em acordeão: cada plataforma é uma linha [logo · nome · chevron].
+ * Ao expandir, aparece "Adicionar perfil" (OAuth: popup navegador/multilogin)
+ * ou "Adicionar conta" (Kwai: fluxo Agência/Conta de Anúncio).
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -15,14 +15,12 @@ import { toast } from "sonner";
 import {
   Facebook,
   Music2,
-  Play,
   Plus,
-  Plug,
   Trash2,
   Loader2,
   ExternalLink,
   Copy,
-  X as XIcon,
+  ChevronDown,
   CheckCircle2,
   AlertTriangle,
   Info,
@@ -31,35 +29,59 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const API = "https://shadowpay-api-production.up.railway.app";
 
-/* ---------- Logos inline (Google 4 cores + X) ---------- */
-function GoogleG({ className = "h-5 w-5" }: { className?: string }) {
+/* ===================== Logos inline ===================== */
+function MetaBadge() {
   return (
-    <svg className={className} viewBox="0 0 48 48" aria-hidden>
-      <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.3-.4-3.5z"/>
-      <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
-      <path fill="#4CAF50" d="M24 44c5.5 0 10.4-2.1 14.1-5.5l-6.5-5.5c-2.1 1.5-4.8 2.5-7.6 2.5-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.6 39.6 16.2 44 24 44z"/>
-      <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.5l6.5 5.5C39.9 36.7 44 31 44 24c0-1.3-.1-2.3-.4-3.5z"/>
-    </svg>
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: "#1877F2" }}>
+      <Facebook className="h-5 w-5 text-white" fill="currentColor" />
+    </span>
   );
 }
-function XLogo({ className = "h-4 w-4" }: { className?: string }) {
+function GoogleAdsBadge() {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-    </svg>
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white" style={{ border: "1px solid rgba(15,23,42,0.10)" }}>
+      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
+        <rect x="6.6" y="2.5" width="4.8" height="14.5" rx="2.4" fill="#FBBC04" transform="rotate(-28 12 12)" />
+        <rect x="12.6" y="2.5" width="4.8" height="14.5" rx="2.4" fill="#4285F4" transform="rotate(28 12 12)" />
+        <circle cx="7.5" cy="18.2" r="2.8" fill="#FBBC04" />
+      </svg>
+    </span>
+  );
+}
+function TikTokBadge() {
+  return (
+    <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "#010101" }}>
+      <Music2 className="absolute h-5 w-5" style={{ color: "#25F4EE", transform: "translate(1px,1px)" }} />
+      <Music2 className="absolute h-5 w-5" style={{ color: "#FE2C55", transform: "translate(-1px,-1px)" }} />
+      <Music2 className="relative h-5 w-5 text-white" />
+    </span>
+  );
+}
+function KwaiBadge() {
+  return (
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "#FF6A00" }}>
+      <span className="text-[15px] font-black italic text-white">K</span>
+    </span>
+  );
+}
+function XBadge() {
+  return (
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "#0F172A" }}>
+      <svg viewBox="0 0 24 24" className="h-4 w-4 text-white" fill="currentColor" aria-hidden>
+        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+      </svg>
+    </span>
   );
 }
 
-/* ---------- Metadados dos providers ---------- */
+/* ===================== Providers ===================== */
+type ProviderCode = "META" | "GOOGLE" | "TIKTOK" | "KWAI" | "X";
 type ProviderUI = {
-  code: "META" | "TIKTOK" | "KWAI" | "GOOGLE" | "X";
+  code: ProviderCode;
   name: string;
-  subtitle: string;
+  kind: "oauth2" | "kwai";
+  badge: React.ReactNode;
   cta: string;
-  kind: "oauth2" | "token";
-  icon: React.ReactNode;
-  iconBg: string;
-  btnStyle: React.CSSProperties;
   note: React.ReactNode;
 };
 
@@ -67,12 +89,9 @@ const PROVIDERS: ProviderUI[] = [
   {
     code: "META",
     name: "Meta Ads",
-    subtitle: "Facebook + Instagram Ads — conecte um perfil e selecione as contas",
-    cta: "Adicionar perfil",
     kind: "oauth2",
-    icon: <Facebook className="h-5 w-5 text-white" />,
-    iconBg: "#1877F2",
-    btnStyle: { background: "#1877F2", color: "#FFFFFF" },
+    badge: <MetaBadge />,
+    cta: "Adicionar perfil",
     note: (
       <>
         Importante: abra o ShadowPay no mesmo navegador onde o Facebook tá
@@ -81,53 +100,11 @@ const PROVIDERS: ProviderUI[] = [
     ),
   },
   {
-    code: "TIKTOK",
-    name: "TikTok Ads",
-    subtitle: "Business Center — conecte e sincronize advertisers/campanhas",
-    cta: "Adicionar Business Center",
-    kind: "oauth2",
-    icon: <Music2 className="h-5 w-5 text-white" />,
-    iconBg: "linear-gradient(135deg, #25F4EE, #000000 55%, #FE2C55)",
-    btnStyle: {
-      background: "linear-gradient(135deg, #25F4EE, #FE2C55)",
-      color: "#FFFFFF",
-    },
-    note: (
-      <>
-        Você precisa ser admin/operador do Business Center no TikTok pra
-        autorizar.
-      </>
-    ),
-  },
-  {
-    code: "KWAI",
-    name: "Kwai Ads",
-    subtitle: "Marketing API — conecte via Access Token do Business Manager",
-    cta: "Adicionar conta",
-    kind: "token",
-    icon: <Play className="h-5 w-5 text-white" fill="currentColor" />,
-    iconBg: "#FF7A00",
-    btnStyle: { background: "#FF7A00", color: "#FFFFFF" },
-    note: (
-      <>
-        Diferente do Meta/TikTok, o Kwai usa Access Token direto (sem OAuth
-        público). Gere em developers.kwai.com → Marketing API → My Apps.
-      </>
-    ),
-  },
-  {
     code: "GOOGLE",
     name: "Google Ads",
-    subtitle: "OAuth + Conversions API — vendas atribuídas via gclid",
-    cta: "Conectar Google",
     kind: "oauth2",
-    icon: <GoogleG className="h-5 w-5" />,
-    iconBg: "#FFFFFF",
-    btnStyle: {
-      background: "#FFFFFF",
-      color: "#334155",
-      border: "1px solid rgba(15,23,42,0.12)",
-    },
+    badge: <GoogleAdsBadge />,
+    cta: "Adicionar perfil",
     note: (
       <>
         Pré-requisito: o admin do ShadowPay precisa de{" "}
@@ -138,14 +115,37 @@ const PROVIDERS: ProviderUI[] = [
     ),
   },
   {
+    code: "TIKTOK",
+    name: "TikTok Ads",
+    kind: "oauth2",
+    badge: <TikTokBadge />,
+    cta: "Adicionar perfil",
+    note: (
+      <>
+        Você precisa ser admin/operador do Business Center no TikTok pra
+        autorizar.
+      </>
+    ),
+  },
+  {
+    code: "KWAI",
+    name: "Kwai Ads",
+    kind: "kwai",
+    badge: <KwaiBadge />,
+    cta: "Adicionar conta",
+    note: (
+      <>
+        Informe o tipo de conta (Agência ou Conta de Anúncio) e os IDs do Kwai
+        Business Manager.
+      </>
+    ),
+  },
+  {
     code: "X",
     name: "X Ads",
-    subtitle: "OAuth — campanhas do X (antigo Twitter Ads)",
-    cta: "Conectar X",
     kind: "oauth2",
-    icon: <XLogo className="h-4 w-4 text-white" />,
-    iconBg: "#000000",
-    btnStyle: { background: "#0F172A", color: "#FFFFFF" },
+    badge: <XBadge />,
+    cta: "Adicionar perfil",
     note: (
       <>
         Antigo Twitter Ads. Precisa de um app no X Developer Portal (
@@ -162,46 +162,34 @@ type Connection = {
   externalId?: string | null;
   name?: string | null;
   status: string;
+  meta?: any;
   connectedAt: string;
 };
 
-const T = {
-  border: "rgba(15,23,42,0.08)",
-  borderSoft: "rgba(15,23,42,0.06)",
-  amberBg: "rgba(245,158,11,0.10)",
-  amberBorder: "rgba(245,158,11,0.30)",
+const AMBER = { bg: "rgba(245,158,11,0.10)", border: "rgba(245,158,11,0.30)" };
+const CARD: React.CSSProperties = {
+  background: "#FFFFFF",
+  border: "1px solid rgba(15,23,42,0.06)",
+  boxShadow: "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
 };
 
 export default function AdsConnections() {
   const { token } = useAuth();
   const [connections, setConnections] = useState<Connection[]>([]);
-  const [configured, setConfigured] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<ProviderCode | null>(null);
 
-  // Modais
   const [oauthModal, setOauthModal] = useState<ProviderUI | null>(null);
-  const [tokenModal, setTokenModal] = useState<ProviderUI | null>(null);
+  const [kwaiModal, setKwaiModal] = useState<ProviderUI | null>(null);
 
   const fetchAll = useCallback(async () => {
     if (!token) return;
     try {
-      const [conns, status] = await Promise.all([
-        axios.get(`${API}/api/ads/connections`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get(`${API}/api/ads/status`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
-      if (conns.data?.success) setConnections(conns.data.data || []);
-      if (status.data?.success) {
-        const map: Record<string, boolean> = {};
-        (status.data.data || []).forEach((p: any) => {
-          map[p.code] = p.configured;
-        });
-        setConfigured(map);
-      }
+      const r = await axios.get(`${API}/api/ads/connections`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (r.data?.success) setConnections(r.data.data || []);
     } catch (e) {
       console.error("ads fetch", e);
     } finally {
@@ -221,6 +209,7 @@ export default function AdsConnections() {
     const error = q.get("error");
     if (connected) {
       toast.success(`${connected.toUpperCase()} conectado com sucesso!`);
+      setExpanded(connected.toUpperCase() as ProviderCode);
       fetchAll();
     } else if (error) {
       toast.error(`Falha ao conectar: ${error}`);
@@ -237,30 +226,23 @@ export default function AdsConnections() {
   const connectionsFor = (code: string) =>
     connections.filter((c) => c.provider === code);
 
-  const handleCardAction = (p: ProviderUI) => {
-    if (p.kind === "token") setTokenModal(p);
+  const openConnect = (p: ProviderUI) => {
+    if (p.kind === "kwai") setKwaiModal(p);
     else setOauthModal(p);
   };
 
-  // Pega a URL de autorização do backend
   const getAuthUrl = async (p: ProviderUI): Promise<string | null> => {
     if (!token) return null;
     const ret = `${window.location.origin}/v1/tracking?tab=ads`;
     try {
       const r = await axios.get(
         `${API}/api/ads/${p.code.toLowerCase()}/oauth/start`,
-        {
-          params: { return: ret },
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { params: { return: ret }, headers: { Authorization: `Bearer ${token}` } }
       );
       return r.data?.data?.url || null;
     } catch (e: any) {
-      const code = e?.response?.data?.code;
-      if (code === "PROVIDER_NOT_CONFIGURED") {
-        toast.error(
-          `${p.name} ainda não foi configurado pelo admin do gateway.`
-        );
+      if (e?.response?.data?.code === "PROVIDER_NOT_CONFIGURED") {
+        toast.error(`${p.name} ainda não foi configurado pelo admin do gateway.`);
       } else {
         toast.error(e?.response?.data?.message || "Erro ao iniciar conexão.");
       }
@@ -302,132 +284,122 @@ export default function AdsConnections() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       {PROVIDERS.map((p) => {
+        const open = expanded === p.code;
         const conns = connectionsFor(p.code);
         return (
-          <section
-            key={p.code}
-            className="overflow-hidden rounded-2xl"
-            style={{
-              background: "#FFFFFF",
-              border: `1px solid ${T.borderSoft}`,
-              boxShadow:
-                "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
-            }}
-          >
-            {/* Header do card */}
-            <div
-              className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
-              style={{ borderBottom: `1px solid ${T.borderSoft}` }}
+          <div key={p.code} className="overflow-hidden rounded-2xl" style={CARD}>
+            {/* Linha (header acordeão) */}
+            <button
+              onClick={() => setExpanded(open ? null : p.code)}
+              className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors hover:bg-slate-50"
             >
               <div className="flex items-center gap-3">
-                <span
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-                  style={{
-                    background: p.iconBg,
-                    border:
-                      p.code === "GOOGLE"
-                        ? "1px solid rgba(15,23,42,0.10)"
-                        : "none",
-                  }}
-                >
-                  {p.icon}
+                {p.badge}
+                <span className="text-[15px] font-bold text-slate-900">
+                  {p.name}
                 </span>
-                <div className="min-w-0">
-                  <h3 className="text-[15px] font-bold text-slate-900">
-                    {p.name}
-                  </h3>
-                  <p className="text-[12.5px] leading-snug text-slate-500">
-                    {p.subtitle}
+                {conns.length > 0 && (
+                  <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+                    <CheckCircle2 className="h-2.5 w-2.5" />
+                    {conns.length}
+                  </span>
+                )}
+              </div>
+              <span
+                className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition-transform"
+                style={{
+                  background: "rgba(15,23,42,0.04)",
+                  transform: open ? "rotate(180deg)" : "none",
+                }}
+              >
+                <ChevronDown className="h-4 w-4" />
+              </span>
+            </button>
+
+            {/* Corpo expandido */}
+            {open && (
+              <div
+                className="px-4 pb-4 pt-1"
+                style={{ borderTop: "1px solid rgba(15,23,42,0.06)" }}
+              >
+                {/* Contas conectadas */}
+                {loading ? null : conns.length > 0 ? (
+                  <div className="mb-3 mt-3 space-y-2">
+                    {conns.map((c) => (
+                      <div
+                        key={c.id}
+                        className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5"
+                        style={{ background: "#F8FAFC", border: "1px solid rgba(15,23,42,0.06)" }}
+                      >
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+                          <div className="min-w-0">
+                            <p className="truncate text-[13px] font-semibold text-slate-800">
+                              {c.name || c.externalId || "Conta conectada"}
+                            </p>
+                            <p className="text-[11px] text-slate-400">
+                              {c.provider === "KWAI" && c.meta
+                                ? `${
+                                    c.meta.accountType === "AD_ACCOUNT"
+                                      ? "Conta de Anúncio"
+                                      : "Agência"
+                                  } · ID ${c.meta.agencyId}${
+                                    c.meta.adAccountIds?.length
+                                      ? ` · ${c.meta.adAccountIds.length} conta(s)`
+                                      : ""
+                                  }`
+                                : `Conectado em ${new Date(
+                                    c.connectedAt
+                                  ).toLocaleDateString("pt-BR")}`}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => disconnect(c.id)}
+                          className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-medium text-rose-600 hover:bg-rose-50"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Remover
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
+                {/* Adicionar */}
+                <p className="mb-2 mt-3 text-[13px] text-slate-500">
+                  {p.kind === "kwai"
+                    ? "Conecte sua conta Kwai por aqui:"
+                    : "Conecte seus perfis por aqui:"}
+                </p>
+                <button
+                  onClick={() => openConnect(p)}
+                  className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
+                  style={{ background: "#2563EB" }}
+                >
+                  <Plus className="h-4 w-4" />
+                  {p.cta}
+                </button>
+
+                {/* Nota */}
+                <div
+                  className="mt-3 flex items-start gap-2 rounded-xl px-3 py-2"
+                  style={{ background: AMBER.bg, border: `1px solid ${AMBER.border}` }}
+                >
+                  <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
+                  <p className="text-[11.5px] leading-relaxed text-amber-700">
+                    {p.note}
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => handleCardAction(p)}
-                className="inline-flex h-10 shrink-0 items-center justify-center gap-2 self-start rounded-xl px-4 text-[13px] font-semibold transition-opacity hover:opacity-90 sm:self-auto"
-                style={p.btnStyle}
-              >
-                <Plus className="h-4 w-4" />
-                {p.cta}
-              </button>
-            </div>
-
-            {/* Corpo: conexões ou empty state */}
-            <div className="p-4 sm:p-5">
-              {loading ? (
-                <div className="flex items-center justify-center py-8 text-slate-400">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                </div>
-              ) : conns.length > 0 ? (
-                <div className="space-y-2">
-                  {conns.map((c) => (
-                    <div
-                      key={c.id}
-                      className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5"
-                      style={{ background: "#F8FAFC", border: `1px solid ${T.borderSoft}` }}
-                    >
-                      <div className="flex min-w-0 items-center gap-2.5">
-                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
-                        <div className="min-w-0">
-                          <p className="truncate text-[13px] font-semibold text-slate-800">
-                            {c.name || c.externalId || "Conta conectada"}
-                          </p>
-                          <p className="text-[11px] text-slate-400">
-                            Conectado em{" "}
-                            {new Date(c.connectedAt).toLocaleDateString("pt-BR")}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => disconnect(c.id)}
-                        className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-medium text-rose-600 hover:bg-rose-50"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        Remover
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center py-8 text-center">
-                  <Plug className="mb-2 h-7 w-7 text-slate-300" />
-                  <p className="text-[13.5px] font-medium text-slate-600">
-                    {p.code === "META"
-                      ? "Nenhum perfil Meta conectado ainda."
-                      : p.code === "TIKTOK"
-                      ? "Nenhum Business Center do TikTok conectado ainda."
-                      : p.code === "KWAI"
-                      ? "Nenhuma conta Kwai conectada ainda."
-                      : p.code === "GOOGLE"
-                      ? "Nenhuma conta Google Ads conectada ainda."
-                      : "Nenhuma conta X Ads conectada ainda."}
-                  </p>
-                  <p className="mt-0.5 text-[12px] text-slate-400">
-                    Clique em{" "}
-                    <span className="font-semibold text-slate-600">{p.cta}</span>{" "}
-                    pra começar.
-                  </p>
-                  {/* Nota / pré-requisito */}
-                  <div className="mt-3 flex max-w-xl items-start gap-2 rounded-xl px-3 py-2 text-left" style={{ background: T.amberBg, border: `1px solid ${T.amberBorder}` }}>
-                    <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
-                    <p className="text-[11.5px] leading-relaxed text-amber-700">
-                      {p.note}
-                    </p>
-                  </div>
-                  {p.kind === "oauth2" && configured[p.code] === false && (
-                    <p className="mt-2 text-[11px] font-medium text-slate-400">
-                      Status: aguardando o admin configurar as credenciais.
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          </section>
+            )}
+          </div>
         );
       })}
 
-      {/* Modal OAuth (escolha de navegador) */}
+      {/* Modal OAuth (navegador / multilogin) */}
       {oauthModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center px-4"
@@ -440,18 +412,7 @@ export default function AdsConnections() {
             style={{ boxShadow: "0 24px 64px -20px rgba(15,23,42,0.30)" }}
           >
             <div className="mb-1 flex items-center gap-2.5">
-              <span
-                className="flex h-9 w-9 items-center justify-center rounded-xl"
-                style={{
-                  background: oauthModal.iconBg,
-                  border:
-                    oauthModal.code === "GOOGLE"
-                      ? "1px solid rgba(15,23,42,0.10)"
-                      : "none",
-                }}
-              >
-                {oauthModal.icon}
-              </span>
+              {oauthModal.badge}
               <h2 className="text-[17px] font-bold text-slate-900">
                 Conectar {oauthModal.name}
               </h2>
@@ -462,7 +423,7 @@ export default function AdsConnections() {
 
             <div
               className="mb-4 flex items-start gap-2 rounded-xl px-3 py-2.5"
-              style={{ background: T.amberBg, border: `1px solid ${T.amberBorder}` }}
+              style={{ background: AMBER.bg, border: `1px solid ${AMBER.border}` }}
             >
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
               <p className="text-[12px] leading-relaxed text-amber-700">
@@ -513,14 +474,14 @@ export default function AdsConnections() {
         </div>
       )}
 
-      {/* Modal token (Kwai) */}
-      {tokenModal && (
-        <TokenModal
-          provider={tokenModal}
+      {/* Modal Kwai (Agência / Conta de Anúncio) */}
+      {kwaiModal && (
+        <KwaiModal
           token={token!}
-          onClose={() => setTokenModal(null)}
+          onClose={() => setKwaiModal(null)}
           onConnected={() => {
-            setTokenModal(null);
+            setKwaiModal(null);
+            setExpanded("KWAI");
             fetchAll();
           }}
         />
@@ -529,42 +490,63 @@ export default function AdsConnections() {
   );
 }
 
-/* ---------- Modal de conexão por token (Kwai) ---------- */
-function TokenModal({
-  provider,
+/* ===================== Modal Kwai (multi-step) ===================== */
+function KwaiModal({
   token,
   onClose,
   onConnected,
 }: {
-  provider: ProviderUI;
   token: string;
   onClose: () => void;
   onConnected: () => void;
 }) {
-  const [accessToken, setAccessToken] = useState("");
-  const [name, setName] = useState("");
+  const [accountType, setAccountType] = useState<"AGENCY" | "AD_ACCOUNT">("AGENCY");
+  const [agencyId, setAgencyId] = useState("");
+  const [agencyName, setAgencyName] = useState("");
+  const [adAccounts, setAdAccounts] = useState<string[]>([]);
+  const [adding, setAdding] = useState(false);
+  const [newAccount, setNewAccount] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const canContinue =
+    !!agencyId.trim() &&
+    !!agencyName.trim() &&
+    (accountType === "AGENCY" || adAccounts.length > 0);
+
+  const confirmAdAccount = () => {
+    const v = newAccount.trim();
+    if (!v) return;
+    setAdAccounts((prev) => Array.from(new Set([...prev, v])));
+    setNewAccount("");
+    setAdding(false);
+  };
+
   const submit = async () => {
-    if (!accessToken.trim()) {
-      toast.error("Cole o Access Token.");
-      return;
-    }
+    if (!canContinue) return;
     setSaving(true);
     try {
       await axios.post(
-        `${API}/api/ads/${provider.code.toLowerCase()}/token`,
-        { accessToken: accessToken.trim(), name: name.trim() || undefined },
+        `${API}/api/ads/kwai/connect`,
+        {
+          accountType,
+          agencyId: agencyId.trim(),
+          agencyName: agencyName.trim(),
+          adAccountIds: adAccounts,
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success(`${provider.name} conectado!`);
+      toast.success("Kwai Ads conectado!");
       onConnected();
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || "Erro ao conectar.");
+      toast.error(e?.response?.data?.message || "Erro ao conectar Kwai.");
     } finally {
       setSaving(false);
     }
   };
+
+  const inputCls =
+    "h-11 w-full rounded-xl bg-slate-50 px-3 text-[14px] text-slate-700 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-violet-100";
+  const inputStyle = { border: "1px solid rgba(15,23,42,0.10)" } as React.CSSProperties;
 
   return (
     <div
@@ -573,64 +555,167 @@ function TokenModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-white p-6"
+        className="w-full max-w-md overflow-hidden rounded-2xl bg-white"
         onClick={(e) => e.stopPropagation()}
         style={{ boxShadow: "0 24px 64px -20px rgba(15,23,42,0.30)" }}
       >
-        <div className="mb-1 flex items-center gap-2.5">
-          <span
-            className="flex h-9 w-9 items-center justify-center rounded-xl"
-            style={{ background: provider.iconBg }}
-          >
-            {provider.icon}
-          </span>
-          <h2 className="text-[17px] font-bold text-slate-900">
-            Conectar {provider.name}
-          </h2>
-        </div>
-        <p className="mb-4 text-[13px] text-slate-500">
-          Cole o Access Token do {provider.name}. Gere em developers.kwai.com →
-          Marketing API → My Apps.
-        </p>
-
-        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-          Access Token
-        </label>
-        <input
-          value={accessToken}
-          onChange={(e) => setAccessToken(e.target.value)}
-          placeholder="Cole aqui o Access Token"
-          className="mb-3 h-11 w-full rounded-xl bg-slate-50 px-3 font-mono text-[13px] text-slate-700 outline-none"
-          style={{ border: "1px solid rgba(15,23,42,0.08)" }}
-        />
-
-        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-          Nome (opcional)
-        </label>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Ex: Conta principal Kwai"
-          className="mb-5 h-11 w-full rounded-xl bg-slate-50 px-3 text-[13px] text-slate-700 outline-none"
-          style={{ border: "1px solid rgba(15,23,42,0.08)" }}
-        />
-
-        <div className="flex gap-2">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 pt-5">
+          <KwaiBadge />
           <button
             onClick={onClose}
-            className="h-11 flex-1 rounded-xl text-[13px] font-semibold text-slate-500 hover:bg-slate-50"
-            style={{ border: "1px solid rgba(15,23,42,0.08)" }}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100"
           >
-            Cancelar
+            ✕
           </button>
+        </div>
+
+        <div className="px-6 pb-6 pt-3">
+          <h2 className="mb-4 text-center text-[18px] font-bold text-slate-900">
+            Escolha seu tipo de conta e preencha os dados necessários
+          </h2>
+
+          {/* Toggle tipo */}
+          <div className="mb-5 grid grid-cols-2 gap-2">
+            {([
+              { id: "AGENCY", label: "Agência" },
+              { id: "AD_ACCOUNT", label: "Conta de Anúncio" },
+            ] as const).map((opt) => {
+              const active = accountType === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => setAccountType(opt.id)}
+                  className="flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-[13px] font-semibold transition-colors"
+                  style={{
+                    background: active ? "rgba(37,99,235,0.06)" : "#FFFFFF",
+                    color: active ? "#2563EB" : "#475569",
+                    border: `1px solid ${active ? "#2563EB" : "rgba(15,23,42,0.10)"}`,
+                  }}
+                >
+                  <span
+                    className="flex h-4 w-4 items-center justify-center rounded-full"
+                    style={{ border: `2px solid ${active ? "#2563EB" : "#CBD5E1"}` }}
+                  >
+                    {active && (
+                      <span className="h-2 w-2 rounded-full" style={{ background: "#2563EB" }} />
+                    )}
+                  </span>
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Id da agência */}
+          <label className="mb-1.5 block text-[13px] font-semibold text-slate-700">
+            Id da agência
+          </label>
+          <input
+            value={agencyId}
+            onChange={(e) => setAgencyId(e.target.value)}
+            placeholder="12345678"
+            className={`mb-4 ${inputCls}`}
+            style={inputStyle}
+          />
+
+          {/* Nome da agência */}
+          <label className="mb-1.5 block text-[13px] font-semibold text-slate-700">
+            Nome da agência
+          </label>
+          <input
+            value={agencyName}
+            onChange={(e) => setAgencyName(e.target.value)}
+            placeholder="Kwai Ads LTDA"
+            className={`${inputCls}`}
+            style={inputStyle}
+          />
+
+          {/* Contas de Anúncio (só quando AD_ACCOUNT) */}
+          {accountType === "AD_ACCOUNT" && (
+            <div className="mt-5" style={{ borderTop: "1px solid rgba(15,23,42,0.08)", paddingTop: 16 }}>
+              <p className="mb-3 text-[16px] font-bold text-slate-900">
+                Contas de Anúncio
+              </p>
+
+              {adAccounts.length > 0 && (
+                <div className="mb-3 space-y-2">
+                  {adAccounts.map((acc) => (
+                    <div
+                      key={acc}
+                      className="flex items-center justify-between rounded-xl px-3 py-2"
+                      style={{ background: "#F8FAFC", border: "1px solid rgba(15,23,42,0.06)" }}
+                    >
+                      <span className="font-mono text-[13px] text-slate-700">{acc}</span>
+                      <button
+                        onClick={() => setAdAccounts((p) => p.filter((x) => x !== acc))}
+                        className="text-rose-500 hover:text-rose-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {adding ? (
+                <div
+                  className="rounded-xl p-3"
+                  style={{ background: "#F8FAFC", border: "1px solid rgba(15,23,42,0.08)" }}
+                >
+                  <label className="mb-1.5 block text-[13px] font-semibold text-slate-700">
+                    Id da conta de anúncios Kwai
+                  </label>
+                  <input
+                    autoFocus
+                    value={newAccount}
+                    onChange={(e) => setNewAccount(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && confirmAdAccount()}
+                    placeholder="8226212"
+                    className={`mb-3 ${inputCls}`}
+                    style={{ border: "1px solid rgba(15,23,42,0.10)", background: "#FFFFFF" }}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setAdding(false);
+                        setNewAccount("");
+                      }}
+                      className="h-9 flex-1 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-white"
+                      style={{ border: "1px solid rgba(15,23,42,0.10)" }}
+                    >
+                      Fechar
+                    </button>
+                    <button
+                      onClick={confirmAdAccount}
+                      className="h-9 flex-1 rounded-lg text-[13px] font-semibold text-white"
+                      style={{ background: "#2563EB" }}
+                    >
+                      Confirmar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setAdding(true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-slate-700"
+                  style={{ background: "#F1F5F9", border: "1px solid rgba(15,23,42,0.10)" }}
+                >
+                  Adicionar <Plus className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Continuar */}
           <button
             onClick={submit}
-            disabled={saving}
-            className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl text-[13px] font-semibold text-white disabled:opacity-60"
-            style={{ background: provider.btnStyle.background as string }}
+            disabled={!canContinue || saving}
+            className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl text-[14px] font-bold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+            style={{ background: "#FF6A00" }}
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Conectar
+            Continuar
           </button>
         </div>
       </div>
