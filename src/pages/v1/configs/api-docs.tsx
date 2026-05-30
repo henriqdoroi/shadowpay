@@ -40,11 +40,11 @@ const T = {
   violetSoft: "rgba(124,58,237,0.08)",
   border: "rgba(15,23,42,0.08)",
   borderSoft: "rgba(15,23,42,0.06)",
-  codeBg: "#0B1020",
+  codeBg: "#F8FAFC",
 };
 
 /* ============================================================
- * Code block — fundo escuro premium com botão copiar
+ * Code block — fundo claro (white theme) com botão copiar
  * ============================================================ */
 function CodeBlock({
   code,
@@ -63,12 +63,15 @@ function CodeBlock({
   return (
     <div
       className="relative overflow-hidden rounded-2xl"
-      style={{ background: T.codeBg, border: "1px solid rgba(148,163,184,0.14)" }}
+      style={{ background: T.codeBg, border: `1px solid ${T.border}` }}
     >
       {label && (
         <div
           className="flex items-center justify-between px-4 py-2.5"
-          style={{ borderBottom: "1px solid rgba(148,163,184,0.12)" }}
+          style={{
+            borderBottom: `1px solid ${T.borderSoft}`,
+            background: "#FFFFFF",
+          }}
         >
           <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
             <Terminal className="h-3.5 w-3.5" />
@@ -76,10 +79,10 @@ function CodeBlock({
           </span>
           <button
             onClick={copy}
-            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold text-slate-300 transition-colors hover:bg-white/5"
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold text-slate-500 transition-colors hover:bg-slate-100"
           >
             {copied ? (
-              <Check className="h-3.5 w-3.5 text-emerald-400" />
+              <Check className="h-3.5 w-3.5 text-emerald-600" />
             ) : (
               <Copy className="h-3.5 w-3.5" />
             )}
@@ -89,7 +92,7 @@ function CodeBlock({
       )}
       <pre className="overflow-x-auto px-4 py-4 text-[12.5px] leading-relaxed">
         <code
-          className="font-mono text-slate-200"
+          className="font-mono text-slate-700"
           style={{ whiteSpace: "pre" }}
         >
           {code}
@@ -98,10 +101,10 @@ function CodeBlock({
       {!label && (
         <button
           onClick={copy}
-          className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-lg bg-white/5 px-2.5 py-1 text-[11px] font-semibold text-slate-300 transition-colors hover:bg-white/10"
+          className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-500 transition-colors hover:bg-slate-50"
         >
           {copied ? (
-            <Check className="h-3.5 w-3.5 text-emerald-400" />
+            <Check className="h-3.5 w-3.5 text-emerald-600" />
           ) : (
             <Copy className="h-3.5 w-3.5" />
           )}
@@ -556,19 +559,24 @@ echo $response["data"]["pix"]["copyPaste"];`;
         <section
           className="mt-6 flex flex-col items-start gap-3 rounded-2xl p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"
           style={{
-            background: "linear-gradient(120deg, #0B1020, #151B33)",
-            border: "1px solid rgba(148,163,184,0.14)",
+            background: "#FFFFFF",
+            border: `1px solid ${T.borderSoft}`,
+            boxShadow:
+              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
           }}
         >
           <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(124,58,237,0.18)", color: "#C4B5FD" }}>
+            <span
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+              style={{ background: T.violetSoft, color: T.violet }}
+            >
               <Webhook className="h-5 w-5" />
             </span>
             <div>
-              <h3 className="text-[15px] font-bold text-white">
+              <h3 className="text-[15px] font-bold text-slate-900">
                 Receba avisos por webhook
               </h3>
-              <p className="mt-0.5 max-w-md text-[12.5px] leading-relaxed text-slate-400">
+              <p className="mt-0.5 max-w-md text-[12.5px] leading-relaxed text-slate-500">
                 Em vez de ficar consultando, configure uma URL pra ShadowPay
                 te avisar automático quando um PIX for pago.
               </p>

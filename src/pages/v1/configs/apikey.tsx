@@ -401,9 +401,10 @@ function ApiKeyContent() {
         <div
           className="mb-6 overflow-hidden rounded-2xl"
           style={{
-            background: "linear-gradient(135deg, #12091F 0%, #1A1130 55%, #0E1330 100%)",
-            border: "1px solid rgba(124,58,237,0.30)",
-            boxShadow: "0 20px 50px -24px rgba(124,58,237,0.45)",
+            background: "#FFFFFF",
+            border: "1px solid rgba(124,58,237,0.20)",
+            boxShadow:
+              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
           }}
         >
           <div className="p-5 sm:p-6">
@@ -411,27 +412,27 @@ function ApiKeyContent() {
               <span
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
                 style={{
-                  background: "rgba(124,58,237,0.22)",
-                  border: "1px solid rgba(167,139,250,0.30)",
-                  color: "#C4B5FD",
+                  background: "rgba(124,58,237,0.08)",
+                  border: "1px solid rgba(124,58,237,0.18)",
+                  color: "#7C3AED",
                 }}
               >
                 <Sparkles className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <h2 className="text-[16px] font-bold text-white">
+                <h2 className="text-[16px] font-bold text-slate-900">
                   Integração via IA{" "}
-                  <span className="font-semibold text-violet-300">
+                  <span className="font-semibold text-violet-600">
                     (ChatGPT, Claude, Gemini)
                   </span>
                 </h2>
-                <p className="mt-1 text-[13px] leading-relaxed text-slate-300/80">
+                <p className="mt-1 text-[13px] leading-relaxed text-slate-500">
                   Copie o prompt abaixo e cole numa IA. Substitua{" "}
-                  <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11.5px] text-violet-200">
+                  <code className="rounded bg-violet-50 px-1.5 py-0.5 font-mono text-[11.5px] text-violet-700">
                     [COLE SUA CHAVE SECRETA AQUI]
                   </code>{" "}
                   e{" "}
-                  <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11.5px] text-violet-200">
+                  <code className="rounded bg-violet-50 px-1.5 py-0.5 font-mono text-[11.5px] text-violet-700">
                     [COLE O ID DO PEDIDO]
                   </code>{" "}
                   com seus dados reais. A IA gera o código completo pra integrar
@@ -444,17 +445,16 @@ function ApiKeyContent() {
             <div
               className="relative mt-4 overflow-hidden rounded-xl"
               style={{
-                background: "rgba(2,6,23,0.55)",
-                border: "1px solid rgba(148,163,184,0.16)",
+                background: "#F8FAFC",
+                border: "1px solid rgba(15,23,42,0.08)",
               }}
             >
               <button
                 onClick={copyPrompt}
                 className="absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11.5px] font-semibold text-white transition-colors"
                 style={{
-                  background: promptCopied
-                    ? "rgba(16,185,129,0.20)"
-                    : "rgba(124,58,237,0.85)",
+                  background: promptCopied ? "#16A34A" : "#7C3AED",
+                  boxShadow: "0 6px 16px -8px rgba(124,58,237,0.45)",
                 }}
               >
                 {promptCopied ? (
@@ -469,7 +469,7 @@ function ApiKeyContent() {
               </button>
               <pre className="max-h-64 overflow-auto px-4 py-4 pr-28 text-[12px] leading-relaxed">
                 <code
-                  className="font-mono text-slate-300"
+                  className="font-mono text-slate-600"
                   style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
                 >
                   {aiPrompt}
@@ -483,13 +483,13 @@ function ApiKeyContent() {
                 <button
                   key={tool.id}
                   onClick={() => openAiTool(tool.url)}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl text-[13px] font-semibold text-white transition-colors"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl text-[13px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
                   style={{
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(148,163,184,0.20)",
+                    background: "#FFFFFF",
+                    border: "1px solid rgba(15,23,42,0.10)",
                   }}
                 >
-                  <Sparkles className="h-4 w-4 text-violet-300" />
+                  <Sparkles className="h-4 w-4 text-violet-500" />
                   {tool.label}
                 </button>
               ))}
