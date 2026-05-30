@@ -182,6 +182,8 @@ export default function AdsConnections() {
 
   const [oauthModal, setOauthModal] = useState<ProviderUI | null>(null);
   const [kwaiModal, setKwaiModal] = useState<ProviderUI | null>(null);
+  // Kwai: id da conexão (agência) recém-salva, pra ligar o token no OAuth
+  const [pendingKwaiCid, setPendingKwaiCid] = useState<string | null>(null);
 
   const fetchAll = useCallback(async () => {
     if (!token) return;
@@ -234,15 +236,23 @@ export default function AdsConnections() {
   const getAuthUrl = async (p: ProviderUI): Promise<string | null> => {
     if (!token) return null;
     const ret = `${window.location.origin}/v1/tracking?tab=ads`;
+    const params: Record<string, string> = { return: ret };
+    if (p.code === "KWAI" && pendingKwaiCid) params.cid = pendingKwaiCid;
     try {
       const r = await axios.get(
         `${API}/api/ads/${p.code.toLowerCase()}/oauth/start`,
-        { params: { return: ret }, headers: { Authorization: `Bearer ${token}` } }
+        { params, headers: { Authorization: `Bearer ${token}` } }
       );
       return r.data?.data?.url || null;
     } catch (e: any) {
       if (e?.response?.data?.code === "PROVIDER_NOT_CONFIGURED") {
-        toast.error(`${p.name} ainda não foi configurado pelo admin do gateway.`);
+        if (p.code === "KWAI") {
+          toast.success(
+            "Conta Kwai salva! A autorização com o Business Center liga quando o app do Kwai for liberado/configurado."
+          );
+        } else {
+          toast.error(`${p.name} ainda não foi configurado pelo admin do gateway.`);
+        }
       } else {
         toast.error(e?.response?.data?.message || "Erro ao iniciar conexão.");
       }
@@ -400,11 +410,17 @@ export default function AdsConnections() {
       })}
 
       {/* Modal OAuth (navegador / multilogin) */}
-      {oauthModal && (
+      {oauthModal && (() => {
+        const isKwai = oauthModal.code === "KWAI";
+        const closeOauth = () => {
+          setOauthModal(null);
+          setPendingKwaiCid(null);
+        };
+        return (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center px-4"
           style={{ background: "rgba(15,23,42,0.45)" }}
-          onClick={() => setOauthModal(null)}
+          onClick={closeOauth}
         >
           <div
             className="w-full max-w-md rounded-2xl bg-white p-6"
@@ -417,54 +433,72 @@ export default function AdsConnections() {
                 Conectar {oauthModal.name}
               </h2>
             </div>
-            <p className="mb-4 text-[13px] text-slate-500">
-              Escolha como deseja conectar sua conta {oauthModal.name}.
+            <p className="mb-4 text-[13px] leading-relaxed text-slate-500">
+              {isKwai ? (
+                <>
+                  Escolha como deseja conectar sua conta Kwai Ads. É necessário
+                  estar logado no Business Center Kwai no navegador que irá
+                  realizar a conexão.
+                </>
+              ) : (
+                <>Escolha como deseja conectar sua conta {oauthModal.name}.</>
+              )}
             </p>
 
-            <div
-              className="mb-4 flex items-start gap-2 rounded-xl px-3 py-2.5"
-              style={{ background: AMBER.bg, border: `1px solid ${AMBER.border}` }}
-            >
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
-              <p className="text-[12px] leading-relaxed text-amber-700">
-                <strong>Atenção:</strong> abra o ShadowPay no mesmo navegador
-                onde a conta tá logada. Se você usa Multilogin/Adspower, use o
-                botão <strong>Copiar link</strong> abaixo.
-              </p>
-            </div>
+            {!isKwai && (
+              <div
+                className="mb-4 flex items-start gap-2 rounded-xl px-3 py-2.5"
+                style={{ background: AMBER.bg, border: `1px solid ${AMBER.border}` }}
+              >
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                <p className="text-[12px] leading-relaxed text-amber-700">
+                  <strong>Atenção:</strong> abra o ShadowPay no mesmo navegador
+                  onde a conta tá logada. Se você usa Multilogin/Adspower, use o
+                  botão <strong>Copiar link</strong> abaixo.
+                </p>
+              </div>
+            )}
 
             <button
               onClick={() => continueInBrowser(oauthModal)}
               disabled={busy === oauthModal.code}
               className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl text-[14px] font-semibold text-white disabled:opacity-60"
-              style={{ background: "#2563EB" }}
+              style={{ background: isKwai ? "#FF6A00" : "#2563EB" }}
             >
               {busy === oauthModal.code ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <ExternalLink className="h-4 w-4" />
               )}
-              Continuar neste navegador (nova aba)
+              Continuar neste navegador
             </button>
             <p className="mb-3 mt-1.5 text-center text-[11.5px] text-slate-400">
-              Conecta diretamente no navegador atual (precisa estar logado aqui)
+              {isKwai
+                ? "Conecte sua conta Kwai Ads diretamente neste navegador"
+                : "Conecta diretamente no navegador atual (precisa estar logado aqui)"}
             </p>
 
             <button
               onClick={() => copyAuthLink(oauthModal)}
               disabled={busy === oauthModal.code}
-              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl text-[14px] font-semibold text-slate-700 disabled:opacity-60"
-              style={{ background: "#F1F5F9", border: "1px solid rgba(15,23,42,0.08)" }}
+              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl text-[14px] font-semibold disabled:opacity-60"
+              style={
+                isKwai
+                  ? { background: "#0F172A", color: "#FFFFFF" }
+                  : { background: "#F1F5F9", color: "#334155", border: "1px solid rgba(15,23,42,0.08)" }
+              }
             >
               <Copy className="h-4 w-4" />
               Copiar link para navegador multilogin
             </button>
             <p className="mb-4 mt-1.5 text-center text-[11.5px] text-slate-400">
-              Cole em outro navegador onde a conta tá logada (Multilogin/Adspower)
+              {isKwai
+                ? "Gere um link para conectar em outro navegador ou compartilhar com colaboradores"
+                : "Cole em outro navegador onde a conta tá logada (Multilogin/Adspower)"}
             </p>
 
             <button
-              onClick={() => setOauthModal(null)}
+              onClick={closeOauth}
               className="h-11 w-full rounded-xl text-[13px] font-semibold text-slate-500 hover:bg-slate-50"
               style={{ border: "1px solid rgba(15,23,42,0.08)" }}
             >
@@ -472,17 +506,22 @@ export default function AdsConnections() {
             </button>
           </div>
         </div>
-      )}
+        );
+      })()}
 
-      {/* Modal Kwai (Agência / Conta de Anúncio) */}
+      {/* Modal Kwai (Agência / Conta de Anúncio) → depois abre o OAuth */}
       {kwaiModal && (
         <KwaiModal
           token={token!}
           onClose={() => setKwaiModal(null)}
-          onConnected={() => {
+          onSaved={(id) => {
             setKwaiModal(null);
             setExpanded("KWAI");
             fetchAll();
+            // Abre o popup "Conectar Kwai Ads" (OAuth Business Center)
+            const kwai = PROVIDERS.find((p) => p.code === "KWAI")!;
+            setPendingKwaiCid(id);
+            setOauthModal(kwai);
           }}
         />
       )}
@@ -494,11 +533,11 @@ export default function AdsConnections() {
 function KwaiModal({
   token,
   onClose,
-  onConnected,
+  onSaved,
 }: {
   token: string;
   onClose: () => void;
-  onConnected: () => void;
+  onSaved: (connectionId: string) => void;
 }) {
   const [accountType, setAccountType] = useState<"AGENCY" | "AD_ACCOUNT">("AGENCY");
   const [agencyId, setAgencyId] = useState("");
@@ -525,7 +564,7 @@ function KwaiModal({
     if (!canContinue) return;
     setSaving(true);
     try {
-      await axios.post(
+      const r = await axios.post(
         `${API}/api/ads/kwai/connect`,
         {
           accountType,
@@ -535,8 +574,7 @@ function KwaiModal({
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success("Kwai Ads conectado!");
-      onConnected();
+      onSaved(r.data?.data?.id || "");
     } catch (e: any) {
       toast.error(e?.response?.data?.message || "Erro ao conectar Kwai.");
     } finally {
