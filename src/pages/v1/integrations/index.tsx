@@ -40,7 +40,10 @@ type Integration = {
   name: string;
   category: "Trackeamento" | "Webhooks" | "Analytics";
   description: string;
+  /** Iniciais (fallback caso nao tenha logo PNG) */
   logo: string;
+  /** Caminho da logo PNG (preferido sobre as iniciais) */
+  logoImage?: string;
   logoBg: string;
   href?: string;
   fields?: Array<{ key: "apiKey" | "apiSecret" | "webhookUrl"; label: string; placeholder?: string; type?: string }>;
@@ -55,7 +58,8 @@ const INTEGRATIONS: Integration[] = [
     category: "Trackeamento",
     description: "Trackeamento server-side com UTMs persistentes em todo o funil de PIX.",
     logo: "UT",
-    logoBg: "linear-gradient(135deg, #6366F1, #8B5CF6)",
+    logoImage: "/utmifylogo.png",
+    logoBg: "#FFFFFF",
     fields: [
       { key: "apiKey", label: "API Token", placeholder: "utmify_xxx...", type: "password" },
     ],
@@ -68,7 +72,8 @@ const INTEGRATIONS: Integration[] = [
     category: "Trackeamento",
     description: "Atribuição multicanal, deduplicação de eventos e CAPI pra escala.",
     logo: "XT",
-    logoBg: "linear-gradient(135deg, #F97316, #EF4444)",
+    logoImage: "/xtrackylogo.png",
+    logoBg: "#FFFFFF",
     fields: [
       { key: "apiKey", label: "API Key", placeholder: "xtk_live_xxx...", type: "password" },
       { key: "webhookUrl", label: "Webhook URL (opcional)", placeholder: "https://..." },
@@ -81,7 +86,8 @@ const INTEGRATIONS: Integration[] = [
     category: "Analytics",
     description: "Eventos de funil + receita enviados pro GA4 via Measurement Protocol.",
     logo: "G4",
-    logoBg: "linear-gradient(135deg, #F59E0B, #D97706)",
+    logoImage: "/googleanalyticslogo.png",
+    logoBg: "#FFFFFF",
     fields: [
       { key: "apiKey", label: "Measurement ID", placeholder: "G-XXXXXXXXXX" },
       { key: "apiSecret", label: "API Secret", type: "password" },
@@ -93,7 +99,8 @@ const INTEGRATIONS: Integration[] = [
     category: "Webhooks",
     description: "Notifique seus sistemas em tempo real pra cada PIX gerado, pago ou cancelado.",
     logo: "WH",
-    logoBg: "linear-gradient(135deg, #7C3AED, #6D28D9)",
+    logoImage: "/webhooklogo.png",
+    logoBg: "#FFFFFF",
     href: "/v1/configs/webhook",
   },
 ];
@@ -156,10 +163,21 @@ function ConnectModal({
       >
         <div className="mb-4 flex items-start gap-3">
           <div
-            className="flex h-12 w-12 items-center justify-center rounded-xl text-[14px] font-bold text-white"
-            style={{ background: integration.logoBg }}
+            className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl text-[14px] font-bold text-white"
+            style={{
+              background: integration.logoBg,
+              border: integration.logoImage ? `1px solid ${T.borderSoft}` : "none",
+            }}
           >
-            {integration.logo}
+            {integration.logoImage ? (
+              <img
+                src={integration.logoImage}
+                alt={`${integration.name} logo`}
+                className="h-full w-full object-contain p-1"
+              />
+            ) : (
+              integration.logo
+            )}
           </div>
           <div className="flex-1">
             <h2 className="text-[16px] font-bold text-slate-900">
@@ -379,10 +397,21 @@ function IntegrationsContent() {
               >
                 <div className="flex items-start gap-3">
                   <div
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-[14px] font-bold text-white"
-                    style={{ background: it.logoBg }}
+                    className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl text-[14px] font-bold text-white"
+                    style={{
+                      background: it.logoBg,
+                      border: it.logoImage ? `1px solid ${T.borderSoft}` : "none",
+                    }}
                   >
-                    {it.logo}
+                    {it.logoImage ? (
+                      <img
+                        src={it.logoImage}
+                        alt={`${it.name} logo`}
+                        className="h-full w-full object-contain p-1"
+                      />
+                    ) : (
+                      it.logo
+                    )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
