@@ -26,7 +26,6 @@ import {
   AlertTriangle,
   Info,
   MoreVertical,
-  Check,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -975,10 +974,7 @@ function ProfileAccounts({
     if (forceOpen) setOpen(true);
   }, [forceOpen]);
 
-  const toggleAccount = async (id: string) => {
-    const next = selected.includes(id)
-      ? selected.filter((x) => x !== id)
-      : [...selected, id];
+  const persist = async (next: string[]) => {
     setSelected(next);
     try {
       await axios.post(
@@ -987,9 +983,18 @@ function ProfileAccounts({
         { headers: { Authorization: `Bearer ${token}` } }
       );
     } catch {
-      toast.error("Erro ao salvar seleção.");
+      toast.error("Erro ao salvar.");
     }
   };
+  const toggleAccount = (id: string) =>
+    persist(
+      selected.includes(id)
+        ? selected.filter((x) => x !== id)
+        : [...selected, id]
+    );
+  const allOn =
+    accounts.length > 0 && accounts.every((a) => selected.includes(a.id));
+  const toggleAll = () => persist(allOn ? [] : accounts.map((a) => a.id));
 
   return (
     <div
@@ -1029,24 +1034,23 @@ function ProfileAccounts({
                 : "Nenhuma conta de anúncio encontrada."}
             </p>
           ) : (
-            <div className="space-y-0.5">
-              {accounts.map((a) => {
-                const on = selected.includes(a.id);
-                return (
-                  <button
+            <div>
+              {/* Ativar todas */}
+              <div
+                className="mb-1 flex items-center justify-between gap-2 px-2 py-1.5"
+                style={{ borderBottom: "1px solid rgba(15,23,42,0.06)" }}
+              >
+                <span className="text-[12px] font-semibold text-slate-500">
+                  Ativar todas:
+                </span>
+                <Toggle on={allOn} onChange={toggleAll} />
+              </div>
+              <div className="space-y-0.5 pt-1">
+                {accounts.map((a) => (
+                  <div
                     key={a.id}
-                    onClick={() => toggleAccount(a.id)}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left hover:bg-slate-50"
+                    className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5"
                   >
-                    <span
-                      className="flex h-4 w-4 shrink-0 items-center justify-center rounded"
-                      style={{
-                        background: on ? "#2563EB" : "#FFFFFF",
-                        border: `1px solid ${on ? "#2563EB" : "rgba(15,23,42,0.20)"}`,
-                      }}
-                    >
-                      {on && <Check className="h-3 w-3 text-white" />}
-                    </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[13px] font-medium text-slate-800">
                         {a.name}
@@ -1055,13 +1059,35 @@ function ProfileAccounts({
                         {a.id}
                       </span>
                     </span>
-                  </button>
-                );
-              })}
+                    <Toggle
+                      on={selected.includes(a.id)}
+                      onChange={() => toggleAccount(a.id)}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
       )}
     </div>
+  );
+}
+
+/* ===================== Toggle (liga/desliga) ===================== */
+function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      aria-pressed={on}
+      className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors"
+      style={{ background: on ? "#2563EB" : "#CBD5E1" }}
+    >
+      <span
+        className="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform"
+        style={{ transform: on ? "translateX(22px)" : "translateX(2px)" }}
+      />
+    </button>
   );
 }
