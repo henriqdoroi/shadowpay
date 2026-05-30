@@ -2,11 +2,13 @@
 
 import Head from "next/head";
 import { useEffect, useState } from "react";
-import { Megaphone, ArrowUpRight, Activity, TrendingUp, MousePointerClick } from "lucide-react";
+import { useRouter } from "next/router";
+import { Megaphone, ArrowUpRight, Activity, TrendingUp, MousePointerClick, BarChart3, Plug } from "lucide-react";
 import axios from "axios";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { LightShell } from "@/components/LightShell";
 import ShadowPanel from "@/components/ShadowPanel";
+import AdsConnections from "@/components/AdsConnections";
 import { useAuth } from "@/contexts/AuthContext";
 
 const API = "https://shadowpay-api-production.up.railway.app";
@@ -31,8 +33,15 @@ type TrackingChannel = {
 
 function TrackingContent() {
   const { token } = useAuth();
+  const router = useRouter();
   const [channels, setChannels] = useState<TrackingChannel[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<"campaigns" | "ads">("campaigns");
+
+  // Abre direto na aba de Ads quando volta do OAuth (?tab=ads)
+  useEffect(() => {
+    if (router.query.tab === "ads") setTab("ads");
+  }, [router.query.tab]);
 
   useEffect(() => {
     if (!token) return;
@@ -70,6 +79,38 @@ function TrackingContent() {
         </p>
       </header>
 
+      {/* Tabs */}
+      <div className="mb-6 flex w-full gap-1 overflow-x-auto sm:w-auto">
+        {[
+          { id: "campaigns" as const, label: "Campanhas", icon: BarChart3 },
+          { id: "ads" as const, label: "Conexões de Ads", icon: Plug },
+        ].map((t) => {
+          const Icon = t.icon;
+          const active = tab === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className="inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-semibold transition-colors"
+              style={{
+                background: active ? "rgba(124,58,237,0.08)" : "#FFFFFF",
+                color: active ? "#7C3AED" : "#475569",
+                border: `1px solid ${active ? "rgba(124,58,237,0.20)" : "rgba(15,23,42,0.08)"}`,
+              }}
+            >
+              <Icon className="h-4 w-4" />
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ===== ABA: CONEXÕES DE ADS ===== */}
+      {tab === "ads" && <AdsConnections />}
+
+      {/* ===== ABA: CAMPANHAS ===== */}
+      {tab === "campaigns" && (
+      <>
       {/* Metrics */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[
@@ -229,6 +270,8 @@ function TrackingContent() {
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }
