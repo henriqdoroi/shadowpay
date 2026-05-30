@@ -742,44 +742,42 @@ function DashboardContent() {
       </Head>
 
       <LightShell valuesVisible={valuesVisible} onToggleValues={() => setValuesVisible((v) => !v)}>
-              {/* HERO — só desktop (md+). Mobile fica sem hero,
-                  começa direto pela toolbar de Refresh + Filtros. */}
+              {/* HERO — banner art como background-image (sem <img>).
+                  Só desktop (md+). Mobile vai direto pra toolbar. */}
               <motion.section
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                className="relative mb-6 hidden items-center overflow-hidden md:flex md:px-8 md:py-7"
+                className="relative mb-6 hidden overflow-hidden md:block"
                 style={{
                   backgroundColor: "#FFFFFF",
+                  backgroundImage: "url('/shadow-hero-bg.png')",
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "left center",
+                  backgroundSize: "auto 100%",
                   border: "1px solid rgba(15, 23, 42, 0.08)",
                   borderRadius: 24,
                   boxShadow: "0 18px 45px rgba(15, 23, 42, 0.06)",
-                  minHeight: 120,
+                  padding: "32px 36px",
                 }}
               >
-                {/* Pantera à esquerda */}
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute inset-y-0 left-0 w-[210px]"
-                  style={{
-                    backgroundImage: "url('/shadow-hero-bg.png')",
-                    backgroundRepeat: "no-repeat",
-                    backgroundPosition: "left center",
-                    backgroundSize: "auto 100%",
-                  }}
-                />
-
-                <div className="relative w-full pl-[210px]">
-                  <div className="flex flex-row items-center justify-between gap-4">
+                {/* Content area — offset right da arte */}
+                <div className="relative md:pl-[210px]">
+                  {/* top row: greeting + buttons */}
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div className="min-w-0 flex-1">
                       <h1
-                        className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[28px] leading-[1.2]"
+                        className="flex flex-wrap items-center gap-x-3 gap-y-1"
                         style={{
                           fontFamily:
                             "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
+                          fontSize: 28,
                           fontWeight: 700,
+                          lineHeight: 1.15,
                           color: "#0F172A",
-                          letterSpacing: "-0.01em",
+                          letterSpacing: "-0.005em",
+                          fontFeatureSettings: '"calt" 1, "kern" 1',
+                          wordSpacing: "0.05em",
                           margin: 0,
                         }}
                       >
@@ -787,18 +785,29 @@ function DashboardContent() {
                           {greeting}, {user?.companyName || "Operador"}.
                         </span>
                         <span
-                          className="inline-block text-[24px]"
-                          style={{ fontFamily: "system-ui, sans-serif" }}
+                          className="inline-block"
+                          style={{
+                            fontFamily: "system-ui, sans-serif",
+                            fontSize: 24,
+                          }}
                         >
                           👋
                         </span>
                       </h1>
                       <p
-                        className="mt-2 text-[14px]"
-                        style={{ color: "#64748B" }}
+                        style={{
+                          marginTop: 8,
+                          fontSize: 14,
+                          color: "#64748B",
+                        }}
                       >
                         Operação sincronizada. Última atualização há{" "}
-                        <span style={{ fontWeight: 600, color: "#1E293B" }}>
+                        <span
+                          style={{
+                            fontWeight: 600,
+                            color: "#334155",
+                          }}
+                        >
                           {Math.max(
                             1,
                             Math.floor(
@@ -811,7 +820,11 @@ function DashboardContent() {
                       </p>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-3">
+                    {/* Buttons — top right */}
+                    <div
+                      className="flex flex-wrap items-center"
+                      style={{ gap: 12 }}
+                    >
                       <button
                         onClick={() => router.push("/v1/products/create")}
                         className="inline-flex items-center gap-2 transition-all hover:bg-slate-50"
@@ -873,19 +886,21 @@ function DashboardContent() {
                     </div>
                   </div>
 
-                  {/* 2FA alert — só aparece se pendente */}
+                  {/* 2FA alert — horizontal bar */}
                   {localUser &&
                     !(localUser.twofaEnabled && localUser.twofaConfirmed) && (
                       <div
-                        className="mt-6 flex flex-row items-center justify-between gap-3"
+                        className="flex items-center justify-between"
                         style={{
+                          marginTop: 28,
+                          height: 64,
                           borderRadius: 16,
-                          background: "rgba(255, 255, 255, 0.85)",
+                          background: "transparent",
                           border: "1px solid rgba(15, 23, 42, 0.06)",
-                          padding: "12px 16px",
+                          padding: "0 18px",
                         }}
                       >
-                        <div className="flex items-center gap-3.5">
+                        <div className="flex items-center" style={{ gap: 14 }}>
                           <div
                             className="flex items-center justify-center"
                             style={{
@@ -925,17 +940,16 @@ function DashboardContent() {
                         </div>
                         <button
                           onClick={() => setIs2FAModalOpen(true)}
-                          className="inline-flex shrink-0 items-center justify-center transition-colors hover:bg-slate-50"
+                          className="inline-flex items-center transition-colors hover:bg-slate-50"
                           style={{
                             height: 36,
-                            padding: "0 18px",
+                            padding: "0 16px",
                             borderRadius: 10,
                             background: "#FFFFFF",
                             border: "1px solid #E5E7EB",
                             fontSize: 12,
                             fontWeight: 600,
                             color: "#334155",
-                            whiteSpace: "nowrap",
                           }}
                         >
                           Ativar agora
