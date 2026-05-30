@@ -4,8 +4,19 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import Head from "next/head";
+import Link from "next/link";
 import { toast } from "sonner";
-import { Copy, CheckCircle, Key, Globe, ShieldCheck } from "lucide-react";
+import {
+  Copy,
+  CheckCircle,
+  Key,
+  Globe,
+  ShieldCheck,
+  Sparkles,
+  FileText,
+  ArrowUpRight,
+  Check,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +29,77 @@ import { LightShell } from "@/components/LightShell";
 import ShadowPanel from "@/components/ShadowPanel";
 
 const API = "https://shadowpay-api-production.up.railway.app";
+
+/* Ferramentas de IA — abrem em nova aba com o prompt já no clipboard */
+const AI_TOOLS = [
+  { id: "chatgpt", label: "Abrir ChatGPT", url: "https://chatgpt.com/" },
+  { id: "claude", label: "Abrir Claude", url: "https://claude.ai/new" },
+  { id: "gemini", label: "Abrir Gemini", url: "https://gemini.google.com/app" },
+];
+
+/**
+ * Monta o prompt de integração via IA. Inclui a documentação real da
+ * API de PIX da ShadowPay pra a IA gerar código que funciona de verdade.
+ */
+function buildAiPrompt(publicKey?: string): string {
+  const pk = publicKey || "pk_live_SUA_CHAVE_PUBLICA";
+  return `Você é um desenvolvedor especialista em integração de gateways de pagamento PIX.
+
+Preciso que você integre o gateway ShadowPay no meu checkout/site e gere o código completo e funcional.
+
+DOCUMENTAÇÃO DA API SHADOWPAY:
+
+Base URL: ${API}
+
+Autenticação: Bearer Token no header
+  Authorization: Bearer [COLE SUA CHAVE SECRETA AQUI]
+  (sua chave secreta começa com sk_live_ — pegue no painel em Chaves de API)
+  Minha chave pública (referência): ${pk}
+
+ENDPOINTS:
+
+1) Criar cobrança PIX
+POST /api/v1/pix/charges
+Body (JSON):
+{
+  "amount": 199.90,                       // valor em reais
+  "customerName": "Nome do Cliente",
+  "customerEmail": "cliente@email.com",
+  "customerCpfCnpj": "12345678900",
+  "description": "Pedido #1234",
+  "externalReference": "[COLE O ID DO PEDIDO]"
+}
+Resposta:
+{
+  "success": true,
+  "data": {
+    "id": "uuid-da-cobranca",
+    "status": "pending",
+    "amount": "199.90",
+    "pix": {
+      "copyPaste": "00020126...",          // código PIX copia-e-cola
+      "qrCodeUrl": "https://..."            // imagem do QR Code
+    },
+    "expiresAt": "2026-..."
+  }
+}
+
+2) Consultar status da cobrança
+GET /api/v1/pix/charges/{id}
+Resposta: mesmo formato, com status "pending" | "approved" | "expired"
+
+3) Testar autenticação
+GET /api/v1/ping
+
+REQUISITOS DA INTEGRAÇÃO:
+- Crie um botão "Pagar com PIX" no meu checkout.
+- Ao clicar, chame POST /api/v1/pix/charges e mostre o QR Code + o copia-e-cola.
+- Faça polling no GET /api/v1/pix/charges/{id} a cada 5 segundos.
+- Quando o status virar "approved", mostre uma tela de "Pagamento aprovado".
+- IMPORTANTE: a chave secreta NUNCA pode ficar exposta no frontend. Chame a API a partir de um backend/servidor.
+
+Me diga qual linguagem/framework você vai usar, gere o código completo e explique passo a passo como rodar.`;
+}
 
 interface ApiKey {
   id: string;
@@ -37,6 +119,7 @@ function ApiKeyContent() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [renewingId, setRenewingId] = useState<string | null>(null);
   const [sellerIp, setSellerIp] = useState<string>("");
+  const [promptCopied, setPromptCopied] = useState(false);
 
   const fetchCredentials = async () => {
     if (!token) return;
@@ -147,6 +230,21 @@ function ApiKeyContent() {
   const current = credentials.length > 0 ? credentials[0] : null;
   const has = !!current;
 
+  const aiPrompt = buildAiPrompt(current?.publicKey);
+
+  const copyPrompt = () => {
+    navigator.clipboard.writeText(aiPrompt);
+    setPromptCopied(true);
+    toast.success("Prompt copiado! Cole na IA.");
+    setTimeout(() => setPromptCopied(false), 2000);
+  };
+
+  const openAiTool = (url: string) => {
+    navigator.clipboard.writeText(aiPrompt).catch(() => undefined);
+    toast.success("Prompt copiado — é só colar (Ctrl+V).");
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
   const inputCls =
     "h-11 w-full rounded-xl border border-slate-200 bg-white px-3 font-mono text-sm text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-violet-300 focus:ring-2 focus:ring-violet-100";
 
@@ -169,8 +267,16 @@ function ApiKeyContent() {
           >
             Chaves de API
           </h1>
-          <p className="mt-1 text-[14px] text-slate-500">
-            Gere e gerencie suas credenciais de integração.
+          <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-[14px] text-slate-500">
+            Use estas chaves pra integrar a API de PIX da ShadowPay no seu site
+            ou checkout.
+            <Link
+              href="/v1/configs/api-docs"
+              className="inline-flex items-center gap-1 font-semibold text-violet-600 transition-colors hover:text-violet-700"
+            >
+              Ver documentação
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </Link>
           </p>
         </header>
 
@@ -289,6 +395,106 @@ function ApiKeyContent() {
               </button>
             </div>
           )}
+        </div>
+
+        {/* Integração via IA */}
+        <div
+          className="mb-6 overflow-hidden rounded-2xl"
+          style={{
+            background: "linear-gradient(135deg, #12091F 0%, #1A1130 55%, #0E1330 100%)",
+            border: "1px solid rgba(124,58,237,0.30)",
+            boxShadow: "0 20px 50px -24px rgba(124,58,237,0.45)",
+          }}
+        >
+          <div className="p-5 sm:p-6">
+            <div className="flex items-start gap-3">
+              <span
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                style={{
+                  background: "rgba(124,58,237,0.22)",
+                  border: "1px solid rgba(167,139,250,0.30)",
+                  color: "#C4B5FD",
+                }}
+              >
+                <Sparkles className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-[16px] font-bold text-white">
+                  Integração via IA{" "}
+                  <span className="font-semibold text-violet-300">
+                    (ChatGPT, Claude, Gemini)
+                  </span>
+                </h2>
+                <p className="mt-1 text-[13px] leading-relaxed text-slate-300/80">
+                  Copie o prompt abaixo e cole numa IA. Substitua{" "}
+                  <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11.5px] text-violet-200">
+                    [COLE SUA CHAVE SECRETA AQUI]
+                  </code>{" "}
+                  e{" "}
+                  <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11.5px] text-violet-200">
+                    [COLE O ID DO PEDIDO]
+                  </code>{" "}
+                  com seus dados reais. A IA gera o código completo pra integrar
+                  a ShadowPay no seu checkout em minutos.
+                </p>
+              </div>
+            </div>
+
+            {/* Prompt box */}
+            <div
+              className="relative mt-4 overflow-hidden rounded-xl"
+              style={{
+                background: "rgba(2,6,23,0.55)",
+                border: "1px solid rgba(148,163,184,0.16)",
+              }}
+            >
+              <button
+                onClick={copyPrompt}
+                className="absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11.5px] font-semibold text-white transition-colors"
+                style={{
+                  background: promptCopied
+                    ? "rgba(16,185,129,0.20)"
+                    : "rgba(124,58,237,0.85)",
+                }}
+              >
+                {promptCopied ? (
+                  <>
+                    <Check className="h-3.5 w-3.5" /> Copiado
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3.5 w-3.5" /> Copiar prompt
+                  </>
+                )}
+              </button>
+              <pre className="max-h-64 overflow-auto px-4 py-4 pr-28 text-[12px] leading-relaxed">
+                <code
+                  className="font-mono text-slate-300"
+                  style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
+                >
+                  {aiPrompt}
+                </code>
+              </pre>
+            </div>
+
+            {/* Abrir IA */}
+            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {AI_TOOLS.map((tool) => (
+                <button
+                  key={tool.id}
+                  onClick={() => openAiTool(tool.url)}
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl text-[13px] font-semibold text-white transition-colors"
+                  style={{
+                    background: "rgba(255,255,255,0.06)",
+                    border: "1px solid rgba(148,163,184,0.20)",
+                  }}
+                >
+                  <Sparkles className="h-4 w-4 text-violet-300" />
+                  {tool.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Histórico */}
