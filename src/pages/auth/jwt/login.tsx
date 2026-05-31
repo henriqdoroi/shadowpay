@@ -1,28 +1,38 @@
 "use client";
 
+/**
+ * /auth/jwt/login — Login com a "craft" da Stripe aplicada na paleta
+ * ShadowPay (violeta + white):
+ *  - tipografia display fina (300) com letter-spacing negativo (editorial)
+ *  - UM único CTA sólido (sem gradiente), em pílula
+ *  - inputs com hairline + foco que troca a borda pro primário
+ *  - profundidade sutil com sombra navy (nada de glow roxo)
+ *  - painel de atmosfera (malha violeta orgânica) à esquerda no desktop
+ *  - números/figuras tabulares (tnum) onde aparecem cifras
+ * Toda a lógica de auth + push subscribe foi mantida intacta.
+ */
+
 import Head from "next/head";
 import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { ForgotPasswordModal } from "@/components/ForgotPasswordModal";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { ArrowRight, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowRight, Loader2, ShieldCheck, Zap, Lock } from "lucide-react";
 
+/* Paleta: ShadowPay (violeta) + tokens "ink/hairline/canvas" no estilo Stripe */
 const T = {
-  bg: "#F1F3F8",
-  surface: "#FFFFFF",
-  text: "#0F172A",
-  text2: "#475569",
-  text3: "#94A3B8",
+  ink: "#0F172A",
+  inkSecondary: "#334155",
+  inkMute: "#64748B",
   primary: "#7C3AED",
-  primaryStrong: "#6D28D9",
-  border: "rgba(15, 23, 42, 0.08)",
-  borderStrong: "rgba(15, 23, 42, 0.12)",
+  primaryPress: "#6D28D9",
+  canvas: "#FFFFFF",
+  canvasSoft: "#F6F9FC",
+  hairline: "#E3E8EE",
+  hairlineInput: "#DCE3EC",
 };
 
 function ShadowMark({ size = 32 }: { size?: number }) {
@@ -41,6 +51,11 @@ function ShadowMark({ size = 32 }: { size?: number }) {
   );
 }
 
+const DISPLAY: React.CSSProperties = {
+  fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
+  fontFeatureSettings: '"ss01" 1',
+};
+
 export default function Login() {
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [email, setEmail] = useState("");
@@ -50,10 +65,6 @@ export default function Login() {
 
   useEffect(() => {
     if (isAuthenticated) router.push("/v1/dashboard");
-    document.body.classList.add("no-scroll");
-    return () => {
-      document.body.classList.remove("no-scroll");
-    };
   }, [isAuthenticated, router]);
 
   function urlBase64ToUint8Array(base64String: string) {
@@ -104,6 +115,14 @@ export default function Login() {
     }
   };
 
+  const inputCls =
+    "h-11 w-full rounded-lg px-3.5 text-[14px] outline-none transition-colors placeholder:text-slate-400 focus:border-[#7C3AED] focus:ring-2 focus:ring-[rgba(124,58,237,0.12)]";
+  const inputStyle: React.CSSProperties = {
+    background: T.canvas,
+    border: `1px solid ${T.hairlineInput}`,
+    color: T.ink,
+  };
+
   return (
     <>
       <Head>
@@ -111,178 +130,229 @@ export default function Login() {
       </Head>
 
       <div
-        className="relative min-h-screen w-full overflow-hidden"
-        style={{
-          fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
-          background: T.bg,
-          color: T.text,
-        }}
+        className="grid min-h-screen w-full lg:grid-cols-[1.05fr_1fr]"
+        style={{ ...DISPLAY, background: T.canvas, color: T.ink }}
       >
-        {/* Sutil halo violeta no topo */}
+        {/* ===== Painel de atmosfera (desktop) ===== */}
         <div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-[-30%] h-[600px] w-[800px] -translate-x-1/2 rounded-full"
+          className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between"
           style={{
-            background: "radial-gradient(circle, rgba(124,58,237,0.10) 0%, transparent 60%)",
-            filter: "blur(40px)",
+            padding: "56px 56px 48px",
+            background: `
+              radial-gradient(60% 55% at 18% 22%, rgba(124,58,237,0.55), transparent 68%),
+              radial-gradient(52% 48% at 82% 26%, rgba(99,102,241,0.42), transparent 70%),
+              radial-gradient(58% 55% at 65% 88%, rgba(168,85,247,0.40), transparent 70%),
+              radial-gradient(42% 42% at 8% 92%, rgba(236,72,153,0.22), transparent 70%),
+              #160D2E
+            `,
           }}
-        />
+        >
+          {/* grão sutil */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 opacity-[0.06]"
+            style={{
+              backgroundImage:
+                "radial-gradient(rgba(255,255,255,0.8) 0.5px, transparent 0.5px)",
+              backgroundSize: "4px 4px",
+            }}
+          />
 
-        <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-10">
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full max-w-md"
-          >
-            {/* Brand */}
-            <div className="mb-8 flex flex-col items-center">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-[0_8px_24px_-12px_rgba(124,58,237,0.4),0_2px_8px_rgba(15,23,42,0.06)]">
-                <ShadowMark size={36} />
-              </div>
-              <h1
-                className="text-2xl font-bold tracking-tight"
-                style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif", color: T.text }}
-              >
-                ShadowPay
-              </h1>
-              <div
-                className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.3em]"
-                style={{ color: T.text3 }}
-              >
-                <ShieldCheck className="h-3 w-3" style={{ color: T.primary }} />
-                Elite Financial Infrastructure
-              </div>
+          {/* Brand */}
+          <div className="relative flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 backdrop-blur">
+              <ShadowMark size={22} />
             </div>
+            <span className="text-[15px] font-semibold tracking-tight text-white">
+              ShadowPay
+            </span>
+          </div>
 
-            {/* Card */}
-            <div
-              className="rounded-2xl p-7"
+          {/* Headline editorial (display fina, tracking negativo) */}
+          <div className="relative max-w-[460px]">
+            <h2
+              className="text-white"
               style={{
-                background: T.surface,
-                border: `1px solid ${T.border}`,
-                boxShadow:
-                  "0 1px 2px rgba(15,23,42,0.04), 0 12px 32px -12px rgba(15,23,42,0.12)",
+                ...DISPLAY,
+                fontSize: 44,
+                fontWeight: 300,
+                lineHeight: 1.08,
+                letterSpacing: "-1.2px",
               }}
             >
-              <h2
-                className="mb-6 text-center text-lg font-semibold"
-                style={{ color: T.text }}
-              >
-                Acesse sua infraestrutura
-              </h2>
+              A infraestrutura de pagamentos PIX do seu negócio.
+            </h2>
+            <p
+              className="mt-5 text-[15px] leading-relaxed"
+              style={{ color: "rgba(255,255,255,0.66)" }}
+            >
+              Cobre, receba e concilie em tempo real. Tudo num painel só, com a
+              segurança que a operação exige.
+            </p>
 
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="email"
-                    className="text-xs font-medium uppercase tracking-wider"
-                    style={{ color: T.text2 }}
-                  >
-                    E-mail
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={isLoading}
-                    className="h-11"
-                    style={{
-                      background: "#F8FAFC",
-                      border: `1px solid ${T.border}`,
-                      color: T.text,
-                    }}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label
+            {/* 3 sinais — figuras tabulares onde tem número */}
+            <div className="mt-8 space-y-3">
+              {[
+                { icon: Zap, label: "Liquidação PIX em segundos" },
+                { icon: ShieldCheck, label: "KYC + antifraude integrados" },
+                { icon: Lock, label: "Chaves de API e webhooks próprios" },
+              ].map((f) => {
+                const Icon = f.icon;
+                return (
+                  <div key={f.label} className="flex items-center gap-3">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10">
+                      <Icon className="h-3.5 w-3.5 text-white" />
+                    </span>
+                    <span className="text-[13.5px] text-white/80">{f.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Rodapé do painel */}
+          <div className="relative flex items-center justify-between text-[11px] text-white/45">
+            <span style={{ fontFeatureSettings: '"tnum" 1' }}>
+              © {new Date().getFullYear()} ShadowPay
+            </span>
+            <span className="uppercase tracking-[0.22em]">Financial OS</span>
+          </div>
+        </div>
+
+        {/* ===== Formulário ===== */}
+        <div className="flex items-center justify-center px-5 py-10 sm:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            className="w-full max-w-[380px]"
+          >
+            {/* Brand mobile */}
+            <div className="mb-8 flex items-center gap-2.5 lg:hidden">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ border: `1px solid ${T.hairline}` }}>
+                <ShadowMark size={24} />
+              </div>
+              <span className="text-[16px] font-semibold tracking-tight" style={{ color: T.ink }}>
+                ShadowPay
+              </span>
+            </div>
+
+            {/* Heading */}
+            <h1
+              style={{ ...DISPLAY, fontSize: 28, fontWeight: 600, letterSpacing: "-0.6px", color: T.ink }}
+            >
+              Entrar na sua conta
+            </h1>
+            <p className="mt-1.5 text-[14px]" style={{ color: T.inkMute }}>
+              Bem-vindo de volta. Acesse seu painel.
+            </p>
+
+            <form onSubmit={handleLogin} className="mt-7 space-y-4">
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="email"
+                  className="block text-[12px] font-medium"
+                  style={{ color: T.inkSecondary }}
+                >
+                  E-mail
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  className={inputCls}
+                  style={inputStyle}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label
                     htmlFor="password"
-                    className="text-xs font-medium uppercase tracking-wider"
-                    style={{ color: T.text2 }}
+                    className="block text-[12px] font-medium"
+                    style={{ color: T.inkSecondary }}
                   >
                     Senha
-                  </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={isLoading}
-                    className="h-11"
-                    style={{
-                      background: "#F8FAFC",
-                      border: `1px solid ${T.border}`,
-                      color: T.text,
-                    }}
-                  />
-                </div>
-                <div className="flex justify-end">
+                  </label>
                   <button
                     type="button"
                     onClick={() => setIsForgotPasswordOpen(true)}
-                    className="text-xs transition-colors hover:opacity-80 disabled:opacity-50"
+                    className="text-[12px] transition-opacity hover:opacity-70 disabled:opacity-50"
                     style={{ color: T.primary }}
                     disabled={isLoading}
                   >
-                    Esqueceu sua senha?
+                    Esqueceu a senha?
                   </button>
                 </div>
-                <Button
-                  type="submit"
-                  disabled={isLoading || !email || !password}
-                  className="group relative h-11 w-full overflow-hidden rounded-xl border-0 font-semibold transition-transform hover:-translate-y-0.5 disabled:translate-y-0 disabled:opacity-50"
-                  style={{
-                    background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
-                    color: "#FFFFFF",
-                    boxShadow: "0 12px 28px -12px rgba(124,58,237,0.5)",
-                  }}
-                >
-                  {isLoading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Conectando…
-                    </span>
-                  ) : (
-                    <span className="flex items-center justify-center gap-2">
-                      Entrar no sistema
-                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                    </span>
-                  )}
-                </Button>
-              </form>
-
-              <div className="my-6 flex items-center gap-3">
-                <div className="h-px flex-1" style={{ background: T.border }} />
-                <span
-                  className="text-[10px] uppercase tracking-[0.2em]"
-                  style={{ color: T.text3 }}
-                >
-                  ou
-                </span>
-                <div className="h-px flex-1" style={{ background: T.border }} />
+                <input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  className={inputCls}
+                  style={inputStyle}
+                />
               </div>
 
-              <p className="text-center text-sm" style={{ color: T.text2 }}>
-                Não tem uma conta?{" "}
-                <Link
-                  href="/auth/jwt/register"
-                  className="font-medium transition-colors hover:opacity-80"
-                  style={{ color: T.primary }}
-                >
-                  Criar conta
-                </Link>
-              </p>
+              {/* CTA único — sólido, em pílula, sem gradiente nem glow */}
+              <button
+                type="submit"
+                disabled={isLoading || !email || !password}
+                className="group inline-flex h-11 w-full items-center justify-center gap-2 rounded-full text-[14px] font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-45"
+                style={{
+                  background: isLoading ? T.primaryPress : T.primary,
+                  boxShadow: "0 1px 2px rgba(13,37,61,0.10)",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isLoading) e.currentTarget.style.background = T.primaryPress;
+                }}
+                onMouseLeave={(e) => {
+                  if (!isLoading) e.currentTarget.style.background = T.primary;
+                }}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Conectando…
+                  </>
+                ) : (
+                  <>
+                    Entrar
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Divisor */}
+            <div className="my-6 flex items-center gap-3">
+              <div className="h-px flex-1" style={{ background: T.hairline }} />
+              <span className="text-[11px] uppercase tracking-[0.18em]" style={{ color: T.inkMute }}>
+                ou
+              </span>
+              <div className="h-px flex-1" style={{ background: T.hairline }} />
             </div>
 
-            <p
-              className="mt-6 text-center text-[10px] uppercase tracking-[0.3em]"
-              style={{ color: T.text3 }}
-            >
-              © {new Date().getFullYear()} ShadowPay — Pagamentos com excelência
+            <p className="text-center text-[14px]" style={{ color: T.inkMute }}>
+              Não tem uma conta?{" "}
+              <Link
+                href="/auth/jwt/register"
+                className="font-semibold transition-opacity hover:opacity-70"
+                style={{ color: T.primary }}
+              >
+                Criar conta
+              </Link>
+            </p>
+
+            <p className="mt-8 flex items-center justify-center gap-1.5 text-[11px]" style={{ color: T.inkMute }}>
+              <Lock className="h-3 w-3" />
+              Conexão segura · dados criptografados
             </p>
           </motion.div>
         </div>
