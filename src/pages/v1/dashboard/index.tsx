@@ -747,21 +747,10 @@ function DashboardContent() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                className="relative mb-6 hidden overflow-hidden md:block"
-                style={{
-                  backgroundColor: "#FFFFFF",
-                  backgroundImage: "url('/shadow-hero-bg.png')",
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "left center",
-                  backgroundSize: "auto 100%",
-                  border: "1px solid rgba(15, 23, 42, 0.08)",
-                  borderRadius: 24,
-                  boxShadow: "0 18px 45px rgba(15, 23, 42, 0.06)",
-                  padding: "32px 36px",
-                }}
+                className="relative mb-7 hidden md:block"
               >
-                {/* Content area — offset right da arte */}
-                <div className="relative md:pl-[210px]">
+                {/* Header limpo (estilo Stripe): título + ações, sem card/mascote */}
+                <div className="relative">
                   {/* top row: greeting + buttons */}
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div className="min-w-0 flex-1">
@@ -783,29 +772,8 @@ function DashboardContent() {
                           {greeting}, {user?.companyName || "Operador"}.
                         </span>
                       </h1>
-                      <p
-                        style={{
-                          marginTop: 8,
-                          fontSize: 14,
-                          color: "#64748B",
-                        }}
-                      >
-                        Operação sincronizada. Última atualização há{" "}
-                        <span
-                          style={{
-                            fontWeight: 600,
-                            color: "#334155",
-                          }}
-                        >
-                          {Math.max(
-                            1,
-                            Math.floor(
-                              (Date.now() - refreshAt.getTime()) / 1000
-                            )
-                          )}{" "}
-                          segundos
-                        </span>
-                        .
+                      <p style={{ marginTop: 6, fontSize: 14, color: "#697386" }}>
+                        Resumo da sua operação.
                       </p>
                     </div>
 
@@ -881,25 +849,23 @@ function DashboardContent() {
                       <div
                         className="flex items-center justify-between"
                         style={{
-                          marginTop: 28,
-                          height: 64,
-                          borderRadius: 16,
-                          background: "transparent",
-                          border: "1px solid rgba(15, 23, 42, 0.06)",
-                          padding: "0 18px",
+                          marginTop: 22,
+                          height: 60,
+                          borderRadius: 12,
+                          background: "rgba(245, 158, 11, 0.06)",
+                          border: "1px solid rgba(245, 158, 11, 0.22)",
+                          padding: "0 16px",
                         }}
                       >
-                        <div className="flex items-center" style={{ gap: 14 }}>
+                        <div className="flex items-center" style={{ gap: 12 }}>
                           <div
                             className="flex items-center justify-center"
                             style={{
-                              width: 36,
-                              height: 36,
-                              borderRadius: 10,
-                              background: "rgba(255, 255, 255, 0.55)",
-                              border: "1px solid rgba(15, 23, 42, 0.05)",
-                              color: "#475569",
-                              backdropFilter: "blur(4px)",
+                              width: 34,
+                              height: 34,
+                              borderRadius: 9,
+                              background: "rgba(245, 158, 11, 0.12)",
+                              color: "#B45309",
                               flexShrink: 0,
                             }}
                           >
