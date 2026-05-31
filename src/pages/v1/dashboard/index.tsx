@@ -21,7 +21,6 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import ShadowPanel from "@/components/ShadowPanel";
 import TwoFAModal from "./2faAuthentication";
 import { LightShell } from "@/components/LightShell";
-import { ShadowLogo } from "@/components/shadow/ShadowLogo";
 
 import {
   ChevronDown,
@@ -742,6 +741,7 @@ function DashboardContent() {
       </Head>
 
       <LightShell valuesVisible={valuesVisible} onToggleValues={() => setValuesVisible((v) => !v)}>
+            <div style={{ fontFeatureSettings: '"tnum" 1, "ss01" 1' }}>
               {/* HERO — banner art como background-image (sem <img>).
                   Só desktop (md+). Mobile vai direto pra toolbar. */}
               <motion.section
@@ -867,14 +867,14 @@ function DashboardContent() {
                       </button>
                       <button
                         onClick={() => router.push("/v1/finance/withdraw")}
-                        className="inline-flex items-center gap-2 transition-transform hover:-translate-y-0.5"
+                        className="inline-flex items-center gap-2 transition-colors"
                         style={{
                           height: 40,
                           padding: "0 18px",
                           borderRadius: 12,
                           background: "#7C3AED",
                           boxShadow:
-                            "0 8px 20px -8px rgba(124, 58, 237, 0.55)",
+                            "0 1px 2px rgba(13,37,61,0.10)",
                           fontSize: 13,
                           fontWeight: 600,
                           color: "#FFFFFF",
@@ -1413,24 +1413,23 @@ function DashboardContent() {
                       {liveFeed.map((item, idx) => {
                         const initial =
                           item.name?.charAt(0).toUpperCase() || "?";
-                        const gradients = [
-                          "linear-gradient(135deg,#7C3AED,#22D3EE)",
-                          "linear-gradient(135deg,#F59E0B,#EF4444)",
-                          "linear-gradient(135deg,#22C55E,#3B82F6)",
-                          "linear-gradient(135deg,#3B82F6,#7C3AED)",
-                          "linear-gradient(135deg,#EC4899,#F59E0B)",
-                          "linear-gradient(135deg,#06B6D4,#22C55E)",
+                        const tints = [
+                          { bg: "#EDE9FE", color: "#7C3AED" },
+                          { bg: "#FEF3C7", color: "#D97706" },
+                          { bg: "#DCFCE7", color: "#16A34A" },
+                          { bg: "#DBEAFE", color: "#2563EB" },
+                          { bg: "#FCE7F3", color: "#DB2777" },
+                          { bg: "#CFFAFE", color: "#0891B2" },
                         ];
+                        const tint = tints[idx % tints.length] as { bg: string; color: string };
                         return (
                           <li
                             key={item.id}
                             className="flex items-center gap-3"
                           >
                             <div
-                              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[12px] font-bold text-white"
-                              style={{
-                                background: gradients[idx % gradients.length],
-                              }}
+                              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[12px] font-bold"
+                              style={{ background: tint.bg, color: tint.color }}
                             >
                               {initial}
                             </div>
@@ -1530,74 +1529,48 @@ function DashboardContent() {
                   </div>
                 </motion.div>
 
-                {/* Shadow AI promo card */}
+                {/* Shadow AI card — limpo, craft Stripe (sem glow/dark) */}
                 <motion.div
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.25 }}
-                  className="relative overflow-hidden rounded-2xl p-5"
+                  className="rounded-2xl p-5"
                   style={{
-                    background:
-                      "linear-gradient(135deg, #1A1430 0%, #2D1B69 50%, #1A1430 100%)",
-                    border: `1px solid rgba(124, 58, 237, 0.3)`,
+                    background: "#FFFFFF",
+                    border: "1px solid rgba(15,23,42,0.06)",
                     boxShadow:
-                      "0 8px 24px -8px rgba(124, 58, 237, 0.4)",
+                      "0 1px 2px rgba(13,37,61,0.04), 0 1px 3px rgba(13,37,61,0.06)",
                   }}
                 >
-                  {/* Big halo behind orb */}
-                  <div
-                    className="pointer-events-none absolute -right-10 -bottom-10 h-52 w-52 rounded-full"
-                    style={{
-                      background:
-                        "radial-gradient(circle, rgba(168,85,247,0.55) 0%, rgba(124,58,237,0.18) 45%, transparent 70%)",
-                      filter: "blur(8px)",
-                    }}
-                  />
-
-                  {/* Orbital ring with logo */}
-                  <div className="pointer-events-none absolute right-2 bottom-2 flex h-32 w-32 items-center justify-center">
-                    <div
-                      className="absolute inset-0 rounded-full"
-                      style={{
-                        background:
-                          "radial-gradient(circle, rgba(255,255,255,0.10) 0%, rgba(124,58,237,0.04) 55%, transparent 100%)",
-                        border: "1px solid rgba(255,255,255,0.08)",
-                        boxShadow:
-                          "inset 0 0 20px rgba(168,85,247,0.15), 0 0 40px rgba(168,85,247,0.18)",
-                      }}
-                    />
-                    <ShadowLogo
-                      size={64}
-                      glow
-                      glowColor="rgba(168, 85, 247, 0.55)"
-                    />
-                  </div>
-
-                  <div className="relative">
-                    <div className="mb-1 flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-violet-300" />
+                  <div className="flex items-start gap-3">
+                    <span
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                      style={{ background: "rgba(124,58,237,0.08)", color: "#7C3AED" }}
+                    >
+                      <Sparkles className="h-5 w-5" />
+                    </span>
+                    <div className="min-w-0">
                       <h3
-                        className="text-[16px] font-bold tracking-tight text-white"
-                        style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
+                        className="text-[15px] font-bold text-slate-900"
+                        style={{ letterSpacing: "-0.01em" }}
                       >
                         Shadow AI
                       </h3>
+                      <p className="mt-0.5 text-[12.5px] text-slate-500">
+                        Monitorando sua operação em tempo real.
+                      </p>
                     </div>
-                    <p className="text-[12px] text-violet-200/80">
-                      Monitorando sua operação
-                    </p>
-                    <button
-                      onClick={() => router.push("/shadow")}
-                      className="mt-4 inline-flex h-9 items-center gap-2 rounded-lg px-4 text-[12px] font-semibold text-white transition-transform hover:-translate-y-0.5"
-                      style={{
-                        background:
-                          "linear-gradient(120deg, #7C3AED 0%, #6D28D9 100%)",
-                      }}
-                    >
-                      Abrir Shadow
-                      <ArrowUpRight className="h-3.5 w-3.5" />
-                    </button>
                   </div>
+                  <button
+                    onClick={() => router.push("/shadow")}
+                    className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-[12.5px] font-semibold text-white transition-colors"
+                    style={{ background: T.primary, boxShadow: "0 1px 2px rgba(13,37,61,0.08)" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "#6D28D9"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = T.primary; }}
+                  >
+                    Abrir Shadow
+                    <ArrowUpRight className="h-3.5 w-3.5" />
+                  </button>
                 </motion.div>
               </section>
 
@@ -1608,6 +1581,7 @@ function DashboardContent() {
               >
                 ShadowPay Financial OS © 2026 · Todos os direitos reservados.
               </p>
+            </div>
       </LightShell>
 
       {/* ============================================================
@@ -1648,10 +1622,10 @@ function DashboardContent() {
               <div className="mb-5 grid grid-cols-2 gap-2">
                 <button
                   onClick={applyFilters}
-                  className="inline-flex h-10 items-center justify-center rounded-xl text-[13px] font-bold text-white transition-transform hover:-translate-y-0.5"
+                  className="inline-flex h-10 items-center justify-center rounded-xl text-[13px] font-bold text-white transition-colors"
                   style={{
                     background: T.primary,
-                    boxShadow: "0 8px 20px -8px rgba(124,58,237,0.55)",
+                    boxShadow: "0 1px 2px rgba(13,37,61,0.10)",
                   }}
                 >
                   Aplicar Filtros
