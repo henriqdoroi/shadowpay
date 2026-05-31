@@ -18,7 +18,7 @@ import { useRouter } from "next/router";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { ArrowRight, Loader2, Lock } from "lucide-react";
+import { ArrowRight, Loader2, Lock, ChevronDown, X } from "lucide-react";
 
 const T = {
   ink: "#0F172A",
@@ -76,13 +76,13 @@ function PurpleIcon({ size = 42 }: { size?: number }) {
 function SaleCard({ sale }: { sale: Notif }) {
   return (
     <div className={"sp-ncard" + (sale.fresh ? " sp-fresh" : "")}>
-      <PurpleIcon size={30} />
+      <PurpleIcon size={33} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
-          <span style={{ fontSize: 12.5, fontWeight: 700, color: "#fff", letterSpacing: "-0.01em" }}>Venda Aprovada!</span>
-          <span style={{ fontSize: 10, color: "rgba(255,255,255,.6)", flexShrink: 0 }}>{sale.t}</span>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: "#fff", letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>Venda Aprovada!</span>
+          <span style={{ fontSize: 9.5, color: "rgba(255,255,255,.6)", flexShrink: 0, whiteSpace: "nowrap" }}>{sale.t}</span>
         </div>
-        <div style={{ fontSize: 11.5, color: "rgba(255,255,255,.92)", marginTop: 0 }}>
+        <div style={{ fontSize: 11.5, color: "rgba(255,255,255,.9)", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           Valor: <span style={{ fontWeight: 600, fontFeatureSettings: '"tnum" 1' }}>R$ {sale.val}</span>
         </div>
       </div>
@@ -99,8 +99,8 @@ function PhoneShowcase({ notifs }: { notifs: Notif[] }) {
         <div className="sp-notif-header">
           <span className="sp-notif-app">ShadowPay</span>
           <div className="sp-notif-actions">
-            <span className="sp-notif-less">Mostrar menos</span>
-            <span className="sp-notif-x">✕</span>
+            <span className="sp-notif-less"><ChevronDown size={11} strokeWidth={2.5} /> Mostrar menos</span>
+            <span className="sp-notif-x"><X size={11} strokeWidth={2.8} /></span>
           </div>
         </div>
         <div className="sp-notif-cards">
@@ -309,21 +309,26 @@ export default function Login() {
 /* ===================== CSS ===================== */
 const CSS = `
 /* ---- showcase: iPhone (mockup) + sombra ---- */
-.sp-showcase { position: relative; width: 412px; max-width: 84vw; }
+.sp-showcase { position: relative; width: 446px; max-width: 86vw; }
 .sp-phone-img { display: block; width: 100%; height: auto; filter: drop-shadow(0 34px 50px rgba(6,3,20,.5)); }
 
 /* grupo de notificações sobre a tela */
 .sp-notif-overlay { position: absolute; left: 13%; width: 51%; top: 31%; z-index: 3; display: flex; flex-direction: column; gap: 5px; }
-.sp-notif-header { display: flex; align-items: center; justify-content: space-between; padding: 0 3px 0; }
-.sp-notif-app { font-size: 14px; font-weight: 700; color: #fff; letter-spacing: -0.02em; text-shadow: 0 1px 6px rgba(0,0,0,.4); }
+.sp-notif-header { display: flex; align-items: center; justify-content: space-between; padding: 0 4px 1px; }
+.sp-notif-app { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: -0.02em; text-shadow: 0 1px 6px rgba(0,0,0,.4); }
 .sp-notif-actions { display: flex; align-items: center; gap: 5px; }
-.sp-notif-less { font-size: 9.5px; color: rgba(255,255,255,.9); background: rgba(255,255,255,.18); border-radius: 999px; padding: 3px 8px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); white-space: nowrap; }
-.sp-notif-x { width: 19px; height: 19px; border-radius: 50%; background: rgba(255,255,255,.18); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 10px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-.sp-notif-cards { display: flex; flex-direction: column; gap: 5px; }
+.sp-notif-less { display: inline-flex; align-items: center; gap: 2px; font-size: 9.5px; font-weight: 500; color: #fff; border-radius: 999px; padding: 4px 8px 4px 6px; white-space: nowrap;
+  background: rgba(255,255,255,.16); border: .5px solid rgba(255,255,255,.28); box-shadow: inset 0 .5px 0 rgba(255,255,255,.4); backdrop-filter: blur(16px) saturate(150%); -webkit-backdrop-filter: blur(16px) saturate(150%); }
+.sp-notif-x { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; color: #fff;
+  background: rgba(255,255,255,.16); border: .5px solid rgba(255,255,255,.28); box-shadow: inset 0 .5px 0 rgba(255,255,255,.4); backdrop-filter: blur(16px) saturate(150%); -webkit-backdrop-filter: blur(16px) saturate(150%); }
+.sp-notif-cards { display: flex; flex-direction: column; gap: 6px; }
+/* ---- liquid glass (iOS) ---- */
 .sp-ncard {
-  display: flex; align-items: flex-start; gap: 8px; padding: 7px 9px; border-radius: 15px;
-  background: rgba(48,32,72,.5); backdrop-filter: blur(26px) saturate(160%); -webkit-backdrop-filter: blur(26px) saturate(160%);
-  border: .5px solid rgba(255,255,255,.15); box-shadow: 0 12px 32px -14px rgba(0,0,0,.55);
+  display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255,255,255,.17), rgba(255,255,255,.07));
+  backdrop-filter: blur(38px) saturate(185%); -webkit-backdrop-filter: blur(38px) saturate(185%);
+  border: .5px solid rgba(255,255,255,.22);
+  box-shadow: inset 0 .6px 0 rgba(255,255,255,.45), inset 0 0 0 .5px rgba(255,255,255,.04), 0 10px 26px -12px rgba(0,0,0,.5);
 }
 @keyframes sp-ncard-in { 0%{opacity:0; transform:translateY(-18px) scale(.95);} 100%{opacity:1; transform:translateY(0) scale(1);} }
 .sp-ncard.sp-fresh { animation: sp-ncard-in .5s cubic-bezier(.22,1,.36,1); }
