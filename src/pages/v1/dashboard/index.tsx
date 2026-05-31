@@ -52,21 +52,20 @@ const API = "https://shadowpay-api-production.up.railway.app";
  * TOKENS LIGHT — locais a essa página, ignora o ThemeProvider dark
  * ============================================================ */
 const T = {
-  bg: "#F4F5F9",
+  bg: "#F6F8FB",
   card: "#FFFFFF",
-  border: "rgba(15, 23, 42, 0.06)",
+  border: "#E6E8EB",
   borderStrong: "rgba(15, 23, 42, 0.10)",
-  text: "#0F172A",
+  text: "#1A1F36",
   text2: "#475569",
-  textMuted: "#94A3B8",
+  textMuted: "#8A94A6",
   primary: "#7C3AED",
   primaryBg: "rgba(124, 58, 237, 0.08)",
   blue: "#3B82F6",
-  green: "#22C55E",
+  green: "#1F8F4E",
   orange: "#F59E0B",
-  red: "#EF4444",
-  cardShadow:
-    "0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06)",
+  red: "#D4351C",
+  cardShadow: "0 1px 1px rgba(15, 23, 42, 0.04)",
   cardShadowHover:
     "0 4px 6px rgba(15, 23, 42, 0.05), 0 10px 15px rgba(15, 23, 42, 0.08)",
 };
@@ -771,27 +770,17 @@ function DashboardContent() {
                         style={{
                           fontFamily:
                             "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
-                          fontSize: 28,
-                          fontWeight: 700,
+                          fontSize: 26,
+                          fontWeight: 600,
                           lineHeight: 1.15,
-                          color: "#0F172A",
-                          letterSpacing: "-0.005em",
+                          color: "#1A1F36",
+                          letterSpacing: "-0.018em",
                           fontFeatureSettings: '"calt" 1, "kern" 1',
-                          wordSpacing: "0.05em",
                           margin: 0,
                         }}
                       >
                         <span className="break-words">
                           {greeting}, {user?.companyName || "Operador"}.
-                        </span>
-                        <span
-                          className="inline-block"
-                          style={{
-                            fontFamily: "system-ui, sans-serif",
-                            fontSize: 24,
-                          }}
-                        >
-                          👋
                         </span>
                       </h1>
                       <p
@@ -1028,50 +1017,40 @@ function DashboardContent() {
                       delay: i * 0.05,
                       ease: [0.22, 1, 0.36, 1],
                     }}
-                    className="rounded-2xl p-4 sm:p-5"
+                    className="rounded-xl p-4 sm:p-[18px]"
                     style={{
-                      background: T.card,
-                      border: `1px solid ${T.border}`,
-                      boxShadow: T.cardShadow,
+                      background: "#FFFFFF",
+                      border: "1px solid #E6E8EB",
                     }}
                   >
-                    <div className="flex items-center justify-between">
-                      <p className="text-[11px] font-semibold text-slate-500">
-                        {k.label}
-                      </p>
-                      <span
-                        className="flex h-7 w-7 items-center justify-center rounded-lg"
-                        style={{
-                          background: `${k.color}1a`,
-                          color: k.color,
-                        }}
-                      >
-                        {k.icon}
-                      </span>
-                    </div>
-                    <div
-                      className="mt-2 text-[24px] font-bold leading-none tracking-tight text-slate-900"
-                      style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
-                    >
+                    <p className="text-[11px] font-medium uppercase tracking-[0.05em] text-slate-500">
+                      {k.label}
+                    </p>
+                    <div className="mt-2.5 text-[26px] font-semibold leading-none tracking-[-0.02em] text-slate-900">
                       {k.value}
                     </div>
                     <div className="mt-2.5 flex items-center gap-1.5">
                       {k.delta ? (
                         <>
                           <span
-                            className="text-[12px] font-bold"
+                            className="inline-flex items-center gap-0.5 text-[12px] font-semibold"
                             style={{
                               color:
                                 k.delta.direction === "up"
-                                  ? T.green
+                                  ? "#1F8F4E"
                                   : k.delta.direction === "down"
-                                  ? T.red
+                                  ? "#D4351C"
                                   : T.textMuted,
                             }}
                           >
+                            {k.delta.direction === "up"
+                              ? "▲"
+                              : k.delta.direction === "down"
+                              ? "▼"
+                              : ""}{" "}
                             {k.delta.text}
                           </span>
-                          <span className="text-[11px] text-slate-500">
+                          <span className="text-[11px] text-slate-400">
                             {k.deltaText}
                           </span>
                         </>
@@ -1081,20 +1060,17 @@ function DashboardContent() {
                         </span>
                       )}
                     </div>
-                    {/* sparkline */}
-                    <div className="mt-3 h-10">
+                    {/* sparkline — cor única e discreta */}
+                    <div className="mt-3 h-9">
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart
-                          data={k.sparkline.map((v, idx) => ({
-                            i: idx,
-                            v,
-                          }))}
+                          data={k.sparkline.map((v, idx) => ({ i: idx, v }))}
                         >
                           <Line
                             type="monotone"
                             dataKey="v"
-                            stroke={k.sparkColor}
-                            strokeWidth={1.8}
+                            stroke="#CBD5E1"
+                            strokeWidth={1.5}
                             dot={false}
                           />
                         </LineChart>
@@ -1112,31 +1088,17 @@ function DashboardContent() {
                     delay: 0.25,
                     ease: [0.22, 1, 0.36, 1],
                   }}
-                  className="rounded-2xl p-4 sm:p-5"
+                  className="rounded-xl p-4 sm:p-5"
                   style={{
                     background: T.card,
                     border: `1px solid ${T.border}`,
                     boxShadow: T.cardShadow,
                   }}
                 >
-                  <div className="flex items-center justify-between">
-                    <p className="text-[11px] font-semibold text-slate-500">
-                      Saldo disponível
-                    </p>
-                    <span
-                      className="flex h-7 w-7 items-center justify-center rounded-lg"
-                      style={{
-                        background: T.primaryBg,
-                        color: T.primary,
-                      }}
-                    >
-                      <Wallet className="h-3.5 w-3.5" />
-                    </span>
-                  </div>
-                  <div
-                    className="mt-2 text-[24px] font-bold leading-none tracking-tight text-slate-900"
-                    style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
-                  >
+                  <p className="text-[11px] font-medium uppercase tracking-[0.05em] text-slate-500">
+                    Saldo disponível
+                  </p>
+                  <div className="mt-2.5 text-[26px] font-semibold leading-none tracking-[-0.02em] text-slate-900">
                     {hideable(fmt(walletStats.currentBalance))}
                   </div>
                   <div className="mt-3 space-y-1.5">
@@ -1171,7 +1133,7 @@ function DashboardContent() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.1 }}
-                  className="rounded-2xl p-4 sm:p-5"
+                  className="rounded-xl p-4 sm:p-5"
                   style={{
                     background: T.card,
                     border: `1px solid ${T.border}`,
@@ -1370,7 +1332,7 @@ function DashboardContent() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.15 }}
-                  className="rounded-2xl p-4 sm:p-5"
+                  className="rounded-xl p-4 sm:p-5"
                   style={{
                     background: T.card,
                     border: `1px solid ${T.border}`,
@@ -1472,7 +1434,7 @@ function DashboardContent() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.2 }}
-                  className="rounded-2xl p-4 sm:p-5"
+                  className="rounded-xl p-4 sm:p-5"
                   style={{
                     background: T.card,
                     border: `1px solid ${T.border}`,
@@ -1534,7 +1496,7 @@ function DashboardContent() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.25 }}
-                  className="rounded-2xl p-5"
+                  className="rounded-xl p-5"
                   style={{
                     background: "#FFFFFF",
                     border: "1px solid rgba(15,23,42,0.06)",
