@@ -1,32 +1,38 @@
 "use client";
 
 /**
- * /auth/jwt/login — Login com a "craft" da Stripe aplicada na paleta
- * ShadowPay (violeta + white):
- *  - tipografia display fina (300) com letter-spacing negativo (editorial)
- *  - UM único CTA sólido (sem gradiente), em pílula
- *  - inputs com hairline + foco que troca a borda pro primário
- *  - profundidade sutil com sombra navy (nada de glow roxo)
- *  - painel de atmosfera (malha violeta orgânica) à esquerda no desktop
- *  - números/figuras tabulares (tnum) onde aparecem cifras
- * Toda a lógica de auth + push subscribe foi mantida intacta.
+ * /auth/jwt/login — split screen:
+ *   LEFT  · iPhone "product mockup" (estilo Stripe, sobre canvas claro)
+ *           com notificações de VENDA caindo na lock screen (iOS).
+ *   RIGHT · formulário bank-grade em tema WHITE com a craft da Stripe
+ *           (tipografia editorial, hairlines, CTA sólido, sombra navy).
+ *
+ * Baseado no conceito enviado pelo usuário, portado pro stack real
+ * (Next + TS + Tailwind) e com a lógica de auth + push 100% mantida.
  */
 
 import Head from "next/head";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ForgotPasswordModal } from "@/components/ForgotPasswordModal";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
-import { ArrowRight, Loader2, ShieldCheck, Zap, Lock } from "lucide-react";
+import {
+  ArrowRight,
+  Loader2,
+  ShieldCheck,
+  Eye,
+  EyeOff,
+  Check,
+} from "lucide-react";
 
-/* Paleta: ShadowPay (violeta) + tokens "ink/hairline/canvas" no estilo Stripe */
+/* Paleta ShadowPay (violeta) + tokens ink/hairline/canvas estilo Stripe */
 const T = {
   ink: "#0F172A",
   inkSecondary: "#334155",
   inkMute: "#64748B",
+  inkFaint: "#94A3B8",
   primary: "#7C3AED",
   primaryPress: "#6D28D9",
   canvas: "#FFFFFF",
@@ -35,37 +41,276 @@ const T = {
   hairlineInput: "#DCE3EC",
 };
 
-function ShadowMark({ size = 32 }: { size?: number }) {
+const FONT =
+  "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif";
+
+const SALE_VALUES = [
+  "R$ 297,00",
+  "R$ 1.490,00",
+  "R$ 540,00",
+  "R$ 89,00",
+  "R$ 890,00",
+  "R$ 149,90",
+  "R$ 2.300,00",
+  "R$ 67,00",
+  "R$ 459,90",
+];
+
+type Notif = { id: string; val: string; t: string; fresh: boolean };
+
+/* ── ícone do app: pantera branca no squircle violeta ── */
+function AppIcon({ size = 38 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
-      <defs>
-        <linearGradient id="sg-login" x1="0" y1="0" x2="48" y2="48">
-          <stop offset="0" stopColor="#7C3AED" />
-          <stop offset="1" stopColor="#A855F7" />
-        </linearGradient>
-      </defs>
-      <circle cx="24" cy="24" r="21" stroke="url(#sg-login)" strokeWidth="2" opacity="0.5" />
-      <circle cx="24" cy="24" r="8" fill="url(#sg-login)" />
-      <circle cx="24" cy="24" r="13" stroke="url(#sg-login)" strokeWidth="1.5" opacity="0.3" />
-    </svg>
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size * 0.265,
+        flexShrink: 0,
+        background: "linear-gradient(150deg,#9B6BFF,#7C3AED 55%,#5B21B6)",
+        boxShadow:
+          "inset 0 1px 1px rgba(255,255,255,.5), 0 1px 3px rgba(0,0,0,.35)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <img
+        src="/shadow-panther.png"
+        alt=""
+        style={{
+          width: size * 0.64,
+          height: size * 0.64,
+          objectFit: "contain",
+          filter: "brightness(0) invert(1)",
+          opacity: 0.97,
+        }}
+      />
+    </div>
   );
 }
 
-const DISPLAY: React.CSSProperties = {
-  fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
-  fontFeatureSettings: '"ss01" 1',
-};
+/* ── notificação iOS (material escuro) ── */
+function LSNotif({ sale }: { sale: Notif }) {
+  return (
+    <div className={"sp-ls-notif" + (sale.fresh ? " sp-fresh" : "")}>
+      <AppIcon size={38} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "space-between",
+            gap: 8,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 13.5,
+              fontWeight: 700,
+              color: "#fff",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            ShadowPay
+          </span>
+          <span
+            style={{ fontSize: 11, color: "rgba(235,235,245,.55)", flexShrink: 0 }}
+          >
+            {sale.t}
+          </span>
+        </div>
+        <div
+          style={{
+            fontSize: 13,
+            color: "rgba(235,235,245,.92)",
+            marginTop: 2,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          Venda aprovada ·{" "}
+          <span style={{ fontWeight: 600, fontFeatureSettings: '"tnum" 1' }}>
+            {sale.val}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── lock screen: wallpaper + relógio + notificações caindo ── */
+function LockScreen({ notifs }: { notifs: Notif[] }) {
+  return (
+    <div
+      style={{
+        position: "relative",
+        height: "100%",
+        width: "100%",
+        overflow: "hidden",
+        background:
+          "radial-gradient(115% 70% at 50% 4%, #241a48 0%, #100b25 42%, #050410 100%)",
+      }}
+    >
+      <img
+        src="/shadow-panther.png"
+        alt=""
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "60%",
+          width: 190,
+          transform: "translate(-50%,-50%)",
+          opacity: 0.06,
+          filter: "grayscale(.3) brightness(1.7)",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "radial-gradient(70% 40% at 50% 100%, rgba(124,58,237,.22), transparent 72%)",
+        }}
+      />
+
+      {/* lock + data + relógio */}
+      <div style={{ position: "relative", textAlign: "center", marginTop: 58 }}>
+        <svg width="14" height="17" viewBox="0 0 15 18" style={{ opacity: 0.9, marginBottom: 8 }}>
+          <rect x="1.5" y="7.5" width="12" height="9.5" rx="2.6" fill="rgba(255,255,255,.92)" />
+          <path d="M4 7.5V5a3.5 3.5 0 0 1 7 0v2.5" fill="none" stroke="rgba(255,255,255,.92)" strokeWidth="1.7" />
+        </svg>
+        <div style={{ fontFamily: "-apple-system, system-ui", fontSize: 14.5, fontWeight: 500, color: "rgba(255,255,255,.9)" }}>
+          sexta-feira, 30 de maio
+        </div>
+        <div
+          style={{
+            fontFamily: "-apple-system, system-ui",
+            fontSize: 70,
+            fontWeight: 600,
+            color: "#fff",
+            lineHeight: 1.0,
+            letterSpacing: "-1px",
+            marginTop: 2,
+            textShadow: "0 2px 26px rgba(0,0,0,.35)",
+          }}
+        >
+          9:41
+        </div>
+      </div>
+
+      {/* pilha de notificações (mais nova no topo) */}
+      <div
+        style={{
+          position: "absolute",
+          left: 11,
+          right: 11,
+          bottom: 28,
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+        }}
+      >
+        {notifs.map((n, idx) => (
+          <div
+            key={n.id}
+            style={{
+              opacity: idx >= 3 ? 0.5 : 1,
+              transform: idx >= 3 ? "scale(.96)" : "none",
+              transformOrigin: "center bottom",
+            }}
+          >
+            <LSNotif sale={n} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── frame realista do iPhone ── */
+function IPhone({ notifs, w = 290, h = 626 }: { notifs: Notif[]; w?: number; h?: number }) {
+  return (
+    <div style={{ position: "relative" }}>
+      <div className="sp-iphone" style={{ width: w, height: h }}>
+        <div className="sp-iphone-screen">
+          <LockScreen notifs={notifs} />
+          <div className="sp-di">
+            <span className="sp-di-cam" />
+          </div>
+          <div className="sp-gloss" />
+          <div
+            style={{
+              position: "absolute",
+              bottom: 9,
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: 108,
+              height: 4.5,
+              borderRadius: 99,
+              background: "rgba(255,255,255,.55)",
+              zIndex: 41,
+            }}
+          />
+        </div>
+        {/* botões laterais */}
+        <span className="sp-ipbtn" style={{ left: -3, top: "21%", width: 3, height: 26, borderRadius: "3px 0 0 3px" }} />
+        <span className="sp-ipbtn" style={{ left: -3, top: "30%", width: 3, height: 46, borderRadius: "3px 0 0 3px" }} />
+        <span className="sp-ipbtn" style={{ left: -3, top: "41%", width: 3, height: 46, borderRadius: "3px 0 0 3px" }} />
+        <span className="sp-ipbtn" style={{ right: -3, top: "33%", width: 3, height: 70, borderRadius: "0 3px 3px 0" }} />
+      </div>
+      <div className="sp-phone-shadow" />
+    </div>
+  );
+}
 
 export default function Login() {
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [remember, setRemember] = useState(true);
+  const [notifs, setNotifs] = useState<Notif[]>([]);
+  const [runId, setRunId] = useState(0);
   const router = useRouter();
   const { login, isLoading, isAuthenticated } = useAuth();
 
   useEffect(() => {
     if (isAuthenticated) router.push("/v1/dashboard");
   }, [isAuthenticated, router]);
+
+  // notificações de venda caindo a cada ~2.6s
+  useEffect(() => {
+    setNotifs([]);
+    let i = 0;
+    const age = (t: string) =>
+      t === "agora"
+        ? "1 min atrás"
+        : t === "1 min atrás"
+        ? "2 min atrás"
+        : t === "2 min atrás"
+        ? "4 min atrás"
+        : "8 min atrás";
+    const drop = () => {
+      const val = SALE_VALUES[i % SALE_VALUES.length];
+      const id = Date.now() + "-" + i;
+      setNotifs((prev) =>
+        [
+          { val, t: "agora", id, fresh: true } as Notif,
+          ...prev.map((p) => ({ ...p, fresh: false, t: age(p.t) })),
+        ].slice(0, 4)
+      );
+      i++;
+    };
+    const first = setTimeout(drop, 700);
+    const iv = setInterval(drop, 2600);
+    return () => {
+      clearTimeout(first);
+      clearInterval(iv);
+    };
+  }, [runId]);
 
   function urlBase64ToUint8Array(base64String: string) {
     const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -76,51 +321,54 @@ export default function Login() {
     return outputArray;
   }
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const result = await login(email, password);
-      if (result.success) {
-        toast.success("Login realizado com sucesso!");
-        if ("Notification" in window && Notification.permission === "default") {
-          const permission = await Notification.requestPermission();
-          if (permission !== "granted") toast("Notificações não ativadas.");
+  const handleLogin = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      try {
+        const result = await login(email, password);
+        if (result.success) {
+          toast.success("Login realizado com sucesso!");
+          if ("Notification" in window && Notification.permission === "default") {
+            const permission = await Notification.requestPermission();
+            if (permission !== "granted") toast("Notificações não ativadas.");
+          }
+          if (
+            "serviceWorker" in navigator &&
+            "PushManager" in window &&
+            Notification.permission === "granted"
+          ) {
+            const registration = await navigator.serviceWorker.ready;
+            const subscription = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(
+                "BGSIIaq7ymGsCu-qDrD32FrzTJtd5KgEU5tbjhuQEWF2JVMc72XGLMJYzSK9Snb2W2Swlun9pB9O2Mrt9l7KC3A",
+              ),
+            });
+            await fetch("/api/webhooks/notifications/subscribe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ subscription }),
+            });
+            toast.success("Notificações ativadas!");
+          }
+          router.push("/v1/dashboard");
+        } else {
+          toast.error(result.error || "Erro no login. Verifique suas credenciais.");
         }
-        if (
-          "serviceWorker" in navigator &&
-          "PushManager" in window &&
-          Notification.permission === "granted"
-        ) {
-          const registration = await navigator.serviceWorker.ready;
-          const subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(
-              "BGSIIaq7ymGsCu-qDrD32FrzTJtd5KgEU5tbjhuQEWF2JVMc72XGLMJYzSK9Snb2W2Swlun9pB9O2Mrt9l7KC3A",
-            ),
-          });
-          await fetch("/api/webhooks/notifications/subscribe", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ subscription }),
-          });
-          toast.success("Notificações ativadas!");
-        }
-        router.push("/v1/dashboard");
-      } else {
-        toast.error(result.error || "Erro no login. Verifique suas credenciais.");
+      } catch (err) {
+        toast.error("Erro inesperado no login.");
+        console.error(err);
       }
-    } catch (err) {
-      toast.error("Erro inesperado no login.");
-      console.error(err);
-    }
-  };
+    },
+    [email, password, login, router]
+  );
 
-  const inputCls =
-    "h-11 w-full rounded-lg px-3.5 text-[14px] outline-none transition-colors placeholder:text-slate-400 focus:border-[#7C3AED] focus:ring-2 focus:ring-[rgba(124,58,237,0.12)]";
-  const inputStyle: React.CSSProperties = {
-    background: T.canvas,
-    border: `1px solid ${T.hairlineInput}`,
-    color: T.ink,
+  const lbl: React.CSSProperties = {
+    display: "block",
+    fontSize: 12,
+    fontWeight: 500,
+    color: T.inkSecondary,
+    marginBottom: 7,
   };
 
   return (
@@ -129,186 +377,187 @@ export default function Login() {
         <title>ShadowPay — Acesso</title>
       </Head>
 
+      <style>{CSS}</style>
+
       <div
         className="grid min-h-screen w-full lg:grid-cols-[1.05fr_1fr]"
-        style={{ ...DISPLAY, background: T.canvas, color: T.ink }}
+        style={{ fontFamily: FONT, background: T.canvas, color: T.ink }}
       >
-        {/* ===== Painel de atmosfera (desktop) ===== */}
-        <div
-          className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between"
+        {/* ===== ESQUERDA — showcase iPhone (canvas claro) ===== */}
+        <section
+          onClick={() => setRunId((r) => r + 1)}
+          title="Reproduzir novamente"
+          className="relative hidden cursor-pointer flex-col items-center justify-center overflow-hidden lg:flex"
           style={{
-            padding: "56px 56px 48px",
-            background: `
-              radial-gradient(60% 55% at 18% 22%, rgba(124,58,237,0.55), transparent 68%),
-              radial-gradient(52% 48% at 82% 26%, rgba(99,102,241,0.42), transparent 70%),
-              radial-gradient(58% 55% at 65% 88%, rgba(168,85,247,0.40), transparent 70%),
-              radial-gradient(42% 42% at 8% 92%, rgba(236,72,153,0.22), transparent 70%),
-              #160D2E
-            `,
+            background:
+              "radial-gradient(80% 55% at 72% 8%, rgba(124,58,237,0.12), transparent 60%), radial-gradient(60% 50% at 12% 95%, rgba(168,85,247,0.10), transparent 65%), " +
+              T.canvasSoft,
           }}
         >
-          {/* grão sutil */}
+          {/* malha pontilhada sutil */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 opacity-[0.06]"
+            className="pointer-events-none absolute inset-0 opacity-[0.5]"
             style={{
               backgroundImage:
-                "radial-gradient(rgba(255,255,255,0.8) 0.5px, transparent 0.5px)",
-              backgroundSize: "4px 4px",
+                "radial-gradient(rgba(15,23,42,0.04) 0.5px, transparent 0.5px)",
+              backgroundSize: "22px 22px",
             }}
           />
 
-          {/* Brand */}
-          <div className="relative flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 backdrop-blur">
-              <ShadowMark size={22} />
-            </div>
-            <span className="text-[15px] font-semibold tracking-tight text-white">
-              ShadowPay
-            </span>
-          </div>
-
-          {/* Headline editorial (display fina, tracking negativo) */}
-          <div className="relative max-w-[460px]">
+          <div className="relative mb-9 max-w-[380px] px-8 text-center">
             <h2
-              className="text-white"
               style={{
-                ...DISPLAY,
-                fontSize: 44,
+                fontFamily: FONT,
+                fontSize: 30,
                 fontWeight: 300,
-                lineHeight: 1.08,
-                letterSpacing: "-1.2px",
+                lineHeight: 1.12,
+                letterSpacing: "-0.9px",
+                color: T.ink,
               }}
             >
-              A infraestrutura de pagamentos PIX do seu negócio.
+              Cada venda aprovada,{" "}
+              <span style={{ fontWeight: 600, color: T.primary }}>
+                no seu bolso na hora.
+              </span>
             </h2>
-            <p
-              className="mt-5 text-[15px] leading-relaxed"
-              style={{ color: "rgba(255,255,255,0.66)" }}
-            >
-              Cobre, receba e concilie em tempo real. Tudo num painel só, com a
-              segurança que a operação exige.
+            <p className="mt-3 text-[14px]" style={{ color: T.inkMute }}>
+              Notificações em tempo real direto no seu celular. Acompanhe a
+              operação de qualquer lugar.
             </p>
+          </div>
 
-            {/* 3 sinais — figuras tabulares onde tem número */}
-            <div className="mt-8 space-y-3">
-              {[
-                { icon: Zap, label: "Liquidação PIX em segundos" },
-                { icon: ShieldCheck, label: "KYC + antifraude integrados" },
-                { icon: Lock, label: "Chaves de API e webhooks próprios" },
-              ].map((f) => {
-                const Icon = f.icon;
-                return (
-                  <div key={f.label} className="flex items-center gap-3">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10">
-                      <Icon className="h-3.5 w-3.5 text-white" />
-                    </span>
-                    <span className="text-[13.5px] text-white/80">{f.label}</span>
-                  </div>
-                );
-              })}
+          <div className="sp-phone-enter relative">
+            <div className="sp-bob">
+              <IPhone notifs={notifs} />
             </div>
           </div>
+        </section>
 
-          {/* Rodapé do painel */}
-          <div className="relative flex items-center justify-between text-[11px] text-white/45">
-            <span style={{ fontFeatureSettings: '"tnum" 1' }}>
-              © {new Date().getFullYear()} ShadowPay
-            </span>
-            <span className="uppercase tracking-[0.22em]">Financial OS</span>
-          </div>
-        </div>
-
-        {/* ===== Formulário ===== */}
-        <div className="flex items-center justify-center px-5 py-10 sm:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full max-w-[380px]"
-          >
-            {/* Brand mobile */}
-            <div className="mb-8 flex items-center gap-2.5 lg:hidden">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ border: `1px solid ${T.hairline}` }}>
-                <ShadowMark size={24} />
-              </div>
-              <span className="text-[16px] font-semibold tracking-tight" style={{ color: T.ink }}>
+        {/* ===== DIREITA — formulário bank-grade (white) ===== */}
+        <div className="relative flex items-center justify-center px-5 py-10 sm:px-10">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute right-0 top-0 h-40 w-full"
+            style={{
+              background:
+                "radial-gradient(60% 100% at 85% 0%, rgba(124,58,237,0.06), transparent 70%)",
+            }}
+          />
+          <div className="relative w-full max-w-[372px]">
+            {/* Brand lockup */}
+            <div className="mb-9 flex items-center gap-3">
+              <AppIcon size={36} />
+              <span
+                style={{
+                  fontSize: 17,
+                  fontWeight: 700,
+                  letterSpacing: "-0.02em",
+                  color: T.ink,
+                }}
+              >
                 ShadowPay
+              </span>
+              <span
+                className="ml-auto rounded-full px-2.5 py-1 text-[9.5px] font-bold uppercase tracking-[0.14em]"
+                style={{
+                  color: T.inkMute,
+                  border: `1px solid ${T.hairline}`,
+                }}
+              >
+                Instituição de pagamento
               </span>
             </div>
 
-            {/* Heading */}
             <h1
-              style={{ ...DISPLAY, fontSize: 28, fontWeight: 600, letterSpacing: "-0.6px", color: T.ink }}
+              style={{
+                fontFamily: FONT,
+                fontSize: 27,
+                fontWeight: 600,
+                letterSpacing: "-0.6px",
+                color: T.ink,
+                margin: 0,
+              }}
             >
-              Entrar na sua conta
+              Acesse sua conta
             </h1>
-            <p className="mt-1.5 text-[14px]" style={{ color: T.inkMute }}>
-              Bem-vindo de volta. Acesse seu painel.
+            <p className="mb-7 mt-1.5 text-[14px]" style={{ color: T.inkMute }}>
+              Entre para gerenciar pagamentos, saques e relatórios da sua
+              operação.
             </p>
 
-            <form onSubmit={handleLogin} className="mt-7 space-y-4">
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="email"
-                  className="block text-[12px] font-medium"
-                  style={{ color: T.inkSecondary }}
-                >
-                  E-mail
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  className={inputCls}
-                  style={inputStyle}
-                />
-              </div>
+            <form onSubmit={handleLogin}>
+              <label style={lbl}>E-mail ou CNPJ</label>
+              <input
+                className="sp-field"
+                type="text"
+                placeholder="seu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={isLoading}
+                style={{ marginBottom: 16 }}
+              />
 
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label
-                    htmlFor="password"
-                    className="block text-[12px] font-medium"
-                    style={{ color: T.inkSecondary }}
-                  >
-                    Senha
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setIsForgotPasswordOpen(true)}
-                    className="text-[12px] transition-opacity hover:opacity-70 disabled:opacity-50"
-                    style={{ color: T.primary }}
-                    disabled={isLoading}
-                  >
-                    Esqueceu a senha?
-                  </button>
-                </div>
+              <label style={lbl}>Senha</label>
+              <div style={{ position: "relative", marginBottom: 14 }}>
                 <input
-                  id="password"
-                  type="password"
+                  className="sp-field"
+                  type={showPw ? "text" : "password"}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={isLoading}
-                  className={inputCls}
-                  style={inputStyle}
+                  style={{ paddingRight: 46 }}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPw((s) => !s)}
+                  className="absolute right-1.5 top-1.5 flex h-[38px] w-[38px] items-center justify-center rounded-lg text-slate-400 transition-colors hover:text-slate-600"
+                  tabIndex={-1}
+                >
+                  {showPw ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
+                </button>
               </div>
 
-              {/* CTA único — sólido, em pílula, sem gradiente nem glow */}
+              <div className="mb-6 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setRemember((r) => !r)}
+                  className="flex items-center gap-2.5"
+                >
+                  <span
+                    className="flex h-[18px] w-[18px] items-center justify-center rounded-[5px] transition-colors"
+                    style={{
+                      border: `1px solid ${remember ? T.primary : T.hairlineInput}`,
+                      background: remember ? T.primary : "transparent",
+                    }}
+                  >
+                    {remember && <Check className="h-3 w-3 text-white" />}
+                  </span>
+                  <span className="text-[13px]" style={{ color: T.inkSecondary }}>
+                    Manter conectado
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsForgotPasswordOpen(true)}
+                  className="text-[13px] font-semibold transition-opacity hover:opacity-70"
+                  style={{ color: T.primary }}
+                >
+                  Esqueci minha senha
+                </button>
+              </div>
+
+              {/* CTA único — sólido, pílula, sem gradiente nem glow */}
               <button
                 type="submit"
                 disabled={isLoading || !email || !password}
-                className="group inline-flex h-11 w-full items-center justify-center gap-2 rounded-full text-[14px] font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-45"
+                className="group inline-flex h-[50px] w-full items-center justify-center gap-2 rounded-full text-[14.5px] font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-45"
                 style={{
                   background: isLoading ? T.primaryPress : T.primary,
-                  boxShadow: "0 1px 2px rgba(13,37,61,0.10)",
+                  boxShadow: "0 1px 2px rgba(13,37,61,0.12)",
                 }}
                 onMouseEnter={(e) => {
                   if (!isLoading) e.currentTarget.style.background = T.primaryPress;
@@ -319,42 +568,58 @@ export default function Login() {
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> Conectando…
+                    <Loader2 className="h-4 w-4 animate-spin" /> Verificando…
                   </>
                 ) : (
                   <>
-                    Entrar
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                    Acessar conta
+                    <ArrowRight className="h-[17px] w-[17px] transition-transform group-hover:translate-x-0.5" />
                   </>
                 )}
               </button>
             </form>
 
-            {/* Divisor */}
-            <div className="my-6 flex items-center gap-3">
+            {/* divisor */}
+            <div className="my-6 flex items-center gap-3.5">
               <div className="h-px flex-1" style={{ background: T.hairline }} />
-              <span className="text-[11px] uppercase tracking-[0.18em]" style={{ color: T.inkMute }}>
+              <span className="text-[11px]" style={{ color: T.inkFaint }}>
                 ou
               </span>
               <div className="h-px flex-1" style={{ background: T.hairline }} />
             </div>
 
-            <p className="text-center text-[14px]" style={{ color: T.inkMute }}>
-              Não tem uma conta?{" "}
+            <p className="text-center text-[13.5px]" style={{ color: T.inkMute }}>
+              Ainda não tem conta?{" "}
               <Link
                 href="/auth/jwt/register"
-                className="font-semibold transition-opacity hover:opacity-70"
+                className="font-bold transition-opacity hover:opacity-70"
                 style={{ color: T.primary }}
               >
-                Criar conta
+                Abra a sua gratuitamente
               </Link>
             </p>
 
-            <p className="mt-8 flex items-center justify-center gap-1.5 text-[11px]" style={{ color: T.inkMute }}>
-              <Lock className="h-3 w-3" />
-              Conexão segura · dados criptografados
-            </p>
-          </motion.div>
+            {/* rodapé de confiança */}
+            <div
+              className="mt-9 pt-5"
+              style={{ borderTop: `1px solid ${T.hairline}` }}
+            >
+              <div
+                className="flex items-center gap-2 text-[11.5px]"
+                style={{ color: T.inkMute }}
+              >
+                <ShieldCheck className="h-3.5 w-3.5" style={{ color: T.primary }} />
+                Ambiente protegido · criptografia de ponta a ponta · 2FA
+              </div>
+              <p
+                className="mt-3 text-[10.5px] leading-relaxed"
+                style={{ color: T.inkFaint, fontFeatureSettings: '"tnum" 1' }}
+              >
+                © {new Date().getFullYear()} ShadowPay Pagamentos · Brasil
+                (Português)
+              </p>
+            </div>
+          </div>
         </div>
 
         <ForgotPasswordModal
@@ -365,3 +630,79 @@ export default function Login() {
     </>
   );
 }
+
+/* ===================== CSS (iPhone + animações) ===================== */
+const CSS = `
+.sp-iphone {
+  position: relative;
+  border-radius: 52px;
+  padding: 9px;
+  background: linear-gradient(135deg,#48484a 0%,#2c2c2e 28%,#1c1c1e 68%,#3a3a3c 100%);
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,0.05) inset,
+    0 46px 80px -38px rgba(22,13,46,0.55),
+    0 24px 48px -28px rgba(124,58,237,0.30);
+}
+.sp-iphone-screen {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  border-radius: 44px;
+  overflow: hidden;
+  background: #000;
+}
+.sp-di {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  width: 90px; height: 29px; border-radius: 999px; background: #000; z-index: 40;
+  display: flex; align-items: center; justify-content: flex-end; padding-right: 11px;
+}
+.sp-di-cam {
+  width: 9px; height: 9px; border-radius: 999px;
+  background: radial-gradient(circle at 35% 30%, #2a2a4a, #050510);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
+}
+.sp-gloss {
+  position: absolute; inset: 0; border-radius: 44px; pointer-events: none; z-index: 42;
+  background: linear-gradient(130deg, rgba(255,255,255,0.10) 0%, transparent 26%);
+}
+.sp-ipbtn {
+  position: absolute; background: linear-gradient(180deg,#3a3a3c,#1c1c1e);
+}
+.sp-phone-shadow {
+  position: absolute; bottom: -26px; left: 50%; transform: translateX(-50%);
+  width: 62%; height: 38px; border-radius: 50%;
+  background: rgba(22,13,46,0.28); filter: blur(26px); z-index: -1;
+}
+.sp-ls-notif {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 12px; border-radius: 18px;
+  background: rgba(38,38,44,0.60);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 0.5px solid rgba(255,255,255,0.09);
+}
+@keyframes sp-ls-in {
+  0% { opacity: 0; transform: translateY(-14px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.sp-fresh { animation: sp-ls-in 0.5s cubic-bezier(0.22,1,0.36,1); }
+@keyframes sp-float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-9px); }
+}
+.sp-bob { animation: sp-float 5.5s ease-in-out infinite; }
+@keyframes sp-phone-enter {
+  0% { opacity: 0; transform: translateY(38px) scale(0.93); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.sp-phone-enter { animation: sp-phone-enter 0.9s cubic-bezier(0.22,1,0.36,1) both; }
+.sp-field {
+  height: 46px; width: 100%; border-radius: 10px; padding: 0 14px;
+  background: ${"#FFFFFF"}; border: 1px solid ${"#DCE3EC"}; color: ${"#0F172A"};
+  font-size: 14px; outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.sp-field::placeholder { color: #94A3B8; }
+.sp-field:focus { border-color: #7C3AED; box-shadow: 0 0 0 3px rgba(124,58,237,0.12); }
+.sp-field:disabled { opacity: 0.6; }
+`;
