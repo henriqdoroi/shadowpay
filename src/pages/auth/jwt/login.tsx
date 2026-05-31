@@ -76,11 +76,11 @@ function PurpleIcon({ size = 42 }: { size?: number }) {
 function SaleCard({ sale }: { sale: Notif }) {
   return (
     <div className={"sp-ncard" + (sale.fresh ? " sp-fresh" : "")}>
-      <PurpleIcon size={33} />
+      <PurpleIcon size={29} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
-          <span style={{ fontSize: 12.5, fontWeight: 700, color: "#fff", letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>Venda Aprovada!</span>
-          <span style={{ fontSize: 9.5, color: "rgba(255,255,255,.6)", flexShrink: 0, whiteSpace: "nowrap" }}>{sale.t}</span>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 5 }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "#fff", letterSpacing: "-0.015em", whiteSpace: "nowrap" }}>Venda Aprovada!</span>
+          <span style={{ fontSize: 9, color: "rgba(255,255,255,.58)", flexShrink: 0, whiteSpace: "nowrap" }}>{sale.t}</span>
         </div>
         <div style={{ fontSize: 11.5, color: "rgba(255,255,255,.9)", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           Valor: <span style={{ fontWeight: 600, fontFeatureSettings: '"tnum" 1' }}>R$ {sale.val}</span>
@@ -142,7 +142,7 @@ export default function Login() {
     if (phase !== "phone") return;
     setNotifs([]);
     let i = 0;
-    const age = (t: string) => (t === "Agora" ? "1 min atrás" : t === "1 min atrás" ? "3 min atrás" : t === "3 min atrás" ? "5 min atrás" : "8 min atrás");
+    const age = (t: string) => (t === "Agora" ? "1 min" : t === "1 min" ? "3 min" : t === "3 min" ? "5 min" : "8 min");
     const drop = () => {
       const val = SALE_VALUES[i % SALE_VALUES.length];
       setNotifs((prev) => [{ val, t: "Agora", id: Date.now() + "-" + i, fresh: true } as Notif, ...prev.map((p) => ({ ...p, fresh: false, t: age(p.t) }))].slice(0, 3));
@@ -309,17 +309,17 @@ export default function Login() {
 /* ===================== CSS ===================== */
 const CSS = `
 /* ---- showcase: iPhone (mockup) + sombra ---- */
-.sp-showcase { position: relative; width: 446px; max-width: 86vw; }
+.sp-showcase { position: relative; width: 486px; max-width: 88vw; }
 .sp-phone-img { display: block; width: 100%; height: auto; filter: drop-shadow(0 34px 50px rgba(6,3,20,.5)); }
 
 /* grupo de notificações sobre a tela */
-.sp-notif-overlay { position: absolute; left: 13%; width: 51%; top: 31%; z-index: 3; display: flex; flex-direction: column; gap: 5px; }
+.sp-notif-overlay { position: absolute; left: 29.5%; width: 41%; top: 33%; z-index: 3; display: flex; flex-direction: column; gap: 5px; }
 .sp-notif-header { display: flex; align-items: center; justify-content: space-between; padding: 0 4px 1px; }
-.sp-notif-app { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: -0.02em; text-shadow: 0 1px 6px rgba(0,0,0,.4); }
-.sp-notif-actions { display: flex; align-items: center; gap: 5px; }
-.sp-notif-less { display: inline-flex; align-items: center; gap: 2px; font-size: 9.5px; font-weight: 500; color: #fff; border-radius: 999px; padding: 4px 8px 4px 6px; white-space: nowrap;
+.sp-notif-app { font-size: 13.5px; font-weight: 700; color: #fff; letter-spacing: -0.02em; text-shadow: 0 1px 6px rgba(0,0,0,.4); }
+.sp-notif-actions { display: flex; align-items: center; gap: 4px; }
+.sp-notif-less { display: inline-flex; align-items: center; gap: 2px; font-size: 9px; font-weight: 500; color: #fff; border-radius: 999px; padding: 3px 7px 3px 5px; white-space: nowrap;
   background: rgba(255,255,255,.16); border: .5px solid rgba(255,255,255,.28); box-shadow: inset 0 .5px 0 rgba(255,255,255,.4); backdrop-filter: blur(16px) saturate(150%); -webkit-backdrop-filter: blur(16px) saturate(150%); }
-.sp-notif-x { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; color: #fff;
+.sp-notif-x { display: flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; color: #fff;
   background: rgba(255,255,255,.16); border: .5px solid rgba(255,255,255,.28); box-shadow: inset 0 .5px 0 rgba(255,255,255,.4); backdrop-filter: blur(16px) saturate(150%); -webkit-backdrop-filter: blur(16px) saturate(150%); }
 .sp-notif-cards { display: flex; flex-direction: column; gap: 6px; }
 /* ---- liquid glass (iOS) ---- */
