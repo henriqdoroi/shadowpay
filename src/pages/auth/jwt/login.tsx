@@ -76,13 +76,13 @@ function PurpleIcon({ size = 42 }: { size?: number }) {
 function SaleCard({ sale }: { sale: Notif }) {
   return (
     <div className={"sp-ncard" + (sale.fresh ? " sp-fresh" : "")}>
-      <PurpleIcon size={36} />
+      <PurpleIcon size={30} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
-          <span style={{ fontSize: 13.5, fontWeight: 700, color: "#fff", letterSpacing: "-0.01em" }}>Venda Aprovada!</span>
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,.6)", flexShrink: 0 }}>{sale.t}</span>
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: "#fff", letterSpacing: "-0.01em" }}>Venda Aprovada!</span>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,.6)", flexShrink: 0 }}>{sale.t}</span>
         </div>
-        <div style={{ fontSize: 12.5, color: "rgba(255,255,255,.92)", marginTop: 1 }}>
+        <div style={{ fontSize: 11.5, color: "rgba(255,255,255,.92)", marginTop: 0 }}>
           Valor: <span style={{ fontWeight: 600, fontFeatureSettings: '"tnum" 1' }}>R$ {sale.val}</span>
         </div>
       </div>
@@ -94,7 +94,7 @@ function SaleCard({ sale }: { sale: Notif }) {
 function PhoneShowcase({ notifs }: { notifs: Notif[] }) {
   return (
     <div className="sp-showcase">
-      <img src="/iphone-17.png" alt="iPhone ShadowPay" className="sp-phone-img" />
+      <img src="/iphone-hand.png" alt="iPhone ShadowPay" className="sp-phone-img" />
       <div className="sp-notif-overlay">
         <div className="sp-notif-header">
           <span className="sp-notif-app">ShadowPay</span>
@@ -129,6 +129,7 @@ export default function Login() {
     if (isAuthenticated) router.push("/v1/dashboard");
   }, [isAuthenticated, router]);
 
+  // 1) intro: silhueta → logo (~3.2s). 2) a logo some e o celular entra.
   useEffect(() => {
     setPhase("intro");
     setNotifs([]);
@@ -136,6 +137,7 @@ export default function Login() {
     return () => clearTimeout(t);
   }, [runId]);
 
+  // Quando o celular entra: espera ele subir (~1.2s) e começa as vendas.
   useEffect(() => {
     if (phase !== "phone") return;
     setNotifs([]);
@@ -146,7 +148,7 @@ export default function Login() {
       setNotifs((prev) => [{ val, t: "Agora", id: Date.now() + "-" + i, fresh: true } as Notif, ...prev.map((p) => ({ ...p, fresh: false, t: age(p.t) }))].slice(0, 3));
       i++;
     };
-    const first = setTimeout(drop, 500);
+    const first = setTimeout(drop, 1300);
     const iv = setInterval(drop, 2600);
     return () => { clearTimeout(first); clearInterval(iv); };
   }, [phase]);
@@ -218,7 +220,7 @@ export default function Login() {
             <span className="text-[14px] font-semibold tracking-tight text-white/90">ShadowPay</span>
           </div>
 
-          {/* INTRO */}
+          {/* INTRO: silhueta da pantera → logo cromada real */}
           {phase === "intro" && (
             <div className="sp-intro">
               <div className="sp-draw-wrap">
@@ -229,16 +231,18 @@ export default function Login() {
             </div>
           )}
 
-          {/* PHONE */}
+          {/* PHONE: a logo some e o celular SOBE com fade-in → caem as vendas */}
           {phase === "phone" && (
             <div className="relative flex flex-col items-center">
-              <div className="sp-headline-in relative mb-5 max-w-[420px] px-8 text-center">
-                <h2 style={{ fontFamily: FONT, fontSize: 27, fontWeight: 300, lineHeight: 1.15, letterSpacing: "-0.7px", color: "#fff" }}>
+              <div className="sp-headline-in relative mb-4 max-w-[420px] px-8 text-center">
+                <h2 style={{ fontFamily: FONT, fontSize: 26, fontWeight: 300, lineHeight: 1.15, letterSpacing: "-0.7px", color: "#fff" }}>
                   Cada venda aprovada,{" "}
                   <span style={{ fontWeight: 600, color: "#C4B5FD" }}>no seu bolso na hora.</span>
                 </h2>
               </div>
-              <div className="sp-phone-enter sp-bob"><PhoneShowcase notifs={notifs} /></div>
+              <div className="sp-rise">
+                <div className="sp-bob"><PhoneShowcase notifs={notifs} /></div>
+              </div>
             </div>
           )}
         </section>
@@ -305,19 +309,19 @@ export default function Login() {
 /* ===================== CSS ===================== */
 const CSS = `
 /* ---- showcase: iPhone (mockup) + sombra ---- */
-.sp-showcase { position: relative; width: 560px; max-width: 90vw; }
-.sp-phone-img { display: block; width: 100%; height: auto; filter: drop-shadow(0 44px 60px rgba(6,3,20,.6)); }
+.sp-showcase { position: relative; width: 412px; max-width: 84vw; }
+.sp-phone-img { display: block; width: 100%; height: auto; filter: drop-shadow(0 34px 50px rgba(6,3,20,.5)); }
 
 /* grupo de notificações sobre a tela */
-.sp-notif-overlay { position: absolute; left: 20%; width: 49%; top: 29%; z-index: 3; display: flex; flex-direction: column; gap: 7px; }
+.sp-notif-overlay { position: absolute; left: 13%; width: 51%; top: 31%; z-index: 3; display: flex; flex-direction: column; gap: 5px; }
 .sp-notif-header { display: flex; align-items: center; justify-content: space-between; padding: 0 3px 0; }
-.sp-notif-app { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -0.02em; text-shadow: 0 1px 6px rgba(0,0,0,.4); }
-.sp-notif-actions { display: flex; align-items: center; gap: 6px; }
-.sp-notif-less { font-size: 10.5px; color: rgba(255,255,255,.9); background: rgba(255,255,255,.18); border-radius: 999px; padding: 4px 9px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); white-space: nowrap; }
-.sp-notif-x { width: 21px; height: 21px; border-radius: 50%; background: rgba(255,255,255,.18); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-.sp-notif-cards { display: flex; flex-direction: column; gap: 7px; }
+.sp-notif-app { font-size: 14px; font-weight: 700; color: #fff; letter-spacing: -0.02em; text-shadow: 0 1px 6px rgba(0,0,0,.4); }
+.sp-notif-actions { display: flex; align-items: center; gap: 5px; }
+.sp-notif-less { font-size: 9.5px; color: rgba(255,255,255,.9); background: rgba(255,255,255,.18); border-radius: 999px; padding: 3px 8px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); white-space: nowrap; }
+.sp-notif-x { width: 19px; height: 19px; border-radius: 50%; background: rgba(255,255,255,.18); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 10px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.sp-notif-cards { display: flex; flex-direction: column; gap: 5px; }
 .sp-ncard {
-  display: flex; align-items: flex-start; gap: 9px; padding: 9px 11px; border-radius: 17px;
+  display: flex; align-items: flex-start; gap: 8px; padding: 7px 9px; border-radius: 15px;
   background: rgba(48,32,72,.5); backdrop-filter: blur(26px) saturate(160%); -webkit-backdrop-filter: blur(26px) saturate(160%);
   border: .5px solid rgba(255,255,255,.15); box-shadow: 0 12px 32px -14px rgba(0,0,0,.55);
 }
@@ -329,6 +333,9 @@ const CSS = `
 .sp-bob { animation: sp-float 6s ease-in-out infinite; }
 @keyframes sp-phone-enter { 0%{opacity:0; transform:translateY(40px) scale(.94);} 100%{opacity:1; transform:translateY(0) scale(1);} }
 .sp-phone-enter { animation: sp-phone-enter .95s cubic-bezier(.22,1,.36,1) both; }
+/* celular SOBE com fade-in de baixo (depois da logo sumir) */
+@keyframes sp-rise { 0%{opacity:0; transform:translateY(95px) scale(.97);} 100%{opacity:1; transform:translateY(0) scale(1);} }
+.sp-rise { animation: sp-rise 1.1s cubic-bezier(.22,1,.36,1) both; }
 .sp-headline-in { animation: sp-fade-up .7s ease .12s both; }
 @keyframes sp-fade-up { 0%{opacity:0; transform:translateY(10px);} 100%{opacity:1; transform:translateY(0);} }
 
