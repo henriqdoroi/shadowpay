@@ -274,6 +274,7 @@ export default function Login() {
   const [remember, setRemember] = useState(true);
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [runId, setRunId] = useState(0);
+  const [phase, setPhase] = useState<"intro" | "phone">("intro");
   const router = useRouter();
   const { login, isLoading, isAuthenticated } = useAuth();
 
@@ -281,8 +282,17 @@ export default function Login() {
     if (isAuthenticated) router.push("/v1/dashboard");
   }, [isAuthenticated, router]);
 
-  // notificações de venda caindo a cada ~2.6s
+  // intro cinematográfica (silhueta → logo real) → depois o iPhone
   useEffect(() => {
+    setPhase("intro");
+    setNotifs([]);
+    const t = setTimeout(() => setPhase("phone"), 3300);
+    return () => clearTimeout(t);
+  }, [runId]);
+
+  // notificações de venda caindo a cada ~2.6s (só na fase do iPhone)
+  useEffect(() => {
+    if (phase !== "phone") return;
     setNotifs([]);
     let i = 0;
     const age = (t: string) =>
@@ -383,54 +393,84 @@ export default function Login() {
         className="grid min-h-screen w-full lg:grid-cols-[1.05fr_1fr]"
         style={{ fontFamily: FONT, background: T.canvas, color: T.ink }}
       >
-        {/* ===== ESQUERDA — showcase iPhone (canvas claro) ===== */}
+        {/* ===== ESQUERDA — showcase cinematográfico (palco escuro) ===== */}
         <section
           onClick={() => setRunId((r) => r + 1)}
           title="Reproduzir novamente"
           className="relative hidden cursor-pointer flex-col items-center justify-center overflow-hidden lg:flex"
           style={{
             background:
-              "radial-gradient(80% 55% at 72% 8%, rgba(124,58,237,0.12), transparent 60%), radial-gradient(60% 50% at 12% 95%, rgba(168,85,247,0.10), transparent 65%), " +
-              T.canvasSoft,
+              "radial-gradient(120% 80% at 50% 0%, #241a48 0%, #15102f 46%, #0a0818 100%)",
           }}
         >
-          {/* malha pontilhada sutil */}
+          {/* brilho violeta no rodapé + grão */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 opacity-[0.5]"
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(60% 38% at 50% 100%, rgba(124,58,237,0.22), transparent 72%)",
+            }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 opacity-[0.05]"
             style={{
               backgroundImage:
-                "radial-gradient(rgba(15,23,42,0.04) 0.5px, transparent 0.5px)",
-              backgroundSize: "22px 22px",
+                "radial-gradient(rgba(255,255,255,0.9) 0.5px, transparent 0.5px)",
+              backgroundSize: "4px 4px",
             }}
           />
 
-          <div className="relative mb-9 max-w-[380px] px-8 text-center">
-            <h2
-              style={{
-                fontFamily: FONT,
-                fontSize: 30,
-                fontWeight: 300,
-                lineHeight: 1.12,
-                letterSpacing: "-0.9px",
-                color: T.ink,
-              }}
-            >
-              Cada venda aprovada,{" "}
-              <span style={{ fontWeight: 600, color: T.primary }}>
-                no seu bolso na hora.
-              </span>
-            </h2>
-            <p className="mt-3 text-[14px]" style={{ color: T.inkMute }}>
-              Notificações em tempo real direto no seu celular. Acompanhe a
-              operação de qualquer lugar.
-            </p>
-          </div>
-
-          <div className="sp-phone-enter relative">
-            <div className="sp-bob">
-              <IPhone notifs={notifs} />
+          {/* INTRO — silhueta da pantera se formando → logo real */}
+          {phase === "intro" && (
+            <div className="sp-intro">
+              <div className="sp-draw-wrap">
+                <span className="sp-draw-sil" />
+                <span className="sp-draw-scan" />
+                <span className="sp-draw-real" />
+              </div>
             </div>
+          )}
+
+          {/* PHONE — iPhone com notificações de venda caindo */}
+          {phase === "phone" && (
+            <div className="relative flex flex-col items-center">
+              <div className="sp-headline-in relative mb-8 max-w-[400px] px-8 text-center">
+                <h2
+                  style={{
+                    fontFamily: FONT,
+                    fontSize: 28,
+                    fontWeight: 300,
+                    lineHeight: 1.14,
+                    letterSpacing: "-0.8px",
+                    color: "#fff",
+                  }}
+                >
+                  Cada venda aprovada,{" "}
+                  <span style={{ fontWeight: 600, color: "#C4B5FD" }}>
+                    no seu bolso na hora.
+                  </span>
+                </h2>
+                <p className="mt-2.5 text-[13.5px]" style={{ color: "rgba(255,255,255,0.55)" }}>
+                  Notificações em tempo real direto no seu celular.
+                </p>
+              </div>
+
+              <div className="sp-phone-enter relative">
+                <div className="sp-bob">
+                  <IPhone notifs={notifs} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* marca no canto */}
+          <div className="absolute left-7 top-7 flex items-center gap-2.5">
+            <AppIcon size={30} />
+            <span className="text-[14px] font-semibold tracking-tight text-white/90">
+              ShadowPay
+            </span>
           </div>
         </section>
 
@@ -705,4 +745,62 @@ const CSS = `
 .sp-field::placeholder { color: #94A3B8; }
 .sp-field:focus { border-color: #7C3AED; box-shadow: 0 0 0 3px rgba(124,58,237,0.12); }
 .sp-field:disabled { opacity: 0.6; }
+
+/* ===== Intro cinematográfica (silhueta → logo real) ===== */
+.sp-intro {
+  position: absolute; inset: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: center;
+}
+.sp-draw-wrap {
+  position: relative; width: 170px; height: 215px;
+  animation: sp-wrap-out 0.55s ease 2.78s forwards;
+}
+/* silhueta da pantera (violeta) revelada de baixo pra cima */
+.sp-draw-sil {
+  position: absolute; inset: 0;
+  background: linear-gradient(160deg,#A78BFA,#7C3AED 52%,#5B21B6);
+  -webkit-mask: url(/shadow-panther.png) center / contain no-repeat;
+          mask: url(/shadow-panther.png) center / contain no-repeat;
+  clip-path: inset(0 0 100% 0);
+  filter: drop-shadow(0 0 14px rgba(124,58,237,0.55));
+  animation: sp-reveal 1.7s cubic-bezier(.45,0,.15,1) forwards;
+}
+@keyframes sp-reveal {
+  0%   { clip-path: inset(0 0 100% 0); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+/* linha de scan subindo durante a formação */
+.sp-draw-scan {
+  position: absolute; left: -14%; right: -14%; height: 3px; bottom: 0; opacity: 0;
+  border-radius: 3px;
+  background: linear-gradient(90deg, transparent, #C4B5FD 32%, #fff 50%, #C4B5FD 68%, transparent);
+  box-shadow: 0 0 20px 6px rgba(167,139,250,0.55);
+  animation: sp-scan 1.7s cubic-bezier(.45,0,.15,1) forwards;
+}
+@keyframes sp-scan {
+  0%   { bottom: 0; opacity: 0; }
+  7%   { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { bottom: 100%; opacity: 0; }
+}
+/* logo cromada REAL aparece com glow */
+.sp-draw-real {
+  position: absolute; inset: 0; opacity: 0;
+  background: url(/shadow-panther.png) center / contain no-repeat;
+  animation: sp-real 1.4s ease 1.5s forwards;
+}
+@keyframes sp-real {
+  0%   { opacity: 0; transform: scale(0.92); filter: drop-shadow(0 0 0 rgba(124,58,237,0)); }
+  45%  { opacity: 1; transform: scale(1.03); filter: drop-shadow(0 12px 34px rgba(124,58,237,0.6)) drop-shadow(0 0 18px rgba(196,181,253,0.5)); }
+  72%  { transform: scale(1); }
+  100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 8px 24px rgba(124,58,237,0.4)); }
+}
+@keyframes sp-wrap-out {
+  to { opacity: 0; transform: scale(1.08); filter: blur(3px); }
+}
+.sp-headline-in { animation: sp-fade-up 0.7s ease 0.15s both; }
+@keyframes sp-fade-up {
+  0%   { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
 `;
