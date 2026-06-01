@@ -1,10 +1,9 @@
 "use client";
 
-import { ReactNode, useState, useEffect, useMemo } from "react";
+import { ReactNode, useState, useEffect, useMemo, type CSSProperties } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
-import { ShadowLogo } from "@/components/shadow/ShadowLogo";
 import {
   Search,
   Bell,
@@ -178,6 +177,43 @@ function isActive(pathname: string, href: string, alsoMatches: string[] = []): b
   return pathname.startsWith(href + "/");
 }
 
+/**
+ * Logo da marca na sidebar — renderizada como CSS `background-image`
+ * (NUNCA um `<img>`). Seleção, arraste, long-press (iOS) e menu de contexto
+ * ficam bloqueados, então o caminho casual de "salvar imagem" não existe:
+ * pra quem olha, parece feita no código. (DevTools ainda enxerga a URL —
+ * é impossível esconder 100% no client — mas ninguém "pega" a logo clicando.)
+ */
+function BrandLogo({ collapsed }: { collapsed: boolean }) {
+  return (
+    <div
+      role="img"
+      aria-label="ShadowPay"
+      draggable={false}
+      onDragStart={(e) => e.preventDefault()}
+      onContextMenu={(e) => e.preventDefault()}
+      className="pointer-events-auto select-none"
+      style={
+        {
+          width: collapsed ? 40 : 178,
+          height: collapsed ? 40 : 48,
+          backgroundImage: `url(${collapsed ? "/logoshadowpay.png" : "/logo-menu-white.jpg"})`,
+          backgroundSize: "contain",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "center",
+          // white-bg JPEG some sem deixar retângulo no menu branco
+          mixBlendMode: "multiply",
+          userSelect: "none",
+          WebkitUserSelect: "none",
+          WebkitTouchCallout: "none",
+          WebkitUserDrag: "none",
+          transition: "width 0.22s cubic-bezier(0.22,1,0.36,1)",
+        } as CSSProperties
+      }
+    />
+  );
+}
+
 export function LightShell({
   children,
   valuesVisible,
@@ -293,27 +329,18 @@ export function LightShell({
         className="fixed inset-y-0 left-0 z-30 hidden flex-col md:flex"
         style={{
           width: sidebarWidth,
-          background: "#F1F3F8",
+          background: "#FFFFFF",
+          borderRight: "1px solid #E6E8EB",
           transition: "width 0.22s cubic-bezier(0.22, 1, 0.36, 1)",
         }}
       >
-        {/* Brand */}
+        {/* Brand — logo protegida (CSS background, sem <img>, não selecionável) */}
         <Link
           href="/v1/dashboard"
-          className="relative flex flex-col items-center gap-2 px-4 py-5"
-          style={{ minHeight: 120 }}
+          className="relative flex items-center justify-center px-4 py-5"
+          style={{ minHeight: 78 }}
         >
-          <ShadowLogo size={sidebarCollapsed ? 40 : 66} />
-          {!sidebarCollapsed && (
-            <div className="text-center leading-tight">
-              <div className="text-[13px] font-bold tracking-[0.18em] text-slate-700">
-                SHADOWPAY
-              </div>
-              <div className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.30em] text-slate-400">
-                Financial OS
-              </div>
-            </div>
-          )}
+          <BrandLogo collapsed={sidebarCollapsed} />
         </Link>
 
         {/* Nav */}
@@ -508,7 +535,7 @@ export function LightShell({
             onClick={(e) => e.stopPropagation()}
             className="flex h-full w-72 flex-col"
             style={{
-              background: "#F1F3F8",
+              background: "#FFFFFF",
               boxShadow: "12px 0 32px rgba(15,23,42,0.15)",
             }}
           >
@@ -519,15 +546,7 @@ export function LightShell({
                 className="flex items-center gap-2"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <ShadowLogo size={36} />
-                <div>
-                  <div className="text-[12px] font-bold tracking-[0.18em] text-slate-700">
-                    SHADOWPAY
-                  </div>
-                  <div className="text-[8.5px] font-semibold uppercase tracking-[0.30em] text-slate-400">
-                    Financial OS
-                  </div>
-                </div>
+                <BrandLogo collapsed={false} />
               </Link>
               <button
                 onClick={() => setMobileMenuOpen(false)}
