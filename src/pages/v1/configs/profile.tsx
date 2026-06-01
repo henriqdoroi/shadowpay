@@ -32,6 +32,7 @@ import {
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { LightShell } from "@/components/LightShell";
+import { ShadowLoader } from "@/components/ShadowLoader";
 
 const API = "https://shadowpay-api-production.up.railway.app";
 
@@ -387,8 +388,8 @@ function ProfileContent() {
         </div>
 
         {loading ? (
-          <div className="mx-auto mt-8 max-w-[640px] rounded-2xl bg-white p-10 text-center text-sm text-slate-500">
-            Carregando…
+          <div className="mt-20 flex justify-center">
+            <ShadowLoader size={72} label="Carregando…" />
           </div>
         ) : (
           <div className="mx-auto mt-6 w-full max-w-[640px] space-y-5 pb-10">
