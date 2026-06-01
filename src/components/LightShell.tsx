@@ -37,8 +37,7 @@ import {
   LogOut,
   Eye,
   EyeOff,
-  PanelLeftClose,
-  PanelLeftOpen,
+  ChevronLeft,
   Users,
   Activity,
   Menu,
@@ -300,18 +299,15 @@ export function LightShell({
     | "APPROVED"
     | "BANNED"
     | undefined;
-  const kycPill = (() => {
-    switch (kycStatus) {
-      case "APPROVED":
-        return { text: "KYC verificado", color: "text-emerald-700 bg-emerald-50" };
-      case "PENDING":
-        return { text: "KYC em análise", color: "text-sky-700 bg-sky-50" };
-      case "BANNED":
-        return { text: "Conta suspensa", color: "text-rose-700 bg-rose-50" };
-      default:
-        return { text: "KYC pendente", color: "text-amber-700 bg-amber-50" };
-    }
-  })();
+  // cor do pontinho de status no avatar (verde = verificado etc.)
+  const kycDot =
+    kycStatus === "APPROVED"
+      ? "#10B981"
+      : kycStatus === "BANNED"
+        ? "#EF4444"
+        : kycStatus === "PENDING"
+          ? "#0EA5E9"
+          : "#F59E0B";
 
   return (
     <div
@@ -455,69 +451,72 @@ export function LightShell({
           ))}
         </nav>
 
-        {/* User card */}
+        {/* User footer — estilo SyncPay: rodapé limpo (avatar + nome + e-mail + sair) */}
         <div className="px-3 pb-3">
+          {!sidebarCollapsed && (
+            <a
+              href="https://wa.me/559991519044?text=Ol%C3%A1%20preciso%20de%20ajuda%20com%20a%20ShadowPay."
+              target="_blank"
+              rel="noreferrer"
+              className="mb-1 flex items-center gap-2 rounded-lg px-2 py-1.5 text-[12px] font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
+            >
+              <LifeBuoy className="h-4 w-4" />
+              Suporte 24/7
+            </a>
+          )}
+
+          <div className="my-1 h-px" style={{ background: "rgba(15,23,42,0.06)" }} />
+
           {!sidebarCollapsed ? (
-            <>
-              <div
-                className="rounded-xl p-3"
-                style={{
-                  background: "#FFFFFF",
-                  border: "1px solid rgba(15,23,42,0.06)",
-                  boxShadow: "0 1px 2px rgba(15,23,42,0.04)",
-                }}
+            <div className="flex items-center gap-2">
+              <Link
+                href="/v1/configs/profile"
+                className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg p-1.5 transition-colors hover:bg-slate-50"
               >
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-                    style={{
-                      background:
-                        "linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)",
-                    }}
+                <span className="relative shrink-0">
+                  <span
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-[13px] font-semibold text-white"
+                    style={{ background: "#7C3AED" }}
                   >
                     {initial}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-semibold text-slate-900">
-                      {user?.companyName || "Operador"}
-                    </p>
-                    <p className="truncate text-[10px] text-slate-500">
-                      {user?.isAdministrator ? "Administrador" : "Seller Bronze"}
-                    </p>
-                  </div>
-                </div>
-                <div
-                  className={`mt-2 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${kycPill.color}`}
-                >
-                  <ShieldCheck className="h-2.5 w-2.5" />
-                  {kycPill.text}
-                </div>
-                <p className="mt-2 text-[10px] text-slate-500">
-                  Próximo repasse{" "}
-                  <span className="font-semibold text-slate-700">25 Mai 2026</span>
-                </p>
-              </div>
-
-              <a
-                href="https://wa.me/559991519044?text=Ol%C3%A1%20preciso%20de%20ajuda%20com%20a%20ShadowPay."
-                target="_blank"
-                rel="noreferrer"
-                className="mt-2 flex items-center justify-center gap-1.5 rounded-lg py-2 text-[12px] font-medium text-slate-500 transition-colors hover:bg-white hover:text-slate-700"
+                  </span>
+                  <span
+                    className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full"
+                    style={{ background: kycDot, border: "2px solid #FFFFFF" }}
+                  />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[13px] font-semibold text-slate-800">
+                    {user?.companyName || "Operador"}
+                  </span>
+                  <span className="block truncate text-[11px] text-slate-400">
+                    {user?.email ||
+                      (user?.isAdministrator ? "Administrador" : "Conta Seller")}
+                  </span>
+                </span>
+              </Link>
+              <button
+                onClick={() => logout()}
+                title="Sair"
+                aria-label="Sair"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
               >
-                <LifeBuoy className="h-3.5 w-3.5" />
-                Suporte 24/7
-              </a>
-            </>
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
           ) : (
-            <div
-              className="mx-auto flex h-10 w-10 items-center justify-center rounded-full text-xs font-bold text-white"
-              style={{
-                background: "linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)",
-              }}
+            <Link
+              href="/v1/configs/profile"
               title={user?.companyName || "Operador"}
+              className="relative mx-auto flex h-9 w-9 items-center justify-center rounded-full text-[13px] font-semibold text-white"
+              style={{ background: "#7C3AED" }}
             >
               {initial}
-            </div>
+              <span
+                className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full"
+                style={{ background: kycDot, border: "2px solid #FFFFFF" }}
+              />
+            </Link>
           )}
         </div>
       </aside>
@@ -702,23 +701,17 @@ export function LightShell({
           } as React.CSSProperties
         }
       >
-        {/* Toggle button */}
+        {/* Toggle recolher — estilo SyncPay: chevron circular na borda */}
         <button
           onClick={() => setSidebarCollapsed((v) => !v)}
-          className="absolute top-7 z-40 hidden h-7 w-7 items-center justify-center rounded-full transition-all hover:scale-110 md:flex"
-          style={{
-            left: -14,
-            background: "#FFFFFF",
-            border: "1px solid rgba(15,23,42,0.08)",
-            boxShadow: "0 2px 6px rgba(15,23,42,0.10)",
-            color: "#475569",
-          }}
+          className="absolute top-6 z-40 hidden h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:border-violet-300 hover:text-violet-600 hover:shadow-md md:flex"
+          style={{ left: -14 }}
           aria-label={sidebarCollapsed ? "Expandir menu" : "Recolher menu"}
         >
           {sidebarCollapsed ? (
-            <PanelLeftOpen className="h-3.5 w-3.5" />
+            <ChevronRight className="h-4 w-4" />
           ) : (
-            <PanelLeftClose className="h-3.5 w-3.5" />
+            <ChevronLeft className="h-4 w-4" />
           )}
         </button>
 
