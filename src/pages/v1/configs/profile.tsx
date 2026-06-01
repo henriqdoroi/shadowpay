@@ -1,92 +1,113 @@
 "use client";
 
 /**
- * /v1/configs/profile — Perfil tema light.
+ * /v1/configs/profile — Perfil (tema white) no layout SyncPay.
  *
- * Layout 2 colunas inspirado no mockup:
- *   esq: "Minha Conta" — infos básicas read-only com ícones violeta
- *   dir: "Dados Cadastrais" — form editável (MCC, telefone, data,
- *        endereço completo) com ícone verde
+ * 3 abas internas:
+ *   - Dados da conta: header + Configurações + Dados empresariais + Dados bancários
+ *   - Taxas: taxas reais do seller/adquirente
+ *   - Limites: limites da conta
+ *
+ * Acesso: pelo menu "•••" no rodapé da sidebar (a aba "Perfil" saiu do menu).
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Head from "next/head";
 import axios from "axios";
 import { toast } from "sonner";
 import {
-  User,
-  Pencil,
-  Cake,
-  Mail,
-  IdCard,
-  Hash,
-  Copy,
-  Briefcase,
-  Phone,
-  Calendar,
-  MapPin,
   Save,
-  Search,
+  Link2,
+  QrCode,
+  Banknote,
+  Repeat,
+  ShoppingCart,
+  CreditCard,
+  Wallet,
+  CalendarDays,
+  Tag,
+  Tags,
+  Moon,
 } from "lucide-react";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { LightShell } from "@/components/LightShell";
-import { ProfileTabs } from "@/components/ProfileTabs";
-import ShadowPanel from "@/components/ShadowPanel";
 
 const API = "https://shadowpay-api-production.up.railway.app";
 
 const T = {
   card: "#FFFFFF",
-  border: "rgba(15,23,42,0.08)",
-  borderSoft: "rgba(15,23,42,0.06)",
+  border: "rgba(15,23,42,0.10)",
+  borderSoft: "rgba(15,23,42,0.08)",
   text: "#0F172A",
-  text2: "#475569",
-  textMuted: "#94A3B8",
+  text2: "#334155",
+  textMuted: "#64748B",
   primary: "#7C3AED",
-  primarySoft: "rgba(124,58,237,0.10)",
-  green: "#10B981",
-  greenSoft: "rgba(16,185,129,0.12)",
-  blue: "#06B6D4",
-  blueSoft: "rgba(6,182,212,0.12)",
-  amber: "#F59E0B",
-  amberSoft: "rgba(245,158,11,0.12)",
-  inputBg: "#F8FAFC",
-  inputBorder: "rgba(15,23,42,0.10)",
+  blue: "#2563EB",
+  blueSoft: "rgba(37,99,235,0.10)",
 };
 
-const MCC_OPTIONS = [
-  "Comércio Direto - Catálogo/Serviços de Marketing - 5964",
-  "Comércio Eletrônico - 5734",
-  "Educação - Cursos Online - 8299",
-  "Saúde e Bem-estar - 7298",
-  "Restaurantes e Alimentação - 5812",
-  "Vestuário - 5651",
-  "Tecnologia - Software - 7372",
-  "Beleza e Estética - 7298",
-  "Imobiliária - 6513",
-  "Outros",
-];
+const BRL = (n: number) =>
+  (Number(n) || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+
+const fmtPct = (n: number) =>
+  `${(Number(n) || 0).toLocaleString("pt-BR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })}%`;
+
+const fmtFee = (fixed: number, pct: number) => {
+  const parts: string[] = [];
+  if (Number(fixed) > 0) parts.push(BRL(fixed));
+  if (Number(pct) > 0) parts.push(fmtPct(pct));
+  return parts.length ? parts.join(" + ") : "Grátis";
+};
+
+const fmtCreated = (s?: string | null) => {
+  if (!s) return "—";
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return "—";
+  const mes = d
+    .toLocaleDateString("pt-BR", { month: "short" })
+    .replace(".", "");
+  return `${String(d.getDate()).padStart(2, "0")} ${
+    mes.charAt(0).toUpperCase() + mes.slice(1)
+  } ${d.getFullYear()}`;
+};
+
+const fmtDoc = (raw?: string | null) => {
+  if (!raw) return "—";
+  const c = raw.replace(/\D/g, "");
+  if (c.length === 11)
+    return c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+  if (c.length === 14)
+    return c.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+  return raw;
+};
+
+const fmtPhone = (v?: string | null) => {
+  if (!v) return "—";
+  const c = v.replace(/\D/g, "").slice(0, 11);
+  if (c.length < 10) return v;
+  if (c.length === 10) return `(${c.slice(0, 2)}) ${c.slice(2, 6)}-${c.slice(6)}`;
+  return `(${c.slice(0, 2)}) ${c.slice(2, 7)}-${c.slice(7)}`;
+};
+
+type TabId = "conta" | "taxas" | "limites";
 
 function ProfileContent() {
+  const [tab, setTab] = useState<TabId>("conta");
   const [seller, setSeller] = useState<any>(null);
   const [kyc, setKyc] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [cepLoading, setCepLoading] = useState(false);
-
-  const [form, setForm] = useState({
-    mcc: "",
-    phone: "",
-    birthDate: "",
-    zip: "",
-    street: "",
-    number: "",
-    complement: "",
-    neighborhood: "",
-    city: "",
-    state: "",
+  const [fees, setFees] = useState<{ withdrawFixed: number }>({
+    withdrawFixed: 0,
   });
+  const [loading, setLoading] = useState(true);
+  const [displayName, setDisplayName] = useState("");
+  const [savingName, setSavingName] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -94,35 +115,20 @@ function ProfileContent() {
       try {
         const token = localStorage.getItem("token");
         if (!token) return;
-        const [pr, kr] = await Promise.all([
-          axios.get(`${API}/api/user/profile`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios
-            .get(`${API}/api/user/kyc`, {
-              headers: { Authorization: `Bearer ${token}` },
-            })
-            .catch(() => null),
+        const headers = { Authorization: `Bearer ${token}` };
+        const [pr, kr, fr] = await Promise.all([
+          axios.get(`${API}/api/user/profile`, { headers }),
+          axios.get(`${API}/api/user/kyc`, { headers }).catch(() => null),
+          axios.get(`${API}/api/user/fees`, { headers }).catch(() => null),
         ]);
-        if (pr.data?.success) setSeller(pr.data.data);
-        if (kr?.data?.success) {
-          setKyc(kr.data.data);
-          const dc = kr.data.data.dadosCadastrais || {};
-          const en = kr.data.data.endereco || {};
-          setForm({
-            mcc: dc.mcc || "",
-            phone: dc.phone || "",
-            birthDate: dc.dataNascimentoAbertura
-              ? new Date(dc.dataNascimentoAbertura).toISOString().slice(0, 10)
-              : "",
-            zip: en.zip || "",
-            street: en.street || "",
-            number: en.number || "",
-            complement: en.complement || "",
-            neighborhood: en.neighborhood || "",
-            city: en.city || "",
-            state: en.state || "",
-          });
+        if (pr.data?.success) {
+          setSeller(pr.data.data);
+          setDisplayName(pr.data.data?.companyName || "");
+        }
+        if (kr?.data?.success) setKyc(kr.data.data);
+        if (fr?.data?.success) {
+          const adq = fr.data.data?.adquerer || {};
+          setFees({ withdrawFixed: Number(adq.txCashOut ?? 0) });
         }
       } catch (e) {
         console.error(e);
@@ -132,162 +138,215 @@ function ProfileContent() {
     })();
   }, []);
 
-  const fmtDate = (s?: string | null) => {
-    if (!s) return "—";
-    const d = new Date(s);
-    if (isNaN(d.getTime())) return s || "—";
-    return d.toLocaleDateString("pt-BR");
-  };
-
-  const fmtDoc = (raw?: string | null) => {
-    if (!raw) return "—";
-    const c = raw.replace(/\D/g, "");
-    if (c.length === 11)
-      return c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
-    if (c.length === 14)
-      return c.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
-    return raw;
-  };
-
-  const fmtPhone = (v: string) => {
-    const c = v.replace(/\D/g, "").slice(0, 11);
-    if (c.length <= 2) return c;
-    if (c.length <= 7) return `(${c.slice(0, 2)}) ${c.slice(2)}`;
-    return `(${c.slice(0, 2)}) ${c.slice(2, 7)}-${c.slice(7)}`;
-  };
-
-  const lookupCep = async (cep: string) => {
-    const c = cep.replace(/\D/g, "");
-    if (c.length !== 8) return;
-    setCepLoading(true);
-    try {
-      const r = await fetch(`https://viacep.com.br/ws/${c}/json/`);
-      const j = await r.json();
-      if (j && !j.erro) {
-        setForm((f) => ({
-          ...f,
-          street: j.logradouro || f.street,
-          neighborhood: j.bairro || f.neighborhood,
-          city: j.localidade || f.city,
-          state: j.uf || f.state,
-        }));
-      } else {
-        toast.error("CEP não encontrado");
-      }
-    } catch {
-      toast.error("Erro ao consultar CEP");
-    } finally {
-      setCepLoading(false);
-    }
-  };
-
-  const copyId = () => {
-    const id = seller?.id?.slice(0, 12) || seller?.id || "";
-    navigator.clipboard.writeText(id);
-    toast.success("ID copiado");
-  };
-
-  const save = async () => {
-    if (!form.zip || form.zip.replace(/\D/g, "").length !== 8) {
-      toast.error("Informe um CEP válido.");
+  const saveName = async () => {
+    const name = displayName.trim();
+    if (!name) {
+      toast.error("Informe um nome de exibição.");
       return;
     }
-    if (!form.number.trim()) {
-      toast.error("Informe o número.");
-      return;
-    }
-    setSaving(true);
+    setSavingName(true);
     try {
       const token = localStorage.getItem("token");
-      const r = await axios.post(
-        `${API}/api/user/kyc/address`,
-        {
-          zip: form.zip,
-          street: form.street,
-          number: form.number,
-          complement: form.complement,
-          neighborhood: form.neighborhood,
-          city: form.city,
-          state: form.state,
-        },
+      const r = await axios.put(
+        `${API}/api/user/profile`,
+        { companyName: name },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (r.data?.success) {
-        toast.success("Alterações salvas!");
+        toast.success("Nome de exibição salvo!");
+        setSeller((s: any) => ({ ...s, companyName: name }));
       } else {
         toast.error(r.data?.message || "Erro ao salvar.");
       }
     } catch (e: any) {
       toast.error(e?.response?.data?.message || "Erro ao salvar.");
     } finally {
-      setSaving(false);
+      setSavingName(false);
     }
   };
 
-  // ---- componentes locais ----
-  const SectionIcon = ({
+  const dc = kyc?.dadosCadastrais || {};
+  const en = kyc?.endereco || {};
+  const isPJ =
+    dc.tipoPessoa === "PJ" ||
+    String(seller?.cpf_cnpj || "").replace(/\D/g, "").length === 14;
+  const tipoConta = isPJ ? "Pessoa jurídica" : "Pessoa física";
+
+  const enderecoStr = [
+    en.street,
+    en.number,
+    en.neighborhood,
+    [en.city, en.state].filter(Boolean).join(" - "),
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  const initial = (seller?.companyName?.[0] || "S").toUpperCase();
+
+  // ---- taxas (reais)
+  const pixFixed = Number(seller?.feeFixedPix ?? 0);
+  const pixPct = Number(seller?.feePercentPix ?? 0);
+  const cardFixed = Number(seller?.feeFixedCard ?? 0);
+  const cardPct = Number(seller?.feePercentCard ?? 0);
+  const wFixed = fees.withdrawFixed;
+
+  const TAXAS = [
+    {
+      icon: <Link2 className="h-[18px] w-[18px]" />,
+      title: "Link de pagamento",
+      desc: "Envio de cobrança via link de pagamento.",
+      value: fmtFee(pixFixed, pixPct),
+    },
+    {
+      icon: <QrCode className="h-[18px] w-[18px]" />,
+      title: "PIX",
+      desc: "Envio e recebimento por chave Pix.",
+      value: fmtFee(pixFixed, pixPct),
+    },
+    {
+      icon: <Banknote className="h-[18px] w-[18px]" />,
+      title: "Saque Painel",
+      desc: "Transferência manual feita pelo painel.",
+      value: wFixed > 0 ? BRL(wFixed) : "Grátis",
+    },
+    {
+      icon: <Repeat className="h-[18px] w-[18px]" />,
+      title: "Saque API",
+      desc: "Transferência automática via integração.",
+      value: wFixed > 0 ? BRL(wFixed) : "Grátis",
+    },
+    {
+      icon: <ShoppingCart className="h-[18px] w-[18px]" />,
+      title: "Checkout",
+      desc: "Cobrança via checkout com pagamento integrado.",
+      value: fmtFee(pixFixed, pixPct),
+    },
+    {
+      icon: <CreditCard className="h-[18px] w-[18px]" />,
+      title: "Cartão de Crédito",
+      desc: "Recebimento por cartão de crédito.",
+      value: fmtFee(cardFixed, cardPct),
+    },
+  ];
+
+  const LIMITES = [
+    {
+      icon: <Wallet className="h-[18px] w-[18px]" />,
+      title: "Saque por dia",
+      desc: "Valor máximo liberado por dia.",
+      value: BRL(50000),
+    },
+    {
+      icon: <CalendarDays className="h-[18px] w-[18px]" />,
+      title: "Saque por mês",
+      desc: "Total permitido no mês.",
+      value: BRL(400000),
+    },
+    {
+      icon: <Tag className="h-[18px] w-[18px]" />,
+      title: "Ticket Mínimo",
+      desc: "Valor mínimo aceito por transação.",
+      value: BRL(1),
+    },
+    {
+      icon: <Tags className="h-[18px] w-[18px]" />,
+      title: "Ticket Máximo",
+      desc: "Valor máximo aceito por transação.",
+      value: BRL(5000),
+    },
+    {
+      icon: <Moon className="h-[18px] w-[18px]" />,
+      title: "Saque noturno",
+      desc: "Valor máximo de saque noturno (das 20h às 8h).",
+      value: BRL(1000),
+    },
+  ];
+
+  // ---- primitivas visuais
+  const Card = ({
+    title,
     children,
-    bg,
-    color,
   }: {
+    title?: string;
     children: React.ReactNode;
-    bg: string;
-    color: string;
   }) => (
     <div
-      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
+      className="rounded-2xl p-5 sm:p-6"
       style={{
-        background: bg,
-        color,
+        background: T.card,
+        border: `1px solid ${T.borderSoft}`,
+        boxShadow: "0 1px 2px rgba(15,23,42,0.04)",
       }}
     >
+      {title && (
+        <>
+          <p className="text-[15px] font-bold text-slate-900">{title}</p>
+          <div
+            className="my-4 h-px"
+            style={{ background: "rgba(15,23,42,0.07)" }}
+          />
+        </>
+      )}
       {children}
     </div>
   );
 
-  const ReadField = ({
-    icon,
+  const Field = ({
     label,
     value,
-    extra,
   }: {
-    icon: React.ReactNode;
     label: string;
     value?: React.ReactNode;
-    extra?: React.ReactNode;
   }) => (
-    <div
-      className="py-3.5"
-      style={{ borderBottom: `1px solid ${T.borderSoft}` }}
-    >
-      <div
-        className="mb-1 flex items-center gap-2 text-[10.5px] font-bold uppercase tracking-wider"
-        style={{ color: T.textMuted }}
-      >
-        <span style={{ color: T.primary }}>{icon}</span>
+    <div>
+      <label className="mb-1.5 block text-[12.5px] text-slate-500">
         {label}
-      </div>
+      </label>
       <div
-        className="flex items-center gap-2 text-[13.5px] font-semibold"
-        style={{ color: T.text }}
+        className="flex h-11 w-full items-center truncate rounded-lg px-3 text-[13.5px] text-slate-700"
+        style={{ border: `1px solid ${T.border}`, background: "#FFFFFF" }}
       >
         {value || "—"}
-        {extra}
       </div>
     </div>
   );
 
-  const inputCls =
-    "h-11 w-full rounded-xl border bg-white px-3 text-[13px] outline-none transition-colors focus:border-violet-300 focus:ring-2 focus:ring-violet-100";
-
-  const Label = ({ children }: { children: React.ReactNode }) => (
-    <label
-      className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider"
-      style={{ color: T.textMuted }}
+  const FeeRow = ({
+    icon,
+    title,
+    desc,
+    value,
+  }: {
+    icon: React.ReactNode;
+    title: string;
+    desc: string;
+    value: string;
+  }) => (
+    <div
+      className="flex items-center gap-3 rounded-xl px-3.5 py-3 sm:gap-4 sm:px-4"
+      style={{ border: `1px solid ${T.borderSoft}` }}
     >
-      {children}
-    </label>
+      <div
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+        style={{ background: T.blueSoft, color: T.blue }}
+      >
+        {icon}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[13.5px] font-bold text-slate-800">{title}</p>
+        <p className="truncate text-[12px] text-slate-400">{desc}</p>
+      </div>
+      <div className="shrink-0 text-[13.5px] font-semibold text-slate-500">
+        {value}
+      </div>
+    </div>
   );
+
+  const tabs: { id: TabId; label: string }[] = [
+    { id: "conta", label: "Dados da conta" },
+    { id: "taxas", label: "Taxas" },
+    { id: "limites", label: "Limites" },
+  ];
 
   return (
     <>
@@ -295,389 +354,158 @@ function ProfileContent() {
         <title>ShadowPay — Perfil</title>
       </Head>
       <LightShell>
-        <ProfileTabs />
+        <h1 className="text-[26px] font-semibold tracking-[-0.01em] text-slate-900">
+          Perfil
+        </h1>
+
+        {/* Tabs (underline estilo SyncPay) */}
+        <div
+          className="mt-5 border-b"
+          style={{ borderColor: "rgba(15,23,42,0.08)" }}
+        >
+          <div className="flex gap-6">
+            {tabs.map((t) => {
+              const active = tab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setTab(t.id)}
+                  className="relative -mb-px pb-3 pt-1 text-[14px] font-medium transition-colors"
+                  style={{ color: active ? T.primary : T.textMuted }}
+                >
+                  {t.label}
+                  {active && (
+                    <span
+                      className="absolute inset-x-0 -bottom-px h-[2px] rounded-full"
+                      style={{ background: T.primary }}
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {loading ? (
-          <div
-            className="rounded-2xl p-10 text-center text-sm text-slate-500"
-            style={{
-              background: T.card,
-              border: `1px solid ${T.borderSoft}`,
-            }}
-          >
+          <div className="mx-auto mt-8 max-w-[640px] rounded-2xl bg-white p-10 text-center text-sm text-slate-500">
             Carregando…
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-            {/* ============ ESQUERDA — Minha Conta ============ */}
-            <div
-              className="rounded-2xl p-3 sm:p-4 md:p-6"
-              style={{
-                background: T.card,
-                border: `1px solid ${T.borderSoft}`,
-                boxShadow:
-                  "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
-              }}
-            >
-              <div className="mb-5 flex items-center gap-3">
-                <SectionIcon bg={T.primarySoft} color={T.primary}>
-                  <User className="h-5 w-5" />
-                </SectionIcon>
-                <div>
-                  <p className="text-[16px] font-bold text-slate-900">
-                    Minha Conta
-                  </p>
-                  <p className="text-[12px] text-slate-500">
-                    Informações básicas
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-0">
-                <ReadField
-                  icon={<User className="h-3.5 w-3.5" />}
-                  label="Nome"
-                  value={seller?.companyName}
-                />
-                <ReadField
-                  icon={<Hash className="h-3.5 w-3.5" />}
-                  label="ID / Hash da conta"
-                  value={
-                    <span className="font-mono text-[12.5px]">
-                      {seller?.id?.slice(0, 10) || "—"}
-                    </span>
-                  }
-                  extra={
-                    <button
-                      onClick={copyId}
-                      className="ml-1 inline-flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-violet-50 hover:text-violet-600"
-                      aria-label="Copiar ID"
+          <div className="mx-auto mt-6 w-full max-w-[640px] space-y-5 pb-10">
+            {/* ============ DADOS DA CONTA ============ */}
+            {tab === "conta" && (
+              <>
+                {/* Header */}
+                <Card>
+                  <div className="flex items-center gap-4">
+                    <span
+                      className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full text-[22px] font-semibold text-white"
+                      style={{ background: T.primary }}
                     >
-                      <Copy className="h-3.5 w-3.5" />
-                    </button>
-                  }
-                />
-                <ReadField
-                  icon={<Cake className="h-3.5 w-3.5" />}
-                  label="Data de Nascimento"
-                  value={fmtDate(kyc?.dadosCadastrais?.dataNascimentoAbertura)}
-                />
-                <ReadField
-                  icon={<Mail className="h-3.5 w-3.5" />}
-                  label="E-mail"
-                  value={seller?.email}
-                />
-                <ReadField
-                  icon={<IdCard className="h-3.5 w-3.5" />}
-                  label="Documento"
-                  value={
-                    <span className="flex items-center gap-2">
-                      <span>{fmtDoc(seller?.cpf_cnpj)}</span>
-                      <span
-                        className="inline-block rounded-md px-2 py-0.5 text-[10px] font-bold"
-                        style={{
-                          background: T.blueSoft,
-                          color: T.blue,
-                        }}
-                      >
-                        {String(seller?.cpf_cnpj || "").replace(/\D/g, "")
-                          .length === 14
-                          ? "Pessoa Jurídica"
-                          : "Pessoa Física"}
-                      </span>
+                      {initial}
                     </span>
-                  }
-                />
-              </div>
-            </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-[17px] font-bold text-slate-900">
+                        {seller?.companyName || "Operador"}
+                      </p>
+                      <p className="mt-0.5 text-[12.5px] text-slate-400">
+                        Criado em: {fmtCreated(seller?.createdAt)}
+                      </p>
+                      <p className="mt-1 text-[12.5px] text-slate-400">
+                        ID: {seller?.id ? String(seller.id).slice(0, 10) : "—"}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
 
-            {/* ============ DIREITA — Dados Cadastrais ============ */}
-            <div
-              className="rounded-2xl p-3 sm:p-4 md:p-6"
-              style={{
-                background: T.card,
-                border: `1px solid ${T.borderSoft}`,
-                boxShadow:
-                  "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
-              }}
-            >
-              <div className="mb-5 flex items-center gap-3">
-                <SectionIcon bg={T.greenSoft} color={T.green}>
-                  <Pencil className="h-5 w-5" />
-                </SectionIcon>
-                <div>
-                  <p className="text-[16px] font-bold text-slate-900">
-                    Dados Cadastrais
-                  </p>
-                  <p className="text-[12px] text-slate-500">
-                    Atualize suas informações
-                  </p>
-                </div>
-              </div>
+                {/* Configurações */}
+                <Card title="Configurações">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="mb-1.5 block text-[12.5px] text-slate-500">
+                        Nome de exibição
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          value={displayName}
+                          onChange={(e) => setDisplayName(e.target.value)}
+                          className="h-11 flex-1 rounded-lg px-3 text-[13.5px] text-slate-800 outline-none transition-colors focus:border-violet-300 focus:ring-2 focus:ring-violet-100"
+                          style={{ border: `1px solid ${T.border}` }}
+                          placeholder="Seu nome de exibição"
+                        />
+                        <button
+                          onClick={saveName}
+                          disabled={savingName}
+                          className="flex h-11 items-center gap-1.5 rounded-lg px-5 text-[13px] font-semibold text-white transition-opacity disabled:opacity-60"
+                          style={{ background: T.primary }}
+                        >
+                          <Save className="h-4 w-4" />
+                          {savingName ? "Salvando…" : "Salvar"}
+                        </button>
+                      </div>
+                    </div>
+                    <Field label="Tipo de conta" value={tipoConta} />
+                  </div>
+                </Card>
 
-              {/* MCC */}
-              <div className="mb-5">
-                <div
-                  className="mb-2 flex items-center gap-2 text-[11.5px] font-bold uppercase tracking-wider"
-                  style={{ color: T.text2 }}
-                >
-                  <Briefcase
-                    className="h-3.5 w-3.5"
-                    style={{ color: T.primary }}
-                  />
-                  Categoria do Negócio (MCC)
-                </div>
-                <Label>Selecione a categoria</Label>
-                <select
-                  value={form.mcc}
-                  onChange={(e) => setForm({ ...form, mcc: e.target.value })}
-                  className={inputCls}
-                  style={{ borderColor: T.inputBorder }}
-                >
-                  <option value="">Selecione…</option>
-                  {MCC_OPTIONS.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
+                {/* Dados empresariais */}
+                <Card title="Dados empresariais">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Field
+                      label="Nome do representante"
+                      value={seller?.companyName}
+                    />
+                    <Field
+                      label="Razão social"
+                      value={dc.companyName || seller?.companyName}
+                    />
+                    <Field label="CNPJ" value={fmtDoc(seller?.cpf_cnpj)} />
+                    <Field label="Endereço" value={enderecoStr} />
+                    <Field
+                      label="Telefone do representante"
+                      value={fmtPhone(dc.phone || seller?.number)}
+                    />
+                    <Field
+                      label="Tipo de empresa"
+                      value={seller?.companyModality || dc.mcc}
+                    />
+                  </div>
+                </Card>
+
+                {/* Dados bancários */}
+                <Card title="Dados bancários">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Field label="Tipo de chave Pix" value="Email" />
+                    <Field label="Chave Pix" value={seller?.email} />
+                  </div>
+                </Card>
+              </>
+            )}
+
+            {/* ============ TAXAS ============ */}
+            {tab === "taxas" && (
+              <Card title="Taxas">
+                <div className="space-y-3">
+                  {TAXAS.map((r) => (
+                    <FeeRow key={r.title} {...r} />
                   ))}
-                </select>
-                <p
-                  className="mt-1.5 text-[11px]"
-                  style={{ color: T.textMuted }}
-                >
-                  O MCC identifica o tipo de negócio da sua empresa
-                </p>
-              </div>
-
-              <div
-                className="my-5 h-px w-full"
-                style={{ background: T.borderSoft }}
-              />
-
-              {/* Dados pessoais */}
-              <div className="mb-5">
-                <div
-                  className="mb-3 flex items-center gap-2 text-[11.5px] font-bold uppercase tracking-wider"
-                  style={{ color: T.text2 }}
-                >
-                  <Phone
-                    className="h-3.5 w-3.5"
-                    style={{ color: T.primary }}
-                  />
-                  Dados pessoais
                 </div>
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                  <div>
-                    <Label>Telefone</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[16px]">
-                        🇧🇷
-                      </span>
-                      <input
-                        value={form.phone}
-                        onChange={(e) =>
-                          setForm({ ...form, phone: fmtPhone(e.target.value) })
-                        }
-                        placeholder="+55 14 99813 9670"
-                        className={inputCls}
-                        style={{
-                          borderColor: T.inputBorder,
-                          paddingLeft: 44,
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Data Nascimento</Label>
-                    <div className="relative">
-                      <Calendar
-                        className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2"
-                        style={{ color: T.primary }}
-                      />
-                      <input
-                        type="date"
-                        value={form.birthDate}
-                        onChange={(e) =>
-                          setForm({ ...form, birthDate: e.target.value })
-                        }
-                        className={inputCls}
-                        style={{ borderColor: T.inputBorder, paddingLeft: 36 }}
-                      />
-                    </div>
-                  </div>
+              </Card>
+            )}
+
+            {/* ============ LIMITES ============ */}
+            {tab === "limites" && (
+              <Card title="Limites">
+                <div className="space-y-3">
+                  {LIMITES.map((r) => (
+                    <FeeRow key={r.title} {...r} />
+                  ))}
                 </div>
-              </div>
-
-              <div
-                className="my-5 h-px w-full"
-                style={{ background: T.borderSoft }}
-              />
-
-              {/* Endereço */}
-              <div className="mb-5">
-                <div
-                  className="mb-3 flex items-center gap-2 text-[11.5px] font-bold uppercase tracking-wider"
-                  style={{ color: T.text2 }}
-                >
-                  <MapPin
-                    className="h-3.5 w-3.5"
-                    style={{ color: T.primary }}
-                  />
-                  Endereço
-                </div>
-
-                <div className="mb-3">
-                  <Label>CEP</Label>
-                  <div className="relative">
-                    <Search
-                      className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2"
-                      style={{ color: T.textMuted }}
-                    />
-                    <input
-                      value={form.zip}
-                      onChange={(e) => {
-                        const v = e.target.value.replace(/\D/g, "").slice(0, 8);
-                        const fmt =
-                          v.length > 5 ? `${v.slice(0, 5)}-${v.slice(5)}` : v;
-                        setForm({ ...form, zip: fmt });
-                        if (v.length === 8) lookupCep(v);
-                      }}
-                      placeholder="00000-000"
-                      className={inputCls}
-                      style={{ borderColor: T.inputBorder, paddingLeft: 36 }}
-                    />
-                    {cepLoading && (
-                      <span
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px]"
-                        style={{ color: T.textMuted }}
-                      >
-                        …
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-[1fr_120px]">
-                  <div>
-                    <Label>Logradouro</Label>
-                    <input
-                      value={form.street}
-                      onChange={(e) =>
-                        setForm({ ...form, street: e.target.value })
-                      }
-                      placeholder="Rua das Violetas"
-                      className={inputCls}
-                      style={{ borderColor: T.inputBorder }}
-                    />
-                  </div>
-                  <div>
-                    <Label>Número</Label>
-                    <input
-                      value={form.number}
-                      onChange={(e) =>
-                        setForm({ ...form, number: e.target.value })
-                      }
-                      placeholder="94"
-                      className={inputCls}
-                      style={{ borderColor: T.inputBorder }}
-                    />
-                  </div>
-                </div>
-
-                <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-                  <div>
-                    <Label>Bairro</Label>
-                    <input
-                      value={form.neighborhood}
-                      onChange={(e) =>
-                        setForm({ ...form, neighborhood: e.target.value })
-                      }
-                      placeholder="Park Residencial Convívio"
-                      className={inputCls}
-                      style={{ borderColor: T.inputBorder }}
-                    />
-                  </div>
-                  <div>
-                    <Label>Complemento (opcional)</Label>
-                    <input
-                      value={form.complement}
-                      onChange={(e) =>
-                        setForm({ ...form, complement: e.target.value })
-                      }
-                      placeholder="Apto 12"
-                      className={inputCls}
-                      style={{ borderColor: T.inputBorder }}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_100px]">
-                  <div>
-                    <Label>Cidade</Label>
-                    <input
-                      value={form.city}
-                      onChange={(e) =>
-                        setForm({ ...form, city: e.target.value })
-                      }
-                      placeholder="Botucatu"
-                      className={inputCls}
-                      style={{ borderColor: T.inputBorder }}
-                    />
-                  </div>
-                  <div>
-                    <Label>Estado</Label>
-                    <select
-                      value={form.state}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          state: e.target.value.toUpperCase(),
-                        })
-                      }
-                      className={inputCls}
-                      style={{ borderColor: T.inputBorder }}
-                    >
-                      <option value="">UF</option>
-                      {[
-                        "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT",
-                        "MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO",
-                        "RR","SC","SP","SE","TO",
-                      ].map((uf) => (
-                        <option key={uf} value={uf}>
-                          {uf}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                className="my-5 h-px w-full"
-                style={{ background: T.borderSoft }}
-              />
-
-              {/* SALVAR */}
-              <div className="flex justify-end">
-                <button
-                  onClick={save}
-                  disabled={saving}
-                  className="inline-flex h-11 items-center gap-2 rounded-xl px-5 text-[12.5px] font-bold uppercase tracking-wider transition-transform hover:-translate-y-0.5 disabled:opacity-50"
-                  style={{
-                    background: T.primary,
-                    color: "#FFFFFF",
-                    boxShadow: "0 8px 20px -8px rgba(124,58,237,0.55)",
-                  }}
-                >
-                  <Save className="h-4 w-4" />
-                  {saving ? "Salvando…" : "Salvar Alterações"}
-                </button>
-              </div>
-            </div>
+              </Card>
+            )}
           </div>
         )}
       </LightShell>
-      <ShadowPanel />
     </>
   );
 }

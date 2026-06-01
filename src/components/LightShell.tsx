@@ -32,12 +32,13 @@ import {
   BellRing,
   Percent,
   IdCard,
-  LifeBuoy,
   ShieldCheck,
   LogOut,
   Eye,
   EyeOff,
-  ChevronLeft,
+  MoreHorizontal,
+  Headphones,
+  ListCollapse,
   Users,
   Activity,
   Menu,
@@ -120,27 +121,10 @@ function buildNav(isAdmin: boolean): NavGroup[] {
         { label: "Tracking", href: "/v1/tracking", icon: Megaphone },
         { label: "Automações", href: "/v1/automation", icon: Workflow },
         {
-          // Configurações agora só agrupa Perfil (que tem Segurança/Notif/KYC
-          // como abas internas) e API & Docs. Taxas saiu — virou parte do
-          // próprio Financeiro.
-          label: "Configurações",
-          href: "/v1/configs/profile",
-          icon: Settings,
-          children: [
-            {
-              label: "Perfil",
-              href: "/v1/configs/profile",
-              icon: UserCircle2,
-              alsoMatches: [
-                "/v1/configs/security",
-                "/v1/configs/notifications",
-                "/v1/kyc",
-                "/v1/kyc/document-upload",
-                "/v1/kyc/selfie",
-              ],
-            },
-            { label: "API & Docs", href: "/v1/configs/apikey", icon: Code },
-          ],
+          // Perfil saiu do menu (agora só via ••• no rodapé). Sobra API & Docs.
+          label: "API & Docs",
+          href: "/v1/configs/apikey",
+          icon: Code,
         },
       ],
     },
@@ -224,6 +208,7 @@ export function LightShell({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [footerMenuOpen, setFooterMenuOpen] = useState(false);
   const [now, setNow] = useState<Date | null>(null);
   const [mounted, setMounted] = useState(false);
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
@@ -293,21 +278,6 @@ export function LightShell({
 
   const initial = (user?.companyName?.[0] || "S").toUpperCase();
 
-  const kycStatus = (user as any)?.kycStatus as
-    | "NOT_STARTED"
-    | "PENDING"
-    | "APPROVED"
-    | "BANNED"
-    | undefined;
-  // cor do pontinho de status no avatar (verde = verificado etc.)
-  const kycDot =
-    kycStatus === "APPROVED"
-      ? "#10B981"
-      : kycStatus === "BANNED"
-        ? "#EF4444"
-        : kycStatus === "PENDING"
-          ? "#0EA5E9"
-          : "#F59E0B";
 
   return (
     <div
@@ -451,73 +421,125 @@ export function LightShell({
           ))}
         </nav>
 
-        {/* User footer — estilo SyncPay: rodapé limpo (avatar + nome + e-mail + sair) */}
-        <div className="px-3 pb-3">
-          {!sidebarCollapsed && (
-            <a
-              href="https://wa.me/559991519044?text=Ol%C3%A1%20preciso%20de%20ajuda%20com%20a%20ShadowPay."
-              target="_blank"
-              rel="noreferrer"
-              className="mb-1 flex items-center gap-2 rounded-lg px-2 py-1.5 text-[12px] font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
-            >
-              <LifeBuoy className="h-4 w-4" />
-              Suporte 24/7
-            </a>
-          )}
-
-          <div className="my-1 h-px" style={{ background: "rgba(15,23,42,0.06)" }} />
-
-          {!sidebarCollapsed ? (
-            <div className="flex items-center gap-2">
-              <Link
-                href="/v1/configs/profile"
-                className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg p-1.5 transition-colors hover:bg-slate-50"
-              >
-                <span className="relative shrink-0">
-                  <span
-                    className="flex h-9 w-9 items-center justify-center rounded-full text-[13px] font-semibold text-white"
-                    style={{ background: "#7C3AED" }}
+        {/* ===== Footer estilo SyncPay (perfil + ••• + Compactar) ===== */}
+        <div className="mt-auto px-3 pb-3">
+          <div className="relative">
+            {/* Menu do ••• (abre pra cima) */}
+            {footerMenuOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setFooterMenuOpen(false)}
+                />
+                <div
+                  className="absolute bottom-full left-0 z-50 mb-2 w-[212px] overflow-hidden rounded-xl bg-white py-1"
+                  style={{
+                    border: "1px solid rgba(15,23,42,0.08)",
+                    boxShadow: "0 16px 40px rgba(15,23,42,0.18)",
+                  }}
+                >
+                  <a
+                    href="https://wa.me/559991519044?text=Ol%C3%A1%20preciso%20de%20ajuda%20com%20a%20ShadowPay."
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => setFooterMenuOpen(false)}
+                    className="flex items-center gap-3 px-3.5 py-2.5 text-[13px] font-medium text-slate-700 transition-colors hover:bg-slate-50"
                   >
-                    {initial}
-                  </span>
-                  <span
-                    className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full"
-                    style={{ background: kycDot, border: "2px solid #FFFFFF" }}
-                  />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[13px] font-semibold text-slate-800">
-                    {user?.companyName || "Operador"}
-                  </span>
-                  <span className="block truncate text-[11px] text-slate-400">
-                    {user?.email ||
-                      (user?.isAdministrator ? "Administrador" : "Conta Seller")}
-                  </span>
-                </span>
-              </Link>
-              <button
-                onClick={() => logout()}
-                title="Sair"
-                aria-label="Sair"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
+                    <Headphones className="h-[18px] w-[18px] text-slate-500" />
+                    Suporte
+                  </a>
+                  <Link
+                    href="/v1/configs/profile"
+                    onClick={() => setFooterMenuOpen(false)}
+                    className="flex items-center gap-3 px-3.5 py-2.5 text-[13px] font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                  >
+                    <UserCircle2 className="h-[18px] w-[18px] text-slate-500" />
+                    Perfil
+                  </Link>
+                  <button
+                    onClick={() => setTheme(isDark ? "light" : "dark")}
+                    className="flex w-full items-center gap-3 px-3.5 py-2.5 text-[13px] font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                  >
+                    <Moon className="h-[18px] w-[18px] text-slate-500" />
+                    <span className="flex-1 text-left">Modo claro</span>
+                    <span
+                      className="relative inline-flex h-[18px] w-8 shrink-0 items-center rounded-full transition-colors"
+                      style={{ background: isDark ? "#7C3AED" : "#CBD5E1" }}
+                    >
+                      <span
+                        className="absolute h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform"
+                        style={{
+                          transform: isDark
+                            ? "translateX(16px)"
+                            : "translateX(2px)",
+                        }}
+                      />
+                    </span>
+                  </button>
+                  <div className="mx-2 my-1 h-px bg-slate-100" />
+                  <button
+                    onClick={() => {
+                      setFooterMenuOpen(false);
+                      logout();
+                    }}
+                    className="flex w-full items-center gap-3 px-3.5 py-2.5 text-[13px] font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                  >
+                    <LogOut className="h-[18px] w-[18px] text-slate-500" />
+                    Sair
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Linha do perfil */}
+            {!sidebarCollapsed ? (
+              <div
+                className={`flex items-center gap-2 rounded-lg px-1 py-1 transition-colors ${
+                  footerMenuOpen ? "bg-slate-50" : ""
+                }`}
               >
-                <LogOut className="h-4 w-4" />
+                <span
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-semibold text-white"
+                  style={{ background: "#7C3AED" }}
+                >
+                  {initial}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold text-slate-800">
+                  {user?.companyName || "Operador"}
+                </span>
+                <button
+                  onClick={() => setFooterMenuOpen((v) => !v)}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-200/70 hover:text-slate-700"
+                  aria-label="Mais opções"
+                >
+                  <MoreHorizontal className="h-5 w-5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setFooterMenuOpen((v) => !v)}
+                className="mx-auto flex h-9 w-9 items-center justify-center rounded-full text-[13px] font-semibold text-white"
+                style={{ background: "#7C3AED" }}
+                title={user?.companyName || "Operador"}
+                aria-label="Conta"
+              >
+                {initial}
               </button>
-            </div>
-          ) : (
-            <Link
-              href="/v1/configs/profile"
-              title={user?.companyName || "Operador"}
-              className="relative mx-auto flex h-9 w-9 items-center justify-center rounded-full text-[13px] font-semibold text-white"
-              style={{ background: "#7C3AED" }}
-            >
-              {initial}
-              <span
-                className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full"
-                style={{ background: kycDot, border: "2px solid #FFFFFF" }}
-              />
-            </Link>
-          )}
+            )}
+          </div>
+
+          {/* Divisor + Compactar (recolher menu) */}
+          <div className="my-2 h-px" style={{ background: "rgba(15,23,42,0.06)" }} />
+          <button
+            onClick={() => setSidebarCollapsed((v) => !v)}
+            className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-[13px] font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 ${
+              sidebarCollapsed ? "justify-center" : ""
+            }`}
+            title={sidebarCollapsed ? "Expandir menu" : "Compactar menu"}
+          >
+            <ListCollapse className="h-[18px] w-[18px] shrink-0" />
+            {!sidebarCollapsed && <span>Compactar</span>}
+          </button>
         </div>
       </aside>
 
@@ -701,19 +723,7 @@ export function LightShell({
           } as React.CSSProperties
         }
       >
-        {/* Toggle recolher — estilo SyncPay: chevron circular na borda */}
-        <button
-          onClick={() => setSidebarCollapsed((v) => !v)}
-          className="absolute top-6 z-40 hidden h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:border-violet-300 hover:text-violet-600 hover:shadow-md md:flex"
-          style={{ left: -14 }}
-          aria-label={sidebarCollapsed ? "Expandir menu" : "Recolher menu"}
-        >
-          {sidebarCollapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <ChevronLeft className="h-4 w-4" />
-          )}
-        </button>
+        {/* (toggle de recolher agora é o botão "Compactar" no rodapé da sidebar) */}
 
         <div className="flex min-w-0 flex-1 flex-col">
           {/* ============================================================
