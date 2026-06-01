@@ -303,7 +303,7 @@ export function LightShell({
           className="relative flex flex-col items-center gap-2 px-4 py-5"
           style={{ minHeight: 120 }}
         >
-          <ShadowLogo size={sidebarCollapsed ? 56 : 110} />
+          <ShadowLogo size={sidebarCollapsed ? 40 : 66} />
           {!sidebarCollapsed && (
             <div className="text-center leading-tight">
               <div className="text-[13px] font-bold tracking-[0.18em] text-slate-700">

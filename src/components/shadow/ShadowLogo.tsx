@@ -9,7 +9,7 @@ interface ShadowLogoProps {
   glow?: boolean;
   glowColor?: string;
   className?: string;
-  /** alt path override (defaults to /shadow-panther.png) */
+  /** alt path override (defaults to /logoshadowpay.png) */
   src?: string;
 }
 
@@ -27,10 +27,10 @@ export function ShadowLogo({
   glow = false,
   glowColor = "rgba(124, 58, 237, 0.25)",
   className,
-  src = "/shadow-panther.png",
+  src = "/logoshadowpay.png",
 }: ShadowLogoProps) {
   const [errored, setErrored] = useState(false);
-  const h = Math.round(size * 1.4);
+  const h = size;
 
   return (
     <div

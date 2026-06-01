@@ -42,32 +42,25 @@ type Notif = { id: string; val: string; t: string; fresh: boolean };
 /* pantera branca no squircle violeta (ícone do app / brand) */
 function AppIcon({ size = 38 }: { size?: number }) {
   return (
-    <div
-      style={{
-        width: size, height: size, borderRadius: size * 0.225, flexShrink: 0,
-        background: "linear-gradient(150deg,#9B6BFF,#7C3AED 55%,#5B21B6)",
-        boxShadow: "inset 0 1px 1px rgba(255,255,255,.5), 0 1px 2px rgba(0,0,0,.3)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}
-    >
-      <img src="/shadow-panther.png" alt="" style={{ width: size * 0.62, height: size * 0.62, objectFit: "contain", filter: "brightness(0) invert(1)", opacity: 0.97 }} />
-    </div>
+    <img
+      src="/logoshadowpay.png"
+      alt="ShadowPay"
+      style={{ width: size, height: size, objectFit: "contain", flexShrink: 0 }}
+    />
   );
 }
 
-/* logo ShadowPay ROXA no fundo BRANCO (ícone da notificação) */
+/* ícone do app na notificação — ninja no quadrado branco (estilo iOS) */
 function PurpleIcon({ size = 42 }: { size?: number }) {
-  const m: React.CSSProperties = {
-    position: "absolute", inset: size * 0.15,
-    background: "linear-gradient(150deg,#9B6BFF,#7C3AED 55%,#5B21B6)",
-    WebkitMaskImage: "url(/shadow-panther.png)", maskImage: "url(/shadow-panther.png)",
-    WebkitMaskSize: "contain", maskSize: "contain",
-    WebkitMaskRepeat: "no-repeat", maskRepeat: "no-repeat",
-    WebkitMaskPosition: "center", maskPosition: "center",
-  };
   return (
-    <div style={{ width: size, height: size, borderRadius: size * 0.225, flexShrink: 0, background: "#fff", position: "relative", overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,.2)" }}>
-      <div style={m} />
+    <div
+      style={{
+        width: size, height: size, borderRadius: size * 0.225, flexShrink: 0,
+        background: "#fff", overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,.2)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}
+    >
+      <img src="/logoshadowpay.png" alt="" style={{ width: size * 0.86, height: size * 0.86, objectFit: "contain" }} />
     </div>
   );
 }
@@ -226,7 +219,7 @@ export default function Login() {
               <div className="sp-draw-wrap">
                 <span className="sp-draw-sil" />
                 <span className="sp-draw-scan" />
-                <img src="/shadow-panther.png" alt="" className="sp-draw-real" />
+                <img src="/logoshadowpay.png" alt="" className="sp-draw-real" />
               </div>
             </div>
           )}
@@ -348,7 +341,7 @@ const CSS = `
 .sp-intro { position:absolute; inset:0; z-index:5; display:flex; align-items:center; justify-content:center; }
 .sp-draw-wrap { position:relative; width:210px; height:232px; animation: sp-wrap-out .55s ease 2.7s forwards; }
 .sp-draw-sil { position:absolute; inset:0; background: linear-gradient(160deg,#A78BFA,#7C3AED 52%,#5B21B6);
-  -webkit-mask: url(/shadow-panther.png) center / contain no-repeat; mask: url(/shadow-panther.png) center / contain no-repeat;
+  -webkit-mask: url(/logoshadowpay.png) center / contain no-repeat; mask: url(/logoshadowpay.png) center / contain no-repeat;
   clip-path: inset(100% 0 0 0); filter: drop-shadow(0 0 16px rgba(124,58,237,.6));
   animation: sp-reveal 1.6s cubic-bezier(.45,0,.15,1) forwards; }
 @keyframes sp-reveal { 0%{clip-path: inset(100% 0 0 0);} 100%{clip-path: inset(0 0 0 0);} }

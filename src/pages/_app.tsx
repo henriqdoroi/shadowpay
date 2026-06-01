@@ -106,13 +106,13 @@ export default function App(props: AppProps) {
         />
 
         {/* Favicon padrão e fallback */}
-        <link rel="icon" type="image/png" href="/icon-safira.png" />
+        <link rel="icon" type="image/png" href="/logoshadowpay.png" />
         <link rel="shortcut icon" href="/favicon.ico" />
 
         {/* Manifest PWA */}
         <link rel="manifest" href="/manifest.json" />
 
-        <link rel="apple-touch-icon" href="/icon-safira.png" />
+        <link rel="apple-touch-icon" href="/logoshadowpay.png" />
 
         <link
           rel="apple-touch-startup-image"
@@ -156,7 +156,7 @@ export default function App(props: AppProps) {
         <meta name="application-name" content="ShadowPay" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <link rel="apple-touch-icon" href="/shadow-panther.png" />
+        <link rel="apple-touch-icon" href="/logoshadowpay.png" />
       </Head>
       <ThemeProvider
         attribute="class"
