@@ -91,11 +91,12 @@ interface RegisterData {
   companyName: string;
   email: string;
   password: string;
-  cpf_cnpj: string;
   number: string;
-  zipCode: string;
-  companyModality: string;
-  companyActivity: string;
+  // Coletados depois no KYC obrigatório — opcionais no cadastro.
+  cpf_cnpj?: string;
+  zipCode?: string;
+  companyModality?: string;
+  companyActivity?: string;
 }
 
 interface AuthContextType {
