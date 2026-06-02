@@ -1,46 +1,27 @@
 "use client";
 
 /**
- * KycGate — bloqueia globalmente todas as páginas até o KYC estar aprovado.
+ * KycGate — verificação OBRIGATÓRIA como popup travado.
  *
- * Quando o status do seller != APPROVED, redireciona pra /v1/kyc.
+ * NÃO redireciona mais. Sempre renderiza a página (dashboard) e, por cima,
+ * abre o <KycModal> travado (fundo escuro) enquanto o KYC != APPROVED.
+ * Não há aba nem página de KYC — é só o popup.
  *
- * Whitelist de rotas que NÃO são bloqueadas (mesmo sem KYC aprovado):
- *  - /v1/kyc/* (a própria página de verificação)
- *  - /auth/*  (login / register / etc.)
- *  - /shadow  (cinematic standalone)
- *  - /v1/configs/profile (vê dados do KYC)
- *  - /v2/manager/* (admin é exceção — pode navegar mesmo sem KYC próprio)
- *
- * Admin (isAdministrator) ignora totalmente o gate.
- *
- * Lê o status do KYC via /api/user/kyc na primeira montagem e cache-amos
- * no AuthContext via window.__shadowKyc — invalidado por logout.
+ * Admin (isAdministrator) e páginas de auth/standalone ignoram o gate.
+ * Status cacheado em window.__shadowKycStatus (limpo no logout).
  */
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
-import { ShieldCheck } from "lucide-react";
+import KycModal from "@/components/KycModal";
 
 const API = "https://shadowpay-api-production.up.railway.app";
 
-const WHITELIST_PREFIXES = [
-  "/v1/kyc",
-  "/auth",
-  "/shadow",
-  "/oauth-ads",
-  "/v2/manager",
-  // Páginas de "Perfil" — o seller pode navegar entre as tabs do perfil
-  // mesmo com KYC pendente (precisa preencher endereço, conferir dados…)
-  "/v1/configs/profile",
-  "/v1/configs/security",
-  "/v1/configs/notifications",
-];
-
-const isWhitelisted = (path: string) =>
-  WHITELIST_PREFIXES.some((p) => path === p || path.startsWith(p + "/")) ||
-  path === "/";
+// Páginas onde o popup NÃO aparece (login/cadastro, telas standalone).
+const EXCLUDED = ["/auth", "/shadow", "/oauth-ads"];
+const isExcluded = (p: string) =>
+  EXCLUDED.some((x) => p === x || p.startsWith(x + "/"));
 
 declare global {
   interface Window {
@@ -52,21 +33,16 @@ export default function KycGate({ children }: { children: React.ReactNode }) {
   const { user, token, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [kycStatus, setKycStatus] = useState<string | null>(
-    typeof window !== "undefined"
-      ? window.__shadowKycStatus ?? null
-      : null
+    typeof window !== "undefined" ? window.__shadowKycStatus ?? null : null
   );
-  const [checked, setChecked] = useState(!!kycStatus);
+  const [checked, setChecked] = useState<boolean>(
+    typeof window !== "undefined" && !!window.__shadowKycStatus
+  );
 
-  // Admin não é bloqueado
   const isAdmin = !!(user as any)?.isAdministrator;
 
-  // Carrega status do KYC uma vez por sessão.
-  // ⚠️ ESPERA o AuthContext terminar de ler localStorage antes de
-  // qualquer coisa. Sem isso, em HARD REFRESH a gente vê token=null,
-  // marca checked=true com kycStatus=null, e o segundo effect dispara
-  // o redirect pra /v1/kyc (bug que tirava o seller da pagina dele
-  // toda vez que apertava F5).
+  // Carrega o status do KYC uma vez por sessão. Espera o AuthContext
+  // terminar (sem isso, em F5 token=null e dava ruído).
   useEffect(() => {
     if (authLoading) return;
     if (!token || isAdmin) {
@@ -87,8 +63,7 @@ export default function KycGate({ children }: { children: React.ReactNode }) {
         window.__shadowKycStatus = status;
         setKycStatus(status);
       } catch {
-        // Em caso de erro, permitimos a navegação (não trava o app por
-        // problema de rede). Quando voltar online, próxima request resolve.
+        // erro de rede não trava o app
         setKycStatus("APPROVED");
       } finally {
         setChecked(true);
@@ -96,74 +71,28 @@ export default function KycGate({ children }: { children: React.ReactNode }) {
     })();
   }, [authLoading, token, isAdmin]);
 
-  // Redirects:
-  //  - KYC não aprovado + fora da whitelist → vai pra /v1/kyc.
-  //  Quando aprovado, deixa o seller navegar livremente (incl. /v1/kyc
-  //  pra ver a tela "Aprovado").
-  //
-  // Importante: NAO redireciona enquanto authLoading=true OU enquanto
-  // token=null — quem cuida disso eh o ProtectedRoute de cada pagina,
-  // que manda pro /auth/jwt/login.
-  useEffect(() => {
-    if (authLoading) return;
-    if (!token) return;
-    if (!checked || isAdmin) return;
-    if (kycStatus === "APPROVED") return;
-    if (isWhitelisted(router.pathname)) return;
-    router.replace("/v1/kyc");
-  }, [authLoading, token, checked, kycStatus, isAdmin, router]);
-
-  // Tela de bloqueio elegante enquanto resolve / redireciona.
-  // Mesma guarda: so mostra se auth ja terminou e tem token.
-  if (
+  const showModal =
     !authLoading &&
     !!token &&
     !isAdmin &&
     checked &&
     kycStatus !== "APPROVED" &&
-    !isWhitelisted(router.pathname)
-  ) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
-        <div
-          className="w-full max-w-md rounded-2xl bg-white p-8 text-center"
-          style={{
-            border: "1px solid rgba(15,23,42,0.06)",
-            boxShadow: "0 12px 32px rgba(15,23,42,0.06)",
-          }}
-        >
-          <div
-            className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full"
-            style={{
-              background: "rgba(124,58,237,0.08)",
-              color: "#7C3AED",
-            }}
-          >
-            <ShieldCheck className="h-7 w-7" />
-          </div>
-          <p className="text-[16px] font-bold text-slate-900">
-            Verificação obrigatória
-          </p>
-          <p className="mt-1.5 text-[13px] text-slate-500">
-            Para acessar esta página é necessário concluir a verificação KYC
-            da sua conta.
-          </p>
-          <button
-            onClick={() => router.push("/v1/kyc")}
-            className="mt-5 inline-flex h-10 items-center gap-2 rounded-xl px-5 text-[13px] font-bold text-white"
-            style={{
-              background: "#7C3AED",
-              boxShadow: "0 8px 20px -8px rgba(124,58,237,0.55)",
-            }}
-          >
-            Concluir verificação
-          </button>
-        </div>
-      </div>
-    );
-  }
+    !isExcluded(router.pathname);
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      {showModal && (
+        <KycModal
+          onApproved={() => {
+            if (typeof window !== "undefined")
+              window.__shadowKycStatus = "APPROVED";
+            setKycStatus("APPROVED");
+          }}
+        />
+      )}
+    </>
+  );
 }
 
 /** Limpa o cache do KYC (chamar no logout). */
