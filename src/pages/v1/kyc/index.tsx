@@ -32,7 +32,7 @@ import { ProfileTabs } from "@/components/ProfileTabs";
 import ShadowPanel from "@/components/ShadowPanel";
 import { useAuth } from "@/contexts/AuthContext";
 
-const API = "https://shadowpay-api-production.up.railway.app";
+const API = "https://shadowpay-backend.onrender.com";
 
 const T = {
   card: "#FFFFFF",

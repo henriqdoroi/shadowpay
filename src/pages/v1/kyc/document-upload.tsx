@@ -216,7 +216,7 @@ function DocumentUploadContent() {
 
     try {
       const response = await axios.post(
-        "https://shadowpay-api-production.up.railway.app/api/user/kyc/start",
+        "https://shadowpay-backend.onrender.com/api/user/kyc/start",
         {},
         {
           headers: {
@@ -296,7 +296,7 @@ function DocumentUploadContent() {
       formData.append("companyDocumentImage", cnpjDocument);
 
       const response = await axios.post(
-        "https://shadowpay-api-production.up.railway.app/api/user/kyc/documents",
+        "https://shadowpay-backend.onrender.com/api/user/kyc/documents",
         formData,
         {
           headers: {

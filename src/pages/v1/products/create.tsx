@@ -419,8 +419,8 @@ export default function CreateProduct() {
 
       // ---------- Requisição ----------
       const url = id
-        ? `https://shadowpay-api-production.up.railway.app/api/products/${id}`
-        : "https://shadowpay-api-production.up.railway.app/api/products";
+        ? `https://shadowpay-backend.onrender.com/api/products/${id}`
+        : "https://shadowpay-backend.onrender.com/api/products";
       const method = id ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -1965,7 +1965,7 @@ export default function CreateProduct() {
                                               "http"
                                             )
                                           ? formData.productImage
-                                          : `https://shadowpay-api-production.up.railway.app/uploads/products/${formData.productImage}`
+                                          : `https://shadowpay-backend.onrender.com/uploads/products/${formData.productImage}`
                                       }
                                       alt="Produto"
                                       className="object-cover w-full h-full"
@@ -2617,7 +2617,7 @@ export default function CreateProduct() {
                                                 "http"
                                               )
                                             ? formData.productImage
-                                            : `https://shadowpay-api-production.up.railway.app/uploads/products/${formData.productImage}`
+                                            : `https://shadowpay-backend.onrender.com/uploads/products/${formData.productImage}`
                                         }
                                         alt="Produto"
                                         className="object-cover w-full h-full"

@@ -28,7 +28,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { LightShell } from "@/components/LightShell";
 import ShadowPanel from "@/components/ShadowPanel";
 
-const API = "https://shadowpay-api-production.up.railway.app";
+const API = "https://shadowpay-backend.onrender.com";
 
 const T = {
   text: "#0F172A",

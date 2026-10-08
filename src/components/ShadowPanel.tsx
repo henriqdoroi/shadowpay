@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Send, X, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
-const API = "https://shadowpay-api-production.up.railway.app/api";
+const API = "https://shadowpay-backend.onrender.com/api";
 const VIOLET = "#7C3AED";
 
 type Msg = { role: "user" | "shadow"; text: string };

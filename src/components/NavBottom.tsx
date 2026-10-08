@@ -83,7 +83,7 @@ function useTransactionStatus(
     setIsChecking(true);
     try {
       const resp = await axios.get(
-        `https://shadowpay-api-production.up.railway.app/api/payments/transaction/${transactionId}`,
+        `https://shadowpay-backend.onrender.com/api/payments/transaction/${transactionId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -139,7 +139,7 @@ export function NavBottom({ items, userKycStatus }: NavBottomProps) {
     setIsLoadingFees(true);
     try {
       const response = await axios.get<FeesResponse>(
-        "https://shadowpay-api-production.up.railway.app/api/user/fees",
+        "https://shadowpay-backend.onrender.com/api/user/fees",
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (response.data.success) setPixFees(response.data.data.fees.pix);
@@ -213,7 +213,7 @@ export function NavBottom({ items, userKycStatus }: NavBottomProps) {
     setIsProcessingDeposit(true);
     try {
       const response = await axios.post(
-        "https://shadowpay-api-production.up.railway.app/api/payments/internal/deposit",
+        "https://shadowpay-backend.onrender.com/api/payments/internal/deposit",
         {
           amount: val,
           paymentMethod: "pix",

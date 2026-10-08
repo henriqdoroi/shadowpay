@@ -13,7 +13,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 
-const API = "https://shadowpay-api-production.up.railway.app";
+const API = "https://shadowpay-backend.onrender.com";
 
 type Status =
   | "loading"      // verificando ambiente / SW

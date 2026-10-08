@@ -362,7 +362,7 @@ function UsersManagerContent() {
       if (!token) throw new Error("Token de acesso não encontrado");
 
       const response = await fetch(
-        `https://shadowpay-api-production.up.railway.app/api/admin/sellers/${sellerId}`,
+        `https://shadowpay-backend.onrender.com/api/admin/sellers/${sellerId}`,
         {
           method: "DELETE",
           headers: {
@@ -434,7 +434,7 @@ function UsersManagerContent() {
       };
 
       const sellerResponse = await fetch(
-        `https://shadowpay-api-production.up.railway.app/api/admin/sellers/${userFormData.id}`,
+        `https://shadowpay-backend.onrender.com/api/admin/sellers/${userFormData.id}`,
         {
           method: "PATCH",
           headers: {
@@ -464,7 +464,7 @@ function UsersManagerContent() {
         };
 
         const walletResponse = await fetch(
-          `https://shadowpay-api-production.up.railway.app/api/admin/wallets/${userFormData.id}/adjust-balance`,
+          `https://shadowpay-backend.onrender.com/api/admin/wallets/${userFormData.id}/adjust-balance`,
           {
             method: "PATCH",
             headers: {
@@ -497,7 +497,7 @@ function UsersManagerContent() {
       if (!token) throw new Error("Token não encontrado");
 
       const response = await fetch(
-        "https://shadowpay-api-production.up.railway.app/api/admin/adquerers",
+        "https://shadowpay-backend.onrender.com/api/admin/adquerers",
         {
           method: "GET",
           headers: {
@@ -544,7 +544,7 @@ function UsersManagerContent() {
           queryParams.append("adquererId", filters.adquererId);
 
         const response = await fetch(
-          `https://shadowpay-api-production.up.railway.app/api/admin/sellers?${queryParams.toString()}`,
+          `https://shadowpay-backend.onrender.com/api/admin/sellers?${queryParams.toString()}`,
           {
             method: "GET",
             headers: {
@@ -601,7 +601,7 @@ function UsersManagerContent() {
       if (filters.isActive) queryParams.append("isActive", filters.isActive);
 
       const response = await fetch(
-        `https://shadowpay-api-production.up.railway.app/api/admin/sellers?${queryParams}`,
+        `https://shadowpay-backend.onrender.com/api/admin/sellers?${queryParams}`,
         {
           method: "GET",
           headers: {
@@ -687,7 +687,7 @@ function UsersManagerContent() {
       }
 
       const response = await fetch(
-        `https://shadowpay-api-production.up.railway.app/api/admin/sellers/${sellerId}`,
+        `https://shadowpay-backend.onrender.com/api/admin/sellers/${sellerId}`,
         {
           method: "GET",
           headers: {
@@ -727,7 +727,7 @@ function UsersManagerContent() {
       }
 
       const response = await fetch(
-        `https://shadowpay-api-production.up.railway.app/api/admin/sellers/${sellerId}`,
+        `https://shadowpay-backend.onrender.com/api/admin/sellers/${sellerId}`,
         {
           method: "GET",
           headers: {
@@ -767,7 +767,7 @@ function UsersManagerContent() {
       }
 
       const response = await fetch(
-        `https://shadowpay-api-production.up.railway.app/api/admin/kyc/${kycId}/approve`,
+        `https://shadowpay-backend.onrender.com/api/admin/kyc/${kycId}/approve`,
         {
           method: "PATCH",
           headers: {
@@ -811,7 +811,7 @@ function UsersManagerContent() {
       }
 
       const response = await fetch(
-        `https://shadowpay-api-production.up.railway.app/api/admin/kyc/${kycId}/reject`,
+        `https://shadowpay-backend.onrender.com/api/admin/kyc/${kycId}/reject`,
         {
           method: "PATCH",
           headers: {
@@ -873,7 +873,7 @@ function UsersManagerContent() {
       }
 
       const response = await fetch(
-        `https://shadowpay-api-production.up.railway.app/api/admin/sellers/${sellerId}/fees`,
+        `https://shadowpay-backend.onrender.com/api/admin/sellers/${sellerId}/fees`,
         {
           method: "PATCH",
           headers: {
@@ -921,7 +921,7 @@ function UsersManagerContent() {
       }
 
       const response = await fetch(
-        `https://shadowpay-api-production.up.railway.app/api/admin/sellers/${sellerId}`,
+        `https://shadowpay-backend.onrender.com/api/admin/sellers/${sellerId}`,
         {
           method: "GET",
           headers: {

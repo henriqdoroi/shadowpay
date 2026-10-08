@@ -261,7 +261,7 @@ export default function CheckoutPage() {
     setIsLoadingFees(true);
     try {
       const response = await axios.get<FeesResponse>(
-        "https://shadowpay-api-production.up.railway.app/api/user/fees",
+        "https://shadowpay-backend.onrender.com/api/user/fees",
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (response.data.success) {
@@ -328,7 +328,7 @@ export default function CheckoutPage() {
       }
     })();
 
-    fetch("https://shadowpay-api-production.up.railway.app/api/tracking/visit", {
+    fetch("https://shadowpay-backend.onrender.com/api/tracking/visit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -454,7 +454,7 @@ export default function CheckoutPage() {
     intervalRef.current = setInterval(async () => {
       try {
         const txRes = await axios.get(
-          `https://shadowpay-api-production.up.railway.app/api/payments/public/transaction/${saleId}`
+          `https://shadowpay-backend.onrender.com/api/payments/public/transaction/${saleId}`
         );
 
         const approvedTx = txRes.data?.data;
@@ -469,13 +469,13 @@ export default function CheckoutPage() {
         );
 
         await axios.put(
-          `https://shadowpay-api-production.up.railway.app/api/sales/${saleId}`,
+          `https://shadowpay-backend.onrender.com/api/sales/${saleId}`,
           { status: "approved" },
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
         const productRes = await axios.get(
-          `https://shadowpay-api-production.up.railway.app/api/products/${productId}/checkout`
+          `https://shadowpay-backend.onrender.com/api/products/${productId}/checkout`
         );
         const productData = productRes.data.data.product;
         const utmifyToken = productData.utmifyToken;
@@ -571,7 +571,7 @@ export default function CheckoutPage() {
         // por seller na página /v1/tracking).
         try {
           await fetch(
-            "https://shadowpay-api-production.up.railway.app/api/tracking/event",
+            "https://shadowpay-backend.onrender.com/api/tracking/event",
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -626,7 +626,7 @@ export default function CheckoutPage() {
       );
 
       const response = await axios.post(
-        "https://shadowpay-api-production.up.railway.app/api/sales/public",
+        "https://shadowpay-backend.onrender.com/api/sales/public",
         {
           productId: formData.id,
           productName: formData.name,
@@ -871,7 +871,7 @@ export default function CheckoutPage() {
       const timer = setTimeout(async () => {
         try {
           const saleRes = await axios.get(
-            `https://shadowpay-api-production.up.railway.app/api/sales/public/${saleId}`
+            `https://shadowpay-backend.onrender.com/api/sales/public/${saleId}`
           );
 
           if (saleRes.data?.linkUpSell) {
@@ -971,7 +971,7 @@ export default function CheckoutPage() {
           : "";
       if (!filename) return undefined;
       const sanitized = filename.replace(/^\/+/, "");
-      return `https://shadowpay-api-production.up.railway.app/${
+      return `https://shadowpay-backend.onrender.com/${
         sanitized.startsWith("uploads/")
           ? sanitized
           : `uploads/products/${sanitized}`
@@ -985,8 +985,8 @@ export default function CheckoutPage() {
 
         const token = localStorage.getItem("token");
         const url = token
-          ? `https://shadowpay-api-production.up.railway.app/api/products/${id}`
-          : `https://shadowpay-api-production.up.railway.app/api/products/${id}/checkout`;
+          ? `https://shadowpay-backend.onrender.com/api/products/${id}`
+          : `https://shadowpay-backend.onrender.com/api/products/${id}/checkout`;
 
         const headers: Record<string, string> = {};
         if (token) headers.Authorization = `Bearer ${token}`;
@@ -1039,7 +1039,7 @@ export default function CheckoutPage() {
         if (savedSaleId && utmifyTokenRef.current) {
           try {
             const txRes = await axios.get(
-              `https://shadowpay-api-production.up.railway.app/api/admin/transactions?saleIds=${savedSaleId}`,
+              `https://shadowpay-backend.onrender.com/api/admin/transactions?saleIds=${savedSaleId}`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
 
@@ -2200,7 +2200,7 @@ export default function CheckoutPage() {
                           ? formData.productImage
                           : formData.productImage.startsWith("http")
                           ? formData.productImage
-                          : `https://shadowpay-api-production.up.railway.app/uploads/products/${formData.productImage}`
+                          : `https://shadowpay-backend.onrender.com/uploads/products/${formData.productImage}`
                       }
                       alt="Produto"
                       className="object-cover w-full h-full"

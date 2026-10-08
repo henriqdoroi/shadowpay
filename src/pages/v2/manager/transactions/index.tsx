@@ -18,7 +18,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { LightShell } from "@/components/LightShell";
 import ShadowPanel from "@/components/ShadowPanel";
 
-const API = "https://shadowpay-api-production.up.railway.app";
+const API = "https://shadowpay-backend.onrender.com";
 
 interface Transaction {
   id: string;

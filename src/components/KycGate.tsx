@@ -16,7 +16,7 @@ import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
 import KycModal from "@/components/KycModal";
 
-const API = "https://shadowpay-api-production.up.railway.app";
+const API = "https://shadowpay-backend.onrender.com";
 
 // Páginas onde o popup NÃO aparece (login/cadastro, telas standalone).
 const EXCLUDED = ["/auth", "/shadow", "/oauth-ads"];

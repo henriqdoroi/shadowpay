@@ -16,7 +16,7 @@ import Script from "next/script";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
 
-const API = "https://shadowpay-api-production.up.railway.app";
+const API = "https://shadowpay-backend.onrender.com";
 
 interface TrackEventData {
   value?: number;

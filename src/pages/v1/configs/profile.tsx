@@ -34,7 +34,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { LightShell } from "@/components/LightShell";
 import { ShadowLoader } from "@/components/ShadowLoader";
 
-const API = "https://shadowpay-api-production.up.railway.app";
+const API = "https://shadowpay-backend.onrender.com";
 
 const T = {
   card: "#FFFFFF",
@@ -167,20 +167,27 @@ function ProfileContent() {
   };
 
   const dc = kyc?.dadosCadastrais || {};
+  const emp = kyc?.empresa || {};
+  const rep = kyc?.representante || {};
+  const recb = kyc?.recebimento || {};
   const en = kyc?.endereco || {};
+  const reEnd = kyc?.repEndereco || {};
   const isPJ =
     dc.tipoPessoa === "PJ" ||
-    String(seller?.cpf_cnpj || "").replace(/\D/g, "").length === 14;
+    String(emp.cnpj || seller?.cpf_cnpj || "").replace(/\D/g, "").length === 14;
   const tipoConta = isPJ ? "Pessoa jurídica" : "Pessoa física";
 
-  const enderecoStr = [
-    en.street,
-    en.number,
-    en.neighborhood,
-    [en.city, en.state].filter(Boolean).join(" - "),
-  ]
-    .filter(Boolean)
-    .join(", ");
+  const fmtAddr = (a: any) =>
+    [a?.street, a?.number, a?.neighborhood, [a?.city, a?.state].filter(Boolean).join(" - ")]
+      .filter(Boolean)
+      .join(", ");
+  const enderecoEmpresaStr = fmtAddr(en);
+  const enderecoRepStr = fmtAddr(reEnd);
+  const fmtNasc = (s?: string | null) => {
+    if (!s) return "—";
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("pt-BR");
+  };
 
   const initial = (seller?.companyName?.[0] || "S").toUpperCase();
 

@@ -211,7 +211,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       await axios.post(
-        "https://shadowpay-api-production.up.railway.app/api/webhooks/notifications/subscribe",
+        "https://shadowpay-backend.onrender.com/api/webhooks/notifications/subscribe",
         { subscription },
         {
           headers: { Authorization: `Bearer ${authToken}` },
@@ -231,7 +231,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     try {
       const response = await axios.get(
-        "https://shadowpay-api-production.up.railway.app/api/user/profile",
+        "https://shadowpay-backend.onrender.com/api/user/profile",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -309,7 +309,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     try {
       const response = await axios.post<LoginResponse>(
-        "https://shadowpay-api-production.up.railway.app/api/auth/login",
+        "https://shadowpay-backend.onrender.com/api/auth/login",
         { email, password },
         {
           headers: {
@@ -380,7 +380,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     try {
       const response = await axios.post(
-        "https://shadowpay-api-production.up.railway.app/api/auth/register",
+        "https://shadowpay-backend.onrender.com/api/auth/register",
         data,
         {
           headers: {

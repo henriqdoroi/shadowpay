@@ -48,7 +48,7 @@ function ReportsContent() {
     setLoading(true);
     try {
       const res = await axios.get(
-        "https://shadowpay-api-production.up.railway.app/api/user/dashboard-stats",
+        "https://shadowpay-backend.onrender.com/api/user/dashboard-stats",
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data?.success) {
@@ -77,7 +77,7 @@ function ReportsContent() {
       if (startDate) params.append("startDate", startDate);
       if (endDate) params.append("endDate", endDate);
       const r = await axios.get(
-        `https://shadowpay-api-production.up.railway.app/api/user/transactions-report?${params}`,
+        `https://shadowpay-backend.onrender.com/api/user/transactions-report?${params}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (r.data?.success) {

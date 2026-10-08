@@ -38,7 +38,7 @@ import {
 } from "lucide-react";
 import { ShadowLoader } from "@/components/ShadowLoader";
 
-const API = "https://shadowpay-api-production.up.railway.app";
+const API = "https://shadowpay-backend.onrender.com";
 
 const PRIMARY = "#7C3AED";
 const BORDER = "rgba(15,23,42,0.12)";

@@ -33,7 +33,7 @@ import ShadowPanel from "@/components/ShadowPanel";
 import TwoFAModal from "@/pages/v1/dashboard/2faAuthentication";
 import { useAuth } from "@/contexts/AuthContext";
 
-const API = "https://shadowpay-api-production.up.railway.app";
+const API = "https://shadowpay-backend.onrender.com";
 
 const T = {
   card: "#FFFFFF",

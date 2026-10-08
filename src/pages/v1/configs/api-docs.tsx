@@ -29,7 +29,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { LightShell } from "@/components/LightShell";
 import ShadowPanel from "@/components/ShadowPanel";
 
-const API_BASE = "https://shadowpay-api-production.up.railway.app";
+const API_BASE = "https://shadowpay-backend.onrender.com";
 
 const T = {
   ink: "#0F172A",

@@ -46,7 +46,7 @@ import {
   Zap,
 } from "lucide-react";
 
-const API = "https://shadowpay-api-production.up.railway.app";
+const API = "https://shadowpay-backend.onrender.com";
 
 /* ============================================================
  * TOKENS LIGHT — locais a essa página, ignora o ThemeProvider dark
