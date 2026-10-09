@@ -906,8 +906,10 @@ export function LightShell({
           {/* ============================================================
               MAIN
               ============================================================ */}
+          {/* Conteúdo centralizado com max-width (igual FlevoPay: 1400px),
+              deixando as margens laterais em telas largas. */}
           <main className="px-3 py-5 sm:px-4 sm:py-6 md:px-8 md:py-8 pb-24 md:pb-8">
-            {children}
+            <div className="mx-auto w-full max-w-[1400px]">{children}</div>
           </main>
         </div>
       </div>
