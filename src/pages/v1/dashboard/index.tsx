@@ -597,44 +597,21 @@ function DashboardContent() {
 
       <LightShell valuesVisible={valuesVisible} onToggleValues={() => setValuesVisible((v) => !v)}>
             <div style={{ fontFeatureSettings: '"tnum" 1' }}>
-              {/* HERO — banner art como background-image (sem <img>).
-                  Só desktop (md+). Mobile vai direto pra toolbar. */}
+              {/* BANNER promocional — largura total do conteúdo (igual à faixa
+                  de métricas). Arquivo em public/dashboard-banner.webp. */}
               <motion.section
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                className="relative mb-7 hidden md:block"
+                className="mb-6"
               >
-                {/* Header limpo (estilo Stripe): título + ações, sem card/mascote */}
-                <div className="relative">
-                  {/* top row: greeting + buttons */}
-                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                    <div className="min-w-0 flex-1">
-                      <h1
-                        className="flex flex-wrap items-center gap-x-3 gap-y-1"
-                        style={{
-                          fontFamily:
-                            "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
-                          fontSize: 26,
-                          fontWeight: 600,
-                          lineHeight: 1.15,
-                          color: "#1A1F36",
-                          letterSpacing: "-0.018em",
-                          fontFeatureSettings: '"calt" 1, "kern" 1',
-                          margin: 0,
-                        }}
-                      >
-                        <span className="break-words">
-                          {greeting}, {user?.companyName || "Operador"}.
-                        </span>
-                      </h1>
-                      <p style={{ marginTop: 6, fontSize: 14, color: "#697386" }}>
-                        Resumo da sua operação.
-                      </p>
-                    </div>
-
-                  </div>
-                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/dashboard-banner.webp"
+                  alt="ShadowPay — seu lucro vale mais"
+                  className="block h-auto w-full rounded-[12px]"
+                  draggable={false}
+                />
               </motion.section>
 
               {/* 2FA modal (controlado pelo banner do hero) */}
