@@ -325,8 +325,8 @@ body {
   background: #FFFFFF;
   color: var(--foreground);
   font-family: var(--font-inter), "Inter", ui-sans-serif, system-ui, sans-serif;
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-  letter-spacing: -0.011em;
+  font-feature-settings: normal;
+  letter-spacing: normal;
   min-height: 100vh;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -342,7 +342,7 @@ body::before {
  * ============================================================ */
 .text-display {
   font-family: var(--font-display);
-  letter-spacing: -0.022em;
+  letter-spacing: normal;
 }
 
 .glow-primary {
@@ -450,8 +450,8 @@ body::before {
   /* Headings — Inter com letter-spacing apertado pra display */
   h1, h2, h3, h4 {
     font-family: var(--font-display);
-    letter-spacing: -0.022em;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    letter-spacing: normal;
+    font-feature-settings: normal;
   }
 }
 

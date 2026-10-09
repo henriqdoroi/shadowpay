@@ -702,7 +702,7 @@ function DashboardContent() {
       </Head>
 
       <LightShell valuesVisible={valuesVisible} onToggleValues={() => setValuesVisible((v) => !v)}>
-            <div style={{ fontFeatureSettings: '"tnum" 1, "ss01" 1' }}>
+            <div style={{ fontFeatureSettings: '"tnum" 1' }}>
               {/* HERO — banner art como background-image (sem <img>).
                   Só desktop (md+). Mobile vai direto pra toolbar. */}
               <motion.section
@@ -957,7 +957,7 @@ function DashboardContent() {
                       </p>
                       <div className="mt-2 flex items-baseline gap-1.5">
                         <span
-                          className="text-[26px] font-bold leading-none tracking-[-0.02em] text-slate-900 sm:text-[30px]"
+                          className="text-[26px] font-extrabold leading-none text-slate-900 sm:text-[30px]"
                           style={{
                             fontFamily:
                               "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
