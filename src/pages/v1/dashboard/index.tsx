@@ -623,60 +623,6 @@ function DashboardContent() {
   /* ---------- KPI data ---------- */
   const deltaText = periodLabel[period];
 
-  type Kpi = {
-    label: string;
-    value: string;
-    delta: { text: string; direction: "up" | "down" | "flat" } | null;
-    deltaText: string;
-    icon: any;
-    color: string;
-    sparkColor: string;
-    sparkline: number[];
-  };
-
-  const kpis: Kpi[] = [
-    {
-      label: "Faturamento bruto",
-      value: hideable(fmt(grossSum)),
-      delta: dGross,
-      deltaText,
-      icon: <CircleDollarSign className="h-3.5 w-3.5" />,
-      color: T.primary,
-      sparkColor: T.primary,
-      sparkline: sparkGross,
-    },
-    {
-      label: "Faturamento líquido",
-      value: hideable(fmt(netSum)),
-      delta: dNet,
-      deltaText,
-      icon: <Wallet className="h-3.5 w-3.5" />,
-      color: T.blue,
-      sparkColor: T.blue,
-      sparkline: sparkGross.map((g) => g * 0.97),
-    },
-    {
-      label: "Taxa de conversão",
-      value: `${conv.toFixed(1)}%`,
-      delta: dConv,
-      deltaText,
-      icon: <Percent className="h-3.5 w-3.5" />,
-      color: T.green,
-      sparkColor: T.green,
-      sparkline: sparkConv,
-    },
-    {
-      label: "Pedidos pagos",
-      value: num(paid.length),
-      delta: dPaid,
-      deltaText,
-      icon: <CheckCircle2 className="h-3.5 w-3.5" />,
-      color: T.orange,
-      sparkColor: T.orange,
-      sparkline: sparkPaidCount,
-    },
-  ];
-
   type Secondary = {
     label: string;
     value: string;
@@ -731,6 +677,22 @@ function DashboardContent() {
       icon: <ShieldCheck className="h-4 w-4" />,
       color: T.green,
     },
+  ];
+
+  /* Faixa de métricas do topo (design do Figma) — valores reais do período
+     selecionado. "Vendas" = pedidos pagos. */
+  const statStrip = [
+    { label: "Faturamento Bruto", value: hideable(fmt(grossSum)) },
+    { label: "Faturamento Líquido", value: hideable(fmt(netSum)) },
+    {
+      label: "Taxa de conversão",
+      value: `${conv.toLocaleString("pt-BR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}%`,
+    },
+    { label: "Ticket médio", value: hideable(fmt(avgTicket)) },
+    { label: "Vendas", value: num(paid.length) },
   ];
 
   return (
@@ -971,126 +933,56 @@ function DashboardContent() {
                 </button>
               </div>
 
-              {/* KPIs ROW */}
-              <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                {kpis.map((k, i) => (
-                  <motion.div
-                    key={k.label}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                      duration: 0.5,
-                      delay: i * 0.05,
-                      ease: [0.22, 1, 0.36, 1],
-                    }}
-                    className="rounded-xl p-4 sm:p-[18px]"
-                    style={{
-                      background: "#FFFFFF",
-                      border: "1px solid #E6E8EB",
-                    }}
-                  >
-                    <p className="text-[11px] font-medium uppercase tracking-[0.05em] text-slate-500">
-                      {k.label}
-                    </p>
-                    <div className="mt-2.5 text-[26px] font-semibold leading-none tracking-[-0.02em] text-slate-900">
-                      {k.value}
-                    </div>
-                    <div className="mt-2.5 flex items-center gap-1.5">
-                      {k.delta ? (
-                        <>
-                          <span
-                            className="inline-flex items-center gap-0.5 text-[12px] font-semibold"
-                            style={{
-                              color:
-                                k.delta.direction === "up"
-                                  ? "#1F8F4E"
-                                  : k.delta.direction === "down"
-                                  ? "#D4351C"
-                                  : T.textMuted,
-                            }}
-                          >
-                            {k.delta.direction === "up"
-                              ? "▲"
-                              : k.delta.direction === "down"
-                              ? "▼"
-                              : ""}{" "}
-                            {k.delta.text}
-                          </span>
-                          <span className="text-[11px] text-slate-400">
-                            {k.deltaText}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-[11px] text-slate-400">
-                          {k.deltaText}
-                        </span>
-                      )}
-                    </div>
-                    {/* sparkline — cor única e discreta */}
-                    <div className="mt-3 h-9">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart
-                          data={k.sparkline.map((v, idx) => ({ i: idx, v }))}
+              {/* KPIs — faixa única (design do Figma): rótulo, valor grande e
+                  triângulo roxo. Dados reais do período selecionado. */}
+              <motion.section
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                className="mb-6 overflow-hidden rounded-2xl"
+                style={{
+                  background: "#FFFFFF",
+                  border: "1px solid #E6E8EB",
+                  boxShadow: T.cardShadow,
+                }}
+              >
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+                  {statStrip.map((s) => (
+                    <div
+                      key={s.label}
+                      className="flex flex-col px-5 py-6 sm:px-6 sm:py-7"
+                    >
+                      <p className="text-[13px] font-normal leading-tight text-slate-500">
+                        {s.label}
+                      </p>
+                      <div className="mt-2 flex items-start gap-1.5">
+                        <span
+                          className="text-[26px] font-bold leading-none tracking-[-0.02em] text-slate-900 sm:text-[30px]"
+                          style={{
+                            fontFamily:
+                              "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
+                          }}
                         >
-                          <Line
-                            type="monotone"
-                            dataKey="v"
-                            stroke="#CBD5E1"
-                            strokeWidth={1.5}
-                            dot={false}
+                          {s.value}
+                        </span>
+                        <svg
+                          width="13"
+                          height="13"
+                          viewBox="0 0 12 12"
+                          fill="none"
+                          className="mt-[3px] shrink-0"
+                          aria-hidden="true"
+                        >
+                          <path
+                            d="M6 1.8 L10.8 10.2 L1.2 10.2 Z"
+                            fill="#7C3AED"
                           />
-                        </LineChart>
-                      </ResponsiveContainer>
+                        </svg>
+                      </div>
                     </div>
-                  </motion.div>
-                ))}
-
-                {/* Saldo disponível — larger card */}
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.5,
-                    delay: 0.25,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                  className="rounded-xl p-4 sm:p-5"
-                  style={{
-                    background: T.card,
-                    border: `1px solid ${T.border}`,
-                    boxShadow: T.cardShadow,
-                  }}
-                >
-                  <p className="text-[11px] font-medium uppercase tracking-[0.05em] text-slate-500">
-                    Saldo disponível
-                  </p>
-                  <div className="mt-2.5 text-[26px] font-semibold leading-none tracking-[-0.02em] text-slate-900">
-                    {hideable(fmt(walletStats.currentBalance))}
-                  </div>
-                  <div className="mt-3 space-y-1.5">
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-slate-500">Bloqueado</span>
-                      <span className="font-semibold text-slate-700">
-                        {hideable(fmt(walletStats.blockedBalance))}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-slate-500">Próximo repasse</span>
-                      <span className="font-semibold text-slate-700">
-                        {nextPayout}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => router.push("/v1/finance/withdraw")}
-                    className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-[11px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
-                    style={{ border: `1px solid ${T.border}` }}
-                  >
-                    Ver extrato
-                    <ArrowUpRight className="h-3 w-3" />
-                  </button>
-                </motion.div>
-              </section>
+                  ))}
+                </div>
+              </motion.section>
 
               {/* CHART + ACTIVITY */}
               <section className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
