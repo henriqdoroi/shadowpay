@@ -589,6 +589,27 @@ function DashboardContent() {
     { label: "Vendas", value: num(paid.length) },
   ];
 
+  /* Próxima premiação — progresso do faturamento rumo aos prêmios da campanha
+     (os mesmos do banner). Usa o faturamento TOTAL (agregado do backend). */
+  const prizes = [
+    { target: 100_000, prize: "AirPods 4ª geração" },
+    { target: 500_000, prize: "iPad" },
+    { target: 1_000_000, prize: "iPhone 18 Pro Max" },
+    { target: 2_000_000, prize: "Fix de R$ 10.000" },
+  ];
+  const totalRevenue = Number(txData.totals.totalEntradas) || 0;
+  const lastPrize = prizes[prizes.length - 1]!;
+  const nextPrize = prizes.find((p) => totalRevenue < p.target) ?? lastPrize;
+  const prizeProgress = Math.min(100, (totalRevenue / nextPrize.target) * 100);
+  const prizeFirstName =
+    (user?.companyName || "Operador").split(" ")[0] || "Operador";
+  const fmtTarget = (v: number) =>
+    v >= 1_000_000
+      ? `${(v / 1_000_000).toLocaleString("pt-BR", {
+          maximumFractionDigits: 1,
+        })}M`
+      : `${Math.round(v / 1000)}K`;
+
   return (
     <>
       <Head>
@@ -779,6 +800,80 @@ function DashboardContent() {
                   </div>
                 </motion.div>
 
+                {/* Coluna direita: próxima premiação + atividade ao vivo */}
+                <div className="flex flex-col gap-4">
+                {/* Próxima premiação — barra de progresso de faturamento (estilo do print) */}
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.12 }}
+                  className="overflow-hidden rounded-xl p-5"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #2E1065 0%, #4C1D95 55%, #1E1B4B 100%)",
+                    border: "1px solid rgba(124,58,237,0.35)",
+                    boxShadow: "0 8px 24px rgba(76,29,149,0.22)",
+                  }}
+                >
+                  <p className="text-[13px] font-bold" style={{ color: "#FBBF24" }}>
+                    Sua próxima premiação, {prizeFirstName}! 🎉
+                  </p>
+
+                  <div
+                    className="mt-3 flex items-center gap-3 rounded-xl p-3"
+                    style={{
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                    }}
+                  >
+                    <span
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[14px] font-extrabold text-white"
+                      style={{ background: "linear-gradient(135deg,#7C3AED,#06B6D4)" }}
+                    >
+                      {fmtTarget(nextPrize.target)}
+                    </span>
+                    <div className="min-w-0">
+                      <p
+                        className="text-[10px] font-semibold uppercase tracking-wider"
+                        style={{ color: "#C4B5FD" }}
+                      >
+                        Prêmio
+                      </p>
+                      <p className="truncate text-[13px] font-bold text-white">
+                        {nextPrize.prize}
+                      </p>
+                    </div>
+                  </div>
+
+                  <p
+                    className="mt-4 text-[26px] font-semibold leading-none text-white"
+                    style={{
+                      fontFamily:
+                        "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
+                    }}
+                  >
+                    {hideable(fmt(totalRevenue))}
+                  </p>
+
+                  <div
+                    className="mt-3 h-2.5 w-full overflow-hidden rounded-full"
+                    style={{ background: "rgba(255,255,255,0.12)" }}
+                  >
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${prizeProgress}%`,
+                        background: "linear-gradient(90deg,#06B6D4,#7C3AED)",
+                        transition: "width 0.6s cubic-bezier(0.22,1,0.36,1)",
+                      }}
+                    />
+                  </div>
+                  <p className="mt-2 text-[11.5px]" style={{ color: "#CBD5E1" }}>
+                    {Math.floor(prizeProgress)}% da jornada foi atingido. Continue
+                    firme!
+                  </p>
+                </motion.div>
+
                 {/* Activity */}
                 <motion.div
                   initial={{ opacity: 0, y: 12 }}
@@ -878,6 +973,7 @@ function DashboardContent() {
                     </ul>
                   )}
                 </motion.div>
+                </div>
               </section>
 
             </div>
