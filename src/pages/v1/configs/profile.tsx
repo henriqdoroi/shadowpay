@@ -456,35 +456,37 @@ function ProfileContent() {
                   </div>
                 </Card>
 
-                {/* Dados empresariais */}
-                <Card title="Dados empresariais">
+                {/* Dados da empresa (vindos do KYC, read-only) */}
+                <Card title="Dados da empresa">
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <Field
-                      label="Nome do representante"
-                      value={seller?.companyName}
-                    />
-                    <Field
-                      label="Razão social"
-                      value={dc.companyName || seller?.companyName}
-                    />
-                    <Field label="CNPJ" value={fmtDoc(seller?.cpf_cnpj)} />
-                    <Field label="Endereço" value={enderecoStr} />
-                    <Field
-                      label="Telefone do representante"
-                      value={fmtPhone(dc.phone || seller?.number)}
-                    />
-                    <Field
-                      label="Tipo de empresa"
-                      value={seller?.companyModality || dc.mcc}
-                    />
+                    <Field label="Razão social" value={emp.razaoSocial} />
+                    <Field label="Nome fantasia" value={emp.nomeFantasia} />
+                    <Field label="CNPJ" value={fmtDoc(emp.cnpj || seller?.cpf_cnpj)} />
+                    <Field label="Tipo de empresa" value={emp.companyType} />
+                    <div className="sm:col-span-2">
+                      <Field label="Endereço da empresa" value={enderecoEmpresaStr} />
+                    </div>
                   </div>
                 </Card>
 
-                {/* Dados bancários */}
+                {/* Dados do representante (vindos do KYC, read-only) */}
+                <Card title="Dados do representante">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Field label="Nome completo" value={rep.repName} />
+                    <Field label="CPF" value={fmtDoc(rep.repCpf)} />
+                    <Field label="Data de nascimento" value={fmtNasc(rep.repBirthDate)} />
+                    <Field label="Telefone" value={fmtPhone(rep.repPhone)} />
+                    <div className="sm:col-span-2">
+                      <Field label="Endereço do representante" value={enderecoRepStr} />
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Dados bancários — chave Pix separada (do KYC) */}
                 <Card title="Dados bancários">
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <Field label="Tipo de chave Pix" value="Email" />
-                    <Field label="Chave Pix" value={seller?.email} />
+                    <Field label="Tipo de chave Pix" value={recb.pixKeyType} />
+                    <Field label="Chave Pix" value={recb.pixKey} />
                   </div>
                 </Card>
               </>
