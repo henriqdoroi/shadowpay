@@ -106,6 +106,16 @@ function DashboardContent() {
   const [period, setPeriod] = useState<PeriodKey>("today");
   const [refreshAt, setRefreshAt] = useState<Date>(new Date());
 
+  // Data selecionada no gráfico "Desempenho Diário" (estilo FlevoPay). A
+  // dashboard (métricas + gráfico) reflete esse dia. Default = hoje.
+  const ymdLocal = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+      d.getDate()
+    ).padStart(2, "0")}`;
+  const [selectedDate, setSelectedDate] = useState<string>(() =>
+    ymdLocal(new Date())
+  );
+
   /* ---------- Drawer de Filtros (botão "Filtros" no topo) ----------
    * Mantém estados PROVISÓRIOS (draftStatus / draftFrom / draftTo) que
    * só viram efetivos quando o seller clica "Aplicar Filtros".
@@ -261,68 +271,18 @@ function DashboardContent() {
   type Range = { start: Date; end: Date };
 
   const periodRanges = useMemo((): { curr: Range; prev: Range } => {
-    const now = new Date();
-    const startOfDay = (d: Date) =>
-      new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    const endOfDay = (d: Date) =>
-      new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
-
-    switch (period) {
-      case "today": {
-        const curr = { start: startOfDay(now), end: endOfDay(now) };
-        const yest = new Date(now); yest.setDate(yest.getDate() - 1);
-        const prev = { start: startOfDay(yest), end: endOfDay(yest) };
-        return { curr, prev };
-      }
-      case "yesterday": {
-        const yest = new Date(now); yest.setDate(yest.getDate() - 1);
-        const curr = { start: startOfDay(yest), end: endOfDay(yest) };
-        const before = new Date(now); before.setDate(before.getDate() - 2);
-        const prev = { start: startOfDay(before), end: endOfDay(before) };
-        return { curr, prev };
-      }
-      case "7d": {
-        const end = now;
-        const start = new Date(now); start.setDate(start.getDate() - 7);
-        const prevEnd = new Date(start);
-        const prevStart = new Date(start); prevStart.setDate(prevStart.getDate() - 7);
-        return { curr: { start, end }, prev: { start: prevStart, end: prevEnd } };
-      }
-      case "30d": {
-        // "Este mês" — calendário
-        const start = new Date(now.getFullYear(), now.getMonth(), 1);
-        const end = now;
-        const prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const prevEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
-        return { curr: { start, end }, prev: { start: prevStart, end: prevEnd } };
-      }
-      case "lastMonth": {
-        const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
-        const prevStart = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-        const prevEnd = new Date(now.getFullYear(), now.getMonth() - 1, 0, 23, 59, 59);
-        return { curr: { start, end }, prev: { start: prevStart, end: prevEnd } };
-      }
-      case "custom": {
-        // Personalizado — usa as datas escolhidas no drawer Filtros.
-        // Período anterior tem o mesmo tamanho da janela.
-        const fromStr = customRange.from || new Date().toISOString().slice(0, 10);
-        const toStr = customRange.to || fromStr;
-        const start = new Date(fromStr + "T00:00:00");
-        const end = new Date(toStr + "T23:59:59.999");
-        const ms = end.getTime() - start.getTime();
-        const prevEnd = new Date(start);
-        const prevStart = new Date(start.getTime() - ms);
-        return { curr: { start, end }, prev: { start: prevStart, end: prevEnd } };
-      }
-      case "max":
-      default: {
-        // Tudo desde o início — não há "anterior"
-        const start = new Date(0);
-        return { curr: { start, end: now }, prev: { start, end: start } };
-      }
-    }
-  }, [period, customRange]);
+    // Janela = o DIA selecionado (estilo FlevoPay). "prev" = dia anterior,
+    // só pra manter os cálculos de delta válidos (não são mais exibidos).
+    const p = selectedDate.split("-");
+    const y = Number(p[0]);
+    const m = Number(p[1]);
+    const d = Number(p[2]);
+    const start = new Date(y, m - 1, d, 0, 0, 0, 0);
+    const end = new Date(y, m - 1, d, 23, 59, 59, 999);
+    const prevStart = new Date(y, m - 1, d - 1, 0, 0, 0, 0);
+    const prevEnd = new Date(y, m - 1, d - 1, 23, 59, 59, 999);
+    return { curr: { start, end }, prev: { start: prevStart, end: prevEnd } };
+  }, [selectedDate]);
 
   const periodLabel: Record<PeriodKey, string> = {
     today: "vs ontem",
@@ -485,77 +445,13 @@ function DashboardContent() {
   type Bucket = { label: string; key: string; gross: number; paid: number; pix: number };
 
   const chartData = useMemo<Bucket[]>(() => {
-    const buckets = new Map<string, Bucket>();
-
-    const isHourly = period === "today" || period === "yesterday";
-    const isMonthly = period === "max";
-
-    if (isHourly) {
-      for (let i = 0; i < 13; i++) {
-        const label = `${String(i * 2).padStart(2, "0")}:00`;
-        buckets.set(String(i), {
-          label,
-          key: String(i),
-          gross: 0,
-          paid: 0,
-          pix: 0,
-        });
-      }
-      for (const t of txs) {
-        if (!t.createdAt) continue;
-        const d = new Date(t.createdAt);
-        const idx = String(Math.min(12, Math.floor(d.getHours() / 2)));
-        const b = buckets.get(idx);
-        if (!b) continue;
-        b.gross += Number(t.grossAmount || 0);
-        if (isPaid(t)) b.paid += 1;
-        if (isPix(t)) b.pix += 1;
-      }
-      return Array.from(buckets.values());
-    }
-
-    if (isMonthly) {
-      // agrupa por mês (até 12 últimos)
-      const sourceRows = allTxs;
-      for (const t of sourceRows) {
-        if (!t.createdAt) continue;
-        const d = new Date(t.createdAt);
-        const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-        if (!buckets.has(k)) {
-          buckets.set(k, {
-            key: k,
-            label: d.toLocaleDateString("pt-BR", { month: "short" }),
-            gross: 0,
-            paid: 0,
-            pix: 0,
-          });
-        }
-        const b = buckets.get(k)!;
-        b.gross += Number(t.grossAmount || 0);
-        if (isPaid(t)) b.paid += 1;
-        if (isPix(t)) b.pix += 1;
-      }
-      return Array.from(buckets.entries())
-        .sort(([a], [b]) => a.localeCompare(b))
-        .slice(-12)
-        .map(([, v]) => v);
-    }
-
-    // dia a dia (7d/este mês/mês passado)
-    const r = periodRanges.curr;
-    const dayMs = 24 * 60 * 60 * 1000;
-    const days = Math.max(
-      1,
-      Math.ceil((r.end.getTime() - r.start.getTime()) / dayMs)
-    );
-    for (let i = 0; i < days; i++) {
-      const d = new Date(r.start.getTime() + i * dayMs);
-      const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-        d.getDate()
-      ).padStart(2, "0")}`;
-      buckets.set(k, {
-        key: k,
-        label: d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+    // Sempre por hora do dia selecionado (00:00 → 22:00, passos de 2h),
+    // igual ao "Desempenho Diário" da FlevoPay.
+    const buckets: Bucket[] = [];
+    for (let i = 0; i < 12; i++) {
+      buckets.push({
+        label: `${String(i * 2).padStart(2, "0")}:00`,
+        key: String(i),
         gross: 0,
         paid: 0,
         pix: 0,
@@ -564,17 +460,15 @@ function DashboardContent() {
     for (const t of txs) {
       if (!t.createdAt) continue;
       const d = new Date(t.createdAt);
-      const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-        d.getDate()
-      ).padStart(2, "0")}`;
-      const b = buckets.get(k);
+      const idx = Math.min(11, Math.floor(d.getHours() / 2));
+      const b = buckets[idx];
       if (!b) continue;
       b.gross += Number(t.grossAmount || 0);
       if (isPaid(t)) b.paid += 1;
       if (isPix(t)) b.pix += 1;
     }
-    return Array.from(buckets.values());
-  }, [txs, allTxs, period, periodRanges]);
+    return buckets;
+  }, [txs]);
 
   /* ---------- sparkline data (last N points per metric) ---------- */
   const sparkGross = chartData.map((b) => b.gross);
@@ -739,140 +633,7 @@ function DashboardContent() {
                       </p>
                     </div>
 
-                    {/* Buttons — top right */}
-                    <div
-                      className="flex flex-wrap items-center"
-                      style={{ gap: 12 }}
-                    >
-                      <button
-                        onClick={() => router.push("/v1/products/create")}
-                        className="inline-flex items-center gap-2 transition-all hover:bg-slate-50"
-                        style={{
-                          height: 40,
-                          padding: "0 16px",
-                          borderRadius: 12,
-                          background: "#FFFFFF",
-                          border: "1px solid #E5E7EB",
-                          fontSize: 13,
-                          fontWeight: 600,
-                          color: "#334155",
-                        }}
-                      >
-                        <Plus
-                          className="h-4 w-4"
-                          style={{ color: "#64748B" }}
-                        />
-                        Novo produto
-                      </button>
-                      <button
-                        onClick={() => router.push("/v1/products/create")}
-                        className="inline-flex items-center gap-2 transition-all hover:bg-slate-50"
-                        style={{
-                          height: 40,
-                          padding: "0 16px",
-                          borderRadius: 12,
-                          background: "#FFFFFF",
-                          border: "1px solid #E5E7EB",
-                          fontSize: 13,
-                          fontWeight: 600,
-                          color: "#334155",
-                        }}
-                      >
-                        <MessageSquare
-                          className="h-4 w-4"
-                          style={{ color: "#64748B" }}
-                        />
-                        Criar checkout
-                      </button>
-                      <button
-                        onClick={() => router.push("/v1/finance/withdraw")}
-                        className="inline-flex items-center gap-2 transition-colors"
-                        style={{
-                          height: 40,
-                          padding: "0 18px",
-                          borderRadius: 12,
-                          background: "#7C3AED",
-                          boxShadow:
-                            "0 1px 2px rgba(13,37,61,0.10)",
-                          fontSize: 13,
-                          fontWeight: 600,
-                          color: "#FFFFFF",
-                        }}
-                      >
-                        <DollarSign className="h-4 w-4" />
-                        Sacar
-                      </button>
-                    </div>
                   </div>
-
-                  {/* 2FA alert — horizontal bar */}
-                  {localUser &&
-                    !(localUser.twofaEnabled && localUser.twofaConfirmed) && (
-                      <div
-                        className="flex items-center justify-between"
-                        style={{
-                          marginTop: 22,
-                          height: 60,
-                          borderRadius: 12,
-                          background: "rgba(245, 158, 11, 0.06)",
-                          border: "1px solid rgba(245, 158, 11, 0.22)",
-                          padding: "0 16px",
-                        }}
-                      >
-                        <div className="flex items-center" style={{ gap: 12 }}>
-                          <div
-                            className="flex items-center justify-center"
-                            style={{
-                              width: 34,
-                              height: 34,
-                              borderRadius: 9,
-                              background: "rgba(245, 158, 11, 0.12)",
-                              color: "#B45309",
-                              flexShrink: 0,
-                            }}
-                          >
-                            <ShieldCheck className="h-4 w-4" />
-                          </div>
-                          <div>
-                            <p
-                              style={{
-                                fontSize: 13,
-                                fontWeight: 600,
-                                color: "#1E293B",
-                                margin: 0,
-                              }}
-                            >
-                              Autenticação em duas etapas pendente
-                            </p>
-                            <p
-                              style={{
-                                fontSize: 12,
-                                color: "#64748B",
-                                margin: 0,
-                              }}
-                            >
-                              Proteja saques, API keys e alterações sensíveis.
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => setIs2FAModalOpen(true)}
-                          className="inline-flex items-center transition-colors hover:bg-slate-50"
-                          style={{
-                            height: 36,
-                            padding: "0 16px",
-                            borderRadius: 10,
-                            background: "#FFFFFF",
-                            border: "1px solid #E5E7EB",
-                            fontSize: 12,
-                            fontWeight: 600,
-                            color: "#334155",
-                          }}
-                        >
-                          Ativar agora
-                        </button>
-                      </div>
-                    )}
                 </div>
               </motion.section>
 
@@ -884,54 +645,6 @@ function DashboardContent() {
                 user={localUser}
                 setUser={setLocalUser}
               />
-
-              {/* TOOLBAR — Refresh + Filtros (alinhado à direita) */}
-              <div className="mb-4 flex justify-end gap-2">
-                <button
-                  onClick={() => fetchTransactions()}
-                  title="Atualizar"
-                  className="inline-flex items-center justify-center transition-all hover:bg-slate-50"
-                  style={{
-                    height: 40,
-                    width: 40,
-                    borderRadius: 12,
-                    background: "#FFFFFF",
-                    border: "1px solid #E5E7EB",
-                    color: "#475569",
-                  }}
-                >
-                  <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-                </button>
-                <button
-                  onClick={openFilters}
-                  className="relative inline-flex items-center gap-2 transition-all hover:bg-slate-50"
-                  style={{
-                    height: 40,
-                    padding: "0 16px",
-                    borderRadius: 12,
-                    background: "#FFFFFF",
-                    border: "1px solid #E5E7EB",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: "#334155",
-                  }}
-                >
-                  <Activity className="h-4 w-4" style={{ color: "#64748B" }} />
-                  Filtros
-                  {(statusFilter !== "all" ||
-                    (customRange.from && customRange.to)) && (
-                    <span
-                      className="ml-1 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-bold text-white"
-                      style={{ background: T.primary }}
-                    >
-                      {[
-                        statusFilter !== "all" ? 1 : 0,
-                        customRange.from && customRange.to ? 1 : 0,
-                      ].reduce((a, b) => a + b, 0)}
-                    </span>
-                  )}
-                </button>
-              </div>
 
               {/* KPIs — faixa única. Espaçamentos iguais aos da FlevoPay:
                   padding 32px (p-8), gap 24px entre colunas (gap-6), radius
@@ -996,94 +709,31 @@ function DashboardContent() {
                     boxShadow: T.cardShadow,
                   }}
                 >
-                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <h2
                         className="text-[15px] font-bold tracking-tight text-slate-900"
                         style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
                       >
-                        Volume processado
+                        Desempenho Diário
                       </h2>
                       <p className="text-[12px] text-slate-500">
-                        Receita, pedidos pagos e PIX gerados
+                        Evolução financeira no período selecionado.
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white px-3 text-[11px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
-                        style={{ border: `1px solid ${T.border}` }}
-                      >
-                        Todos os checkouts
-                        <ChevronDown className="h-3 w-3" />
-                      </button>
-                      <button
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-50"
-                        style={{ border: `1px solid ${T.border}` }}
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Period pills */}
-                  <div className="mb-4 flex flex-wrap items-center gap-1.5">
-                    {(
-                      [
-                        ["today", "Hoje"],
-                        ["yesterday", "Ontem"],
-                        ["7d", "7 dias"],
-                        ["30d", "Este mês"],
-                        ["lastMonth", "Mês passado"],
-                        ["max", "Máximo"],
-                      ] as const
-                    ).map(([key, label]) => {
-                      const active = period === key;
-                      return (
-                        <button
-                          key={key}
-                          onClick={() => setPeriod(key as any)}
-                          className="rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors"
-                          style={{
-                            background: active ? T.primaryBg : "transparent",
-                            color: active ? T.primary : T.text2,
-                          }}
-                        >
-                          {label}
-                        </button>
-                      );
-                    })}
-                    <button
-                      className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition-colors hover:bg-slate-50"
-                      style={{ border: `1px solid ${T.border}` }}
+                    {/* Seletor de data (estilo FlevoPay) — controla o dia exibido */}
+                    <div
+                      className="inline-flex h-9 items-center gap-2 rounded-lg px-3"
+                      style={{ border: `1px solid ${T.border}`, background: "#F8FAFC" }}
                     >
-                      Personalizado
-                      <Calendar className="h-3 w-3" />
-                    </button>
-                  </div>
-
-                  {/* Legend */}
-                  <div className="mb-3 flex flex-wrap items-center gap-4">
-                    <span className="flex items-center gap-1.5 text-[11px] text-slate-600">
-                      <span
-                        className="h-2 w-2 rounded-full"
-                        style={{ background: T.primary }}
+                      <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                      <input
+                        type="date"
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        className="bg-transparent text-[12.5px] font-semibold text-slate-700 outline-none"
                       />
-                      Faturamento bruto
-                    </span>
-                    <span className="flex items-center gap-1.5 text-[11px] text-slate-600">
-                      <span
-                        className="h-2 w-2 rounded-full"
-                        style={{ background: T.blue }}
-                      />
-                      Pedidos pagos
-                    </span>
-                    <span className="flex items-center gap-1.5 text-[11px] text-slate-600">
-                      <span
-                        className="h-2 w-2 rounded-full"
-                        style={{ background: T.green }}
-                      />
-                      PIX gerados
-                    </span>
+                    </div>
                   </div>
 
                   {/* Chart */}
@@ -1143,40 +793,9 @@ function DashboardContent() {
                           type="monotone"
                           dataKey="gross"
                           stroke={T.primary}
-                          strokeWidth={2.2}
-                          dot={{
-                            fill: T.primary,
-                            stroke: "white",
-                            strokeWidth: 2,
-                            r: 3,
-                          }}
-                          activeDot={{ r: 5 }}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="paid"
-                          stroke={T.blue}
-                          strokeWidth={2.2}
-                          dot={{
-                            fill: T.blue,
-                            stroke: "white",
-                            strokeWidth: 2,
-                            r: 3,
-                          }}
-                          activeDot={{ r: 5 }}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="pix"
-                          stroke={T.green}
-                          strokeWidth={2.2}
-                          dot={{
-                            fill: T.green,
-                            stroke: "white",
-                            strokeWidth: 2,
-                            r: 3,
-                          }}
-                          activeDot={{ r: 5 }}
+                          strokeWidth={2.4}
+                          dot={false}
+                          activeDot={{ r: 4 }}
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -1284,121 +903,6 @@ function DashboardContent() {
                 </motion.div>
               </section>
 
-              {/* SECONDARY METRICS + SHADOW AI */}
-              <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.2 }}
-                  className="rounded-xl p-4 sm:p-5"
-                  style={{
-                    background: T.card,
-                    border: `1px solid ${T.border}`,
-                    boxShadow: T.cardShadow,
-                  }}
-                >
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3 lg:grid-cols-6">
-                    {secondary.map((m) => (
-                      <div key={m.label}>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="flex h-6 w-6 items-center justify-center rounded-md"
-                            style={{
-                              background: `${m.color}14`,
-                              color: m.color,
-                            }}
-                          >
-                            {m.icon}
-                          </span>
-                        </div>
-                        <p className="mt-2 text-[11px] font-semibold text-slate-500">
-                          {m.label}
-                        </p>
-                        <div className="mt-1.5 flex items-baseline gap-1.5">
-                          <span
-                            className="text-[18px] font-bold tracking-tight text-slate-900"
-                            style={{
-                              fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
-                            }}
-                          >
-                            {m.value}
-                          </span>
-                          {m.delta && (
-                            <span
-                              className="text-[11px] font-bold"
-                              style={{
-                                color: (() => {
-                                  const d = m.delta!.direction;
-                                  if (d === "flat") return T.textMuted;
-                                  // pra reembolsos, "down" é bom
-                                  const goodDown = m.negativeIsGood;
-                                  if (goodDown)
-                                    return d === "down" ? T.green : T.red;
-                                  return d === "up" ? T.green : T.red;
-                                })(),
-                              }}
-                            >
-                              {m.delta.text}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-
-                {/* Shadow AI card — limpo, craft Stripe (sem glow/dark) */}
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.25 }}
-                  className="rounded-xl p-5"
-                  style={{
-                    background: "#FFFFFF",
-                    border: "1px solid rgba(15,23,42,0.06)",
-                    boxShadow:
-                      "0 1px 2px rgba(13,37,61,0.04), 0 1px 3px rgba(13,37,61,0.06)",
-                  }}
-                >
-                  <div className="flex items-start gap-3">
-                    <span
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                      style={{ background: "rgba(124,58,237,0.08)", color: "#7C3AED" }}
-                    >
-                      <Sparkles className="h-5 w-5" />
-                    </span>
-                    <div className="min-w-0">
-                      <h3
-                        className="text-[15px] font-bold text-slate-900"
-                        style={{ letterSpacing: "-0.01em" }}
-                      >
-                        Shadow AI
-                      </h3>
-                      <p className="mt-0.5 text-[12.5px] text-slate-500">
-                        Monitorando sua operação em tempo real.
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => router.push("/shadow")}
-                    className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-[12.5px] font-semibold text-white transition-colors"
-                    style={{ background: T.primary, boxShadow: "0 1px 2px rgba(13,37,61,0.08)" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "#6D28D9"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = T.primary; }}
-                  >
-                    Abrir Shadow
-                    <ArrowUpRight className="h-3.5 w-3.5" />
-                  </button>
-                </motion.div>
-              </section>
-
-              {/* Footer */}
-              <p
-                className="mt-8 text-center text-[11px]"
-                style={{ color: T.textMuted }}
-              >
-                ShadowPay Financial OS © 2026 · Todos os direitos reservados.
-              </p>
             </div>
       </LightShell>
 
