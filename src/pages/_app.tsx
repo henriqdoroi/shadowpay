@@ -54,6 +54,18 @@ function AppContent({ Component, pageProps }: AppProps) {
       .catch((e) => console.warn("SW register failed:", e));
   }, []);
 
+  // Acorda o backend assim que o site abre (Render free "dorme" após ~15min
+  // de inatividade). Reduz/elimina o cold-start no 1o login/cadastro, pois o
+  // servidor já vai estar de pé enquanto a pessoa digita. Fire-and-forget.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    fetch("https://shadowpay-backend.onrender.com/", {
+      method: "GET",
+      mode: "no-cors",
+      cache: "no-store",
+    }).catch(() => {});
+  }, []);
+
   useEffect(() => {
     if (isLoading || !user) return;
 
