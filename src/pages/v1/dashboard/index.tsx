@@ -933,31 +933,29 @@ function DashboardContent() {
                 </button>
               </div>
 
-              {/* KPIs — faixa única (design do Figma): rótulo, valor grande e
-                  triângulo roxo. Dados reais do período selecionado. */}
+              {/* KPIs — faixa única. Espaçamentos iguais aos da FlevoPay:
+                  padding 32px (p-8), gap 24px entre colunas (gap-6), radius
+                  12px; rótulo 14px/500, valor 28px/800, gap rótulo→valor 8px. */}
               <motion.section
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                className="mb-6 overflow-hidden rounded-2xl"
+                className="mb-6 rounded-[12px] p-5 sm:p-8"
                 style={{
                   background: "#FFFFFF",
-                  border: "1px solid #E6E8EB",
+                  border: "1px solid #E2E8F0",
                   boxShadow: T.cardShadow,
                 }}
               >
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+                <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">
                   {statStrip.map((s) => (
-                    <div
-                      key={s.label}
-                      className="flex flex-col px-5 py-6 sm:px-6 sm:py-7"
-                    >
-                      <p className="text-[13px] font-normal leading-tight text-slate-500">
+                    <div key={s.label} className="flex flex-col">
+                      <p className="text-[14px] font-medium leading-tight text-slate-500">
                         {s.label}
                       </p>
                       <div className="mt-2 flex items-baseline gap-1.5">
                         <span
-                          className="text-[26px] font-extrabold leading-none text-slate-900 sm:text-[30px]"
+                          className="text-[28px] font-extrabold leading-none text-slate-900"
                           style={{
                             fontFamily:
                               "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
