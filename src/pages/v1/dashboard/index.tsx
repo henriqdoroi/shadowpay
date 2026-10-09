@@ -955,7 +955,7 @@ function DashboardContent() {
                       </p>
                       <div className="mt-2 flex items-baseline gap-1.5">
                         <span
-                          className="text-[28px] font-extrabold leading-none text-slate-900"
+                          className="text-[28px] font-semibold leading-none text-slate-900"
                           style={{
                             fontFamily:
                               "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
