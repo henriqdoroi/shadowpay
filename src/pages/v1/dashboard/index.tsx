@@ -955,7 +955,7 @@ function DashboardContent() {
                       <p className="text-[13px] font-normal leading-tight text-slate-500">
                         {s.label}
                       </p>
-                      <div className="mt-2 flex items-start gap-1.5">
+                      <div className="mt-2 flex items-baseline gap-1.5">
                         <span
                           className="text-[26px] font-bold leading-none tracking-[-0.02em] text-slate-900 sm:text-[30px]"
                           style={{
@@ -970,7 +970,7 @@ function DashboardContent() {
                           height="13"
                           viewBox="0 0 12 12"
                           fill="none"
-                          className="mt-[3px] shrink-0"
+                          className="shrink-0"
                           aria-hidden="true"
                         >
                           <path
