@@ -77,8 +77,8 @@ type NavItem = {
 };
 type NavGroup = { label: string; items: NavItem[] };
 
-/* Ícone do PIX (4 setas em pinwheel, estilo da marca) — serve como indicador
-   do método PIX no menu. Usa currentColor pra herdar a cor do item. */
+/* Ícone do PIX (logo oficial) — indicador do método PIX no menu.
+   Usa currentColor pra herdar a cor do item. */
 function PixIcon({
   className,
   style,
@@ -88,16 +88,13 @@ function PixIcon({
 }) {
   return (
     <svg
-      viewBox="0 0 24 24"
+      viewBox="0 0 512 512"
       fill="currentColor"
       className={className}
       style={style}
       aria-hidden="true"
     >
-      <path d="M13.2 4.8 L19.2 4.8 L19.2 10.8 L16.2 7.8 Z" />
-      <path d="M19.2 13.2 L19.2 19.2 L13.2 19.2 L16.2 16.2 Z" />
-      <path d="M10.8 19.2 L4.8 19.2 L4.8 13.2 L7.8 16.2 Z" />
-      <path d="M4.8 10.8 L4.8 4.8 L10.8 4.8 L7.8 7.8 Z" />
+      <path d="M242.4 292.5c5.4-5.4 14.7-5.4 20.1 0l77 77c14.2 14.2 33.1 22 53.1 22h15.1l-97.1 97.1c-30.3 30.3-79.5 30.3-109.8 0l-97.5-97.5h9.3c20 0 38.9-7.8 53.1-22l76.7-76.6zm20.1-73.6c-5.6 5.4-14.6 5.6-20.1 0l-76.7-76.7c-14.2-15.1-33.1-22-53.1-22h-9.3l97.6-97.6c30.3-30.2 79.5-30.2 109.8 0l97.1 97.1h-15.2c-20 0-38.9 7.8-53.1 22l-77 77.2zM112.6 142.7c13.8 0 26.5 5.6 37.1 15.4l76.7 76.7c7.2 6.3 16.6 10.8 26.1 10.8s18.9-4.5 26.1-10.8l77-77c9.8-9.7 23.3-15.3 37.1-15.3h37.7l58.3 58.3c30.3 30.3 30.3 79.5 0 109.8l-58.3 58.3h-37.7c-13.8 0-27.3-5.6-37.1-15.4l-77-77c-13.9-13.9-38.2-13.9-52.1.1l-76.7 76.7c-10.6 9.7-23.3 15.3-37.1 15.3H80.8l-58.2-58.3c-30.2-30.3-30.2-79.5 0-109.8l58.2-58.2h31.8z" />
     </svg>
   );
 }
