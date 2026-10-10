@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -140,8 +141,9 @@ function PixelsContent() {
             Pixels
           </h1>
           <p className="mt-1 text-[13px] text-slate-500">
-            Conecte Meta, Google Ads, TikTok e Kwai pra rastrear conversões nas
-            campanhas de mídia paga.
+            Conecte seu pixel uma vez e o ShadowPay dispara os eventos de
+            conversão automaticamente em todas as vendas — sem configurar
+            produto por produto.
           </p>
         </div>
         <button
@@ -156,6 +158,32 @@ function PixelsContent() {
           Novo pixel
         </button>
       </header>
+
+      {/* Info — envio server-side (CAPI) */}
+      <div
+        className="mb-6 flex items-start gap-3 rounded-2xl p-4"
+        style={{
+          background: "rgba(124,58,237,0.05)",
+          border: `1px solid ${T.borderSoft}`,
+        }}
+      >
+        <div
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+          style={{ background: T.primaryBg, color: T.primary }}
+        >
+          <Zap className="h-[18px] w-[18px]" />
+        </div>
+        <div className="text-[12.5px] leading-relaxed text-slate-600">
+          <b className="text-slate-900">
+            Envio server-side (CAPI) ativo pra Meta e TikTok.
+          </b>{" "}
+          Conecte o pixel com o <b>Access Token</b> e ligue a{" "}
+          <b>Conversions API</b>: o ShadowPay dispara <b>Purchase</b> (venda
+          aprovada) e <b>AddPaymentInfo</b> (PIX gerado) direto do backend, sem
+          depender do navegador do cliente. Informe um <b>Código de Teste</b> pra
+          ver os eventos chegando ao vivo no Gerenciador de Eventos.
+        </div>
+      </div>
 
       {showForm && (
         <form
@@ -245,10 +273,30 @@ function PixelsContent() {
                 }
               />
               <label htmlFor="capi" className="text-[13px] text-slate-700">
-                Ativar Conversions API (server-side) — dispara eventos Purchase
-                via backend
+                Ativar Conversions API (server-side) — dispara Purchase e
+                AddPaymentInfo pelo backend (Meta e TikTok)
               </label>
             </div>
+            {form.capiEnabled && (
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                  Código de Teste (opcional)
+                </label>
+                <input
+                  value={form.testCode}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, testCode: e.target.value }))
+                  }
+                  placeholder="TEST12345"
+                  className="h-10 w-full rounded-lg bg-slate-50 px-3 font-mono text-[13px] outline-none"
+                  style={{ border: `1px solid ${T.borderSoft}` }}
+                />
+                <p className="mt-1 text-[11px] text-slate-400">
+                  Pega no Gerenciador de Eventos → Testar eventos. Deixe vazio em
+                  produção.
+                </p>
+              </div>
+            )}
           </div>
           <div className="mt-4 flex justify-end gap-2">
             <button

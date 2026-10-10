@@ -227,9 +227,7 @@ export default function CreateProduct() {
   const [newCustomDomain, setNewCustomDomain] = useState("");
 
   const [apiSettings, setApiSettings] = useState({
-    pixelAdsToken: "",
     utmifyToken: "",
-    fbpixelidToken: "",
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -353,9 +351,7 @@ export default function CreateProduct() {
       );
       formDataToSend.append("whatsappSupport", formData.supportWhatsapp || "");
       formDataToSend.append("emailSupport", formData.supportEmail || "");
-      // ---------- Pixel e UTMify ----------
-      formDataToSend.append("pixelToken", apiSettings.pixelAdsToken || "");
-      formDataToSend.append("fbpixelid", apiSettings.fbpixelidToken || "");
+      // ---------- UTMify (o pixel agora é global, em Integrações → Pixels) ----------
       formDataToSend.append("utmifyToken", apiSettings.utmifyToken || "");
       // ---------- Imagem do produto ----------
       if (formData.productImageFile instanceof File) {
@@ -2989,40 +2985,25 @@ export default function CreateProduct() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    {/* Pixel ADS Token */}
-                    <div className="space-y-2">
-                      <Label htmlFor="pixelAdsToken">Token Facebook/Meta</Label>
-                      <Input
-                        id="pixelAdsToken"
-                        value={apiSettings.pixelAdsToken}
-                        onChange={(e) =>
-                          handleApiChange("pixelAdsToken", e.target.value)
-                        }
-                        placeholder="Digite seu token do Pixel ADS"
-                        type="password"
+                    {/* Pixel agora é global — movido pra Integrações → Pixels */}
+                    <div
+                      className="flex items-start gap-3 rounded-xl p-3.5"
+                      style={{
+                        background: "rgba(124,58,237,0.05)",
+                        border: "1px solid rgba(15,23,42,0.06)",
+                      }}
+                    >
+                      <Zap
+                        className="mt-0.5 h-[18px] w-[18px] shrink-0"
+                        style={{ color: "#7C3AED" }}
                       />
-                      <p className="text-xs text-muted-foreground">
-                        Token para integração com Facebook/Meta Pixel para
-                        rastreamento de conversões.
-                      </p>
-                    </div>
-                    {/* Id do Pixel ADS Facebook/Meta Token */}
-                    <div className="space-y-2">
-                      <Label htmlFor="fbpixelidToken">
-                        Id do Pixel Facebook/Meta Ads
-                      </Label>
-                      <Input
-                        id="fbpixelidToken"
-                        value={apiSettings.fbpixelidToken}
-                        onChange={(e) =>
-                          handleApiChange("fbpixelidToken", e.target.value)
-                        }
-                        placeholder="Digite seu Id do Pixel Fb ADS"
-                        type="password"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Id do pixel/campanha no Facebook/Meta Pixel
-                      </p>
+                      <div className="text-[12.5px] leading-relaxed text-slate-600">
+                        <b className="text-slate-900">O Pixel agora é global.</b>{" "}
+                        Conecte seu Meta ou TikTok uma vez em{" "}
+                        <b>Integrações → Pixels</b> e os eventos (Purchase e
+                        AddPaymentInfo) disparam automaticamente em todos os
+                        produtos — não precisa configurar aqui.
+                      </div>
                     </div>
                     {/* UTMify Token */}
                     <div className="space-y-2">
@@ -3048,26 +3029,6 @@ export default function CreateProduct() {
                         Status das Integrações
                       </h4>
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between p-3 border rounded-lg">
-                          <div>
-                            <span className="font-medium">Pixel ADS</span>
-                            <p className="text-sm text-muted-foreground">
-                              Facebook/Meta Pixel
-                            </p>
-                          </div>
-                          <span
-                            className={`px-2 py-1 text-xs rounded-full ${
-                              apiSettings.pixelAdsToken
-                                ? "bg-green-100 text-green-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {apiSettings.pixelAdsToken
-                              ? "Conectado"
-                              : "Não Conectado"}
-                          </span>
-                        </div>
-
                         <div className="flex items-center justify-between p-3 border rounded-lg">
                           <div>
                             <span className="font-medium">UTMify</span>
