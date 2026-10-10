@@ -12,7 +12,6 @@ import {
   Target,
   BarChart3,
   Crosshair,
-  Send,
   MessageCircle,
   Activity,
   ArrowRight,
@@ -124,17 +123,6 @@ const CARDS: Card[] = [
     fields: [
       { key: "apiKey", label: "API Key", placeholder: "xtk_live_xxx...", type: "password" },
     ],
-  },
-  {
-    id: "telegram",
-    title: "Canal de vendas (Telegram)",
-    provider: "Telegram",
-    description:
-      "Cada venda aprovada vira uma mensagem no seu canal do Telegram.",
-    icon: Send,
-    color: "#0EA5E9",
-    href: "/v1/automation",
-    status: "telegram",
   },
   {
     id: "whatsapp",
