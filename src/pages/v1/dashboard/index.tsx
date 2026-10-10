@@ -695,13 +695,13 @@ function DashboardContent() {
               </motion.section>
 
               {/* GRÁFICO + PRÓXIMA PREMIAÇÃO (premiação ocupa a coluna direita) */}
-              <section className="mb-6 grid grid-cols-1 items-start gap-4 xl:grid-cols-[1.4fr_1fr]">
+              <section className="mb-6 grid grid-cols-1 items-stretch gap-4 xl:grid-cols-[1.4fr_1fr]">
                 {/* Chart */}
                 <motion.div
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.1 }}
-                  className="rounded-xl p-4 sm:p-5"
+                  className="flex flex-col rounded-xl p-4 sm:p-5"
                   style={{
                     background: T.card,
                     border: `1px solid ${T.border}`,
@@ -736,7 +736,7 @@ function DashboardContent() {
                   </div>
 
                   {/* Chart */}
-                  <div className="h-[280px] w-full">
+                  <div className="min-h-[280px] w-full flex-1">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart
                         data={chartData}
