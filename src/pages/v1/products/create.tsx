@@ -1,4 +1,7 @@
 import { AppSidebar } from "@/components/app-sidebar";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import { LightShell } from "@/components/LightShell";
+import Head from "next/head";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -463,50 +466,31 @@ export default function CreateProduct() {
   };
 
   return (
-    <div className="min-h-screen" style={{ color: "#0F172A" }}>
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset
-          style={{
-            background: "#F1F3F8",
-            color: "#0F172A",
-          }}
-        >
-          <header className="flex items-center gap-3 px-4 pt-6 lg:px-8">
-            <SidebarTrigger style={{ color: "#64748B" }} />
+    <ProtectedRoute>
+      <Head>
+        <title>ShadowPay — Criar Produto</title>
+      </Head>
+      <LightShell>
+        <div className="mx-auto w-full max-w-[1100px]">
+          {/* Header */}
+          <div className="mb-6 flex items-center gap-3">
+            <Button
+              className="cursor-pointer"
+              variant="outline"
+              size="icon"
+              onClick={handleBack}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
             <div>
-              <h1
-                className="text-2xl font-bold tracking-tight md:text-[28px]"
-                style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif", color: "#0F172A" }}
-              >
+              <h1 className="text-[22px] font-bold tracking-tight text-slate-900 sm:text-[26px]">
                 Criar Produto
               </h1>
-              <p className="mt-1 text-xs" style={{ color: "#64748B" }}>
+              <p className="mt-1 text-[13px] text-slate-500">
                 Configure produto, checkout e formas de pagamento
               </p>
             </div>
-          </header>
-
-          <div className="flex flex-1 flex-col gap-6 p-4 pt-0 min-h-screen">
-            {/* Header */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
-                <Button
-                  className="cursor-pointer"
-                  variant="outline"
-                  size="icon"
-                  onClick={handleBack}
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <div>
-                  <h1 className="text-2xl font-bold">Criar Produto</h1>
-                  <p className="text-muted-foreground">
-                    Preencha as informações do seu produto
-                  </p>
-                </div>
-              </div>
-            </div>
+          </div>
 
             {/* Wizard (abas viram etapas guiadas) */}
             <Tabs value={activeStep} onValueChange={setActiveStep} className="w-full">
@@ -3070,8 +3054,7 @@ export default function CreateProduct() {
               )}
             </div>
           </div>
-        </SidebarInset>
-      </SidebarProvider>
-    </div>
+      </LightShell>
+    </ProtectedRoute>
   );
 }
