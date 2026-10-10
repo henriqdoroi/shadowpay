@@ -38,7 +38,7 @@ const T = {
   card: "#FFFFFF",
 };
 
-type StatusKind = "apikeys" | "webhooks" | "pixel" | "telegram" | "whatsapp";
+type StatusKind = "apikeys" | "webhooks" | "pixel" | "whatsapp";
 
 type Card = {
   id: string;
@@ -325,8 +325,6 @@ function IntegrationsContent() {
       return { text: "Gerenciar chaves", active: false };
     if (c.status === "webhooks")
       return { text: "Configurar webhooks", active: false };
-    if (c.status === "telegram")
-      return { text: "Conectar canal", active: false };
     return { text: "Configurar", active: false };
   }
 
