@@ -44,6 +44,7 @@ import {
   RotateCcw,
   DollarSign,
   Zap,
+  Trophy,
 } from "lucide-react";
 
 const API = "https://shadowpay-backend.onrender.com";
@@ -693,8 +694,8 @@ function DashboardContent() {
                 </div>
               </motion.section>
 
-              {/* CHART + ACTIVITY */}
-              <section className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
+              {/* GRÁFICO + PRÓXIMA PREMIAÇÃO (premiação ocupa a coluna direita) */}
+              <section className="mb-6 grid grid-cols-1 items-start gap-4 xl:grid-cols-[1.4fr_1fr]">
                 {/* Chart */}
                 <motion.div
                   initial={{ opacity: 0, y: 12 }}
@@ -802,177 +803,107 @@ function DashboardContent() {
 
                 {/* Coluna direita: próxima premiação + atividade ao vivo */}
                 <div className="flex flex-col gap-4">
-                {/* Próxima premiação — barra de progresso de faturamento (estilo do print) */}
+                {/* Próxima premiação — card claro (cor da página), placa no meio */}
                 <motion.div
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.12 }}
-                  className="overflow-hidden rounded-xl p-5"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #2E1065 0%, #4C1D95 55%, #1E1B4B 100%)",
-                    border: "1px solid rgba(124,58,237,0.35)",
-                    boxShadow: "0 8px 24px rgba(76,29,149,0.22)",
-                  }}
-                >
-                  <p className="text-[13px] font-bold" style={{ color: "#FBBF24" }}>
-                    Sua próxima premiação, {prizeFirstName}! 🎉
-                  </p>
-
-                  <div
-                    className="mt-3 flex items-center gap-3 rounded-xl p-3"
-                    style={{
-                      background: "rgba(255,255,255,0.06)",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                    }}
-                  >
-                    <span
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[14px] font-extrabold text-white"
-                      style={{ background: "linear-gradient(135deg,#7C3AED,#06B6D4)" }}
-                    >
-                      {fmtTarget(nextPrize.target)}
-                    </span>
-                    <div className="min-w-0">
-                      <p
-                        className="text-[10px] font-semibold uppercase tracking-wider"
-                        style={{ color: "#C4B5FD" }}
-                      >
-                        Prêmio
-                      </p>
-                      <p className="truncate text-[13px] font-bold text-white">
-                        {nextPrize.prize}
-                      </p>
-                    </div>
-                  </div>
-
-                  <p
-                    className="mt-4 text-[26px] font-semibold leading-none text-white"
-                    style={{
-                      fontFamily:
-                        "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
-                    }}
-                  >
-                    {hideable(fmt(totalRevenue))}
-                  </p>
-
-                  <div
-                    className="mt-3 h-2.5 w-full overflow-hidden rounded-full"
-                    style={{ background: "rgba(255,255,255,0.12)" }}
-                  >
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${prizeProgress}%`,
-                        background: "linear-gradient(90deg,#06B6D4,#7C3AED)",
-                        transition: "width 0.6s cubic-bezier(0.22,1,0.36,1)",
-                      }}
-                    />
-                  </div>
-                  <p className="mt-2 text-[11.5px]" style={{ color: "#CBD5E1" }}>
-                    {Math.floor(prizeProgress)}% da jornada foi atingido. Continue
-                    firme!
-                  </p>
-                </motion.div>
-
-                {/* Activity */}
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.15 }}
-                  className="rounded-xl p-4 sm:p-5"
+                  className="flex flex-col items-center rounded-xl p-6 text-center"
                   style={{
                     background: T.card,
                     border: `1px solid ${T.border}`,
                     boxShadow: T.cardShadow,
                   }}
                 >
-                  <div className="mb-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <h3
-                        className="text-[14px] font-bold tracking-tight text-slate-900"
-                        style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
-                      >
-                        Atividade ao vivo
-                      </h3>
-                      <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700">
-                        <span className="relative flex h-1.5 w-1.5">
-                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                        </span>
-                        Live
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => router.push("/v1/products/sales")}
-                      className="text-[11px] font-semibold text-slate-500 hover:text-slate-700"
-                    >
-                      Ver todas
-                    </button>
-                  </div>
+                  <div className="mx-auto flex w-full max-w-[400px] flex-1 flex-col items-center">
+                    <p className="text-[15px] font-bold" style={{ color: "#D97706" }}>
+                      Sua próxima premiação, {prizeFirstName}! 🎉
+                    </p>
 
-                  {liveFeed.length === 0 ? (
-                    <div className="py-10 text-center">
-                      <Inbox className="mx-auto mb-2 h-6 w-6 text-slate-300" />
-                      <p className="text-xs text-slate-500">
-                        Nenhuma atividade ainda
-                      </p>
-                    </div>
-                  ) : (
-                    <ul className="space-y-3">
-                      {liveFeed.map((item, idx) => {
-                        const initial =
-                          item.name?.charAt(0).toUpperCase() || "?";
-                        const tints = [
-                          { bg: "#EDE9FE", color: "#7C3AED" },
-                          { bg: "#FEF3C7", color: "#D97706" },
-                          { bg: "#DCFCE7", color: "#16A34A" },
-                          { bg: "#DBEAFE", color: "#2563EB" },
-                          { bg: "#FCE7F3", color: "#DB2777" },
-                          { bg: "#CFFAFE", color: "#0891B2" },
-                        ];
-                        const tint = tints[idx % tints.length] as { bg: string; color: string };
-                        return (
-                          <li
-                            key={item.id}
-                            className="flex items-center gap-3"
+                    {/* Placa (poster emoldurado) — troféu + marco de faturamento */}
+                    <div className="flex flex-1 items-center justify-center py-6">
+                      <div
+                        style={{
+                          width: 236,
+                          maxWidth: "82%",
+                          borderRadius: 16,
+                          padding: 10,
+                          background: "linear-gradient(145deg,#3A3A42,#161619)",
+                          boxShadow:
+                            "0 18px 36px rgba(15,23,42,0.28), inset 0 1px 0 rgba(255,255,255,0.08)",
+                        }}
+                      >
+                        <div
+                          className="flex flex-col items-center rounded-[10px] px-4 py-6"
+                          style={{
+                            background: "#232329",
+                            border: "1px solid rgba(255,255,255,0.05)",
+                          }}
+                        >
+                          <p
+                            className="text-[11px] font-semibold tracking-wide"
+                            style={{ color: "#9CA3AF" }}
                           >
-                            <div
-                              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[12px] font-bold"
-                              style={{ background: tint.bg, color: tint.color }}
-                            >
-                              {initial}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-[12px] font-semibold text-slate-800">
-                                {item.title}
-                              </p>
-                              <p className="truncate text-[11px] text-slate-500">
-                                {item.name}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <p
-                                className="text-[12px] font-bold"
-                                style={{
-                                  color:
-                                    item.kind === "paid"
-                                      ? T.primary
-                                      : T.green,
-                                  fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
-                                }}
-                              >
-                                {valuesVisible ? item.value : "•••••"}
-                              </p>
-                              <p className="text-[10px] text-slate-400">
-                                {timeAgo(item.at)}
-                              </p>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
+                            ShadowPay
+                          </p>
+                          <span
+                            className="my-3 flex h-16 w-16 items-center justify-center rounded-full"
+                            style={{ background: "rgba(251,191,36,0.12)" }}
+                          >
+                            <Trophy className="h-8 w-8" style={{ color: "#FBBF24" }} />
+                          </span>
+                          <p className="text-[38px] font-extrabold leading-none text-white">
+                            {fmtTarget(nextPrize.target)}
+                          </p>
+                          <p
+                            className="mt-1.5 text-[12px] font-semibold"
+                            style={{ color: "#D1D5DB" }}
+                          >
+                            {nextPrize.target >= 1_000_000
+                              ? `${nextPrize.target / 1_000_000} ${
+                                  nextPrize.target === 1_000_000 ? "milhão" : "milhões"
+                                } em vendas`
+                              : `${nextPrize.target / 1000} mil em vendas`}
+                          </p>
+                          <p
+                            className="mt-2 text-[10px] uppercase tracking-wider"
+                            style={{ color: "#8B8B93" }}
+                          >
+                            Prêmio: {nextPrize.prize}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p
+                      className="text-[30px] font-semibold leading-none text-slate-900"
+                      style={{
+                        fontFamily:
+                          "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
+                      }}
+                    >
+                      {hideable(fmt(totalRevenue))}
+                    </p>
+
+                    <div
+                      className="mt-4 h-2.5 w-full overflow-hidden rounded-full"
+                      style={{ background: "#E2E8F0" }}
+                    >
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${prizeProgress}%`,
+                          background: "linear-gradient(90deg,#06B6D4,#22D3EE)",
+                          transition: "width 0.6s cubic-bezier(0.22,1,0.36,1)",
+                        }}
+                      />
+                    </div>
+                    <p className="mt-2.5 text-[12px] text-slate-500">
+                      {Math.floor(prizeProgress)}% da jornada foi atingido. Continue firme!
+                    </p>
+                  </div>
                 </motion.div>
+
                 </div>
               </section>
 
