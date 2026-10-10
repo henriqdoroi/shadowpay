@@ -77,73 +77,37 @@ type NavItem = {
 };
 type NavGroup = { label: string; items: NavItem[] };
 
-function buildNav(isAdmin: boolean): NavGroup[] {
-  const groups: NavGroup[] = [
+/* Menu em LISTA ÚNICA (flat), sem seções — estilo FlevoPay/BravoPay.
+   Removidos: Relatórios, UTMs, Tracking. "Vendas" virou "Transações". */
+function buildNav(isAdmin: boolean): NavItem[] {
+  const items: NavItem[] = [
+    { label: "Dashboard", href: "/v1/dashboard", icon: LayoutDashboard },
+    { label: "Transações", href: "/v1/products/sales", icon: Receipt },
+    { label: "Financeiro", href: "/v1/finance", icon: Wallet },
+    { label: "Produtos", href: "/v1/products", icon: Package },
+    { label: "Pixels", href: "/v1/integrations/pixels", icon: Target },
+    { label: "Domínios", href: "/v1/integrations/domains", icon: Globe },
+    { label: "Integrações", href: "/v1/integrations", icon: Plug },
     {
-      label: "Negócios",
-      items: [
-        { label: "Dashboard", href: "/v1/dashboard", icon: LayoutDashboard },
-        {
-          label: "Produtos",
-          href: "/v1/products",
-          icon: Package,
-          children: [
-            { label: "Todos", href: "/v1/products", icon: Package },
-            { label: "Pixels", href: "/v1/integrations/pixels", icon: Target },
-            { label: "Domínios", href: "/v1/integrations/domains", icon: Globe },
-          ],
-        },
-        {
-          // Financeiro virou página única (saque + taxas + histórico tudo junto).
-          label: "Financeiro",
-          href: "/v1/finance",
-          icon: Wallet,
-        },
-      ],
+      label: "Adquirentes",
+      href: isAdmin ? "/v2/manager/adquerers" : "/v1/integrations/acquirers",
+      icon: Building2,
     },
-    {
-      label: "Análises",
-      items: [
-        { label: "Relatórios", href: "/v1/reports", icon: BarChart3 },
-        { label: "UTMs", href: "/v1/analytics/utms", icon: LineChart },
-        { label: "Vendas", href: "/v1/products/sales", icon: Receipt },
-      ],
-    },
-    {
-      label: "Avançado",
-      items: [
-        { label: "Integrações", href: "/v1/integrations", icon: Plug },
-        {
-          label: "Adquirentes",
-          href: isAdmin ? "/v2/manager/adquerers" : "/v1/integrations/acquirers",
-          icon: Building2,
-        },
-        { label: "Tracking", href: "/v1/tracking", icon: Megaphone },
-        { label: "Automações", href: "/v1/automation", icon: Workflow },
-        {
-          // Perfil saiu do menu (agora só via ••• no rodapé). Sobra API & Docs.
-          label: "API & Docs",
-          href: "/v1/configs/apikey",
-          icon: Code,
-        },
-      ],
-    },
+    { label: "Automações", href: "/v1/automation", icon: Workflow },
+    { label: "API & Docs", href: "/v1/configs/apikey", icon: Code },
   ];
 
   if (isAdmin) {
-    groups.push({
-      label: "Admin",
-      items: [
-        { label: "Painel", href: "/v2/manager", icon: ShieldCheck },
-        { label: "Sellers", href: "/v2/manager/users", icon: Users },
-        { label: "Transações", href: "/v2/manager/transactions", icon: Activity },
-        { label: "Saques admin", href: "/v2/manager/withdraw", icon: ArrowUpFromLine },
-        { label: "PSP Keys", href: "/v2/manager/psp-key", icon: Settings },
-      ],
-    });
+    items.push(
+      { label: "Painel", href: "/v2/manager", icon: ShieldCheck },
+      { label: "Sellers", href: "/v2/manager/users", icon: Users },
+      { label: "Todas transações", href: "/v2/manager/transactions", icon: Activity },
+      { label: "Saques admin", href: "/v2/manager/withdraw", icon: ArrowUpFromLine },
+      { label: "PSP Keys", href: "/v2/manager/psp-key", icon: Settings },
+    );
   }
 
-  return groups;
+  return items;
 }
 
 /* Active-state matcher: exact or descendant path (with /v1/products excluded
@@ -245,28 +209,6 @@ export function LightShell({
     [user?.isAdministrator]
   );
 
-  // Auto-expand a parent whose child matches the current route
-  useEffect(() => {
-    const toOpen = new Set<string>(expandedKeys);
-    let changed = false;
-    nav.forEach((group) => {
-      group.items.forEach((item) => {
-        if (
-          item.children &&
-          item.children.some((c) => isActive(router.pathname, c.href, c.alsoMatches))
-        ) {
-          const key = `${group.label}-${item.label}`;
-          if (!toOpen.has(key)) {
-            toOpen.add(key);
-            changed = true;
-          }
-        }
-      });
-    });
-    if (changed) setExpandedKeys(toOpen);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router.pathname, nav]);
-
   const toggleExpanded = (key: string) => {
     setExpandedKeys((prev) => {
       const next = new Set(prev);
@@ -309,116 +251,41 @@ export function LightShell({
           <BrandLogo collapsed={sidebarCollapsed} />
         </Link>
 
-        {/* Nav */}
+        {/* Nav — lista única (flat), sem seções */}
         <nav className="flex-1 overflow-y-auto px-3 py-2">
-          {nav.map((group) => (
-            <div key={group.label} className="mb-5 last:mb-0">
-              {!sidebarCollapsed && (
-                <p
-                  className="px-3 pb-2 text-[9.5px] font-bold uppercase tracking-[0.20em]"
-                  style={{ color: T.textMuted }}
-                >
-                  {group.label}
-                </p>
-              )}
-              <ul className="space-y-0.5">
-                {group.items.map((item) => {
-                  const Icon = item.icon;
-                  const key = `${group.label}-${item.label}`;
-                  const hasChildren = !!item.children?.length;
-                  const expanded = expandedKeys.has(key);
-                  const selfActive = isActive(router.pathname, item.href, item.alsoMatches);
-                  const childActive =
-                    hasChildren &&
-                    item.children!.some((c) =>
-                      isActive(router.pathname, c.href, c.alsoMatches)
-                    );
-                  const active = selfActive || childActive;
-
-                  return (
-                    <li key={key}>
-                      {hasChildren && !sidebarCollapsed ? (
-                        <button
-                          onClick={() => toggleExpanded(key)}
-                          className="group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors"
-                          style={{
-                            background: active ? T.primaryBg : "transparent",
-                            color: active ? T.primary : T.text2,
-                          }}
-                        >
-                          <Icon
-                            className="h-4 w-4 shrink-0"
-                            style={{ color: active ? T.primary : T.textMuted }}
-                          />
-                          <span className="flex-1 truncate text-left">
-                            {item.label}
-                          </span>
-                          <ChevronRight
-                            className="h-3.5 w-3.5 shrink-0 transition-transform"
-                            style={{
-                              color: active ? T.primary : T.textMuted,
-                              transform: expanded ? "rotate(90deg)" : "none",
-                            }}
-                          />
-                        </button>
-                      ) : (
-                        <Link
-                          href={item.href}
-                          title={sidebarCollapsed ? item.label : undefined}
-                          className="group flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-colors"
-                          style={{
-                            padding: sidebarCollapsed ? "10px" : "8px 12px",
-                            justifyContent: sidebarCollapsed ? "center" : "flex-start",
-                            background: active ? T.primaryBg : "transparent",
-                            color: active ? T.primary : T.text2,
-                          }}
-                        >
-                          <Icon
-                            className="h-4 w-4 shrink-0"
-                            style={{ color: active ? T.primary : T.textMuted }}
-                          />
-                          {!sidebarCollapsed && (
-                            <span className="flex-1 truncate">{item.label}</span>
-                          )}
-                        </Link>
-                      )}
-
-                      {/* Children (only when sidebar expanded + parent open) */}
-                      {hasChildren && !sidebarCollapsed && expanded && (
-                        <ul className="mt-0.5 space-y-0.5 pl-3">
-                          {item.children!.map((child) => {
-                            const ChildIcon = child.icon;
-                            const cActive = isActive(router.pathname, child.href, child.alsoMatches);
-                            return (
-                              <li key={`${key}-${child.label}`}>
-                                <Link
-                                  href={child.href}
-                                  className="group flex items-center gap-2 rounded-lg py-1.5 pl-4 pr-3 text-[12.5px] font-medium transition-colors"
-                                  style={{
-                                    background: cActive ? T.primaryBg : "transparent",
-                                    color: cActive ? T.primary : T.text2,
-                                    borderLeft: cActive
-                                      ? `2px solid ${T.primary}`
-                                      : `2px solid transparent`,
-                                  }}
-                                >
-                                  <ChildIcon
-                                    className="h-3.5 w-3.5 shrink-0"
-                                    style={{ color: cActive ? T.primary : T.textMuted }}
-                                  />
-                                  <span className="flex-1 truncate">{child.label}</span>
-                                </Link>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
+          <ul className="space-y-0.5">
+            {nav.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(
+                router.pathname,
+                item.href,
+                item.alsoMatches
+              );
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    title={sidebarCollapsed ? item.label : undefined}
+                    className="group flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-colors"
+                    style={{
+                      padding: sidebarCollapsed ? "10px" : "8px 12px",
+                      justifyContent: sidebarCollapsed ? "center" : "flex-start",
+                      background: active ? T.primaryBg : "transparent",
+                      color: active ? T.primary : T.text2,
+                    }}
+                  >
+                    <Icon
+                      className="h-4 w-4 shrink-0"
+                      style={{ color: active ? T.primary : T.textMuted }}
+                    />
+                    {!sidebarCollapsed && (
+                      <span className="flex-1 truncate">{item.label}</span>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         </nav>
 
         {/* ===== Footer estilo SyncPay (perfil + ••• + Compactar) ===== */}
@@ -579,116 +446,35 @@ export function LightShell({
             </div>
 
             <nav className="flex-1 overflow-y-auto px-3 pb-4">
-              {nav.map((group) => (
-                <div key={group.label} className="mb-5 last:mb-0">
-                  <p
-                    className="px-3 pb-2 text-[9.5px] font-bold uppercase tracking-[0.20em]"
-                    style={{ color: T.textMuted }}
-                  >
-                    {group.label}
-                  </p>
-                  <ul className="space-y-0.5">
-                    {group.items.map((item) => {
-                      const Icon = item.icon;
-                      const key = `mobile-${group.label}-${item.label}`;
-                      const hasChildren = !!item.children?.length;
-                      const expanded = expandedKeys.has(key);
-                      const selfActive = isActive(
-                        router.pathname,
-                        item.href,
-                        item.alsoMatches
-                      );
-                      const childActive =
-                        hasChildren &&
-                        item.children!.some((c) =>
-                          isActive(router.pathname, c.href, c.alsoMatches)
-                        );
-                      const active = selfActive || childActive;
-
-                      return (
-                        <li key={key}>
-                          {hasChildren ? (
-                            <button
-                              onClick={() => toggleExpanded(key)}
-                              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13.5px] font-medium"
-                              style={{
-                                background: active ? T.primaryBg : "transparent",
-                                color: active ? T.primary : T.text2,
-                              }}
-                            >
-                              <Icon
-                                className="h-4 w-4 shrink-0"
-                                style={{ color: active ? T.primary : T.textMuted }}
-                              />
-                              <span className="flex-1 truncate text-left">
-                                {item.label}
-                              </span>
-                              <ChevronRight
-                                className="h-3.5 w-3.5 shrink-0 transition-transform"
-                                style={{
-                                  color: active ? T.primary : T.textMuted,
-                                  transform: expanded ? "rotate(90deg)" : "none",
-                                }}
-                              />
-                            </button>
-                          ) : (
-                            <Link
-                              href={item.href}
-                              onClick={() => setMobileMenuOpen(false)}
-                              className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13.5px] font-medium"
-                              style={{
-                                background: active ? T.primaryBg : "transparent",
-                                color: active ? T.primary : T.text2,
-                              }}
-                            >
-                              <Icon
-                                className="h-4 w-4 shrink-0"
-                                style={{ color: active ? T.primary : T.textMuted }}
-                              />
-                              <span className="flex-1 truncate">{item.label}</span>
-                            </Link>
-                          )}
-
-                          {hasChildren && expanded && (
-                            <ul className="mt-0.5 space-y-0.5 pl-3">
-                              {item.children!.map((child) => {
-                                const ChildIcon = child.icon;
-                                const cActive = isActive(
-                                  router.pathname,
-                                  child.href,
-                                  child.alsoMatches
-                                );
-                                return (
-                                  <li key={`${key}-${child.label}`}>
-                                    <Link
-                                      href={child.href}
-                                      onClick={() => setMobileMenuOpen(false)}
-                                      className="flex items-center gap-2 rounded-lg py-2 pl-4 pr-3 text-[12.5px] font-medium"
-                                      style={{
-                                        background: cActive ? T.primaryBg : "transparent",
-                                        color: cActive ? T.primary : T.text2,
-                                        borderLeft: cActive
-                                          ? `2px solid ${T.primary}`
-                                          : `2px solid transparent`,
-                                      }}
-                                    >
-                                      <ChildIcon
-                                        className="h-3.5 w-3.5 shrink-0"
-                                        style={{ color: cActive ? T.primary : T.textMuted }}
-                                      />
-                                      <span className="flex-1 truncate">{child.label}</span>
-                                    </Link>
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              ))}
+              <ul className="space-y-0.5">
+                {nav.map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(
+                    router.pathname,
+                    item.href,
+                    item.alsoMatches
+                  );
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13.5px] font-medium"
+                        style={{
+                          background: active ? T.primaryBg : "transparent",
+                          color: active ? T.primary : T.text2,
+                        }}
+                      >
+                        <Icon
+                          className="h-4 w-4 shrink-0"
+                          style={{ color: active ? T.primary : T.textMuted }}
+                        />
+                        <span className="flex-1 truncate">{item.label}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
             </nav>
 
             {/* footer logout */}
