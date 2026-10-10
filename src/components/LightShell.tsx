@@ -77,21 +77,46 @@ type NavItem = {
 };
 type NavGroup = { label: string; items: NavItem[] };
 
+/* Ícone do PIX (4 setas em pinwheel, estilo da marca) — serve como indicador
+   do método PIX no menu. Usa currentColor pra herdar a cor do item. */
+function PixIcon({
+  className,
+  style,
+}: {
+  className?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      style={style}
+      aria-hidden="true"
+    >
+      <path d="M13.2 4.8 L19.2 4.8 L19.2 10.8 L16.2 7.8 Z" />
+      <path d="M19.2 13.2 L19.2 19.2 L13.2 19.2 L16.2 16.2 Z" />
+      <path d="M10.8 19.2 L4.8 19.2 L4.8 13.2 L7.8 16.2 Z" />
+      <path d="M4.8 10.8 L4.8 4.8 L10.8 4.8 L7.8 7.8 Z" />
+    </svg>
+  );
+}
+
 /* Menu em LISTA ÚNICA (flat), sem seções — estilo FlevoPay/BravoPay.
-   Removidos: Relatórios, UTMs, Tracking. "Vendas" virou "Transações". */
+   Removidos: Relatórios, UTMs, Tracking, Pixels (pixel agora fica dentro
+   do produto). "Vendas" virou "Transações"; "Adquirentes" virou "Nominal". */
 function buildNav(isAdmin: boolean): NavItem[] {
   const items: NavItem[] = [
     { label: "Dashboard", href: "/v1/dashboard", icon: LayoutDashboard },
     { label: "Transações", href: "/v1/products/sales", icon: Receipt },
     { label: "Financeiro", href: "/v1/finance", icon: Wallet },
     { label: "Produtos", href: "/v1/products", icon: Package },
-    { label: "Pixels", href: "/v1/integrations/pixels", icon: Target },
     { label: "Domínios", href: "/v1/integrations/domains", icon: Globe },
     { label: "Integrações", href: "/v1/integrations", icon: Plug },
     {
-      label: "Adquirentes",
+      label: "Nominal",
       href: isAdmin ? "/v2/manager/adquerers" : "/v1/integrations/acquirers",
-      icon: Building2,
+      icon: PixIcon,
     },
     { label: "Automações", href: "/v1/automation", icon: Workflow },
     { label: "API & Docs", href: "/v1/configs/apikey", icon: Code },
