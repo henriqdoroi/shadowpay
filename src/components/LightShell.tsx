@@ -189,7 +189,7 @@ export function LightShell({
   onToggleValues,
 }: LightShellProps) {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -199,6 +199,29 @@ export function LightShell({
   const [mounted, setMounted] = useState(false);
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
   const sidebarWidth = sidebarCollapsed ? 76 : 260;
+
+  // Saldo disponível (card no topo da sidebar, estilo BravoPay). Começa pelo
+  // wallet do user (instantâneo) e atualiza via /api/user/dashboard-stats.
+  const [balance, setBalance] = useState<number | null>(() => {
+    const w = (user as any)?.wallet?.[0]?.balance;
+    return w != null && !isNaN(Number(w)) ? Number(w) : null;
+  });
+  useEffect(() => {
+    if (!token) return;
+    fetch("https://shadowpay-backend.onrender.com/api/user/dashboard-stats", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.success) setBalance(Number(d.data?.currentBalance) || 0);
+      })
+      .catch(() => {});
+  }, [token]);
+  const fmtBRL = (v: number) =>
+    new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(v || 0);
 
   // Evita mismatch hidratação no botão de tema
   useEffect(() => setMounted(true), []);
@@ -272,6 +295,56 @@ export function LightShell({
         >
           <BrandLogo collapsed={sidebarCollapsed} />
         </Link>
+
+        {/* Saldo disponível (estilo BravoPay) — clica pro Financeiro */}
+        {!sidebarCollapsed ? (
+          <Link
+            href="/v1/finance"
+            className="mx-3 mb-3 block overflow-hidden rounded-xl px-3.5 py-3 transition-transform hover:-translate-y-0.5"
+            style={{
+              background: "linear-gradient(135deg, #10231A 0%, #0B1711 100%)",
+              border: "1px solid rgba(34,197,94,0.22)",
+              boxShadow: "0 4px 14px rgba(16,35,26,0.22)",
+            }}
+          >
+            <p
+              className="flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-[0.14em]"
+              style={{ color: "#4ADE80" }}
+            >
+              <span
+                className="inline-block h-1.5 w-1.5 rounded-full"
+                style={{ background: "#22C55E" }}
+              />
+              Saldo disponível
+            </p>
+            <p
+              className="mt-1 text-[18px] font-bold leading-none tracking-tight text-white"
+              style={{
+                fontFamily:
+                  "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
+              }}
+            >
+              {valuesVisible === false
+                ? "••••••"
+                : balance == null
+                ? "—"
+                : fmtBRL(balance)}
+            </p>
+          </Link>
+        ) : (
+          <Link
+            href="/v1/finance"
+            title="Saldo disponível"
+            className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl"
+            style={{
+              background: "linear-gradient(135deg, #10231A 0%, #0B1711 100%)",
+              border: "1px solid rgba(34,197,94,0.22)",
+              color: "#4ADE80",
+            }}
+          >
+            <Wallet className="h-4 w-4" />
+          </Link>
+        )}
 
         {/* Nav — lista única (flat), sem seções */}
         <nav className="flex-1 overflow-y-auto px-3 py-2">
