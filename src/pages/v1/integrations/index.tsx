@@ -7,17 +7,20 @@ import Head from "next/head";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  Plug,
-  Search,
-  CheckCircle2,
-  Plus,
-  ExternalLink,
+  Key,
+  Webhook,
+  Target,
+  BarChart3,
+  Crosshair,
+  Send,
+  MessageCircle,
+  Activity,
+  ArrowRight,
   X,
   Loader2,
-  Sparkles,
-  Trash2,
+  ExternalLink,
 } from "lucide-react";
-import Link from "next/link";
+import { useRouter } from "next/router";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -30,116 +33,146 @@ const T = {
   primary: "#7C3AED",
   primaryStrong: "#6D28D9",
   primaryBg: "rgba(124, 58, 237, 0.08)",
+  green: "#16A34A",
   border: "rgba(15, 23, 42, 0.08)",
   borderSoft: "rgba(15, 23, 42, 0.06)",
+  card: "#FFFFFF",
 };
 
-type Integration = {
+type StatusKind = "apikeys" | "webhooks" | "pixel" | "telegram" | "whatsapp";
+
+type Card = {
   id: string;
-  providerCode?: string;
-  name: string;
-  category: "Trackeamento" | "Webhooks" | "Analytics";
+  title: string;
+  /** "Provedor" do subtítulo (Meta + TikTok, UTMify, etc.) */
+  provider: string;
   description: string;
-  /** Iniciais (fallback caso nao tenha logo PNG) */
-  logo: string;
-  /** Caminho da logo PNG (preferido sobre as iniciais) */
-  logoImage?: string;
-  logoBg: string;
-  href?: string;
-  fields?: Array<{ key: "apiKey" | "apiSecret" | "webhookUrl"; label: string; placeholder?: string; type?: string }>;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+  color: string;
+  href: string;
+  /** chave p/ computar a linha de status */
+  status: StatusKind | "provider";
+  /** quando status === "provider" */
+  providerCode?: string;
+  fields?: Array<{
+    key: string;
+    label: string;
+    placeholder?: string;
+    type?: string;
+  }>;
   docsUrl?: string;
 };
 
-const INTEGRATIONS: Integration[] = [
+const CARDS: Card[] = [
   {
-    id: "utmify",
-    providerCode: "UTMIFY",
-    name: "UTMify",
-    category: "Trackeamento",
-    description: "Trackeamento server-side com UTMs persistentes em todo o funil de PIX.",
-    logo: "UT",
-    logoImage: "/utmifylogo.png",
-    logoBg: "#FFFFFF",
-    fields: [
-      { key: "apiKey", label: "API Token", placeholder: "utmify_xxx...", type: "password" },
-    ],
-    docsUrl: "https://utmify.com.br/docs",
-  },
-  {
-    id: "xtracky",
-    providerCode: "XTRACKY",
-    name: "Xtracky",
-    category: "Trackeamento",
-    description: "Atribuição multicanal, deduplicação de eventos e CAPI pra escala.",
-    logo: "XT",
-    logoImage: "/xtrackylogo.png",
-    logoBg: "#FFFFFF",
-    fields: [
-      { key: "apiKey", label: "API Key", placeholder: "xtk_live_xxx...", type: "password" },
-      { key: "webhookUrl", label: "Webhook URL (opcional)", placeholder: "https://..." },
-    ],
-  },
-  {
-    id: "google-analytics",
-    providerCode: "GA4",
-    name: "Google Analytics 4",
-    category: "Analytics",
-    description: "Eventos de funil + receita enviados pro GA4 via Measurement Protocol.",
-    logo: "G4",
-    logoImage: "/googleanalyticslogo.png",
-    logoBg: "#FFFFFF",
-    fields: [
-      { key: "apiKey", label: "Measurement ID", placeholder: "G-XXXXXXXXXX" },
-      { key: "apiSecret", label: "API Secret", type: "password" },
-    ],
+    id: "apikeys",
+    title: "API Keys",
+    provider: "ShadowPay",
+    description: "Chaves de integração pra usar a API v1 no seu backend.",
+    icon: Key,
+    color: "#7C3AED",
+    href: "/v1/configs/apikey",
+    status: "apikeys",
   },
   {
     id: "webhooks",
-    name: "Webhooks",
-    category: "Webhooks",
-    description: "Notifique seus sistemas em tempo real pra cada PIX gerado, pago ou cancelado.",
-    logo: "WH",
-    logoImage: "/webhooklogo.png",
-    logoBg: "#FFFFFF",
+    title: "Webhooks",
+    provider: "ShadowPay",
+    description: "Receba eventos de transações no seu servidor em tempo real.",
+    icon: Webhook,
+    color: "#0EA5E9",
     href: "/v1/configs/webhook",
+    status: "webhooks",
+  },
+  {
+    id: "pixel",
+    title: "Pixel Facebook / TikTok",
+    provider: "Meta + TikTok",
+    description:
+      "Envia o evento de compra de todas as vendas pro seu Pixel (CAPI).",
+    icon: Target,
+    color: "#7C3AED",
+    href: "/v1/integrations/pixels",
+    status: "pixel",
+  },
+  {
+    id: "utmify",
+    title: "UTMify",
+    provider: "UTMify",
+    description: "Envia vendas com UTMs pra sua conta UTMify, por produto.",
+    icon: BarChart3,
+    color: "#F59E0B",
+    href: "#",
+    status: "provider",
+    providerCode: "UTMIFY",
+    fields: [
+      { key: "apiKey", label: "API Token", placeholder: "utmify_xxx...", type: "password" },
+    ],
+    docsUrl: "https://utmify.com.br",
+  },
+  {
+    id: "xtracky",
+    title: "Xtracky",
+    provider: "Xtracky",
+    description:
+      "Envia vendas geradas e pagas pro seu rastreio Xtracky, por produto.",
+    icon: Crosshair,
+    color: "#D97706",
+    href: "#",
+    status: "provider",
+    providerCode: "XTRACKY",
+    fields: [
+      { key: "apiKey", label: "API Key", placeholder: "xtk_live_xxx...", type: "password" },
+    ],
+  },
+  {
+    id: "telegram",
+    title: "Canal de vendas (Telegram)",
+    provider: "Telegram",
+    description:
+      "Cada venda aprovada vira uma mensagem no seu canal do Telegram.",
+    icon: Send,
+    color: "#0EA5E9",
+    href: "/v1/automation",
+    status: "telegram",
+  },
+  {
+    id: "whatsapp",
+    title: "WhatsApp",
+    provider: "Meta Cloud API",
+    description: "Recuperação de carrinho abandonado via Meta Cloud API.",
+    icon: MessageCircle,
+    color: "#16A34A",
+    href: "/v1/automation",
+    status: "whatsapp",
   },
 ];
 
-const CATEGORIES = ["Tudo", "Trackeamento", "Webhooks", "Analytics"] as const;
-
-type ConnectedProvider = {
-  id: string;
-  provider: string;
-  active: boolean;
-  webhookUrl?: string;
-  connectedAt: string;
-};
-
 function ConnectModal({
-  integration,
+  card,
+  token,
   onClose,
   onConnected,
-  token,
 }: {
-  integration: Integration;
+  card: Card;
+  token: string;
   onClose: () => void;
   onConnected: () => void;
-  token: string;
 }) {
   const [form, setForm] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     try {
       const r = await axios.post(
         `${API}/api/integrations/providers`,
-        { provider: integration.providerCode, ...form },
+        { provider: card.providerCode, ...form },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (r.data?.success) {
-        toast.success(`${integration.name} conectado!`);
+        toast.success(`${card.title} conectado!`);
         onConnected();
         onClose();
       }
@@ -150,10 +183,11 @@ function ConnectModal({
     }
   }
 
+  const Icon = card.icon;
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ background: "rgba(15, 23, 42, 0.50)" }}
+      style={{ background: "rgba(15,23,42,0.50)" }}
       onClick={onClose}
     >
       <div
@@ -162,36 +196,28 @@ function ConnectModal({
         style={{ boxShadow: "0 24px 64px -20px rgba(15,23,42,0.30)" }}
       >
         <div className="mb-4 flex items-start gap-3">
-          <div
-            className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl text-[14px] font-bold text-white"
-            style={{
-              background: integration.logoBg,
-              border: integration.logoImage ? `1px solid ${T.borderSoft}` : "none",
-            }}
+          <span
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
+            style={{ background: `${card.color}14`, color: card.color }}
           >
-            {integration.logoImage ? (
-              <img
-                src={integration.logoImage}
-                alt={`${integration.name} logo`}
-                className="h-full w-full object-contain p-1"
-              />
-            ) : (
-              integration.logo
-            )}
-          </div>
+            <Icon className="h-5 w-5" />
+          </span>
           <div className="flex-1">
             <h2 className="text-[16px] font-bold text-slate-900">
-              Conectar {integration.name}
+              Conectar {card.title}
             </h2>
-            <p className="text-[12px] text-slate-500">{integration.description}</p>
+            <p className="text-[12px] text-slate-500">{card.description}</p>
           </div>
-          <button onClick={onClose} className="rounded-md p-1 text-slate-400 hover:bg-slate-100">
+          <button
+            onClick={onClose}
+            className="rounded-md p-1 text-slate-400 hover:bg-slate-100"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {integration.fields?.map((f) => (
+        <form onSubmit={submit} className="space-y-3">
+          {card.fields?.map((f) => (
             <div key={f.key}>
               <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                 {f.label}
@@ -199,7 +225,9 @@ function ConnectModal({
               <input
                 type={f.type || "text"}
                 value={form[f.key] || ""}
-                onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))}
+                onChange={(e) =>
+                  setForm((s) => ({ ...s, [f.key]: e.target.value }))
+                }
                 placeholder={f.placeholder}
                 className="h-10 w-full rounded-lg bg-slate-50 px-3 font-mono text-[13px] outline-none"
                 style={{ border: `1px solid ${T.borderSoft}` }}
@@ -207,9 +235,9 @@ function ConnectModal({
             </div>
           ))}
 
-          {integration.docsUrl && (
+          {card.docsUrl && (
             <a
-              href={integration.docsUrl}
+              href={card.docsUrl}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-1 text-[12px] font-semibold"
@@ -233,10 +261,7 @@ function ConnectModal({
               type="submit"
               disabled={saving}
               className="inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-[12px] font-semibold text-white disabled:opacity-50"
-              style={{
-                background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
-                boxShadow: "0 6px 16px -8px rgba(124,58,237,0.45)",
-              }}
+              style={{ background: T.primary }}
             >
               {saving ? (
                 <>
@@ -255,259 +280,181 @@ function ConnectModal({
 
 function IntegrationsContent() {
   const { token } = useAuth();
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<(typeof CATEGORIES)[number]>("Tudo");
-  const [connected, setConnected] = useState<ConnectedProvider[]>([]);
-  const [modalFor, setModalFor] = useState<Integration | null>(null);
+  const router = useRouter();
+  const [connected, setConnected] = useState<string[]>([]);
+  const [pixelCount, setPixelCount] = useState(0);
+  const [modalFor, setModalFor] = useState<Card | null>(null);
 
-  async function fetchConnected() {
+  function refetch() {
     if (!token) return;
-    try {
-      const r = await axios.get(`${API}/api/integrations/providers`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (r.data?.success) setConnected(r.data.data || []);
-    } catch (e) {
-      console.error("connected providers", e);
-    }
+    const h = { headers: { Authorization: `Bearer ${token}` } };
+    axios
+      .get(`${API}/api/integrations/providers`, h)
+      .then((r) => {
+        if (r.data?.success)
+          setConnected(
+            (r.data.data || [])
+              .filter((c: any) => c.active !== false)
+              .map((c: any) => c.provider)
+          );
+      })
+      .catch(() => {});
   }
 
   useEffect(() => {
-    fetchConnected();
+    if (!token) return;
+    refetch();
+    // Pixels conectados (endpoint da Fase 2 — falha graciosa enquanto não existe)
+    axios
+      .get(`${API}/api/user/pixels`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((r) => {
+        if (r.data?.success) setPixelCount((r.data.data || []).length);
+      })
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  async function handleDisconnect(connectionId: string) {
-    if (!confirm("Desconectar essa integração?")) return;
-    try {
-      await axios.delete(`${API}/api/integrations/providers/${connectionId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      toast.success("Integração desconectada.");
-      fetchConnected();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Erro ao desconectar.");
+  function statusLine(c: Card): { text: string; active: boolean } {
+    if (c.status === "provider") {
+      const on = !!c.providerCode && connected.includes(c.providerCode);
+      return on
+        ? { text: "Integração ativa", active: true }
+        : { text: "Não conectado", active: false };
     }
-  }
-
-  const filtered = INTEGRATIONS.filter((it) => {
-    const matchCat = category === "Tudo" || it.category === category;
-    const matchSearch =
-      !search ||
-      it.name.toLowerCase().includes(search.toLowerCase()) ||
-      it.description.toLowerCase().includes(search.toLowerCase());
-    return matchCat && matchSearch;
-  });
-
-  function getConnection(providerCode?: string) {
-    return providerCode ? connected.find((c) => c.provider === providerCode) : undefined;
+    if (c.status === "pixel") {
+      return pixelCount > 0
+        ? {
+            text: `${pixelCount} pixel${pixelCount > 1 ? "s" : ""} conectado${
+              pixelCount > 1 ? "s" : ""
+            }`,
+            active: true,
+          }
+        : { text: "Nenhum pixel conectado", active: false };
+    }
+    if (c.status === "apikeys")
+      return { text: "Gerenciar chaves", active: false };
+    if (c.status === "webhooks")
+      return { text: "Configurar webhooks", active: false };
+    if (c.status === "telegram")
+      return { text: "Conectar canal", active: false };
+    return { text: "Configurar", active: false };
   }
 
   return (
-    <>
-      <div className="mx-auto max-w-7xl">
-        <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
-              AVANÇADO
-            </p>
-            <h1
-              className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
-              style={{ letterSpacing: "-0.005em" }}
-            >
-              Integrações
-            </h1>
-            <p className="mt-1 text-[13px] text-slate-500">
-              Conecte UTMify, Xtracky, pixels, webhooks e ferramentas de
-              trackeamento ao seu gateway.
-            </p>
-          </div>
-          <div
-            className="inline-flex items-center gap-2 self-start rounded-xl px-3 py-2 text-[12px] font-semibold sm:self-auto"
-            style={{
-              background: T.primaryBg,
-              color: T.primary,
-              border: `1px solid ${T.border}`,
-            }}
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            {connected.length} conectada{connected.length !== 1 ? "s" : ""} ·{" "}
-            {INTEGRATIONS.length} disponíveis
-          </div>
-        </header>
-
-        <div
-          className="mb-6 flex flex-col gap-3 rounded-2xl p-4 lg:flex-row lg:items-center"
-          style={{
-            background: "#FFFFFF",
-            border: `1px solid ${T.borderSoft}`,
-            boxShadow:
-              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
-          }}
+    <div className="mx-auto w-full max-w-[1100px]">
+      <header className="mb-6">
+        <h1
+          className="text-[22px] font-bold tracking-tight text-slate-900 sm:text-[26px]"
+          style={{ letterSpacing: "-0.01em" }}
         >
-          <div
-            className="flex h-10 flex-1 items-center rounded-xl px-3"
-            style={{
-              background: "#F8FAFC",
-              border: `1px solid ${T.borderSoft}`,
-            }}
-          >
-            <Search className="mr-2 h-4 w-4 text-slate-400" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar integração (UTMify, Xtracky, Meta Pixel...)"
-              className="flex-1 bg-transparent text-[13px] text-slate-700 placeholder-slate-400 outline-none"
-            />
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {CATEGORIES.map((c) => {
-              const active = c === category;
-              return (
-                <button
-                  key={c}
-                  onClick={() => setCategory(c)}
-                  className="rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors"
-                  style={{
-                    background: active ? T.primary : "#F8FAFC",
-                    color: active ? "#FFFFFF" : T.text2,
-                    border: `1px solid ${active ? T.primary : T.borderSoft}`,
-                  }}
-                >
-                  {c}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+          Integrações
+        </h1>
+        <p className="mt-1 text-[13px] text-slate-500">
+          Conecte pixel, webhooks, rastreio e canais de venda ao seu gateway.
+        </p>
+      </header>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((it) => {
-            const conn = getConnection(it.providerCode);
-            return (
-              <div
-                key={it.id}
-                className="group flex flex-col rounded-2xl p-5 transition-all hover:-translate-y-0.5"
-                style={{
-                  background: "#FFFFFF",
-                  border: `1px solid ${T.borderSoft}`,
-                  boxShadow:
-                    "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
-                }}
-              >
-                <div className="flex items-start gap-3">
-                  <div
-                    className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl text-[14px] font-bold text-white"
-                    style={{
-                      background: it.logoBg,
-                      border: it.logoImage ? `1px solid ${T.borderSoft}` : "none",
-                    }}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {CARDS.map((c) => {
+          const Icon = c.icon;
+          const st = statusLine(c);
+          return (
+            <div
+              key={c.id}
+              className="flex flex-col rounded-2xl p-5"
+              style={{
+                background: T.card,
+                border: `1px solid ${T.borderSoft}`,
+                boxShadow:
+                  "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+              }}
+            >
+              {/* topo: ícone + título + ABRIR */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-start gap-3">
+                  <span
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
+                    style={{ background: `${c.color}14`, color: c.color }}
                   >
-                    {it.logoImage ? (
-                      <img
-                        src={it.logoImage}
-                        alt={`${it.name} logo`}
-                        className="h-full w-full object-contain p-1"
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="truncate text-[15px] font-bold text-slate-900">
+                      {c.title}
+                    </h3>
+                    <p className="mt-0.5 flex items-center gap-1.5 text-[12px] text-slate-500">
+                      <span
+                        className="inline-block h-1.5 w-1.5 rounded-full"
+                        style={{ background: T.green }}
                       />
-                    ) : (
-                      it.logo
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="truncate text-[14px] font-bold text-slate-900">
-                        {it.name}
-                      </h3>
-                      {conn && (
-                        <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700">
-                          <CheckCircle2 className="h-2.5 w-2.5" />
-                          Conectado
-                        </span>
-                      )}
-                    </div>
-                    <p
-                      className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider"
-                      style={{ color: T.textMuted }}
-                    >
-                      {it.category}
+                      {c.provider} · Grátis pra usar
                     </p>
                   </div>
                 </div>
-
-                <p className="mt-3 flex-1 text-[12.5px] leading-relaxed text-slate-500">
-                  {it.description}
-                </p>
-
-                <div className="mt-4 flex items-center gap-2">
-                  {it.href ? (
-                    <Link
-                      href={it.href}
-                      className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg text-[12px] font-semibold text-white transition-opacity hover:opacity-90"
-                      style={{
-                        background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
-                        boxShadow: "0 8px 20px -8px rgba(124,58,237,0.45)",
-                      }}
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      Abrir
-                    </Link>
-                  ) : conn ? (
-                    <button
-                      onClick={() => handleDisconnect(conn.id)}
-                      className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg text-[12px] font-semibold text-rose-600 transition-colors hover:bg-rose-50"
-                      style={{ border: "1px solid rgba(239,68,68,0.30)" }}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Desconectar
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setModalFor(it)}
-                      disabled={!it.providerCode}
-                      className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg text-[12px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-                      style={{
-                        background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
-                        boxShadow: "0 8px 20px -8px rgba(124,58,237,0.45)",
-                      }}
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      Conectar
-                    </button>
-                  )}
-                </div>
+                <button
+                  onClick={() =>
+                    c.providerCode ? setModalFor(c) : router.push(c.href)
+                  }
+                  className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg px-3 text-[11px] font-bold uppercase tracking-wide text-white transition-colors"
+                  style={{
+                    background: T.primary,
+                    boxShadow: "0 6px 16px -8px rgba(124,58,237,0.45)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = T.primaryStrong;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = T.primary;
+                  }}
+                >
+                  Abrir
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
               </div>
-            );
-          })}
-        </div>
 
-        {filtered.length === 0 && (
-          <div
-            className="mt-6 rounded-2xl p-12 text-center"
-            style={{
-              background: "#FFFFFF",
-              border: `1px solid ${T.borderSoft}`,
-            }}
-          >
-            <Plug
-              className="mx-auto mb-3 h-10 w-10"
-              style={{ color: T.textMuted }}
-            />
-            <p className="text-[14px] font-semibold text-slate-700">
-              Nenhuma integração encontrada
-            </p>
-          </div>
-        )}
+              <div
+                className="my-4 h-px w-full"
+                style={{ background: T.borderSoft }}
+              />
+
+              <p className="text-[13px] leading-relaxed text-slate-600">
+                {c.description}
+              </p>
+
+              <div
+                className="my-4 h-px w-full"
+                style={{ background: T.borderSoft }}
+              />
+
+              {/* status */}
+              <div className="flex items-center gap-1.5">
+                <Activity
+                  className="h-3.5 w-3.5"
+                  style={{ color: st.active ? T.green : T.textMuted }}
+                />
+                <span
+                  className="text-[12px] font-semibold"
+                  style={{ color: st.active ? T.green : T.textMuted }}
+                >
+                  {st.text}
+                </span>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {modalFor && token && (
         <ConnectModal
-          integration={modalFor}
-          onClose={() => setModalFor(null)}
-          onConnected={fetchConnected}
+          card={modalFor}
           token={token}
+          onClose={() => setModalFor(null)}
+          onConnected={refetch}
         />
       )}
-    </>
+    </div>
   );
 }
 
