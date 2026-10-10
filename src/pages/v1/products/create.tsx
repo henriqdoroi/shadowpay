@@ -28,6 +28,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft,
+  ArrowRight,
   Save,
   Package,
   Upload,
@@ -221,6 +222,22 @@ export default function CreateProduct() {
   });
 
   const [isLoading, setIsLoading] = useState(false);
+
+  // Wizard em etapas: converte as 4 abas existentes em passos guiados
+  // (não mexe em nenhum campo nem no salvar — só a navegação muda).
+  const STEPS = [
+    { id: "dados-gerais", label: "Produto" },
+    { id: "aparencia", label: "Checkout" },
+    { id: "links", label: "Links" },
+    { id: "apis", label: "Avançado" },
+  ];
+  const [activeStep, setActiveStep] = useState<string>("dados-gerais");
+  const stepIdx = STEPS.findIndex((s) => s.id === activeStep);
+  const goStep = (id: string) => {
+    setActiveStep(id);
+    if (typeof window !== "undefined")
+      window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const handleInputChange = (field: string, value: any) => {
     setFormData((prev) => ({
@@ -489,51 +506,51 @@ export default function CreateProduct() {
                   </p>
                 </div>
               </div>
-              <Button
-                onClick={handleSave}
-                disabled={isLoading}
-                className="flex items-center gap-2 cursor-pointer"
-              >
-                <Save className="h-4 w-4" />
-                {isLoading ? "Salvando..." : "Criar Produto"}
-              </Button>
             </div>
 
-            {/* Tabs de Edição */}
-            <Tabs defaultValue="dados-gerais" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger
-                  value="dados-gerais"
-                  className="flex items-center gap-2 cursor-pointer"
-                >
-                  <Package className="h-4 w-4" />
-                  <span className="hidden sm:inline">Dados Gerais</span>
-                </TabsTrigger>
-
-                <TabsTrigger
-                  value="aparencia"
-                  className="flex items-center gap-2 cursor-pointer"
-                >
-                  <Settings className="h-4 w-4" />
-                  <span className="hidden sm:inline">Aparência</span>
-                </TabsTrigger>
-
-                <TabsTrigger
-                  value="links"
-                  className="flex items-center gap-2 cursor-pointer"
-                >
-                  <Link className="h-4 w-4" />
-                  <span className="hidden sm:inline">Links</span>
-                </TabsTrigger>
-
-                <TabsTrigger
-                  value="apis"
-                  className="flex items-center gap-2 cursor-pointer"
-                >
-                  <Code className="h-4 w-4" />
-                  <span className="hidden sm:inline">API's</span>
-                </TabsTrigger>
-              </TabsList>
+            {/* Wizard (abas viram etapas guiadas) */}
+            <Tabs value={activeStep} onValueChange={setActiveStep} className="w-full">
+              {/* Stepper — uma etapa por vez (clicável) */}
+              <div className="mb-6 flex items-center gap-2">
+                {STEPS.map((s, i) => {
+                  const done = i < stepIdx;
+                  const current = i === stepIdx;
+                  return (
+                    <div key={s.id} className="flex flex-1 items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => goStep(s.id)}
+                        className="flex shrink-0 items-center gap-2 cursor-pointer"
+                      >
+                        <span
+                          className="flex h-7 w-7 items-center justify-center rounded-full text-[12px] font-bold transition-colors"
+                          style={{
+                            background:
+                              current || done ? "#7C3AED" : "#E2E8F0",
+                            color: current || done ? "#FFFFFF" : "#64748B",
+                          }}
+                        >
+                          {done ? "✓" : i + 1}
+                        </span>
+                        <span
+                          className="hidden text-[13px] font-semibold sm:inline"
+                          style={{ color: current ? "#0F172A" : "#94A3B8" }}
+                        >
+                          {s.label}
+                        </span>
+                      </button>
+                      {i < STEPS.length - 1 && (
+                        <span
+                          className="h-0.5 flex-1 rounded"
+                          style={{
+                            background: i < stepIdx ? "#7C3AED" : "#E2E8F0",
+                          }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
 
               {/* Aba Dados Gerais */}
               <TabsContent value="dados-gerais" className="space-y-6">
@@ -3018,6 +3035,40 @@ export default function CreateProduct() {
                 </Card>
               </TabsContent>
             </Tabs>
+
+            {/* Navegação do wizard */}
+            <div className="mt-6 flex items-center justify-between gap-3">
+              {stepIdx > 0 ? (
+                <Button
+                  variant="outline"
+                  className="cursor-pointer"
+                  onClick={() => goStep(STEPS[stepIdx - 1]!.id)}
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Voltar
+                </Button>
+              ) : (
+                <span />
+              )}
+              {stepIdx < STEPS.length - 1 ? (
+                <Button
+                  className="cursor-pointer"
+                  onClick={() => goStep(STEPS[stepIdx + 1]!.id)}
+                >
+                  Continuar
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSave}
+                  disabled={isLoading}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <Save className="h-4 w-4" />
+                  {isLoading ? "Salvando..." : "Criar Produto"}
+                </Button>
+              )}
+            </div>
           </div>
         </SidebarInset>
       </SidebarProvider>
