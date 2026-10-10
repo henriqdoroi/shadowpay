@@ -43,6 +43,14 @@ import {
   ExternalLink,
   Trash2,
   Plus,
+  ToggleRight,
+  Image as ImageIcon,
+  Timer,
+  LayoutTemplate,
+  CreditCard,
+  ClipboardList,
+  PanelTop,
+  Quote,
 } from "lucide-react";
 import router, { useRouter } from "next/router";
 import { useState } from "react";
@@ -471,7 +479,73 @@ export default function CreateProduct() {
         <title>ShadowPay — Criar Produto</title>
       </Head>
       <LightShell>
-        <div className="mx-auto w-full max-w-[1100px]">
+        <div className="wiz-premium mx-auto w-full max-w-[1100px]">
+          <style dangerouslySetInnerHTML={{ __html: `
+            .wiz-premium [data-slot="card"] {
+              border-radius: 16px;
+              border: 1px solid rgba(15, 23, 42, 0.06);
+              box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04),
+                0 1px 3px rgba(15, 23, 42, 0.05);
+              background: #ffffff;
+            }
+            .wiz-premium [data-slot="card-title"] {
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              font-size: 15px;
+              font-weight: 600;
+              color: #0f172a;
+            }
+            .wiz-premium [data-slot="card-title"] svg {
+              width: 34px;
+              height: 34px;
+              padding: 7px;
+              border-radius: 10px;
+              color: #7c3aed;
+              background: rgba(124, 58, 237, 0.1);
+              flex-shrink: 0;
+            }
+            .wiz-premium [data-slot="label"] {
+              font-size: 13px;
+              font-weight: 500;
+              color: #334155;
+            }
+            .wiz-premium
+              [data-slot="input"]:not([type="color"]):not([type="file"]),
+            .wiz-premium [data-slot="select-trigger"] {
+              height: 44px;
+              border-radius: 10px;
+              border: 1px solid rgba(15, 23, 42, 0.1);
+              background: #ffffff;
+              font-size: 14px;
+              transition: border-color 0.15s ease, box-shadow 0.15s ease;
+            }
+            .wiz-premium
+              [data-slot="input"]:not([type="color"]):not([type="file"]) {
+              padding-left: 14px;
+              padding-right: 14px;
+            }
+            .wiz-premium [data-slot="input"][type="color"] {
+              height: 44px;
+              border-radius: 10px;
+            }
+            .wiz-premium [data-slot="textarea"] {
+              border-radius: 10px;
+              border: 1px solid rgba(15, 23, 42, 0.1);
+              background: #ffffff;
+              font-size: 14px;
+              padding: 10px 14px;
+              transition: border-color 0.15s ease, box-shadow 0.15s ease;
+            }
+            .wiz-premium
+              [data-slot="input"]:not([type="color"]):not([type="file"]):focus-visible,
+            .wiz-premium [data-slot="textarea"]:focus-visible,
+            .wiz-premium [data-slot="select-trigger"]:focus-visible {
+              border-color: #7c3aed;
+              box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.14);
+              outline: none;
+            }
+          ` }} />
           {/* Header */}
           <div className="mb-6 flex items-center gap-3">
             <Button
@@ -767,7 +841,7 @@ export default function CreateProduct() {
                       {/* Status */}
                       <Card>
                         <CardHeader>
-                          <CardTitle>Status</CardTitle>
+                          <CardTitle><ToggleRight className="h-5 w-5" />Status</CardTitle>
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-2">
@@ -1035,7 +1109,7 @@ export default function CreateProduct() {
                     {/* Banner */}
                     <Card>
                       <CardHeader>
-                        <CardTitle>Banner</CardTitle>
+                        <CardTitle><ImageIcon className="h-5 w-5" />Banner</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         {/* Switch para exibir banner */}
@@ -1129,7 +1203,7 @@ export default function CreateProduct() {
                     {/* Timer */}
                     <Card>
                       <CardHeader>
-                        <CardTitle>Timer de Urgência</CardTitle>
+                        <CardTitle><Timer className="h-5 w-5" />Timer de Urgência</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="flex items-center space-x-2">
@@ -1173,7 +1247,7 @@ export default function CreateProduct() {
                     {/* Header */}
                     <Card>
                       <CardHeader>
-                        <CardTitle>Header</CardTitle>
+                        <CardTitle><LayoutTemplate className="h-5 w-5" />Header</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="flex items-center space-x-2">
@@ -1210,7 +1284,7 @@ export default function CreateProduct() {
                     </Card>
                     <Card>
                       <CardHeader>
-                        <CardTitle>Métodos de pagamento</CardTitle>
+                        <CardTitle><CreditCard className="h-5 w-5" />Métodos de pagamento</CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="grid grid-cols-3 gap-4">
@@ -1287,7 +1361,7 @@ export default function CreateProduct() {
                       </CardContent>
                     </Card>
                     <Card>
-                      <CardHeader>Formulario de Identificação</CardHeader>
+                      <CardHeader><CardTitle><ClipboardList className="h-5 w-5" />Formulário de Identificação</CardTitle></CardHeader>
                       <CardContent>
                         <div className="grid grid-cols-2 gap-4">
                           {[
@@ -1326,7 +1400,7 @@ export default function CreateProduct() {
                     {/* Topbar */}
                     <Card>
                       <CardHeader>
-                        <CardTitle>Topbar</CardTitle>
+                        <CardTitle><PanelTop className="h-5 w-5" />Topbar</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="flex items-center space-x-2">
@@ -1363,7 +1437,7 @@ export default function CreateProduct() {
                     {/* Depoimentos */}
                     <Card>
                       <CardHeader>
-                        <CardTitle>Depoimentos</CardTitle>
+                        <CardTitle><Quote className="h-5 w-5" />Depoimentos</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="flex items-center space-x-2">
