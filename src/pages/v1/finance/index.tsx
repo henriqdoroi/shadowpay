@@ -26,7 +26,6 @@ import {
   ShieldCheck,
   FileText,
   Receipt,
-  HelpCircle,
   Banknote,
   Percent,
   ArrowDownToLine,
@@ -436,31 +435,33 @@ function FinanceContent() {
           <div
             className="relative overflow-hidden rounded-2xl p-6"
             style={{
-              background: T.card,
-              border: `1px solid ${T.borderSoft}`,
-              boxShadow:
-                "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+              background:
+                "linear-gradient(135deg, #2E1065 0%, #4C1D95 58%, #1E1B4B 100%)",
+              boxShadow: "0 12px 32px rgba(76,29,149,0.28)",
             }}
           >
-            {/* Halo decorativo direita */}
+            {/* Halo decorativo */}
             <div
-              className="pointer-events-none absolute -right-16 top-1/2 hidden h-64 w-64 -translate-y-1/2 opacity-50 md:block"
+              className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full"
               style={{
                 background:
-                  "radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 60%)",
-                filter: "blur(4px)",
+                  "radial-gradient(circle, rgba(34,197,94,0.16) 0%, transparent 62%)",
               }}
             />
 
             <div className="relative">
-              <div className="flex items-center gap-2">
-                <p className="text-[13px] font-semibold text-slate-700">
-                  Saldo disponível
-                </p>
-                <HelpCircle className="h-3.5 w-3.5 text-slate-400" />
-              </div>
               <p
-                className="mt-2 text-[40px] font-bold leading-none tracking-tight text-slate-900"
+                className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em]"
+                style={{ color: "#C4B5FD" }}
+              >
+                <span
+                  className="h-1.5 w-1.5 rounded-full"
+                  style={{ background: "#22C55E" }}
+                />
+                Saldo disponível
+              </p>
+              <p
+                className="mt-2 text-[40px] font-bold leading-none tracking-tight text-white"
                 style={{
                   fontFamily:
                     "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
@@ -468,30 +469,27 @@ function FinanceContent() {
               >
                 {hideable(fmt(balance.current))}
               </p>
-              <p
-                className="mt-2 inline-flex items-center gap-1 text-[12.5px] font-semibold"
-                style={{ color: T.green }}
-              >
-                <span
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{ background: T.green }}
-                />
-                Disponível para saque
+              <p className="mt-2 text-[12.5px]" style={{ color: "#C4B5FD" }}>
+                Pronto pra saque · taxa{" "}
+                <b className="text-white">{fmt(fees.withdrawFixed)}</b> por PIX
               </p>
 
               <div
                 className="my-5 h-px w-full"
-                style={{ background: T.borderSoft }}
+                style={{ background: "rgba(255,255,255,0.12)" }}
               />
 
               {/* sub-cards inline */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  <p
+                    className="text-[10px] font-semibold uppercase tracking-wider"
+                    style={{ color: "#A78BDA" }}
+                  >
                     Saldo bloqueado
                   </p>
                   <p
-                    className="mt-1 text-[18px] font-bold text-slate-900"
+                    className="mt-1 text-[18px] font-bold text-white"
                     style={{
                       fontFamily:
                         "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
@@ -501,19 +499,25 @@ function FinanceContent() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  <p
+                    className="text-[10px] font-semibold uppercase tracking-wider"
+                    style={{ color: "#A78BDA" }}
+                  >
                     Próximo repasse
                   </p>
-                  <p className="mt-1 text-[15px] font-bold text-slate-900">
+                  <p className="mt-1 text-[15px] font-bold text-white">
                     {nextPayout}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  <p
+                    className="text-[10px] font-semibold uppercase tracking-wider"
+                    style={{ color: "#A78BDA" }}
+                  >
                     Total já recebido
                   </p>
                   <p
-                    className="mt-1 text-[18px] font-bold text-slate-900"
+                    className="mt-1 text-[18px] font-bold text-white"
                     style={{
                       fontFamily:
                         "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
