@@ -202,17 +202,50 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(
-          process.env.VAPID_PUBLIC_KEY ||
-            "BGSIIaq7ymGsCu-qDrD32FrzTJtd5KgEU5tbjhuQEWF2JVMc72XGLMJYzSK9Snb2W2Swlun9pB9O2Mrt9l7KC3A"
-        ),
-      });
+      // VAPID key CORRETA, buscada do backend (fonte única da verdade).
+      let vapidKey = "";
+      try {
+        const vr = await axios.get(
+          "https://shadowpay-backend.onrender.com/api/user/push/vapid-key"
+        );
+        vapidKey = vr.data?.publicKey || "";
+      } catch {
+        vapidKey = "";
+      }
+      if (!vapidKey) return; // sem chave do backend, não dá pra inscrever
 
+      const wantKey = urlBase64ToUint8Array(vapidKey);
+      let subscription = await registration.pushManager.getSubscription();
+      if (subscription) {
+        // recria se a inscrição foi feita com uma VAPID key diferente (ex.: a antiga/errada)
+        const cur = subscription.options?.applicationServerKey as
+          | ArrayBuffer
+          | null;
+        const same =
+          !!cur &&
+          new Uint8Array(cur).length === wantKey.length &&
+          new Uint8Array(cur).every((v, i) => v === wantKey[i]);
+        if (!same) {
+          try {
+            await subscription.unsubscribe();
+          } catch {
+            /* ignora */
+          }
+          subscription = null;
+        }
+      }
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: wantKey,
+        });
+      }
+
+      // Endpoint CORRETO (/api/user/push/subscribe) com o payload que ele espera.
+      const json = subscription.toJSON() as any;
       await axios.post(
-        "https://shadowpay-backend.onrender.com/api/webhooks/notifications/subscribe",
-        { subscription },
+        "https://shadowpay-backend.onrender.com/api/user/push/subscribe",
+        { endpoint: json.endpoint, keys: json.keys },
         {
           headers: { Authorization: `Bearer ${authToken}` },
         }
@@ -220,8 +253,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       sessionStorage.setItem("pushSubscribed", "true");
     } catch (error: any) {
-      toast.error("Erro ao ativar notificações: " + error.message);
-      console.error("Erro push:", error);
+      // Auto-subscribe é best-effort: falha NÃO enche a tela de login com erro.
+      // O seller ativa/vê o status na página de Notificações (PushEnableCard).
+      console.warn("[push] auto-subscribe falhou:", error?.message);
     }
   };
 

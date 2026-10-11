@@ -146,15 +146,6 @@ export default function Login() {
     return () => { clearTimeout(first); clearInterval(iv); };
   }, [phase]);
 
-  function urlBase64ToUint8Array(base64String: string) {
-    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-    const rawData = window.atob(base64);
-    const out = new Uint8Array(rawData.length);
-    for (let i = 0; i < rawData.length; ++i) out[i] = rawData.charCodeAt(i);
-    return out;
-  }
-
   const handleLogin = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -162,19 +153,8 @@ export default function Login() {
         const result = await login(email, password);
         if (result.success) {
           toast.success("Login realizado com sucesso!");
-          if ("Notification" in window && Notification.permission === "default") {
-            const permission = await Notification.requestPermission();
-            if (permission !== "granted") toast("Notificações não ativadas.");
-          }
-          if ("serviceWorker" in navigator && "PushManager" in window && Notification.permission === "granted") {
-            const registration = await navigator.serviceWorker.ready;
-            const subscription = await registration.pushManager.subscribe({
-              userVisibleOnly: true,
-              applicationServerKey: urlBase64ToUint8Array("BGSIIaq7ymGsCu-qDrD32FrzTJtd5KgEU5tbjhuQEWF2JVMc72XGLMJYzSK9Snb2W2Swlun9pB9O2Mrt9l7KC3A"),
-            });
-            await fetch("/api/webhooks/notifications/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subscription }) });
-            toast.success("Notificações ativadas!");
-          }
+          // Push é ativado automaticamente pelo AuthContext (subscribeUserToPush),
+          // com a VAPID key e o endpoint corretos.
           router.push("/v1/dashboard");
         } else {
           toast.error(result.error || "Erro no login. Verifique suas credenciais.");
