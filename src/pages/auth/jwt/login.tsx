@@ -153,8 +153,8 @@ export default function Login() {
         const result = await login(email, password);
         if (result.success) {
           toast.success("Login realizado com sucesso!");
-          // Push é ativado automaticamente pelo AuthContext (subscribeUserToPush),
-          // com a VAPID key e o endpoint corretos.
+          // Push: se este aparelho já permitiu, o AuthContext o registra pra
+          // esta conta; senão, o seller ativa pelo banner do dashboard.
           router.push("/v1/dashboard");
         } else {
           toast.error(result.error || "Erro no login. Verifique suas credenciais.");

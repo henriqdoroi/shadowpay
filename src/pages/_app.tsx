@@ -13,6 +13,7 @@ import { useEffect } from "react";
 import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
 import KycGate from "@/components/KycGate";
 import { installAxiosErrorNormalizer } from "@/lib/axiosErrors";
+import { registerServiceWorker } from "@/lib/push";
 
 // Erros do backend vêm em { error: { message } } — normaliza pra todas as
 // telas lerem `e.response.data.message` e mostrarem o motivo real.
@@ -49,14 +50,10 @@ function AppContent({ Component, pageProps }: AppProps) {
     return () => window.removeEventListener("resize", handleResize);
   }, [setOpenMobile]);
 
-  // Registra o Service Worker da PWA (silencioso — push só é ativado
-  // quando o seller pede em /v1/configs/notifications).
+  // Registra o Service Worker da PWA (silencioso — o push só é ativado por
+  // um toque do seller; ver src/lib/push.ts).
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!("serviceWorker" in navigator)) return;
-    navigator.serviceWorker
-      .register("/sw.js", { scope: "/" })
-      .catch((e) => console.warn("SW register failed:", e));
+    registerServiceWorker();
   }, []);
 
   // Acorda o backend assim que o site abre (Render free "dorme" após ~15min
@@ -129,7 +126,7 @@ export default function App(props: AppProps) {
         {/* Manifest PWA */}
         <link rel="manifest" href="/manifest.json" />
 
-        <link rel="apple-touch-icon" href="/logoshadowpay.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/pwa/apple-touch-icon.png" />
 
         <link
           rel="apple-touch-startup-image"
@@ -157,14 +154,6 @@ export default function App(props: AppProps) {
           media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)"
         />
 
-        {/* Meta tags para iOS */}
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-title" content="Safira Cash" />
-        <meta
-          name="apple-mobile-web-app-status-bar-style"
-          content="black-translucent"
-        />
-
         {/* Cor da barra de status no Android e iOS — usa violeta da marca */}
         <meta name="theme-color" content="#7C3AED" />
 
@@ -173,7 +162,6 @@ export default function App(props: AppProps) {
         <meta name="application-name" content="ShadowPay" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <link rel="apple-touch-icon" href="/logoshadowpay.png" />
       </Head>
       <ThemeProvider
         attribute="class"

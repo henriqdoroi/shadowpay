@@ -125,6 +125,7 @@ function buildNav(isAdmin: boolean): NavItem[] {
       { label: "Sellers", href: "/v2/manager/users", icon: Users },
       { label: "Todas transações", href: "/v2/manager/transactions", icon: Activity },
       { label: "Saques admin", href: "/v2/manager/withdraw", icon: ArrowUpFromLine },
+      { label: "Notificações", href: "/v2/manager/notifications", icon: BellRing },
       { label: "PSP Keys", href: "/v2/manager/psp-key", icon: Settings },
     );
   }

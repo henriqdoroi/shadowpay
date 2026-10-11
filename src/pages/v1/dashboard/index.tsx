@@ -21,6 +21,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import ShadowPanel from "@/components/ShadowPanel";
 import TwoFAModal from "./2faAuthentication";
 import { LightShell } from "@/components/LightShell";
+import { PushPromptBanner } from "@/components/PushPromptBanner";
 
 import {
   ChevronDown,
@@ -635,6 +636,9 @@ function DashboardContent() {
                   draggable={false}
                 />
               </motion.section>
+
+              {/* Convite pra ativar as notificações de venda neste aparelho */}
+              <PushPromptBanner token={token} />
 
               {/* 2FA modal (controlado pelo banner do hero) */}
               <TwoFAModal

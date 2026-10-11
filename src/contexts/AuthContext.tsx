@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
-import { toast } from "sonner";
+import { forgetDeviceOnLogout, syncPushIfGranted } from "@/lib/push";
 
 // Tipos para os dados do usuário
 interface Wallet {
@@ -130,134 +130,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = !!user && !!token;
 
-  // --- Função auxiliar para converter chave pública VAPID ---
-  const urlBase64ToUint8Array = (base64String: string) => {
-    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-    const base64 = (base64String + padding)
-      .replace(/-/g, "+")
-      .replace(/_/g, "/");
-    const rawData = window.atob(base64);
-    return new Uint8Array([...rawData].map((c) => c.charCodeAt(0)));
-  };
-
-  // --- Função para registrar service worker (se ainda não registrado) ---
-  const registerServiceWorker =
-    async (): Promise<ServiceWorkerRegistration | null> => {
-      if ("serviceWorker" in navigator) {
-        try {
-          return await navigator.serviceWorker.register("/sk.js");
-        } catch (error) {
-          console.error("Erro ao registrar service worker:", error);
-          return null;
-        }
-      }
-      return null;
-    };
-
-  const subscribeUserToPush = async (authToken: string) => {
-    // Checa se já tentou inscrever nesta sessão
-    if (sessionStorage.getItem("pushSubscribed")) {
-      console.log("Push subscription já enviada nesta sessão.");
-      return;
-    }
-
-    // Checa se já avisou que está negado nesta sessão
-    if (sessionStorage.getItem("pushDeniedWarned")) {
-      if (Notification.permission === "denied") {
-        return; // não enche o saco de novo
-      }
-    }
-
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-      console.log("Push notifications não são suportadas nesse navegador.");
-      return;
-    }
-
-    try {
-      if (Notification.permission === "denied") {
-        toast.error(
-          "Permissão para notificações negada. Por favor, habilite nas configurações do navegador."
-        );
-        // marca que já avisou nesta sessão
-        sessionStorage.setItem("pushDeniedWarned", "true");
-        return;
-      }
-
-      if (Notification.permission === "default") {
-        const permission = await Notification.requestPermission();
-        if (permission !== "granted") {
-          toast.error("Permissão para notificações negada");
-          sessionStorage.setItem("pushDeniedWarned", "true");
-          return;
-        }
-      }
-
-      await registerServiceWorker();
-
-      const registration = await navigator.serviceWorker.ready;
-      if (!registration) {
-        toast.error(
-          "Falha ao obter registro ativo do service worker para push"
-        );
-        return;
-      }
-
-      // VAPID key CORRETA, buscada do backend (fonte única da verdade).
-      let vapidKey = "";
-      try {
-        const vr = await axios.get(
-          "https://shadowpay-backend.onrender.com/api/user/push/vapid-key"
-        );
-        vapidKey = vr.data?.publicKey || "";
-      } catch {
-        vapidKey = "";
-      }
-      if (!vapidKey) return; // sem chave do backend, não dá pra inscrever
-
-      const wantKey = urlBase64ToUint8Array(vapidKey);
-      let subscription = await registration.pushManager.getSubscription();
-      if (subscription) {
-        // recria se a inscrição foi feita com uma VAPID key diferente (ex.: a antiga/errada)
-        const cur = subscription.options?.applicationServerKey as
-          | ArrayBuffer
-          | null;
-        const same =
-          !!cur &&
-          new Uint8Array(cur).length === wantKey.length &&
-          new Uint8Array(cur).every((v, i) => v === wantKey[i]);
-        if (!same) {
-          try {
-            await subscription.unsubscribe();
-          } catch {
-            /* ignora */
-          }
-          subscription = null;
-        }
-      }
-      if (!subscription) {
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: wantKey,
-        });
-      }
-
-      // Endpoint CORRETO (/api/user/push/subscribe) com o payload que ele espera.
-      const json = subscription.toJSON() as any;
-      await axios.post(
-        "https://shadowpay-backend.onrender.com/api/user/push/subscribe",
-        { endpoint: json.endpoint, keys: json.keys },
-        {
-          headers: { Authorization: `Bearer ${authToken}` },
-        }
-      );
-
-      sessionStorage.setItem("pushSubscribed", "true");
-    } catch (error: any) {
-      // Auto-subscribe é best-effort: falha NÃO enche a tela de login com erro.
-      // O seller ativa/vê o status na página de Notificações (PushEnableCard).
-      console.warn("[push] auto-subscribe falhou:", error?.message);
-    }
-  };
+  // Push: a permissão SÓ é pedida por um toque do seller (PushEnableCard /
+  // banner do dashboard). Aqui, só mantemos o aparelho registrado quando a
+  // permissão já foi dada — ver src/lib/push.ts.
 
   // Função para buscar dados atualizados do usuário
   const refreshUserData = async (): Promise<void> => {
@@ -311,8 +186,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Atualizar dados do usuário após carregar do localStorage
         setTimeout(() => {
           refreshUserData();
-          // Inscrever push ao carregar a aplicação se já autenticado
-          subscribeUserToPush(savedToken);
+          // Mantém este aparelho registrado no push (só se já permitiu)
+          syncPushIfGranted(savedToken);
         }, 1000);
       } catch (error) {
         console.error("Erro ao parsear dados do usuário:", error);
@@ -366,8 +241,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           delete (window as any).__shadowKycStatus;
         }
 
-        // Após login, inscreve o usuário no push
-        subscribeUserToPush(authToken);
+        // Este aparelho passa a receber as vendas desta conta (se já permitiu)
+        syncPushIfGranted(authToken, true);
 
         return { success: true };
       } else {
@@ -396,6 +271,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
+    // Este aparelho para de receber as vendas desta conta (usa o token atual).
+    forgetDeviceOnLogout(token);
     setUser(null);
     setToken(null);
     localStorage.removeItem("token");

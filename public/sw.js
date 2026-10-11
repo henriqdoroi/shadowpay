@@ -1,107 +1,129 @@
 /* eslint-disable no-undef */
 /**
- * Service Worker da ShadowPay PWA.
+ * Service Worker da ShadowPay (PWA) — push refeito do zero.
  *
- *  - Install/activate: limpa caches antigos e assume controle imediato.
- *  - push: mostra notificação com title/body vindos do backend.
- *  - notificationclick: foca a aba aberta ou abre uma nova com `url`.
+ *  - push: SEMPRE mostra uma notificação (o iPhone cancela a inscrição se um
+ *    push chegar sem notificação visível).
+ *  - notificationclick: foca o app aberto e navega pra tela da notificação,
+ *    ou abre o app nela.
+ *  - pushsubscriptionchange: o navegador renovou a inscrição — reinscreve e
+ *    avisa o backend (sem login: o backend reconhece pelo endpoint antigo).
  *
- *  Não faz cache de HTML/JS — o app é SPA e queremos sempre versão
- *  fresca. O foco é estritamente PWA install + push.
+ *  Não faz cache de páginas: o app sempre carrega a versão nova.
  */
-const VERSION = "v1.0.0";
+const SW_VERSION = "2026-10-11-push-v2";
+const API = "https://shadowpay-backend.onrender.com";
+const DEFAULT_URL = "/v1/dashboard";
+const ICON = "/pwa/icon-192.png";
+const BADGE = "/pwa/badge-96.png";
 
-self.addEventListener("install", (event) => {
-  // ativa imediatamente, sem esperar abas antigas
+self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
+      // Remove caches de versões antigas (este SW não usa cache).
       const keys = await caches.keys();
-      await Promise.all(
-        keys.filter((k) => !k.includes(VERSION)).map((k) => caches.delete(k))
-      );
+      await Promise.all(keys.map((k) => caches.delete(k)));
       await self.clients.claim();
     })()
   );
 });
 
-/**
- * Push event — backend envia { title, body, url, tag, data }.
- * Payload é JSON em event.data.text().
- */
-self.addEventListener("push", (event) => {
-  let payload = {
-    title: "ShadowPay",
-    body: "Você tem uma nova notificação.",
-    url: "/v1/dashboard",
-    tag: "shadowpay",
-    data: {},
-  };
+function parsePayload(event) {
+  if (!event.data) return {};
   try {
-    if (event.data) {
-      const parsed = event.data.json();
-      payload = { ...payload, ...parsed };
-    }
-  } catch (e) {
-    // payload texto
-    if (event.data) {
-      payload.body = event.data.text();
+    return event.data.json() || {};
+  } catch (_) {
+    try {
+      return { body: event.data.text() };
+    } catch (__) {
+      return {};
     }
   }
+}
 
+self.addEventListener("push", (event) => {
+  const p = parsePayload(event);
+  const title = p.title || "ShadowPay";
   const options = {
-    body: payload.body,
-    icon: "/shadow-panther.png",
-    badge: "/shadow-panther.png",
-    tag: payload.tag,
-    renotify: true, // reapresenta mesmo que a tag já exista
-    data: { url: payload.url, ...payload.data },
+    body: p.body || "Você tem uma nova notificação.",
+    icon: p.icon || ICON,
+    badge: p.badge || BADGE,
+    data: Object.assign({}, p.data || {}, { url: p.url || DEFAULT_URL }),
+    timestamp: p.timestamp || Date.now(),
     vibrate: [120, 60, 120],
-    requireInteraction: false,
   };
-
-  event.waitUntil(self.registration.showNotification(payload.title, options));
+  if (p.tag) {
+    options.tag = p.tag;
+    // mesma tag (ex.: venda gerada -> aprovada) substitui e toca de novo
+    options.renotify = true;
+  }
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
-/**
- * Clique na notificação — foca aba aberta ou abre nova com `url`.
- */
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const targetUrl = (event.notification.data && event.notification.data.url) || "/v1/dashboard";
+  const data = event.notification.data || {};
+  const target = new URL(data.url || DEFAULT_URL, self.location.origin).href;
 
   event.waitUntil(
     (async () => {
-      const allClients = await self.clients.matchAll({
-        type: "window",
-        includeUncontrolled: true,
-      });
-      // tenta achar aba já no mesmo domínio e focar
-      for (const client of allClients) {
+      const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      for (const client of windows) {
+        if (new URL(client.url).origin !== self.location.origin) continue;
         try {
-          const url = new URL(client.url);
-          if (url.origin === self.location.origin) {
-            await client.focus();
-            // navega pra rota da notificação
-            if ("navigate" in client) {
-              await client.navigate(targetUrl);
-            }
-            return;
-          }
+          await client.focus();
         } catch (_) {}
+        if (client.url !== target && "navigate" in client) {
+          try {
+            await client.navigate(target);
+          } catch (_) {
+            // aba não controlada por este SW: abre a tela numa janela nova
+            if (self.clients.openWindow) await self.clients.openWindow(target);
+          }
+        }
+        return;
       }
-      // senão, abre nova
-      if (self.clients.openWindow) {
-        await self.clients.openWindow(targetUrl);
-      }
+      if (self.clients.openWindow) await self.clients.openWindow(target);
     })()
   );
 });
 
+function urlBase64ToUint8Array(base64) {
+  const padding = "=".repeat((4 - (base64.length % 4)) % 4);
+  const raw = atob((base64 + padding).replace(/-/g, "+").replace(/_/g, "/"));
+  const out = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+
 self.addEventListener("pushsubscriptionchange", (event) => {
-  // O navegador renovou a subscription — o frontend re-inscreve na próxima
-  // abertura via `usePush()`. Aqui não fazemos nada de especial.
+  event.waitUntil(
+    (async () => {
+      const old = event.oldSubscription || null;
+      let sub = event.newSubscription || null;
+      if (!sub) {
+        let key = old && old.options && old.options.applicationServerKey;
+        if (!key) {
+          const r = await fetch(API + "/api/push/vapid-key");
+          const j = await r.json();
+          if (!j || !j.publicKey) return;
+          key = urlBase64ToUint8Array(j.publicKey);
+        }
+        sub = await self.registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: key,
+        });
+      }
+      if (!old || !old.endpoint) return; // o app re-registra na próxima abertura
+      await fetch(API + "/api/push/resubscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ oldEndpoint: old.endpoint, subscription: sub.toJSON() }),
+      });
+    })().catch(() => {})
+  );
 });
