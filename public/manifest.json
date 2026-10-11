@@ -2,7 +2,7 @@
   "name": "ShadowPay — Financial OS",
   "short_name": "ShadowPay",
   "description": "Gateway de pagamentos PIX da ShadowPay — acompanhe vendas, saques e taxas direto do seu celular.",
-  "start_url": "/app?source=pwa",
+  "start_url": "/v1/dashboard?source=pwa",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
