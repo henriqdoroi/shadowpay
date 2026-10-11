@@ -652,16 +652,14 @@ function DashboardContent() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                className="mb-6 rounded-[12px] p-5 sm:p-8"
-                style={{
-                  background: "#FFFFFF",
-                  border: "1px solid #E2E8F0",
-                  boxShadow: T.cardShadow,
-                }}
+                className="mb-6 p-0 sm:rounded-[12px] sm:border sm:border-[#E2E8F0] sm:bg-white sm:p-8 sm:shadow-[0_1px_1px_rgba(15,23,42,0.04)]"
               >
-                <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-6 lg:grid-cols-5">
                   {statStrip.map((s) => (
-                    <div key={s.label} className="flex flex-col">
+                    <div
+                      key={s.label}
+                      className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-[0_1px_1px_rgba(15,23,42,0.04)] sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none"
+                    >
                       <p className="text-[14px] font-medium leading-tight text-slate-500">
                         {s.label}
                       </p>

@@ -433,26 +433,28 @@ function FinanceContent() {
         <section className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_420px]">
           {/* ----- Card Saldo (esquerda, large) ----- */}
           <div
-            className="relative overflow-hidden rounded-2xl p-6"
+            className="relative overflow-hidden rounded-[22px] p-7"
             style={{
               background:
-                "linear-gradient(135deg, #2E1065 0%, #4C1D95 58%, #1E1B4B 100%)",
-              boxShadow: "0 12px 32px rgba(76,29,149,0.28)",
+                "linear-gradient(135deg, #FBFAFF 0%, #F4F1FE 58%, #EEF1FF 100%)",
+              border: "1px solid rgba(124,58,237,0.10)",
+              boxShadow:
+                "0 1px 3px rgba(15,23,42,0.04), 0 22px 46px -30px rgba(124,58,237,0.35)",
             }}
           >
-            {/* Halo decorativo */}
+            {/* Glow suave */}
             <div
-              className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full"
+              className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full"
               style={{
                 background:
-                  "radial-gradient(circle, rgba(34,197,94,0.16) 0%, transparent 62%)",
+                  "radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 62%)",
               }}
             />
 
             <div className="relative">
               <p
-                className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em]"
-                style={{ color: "#C4B5FD" }}
+                className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em]"
+                style={{ color: "#8B5CF6" }}
               >
                 <span
                   className="h-1.5 w-1.5 rounded-full"
@@ -461,36 +463,38 @@ function FinanceContent() {
                 Saldo disponível
               </p>
               <p
-                className="mt-2 text-[40px] font-bold leading-none tracking-tight text-white"
+                className="mt-3 text-[46px] font-semibold leading-none"
                 style={{
+                  color: "#2E1065",
+                  letterSpacing: "-0.02em",
                   fontFamily:
                     "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                 }}
               >
                 {hideable(fmt(balance.current))}
               </p>
-              <p className="mt-2 text-[12.5px]" style={{ color: "#C4B5FD" }}>
+              <p className="mt-3 text-[12.5px]" style={{ color: "#7C6AAE" }}>
                 Pronto pra saque · taxa{" "}
-                <b className="text-white">{fmt(fees.withdrawFixed)}</b> por PIX
+                <b style={{ color: "#2E1065" }}>{fmt(fees.withdrawFixed)}</b> por
+                PIX
               </p>
 
+              {/* sub-stats com divisórias finas (arejado) */}
               <div
-                className="my-5 h-px w-full"
-                style={{ background: "rgba(255,255,255,0.12)" }}
-              />
-
-              {/* sub-cards inline */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div>
+                className="mt-6 flex flex-col gap-4 border-t pt-5 sm:flex-row sm:gap-0"
+                style={{ borderColor: "rgba(124,58,237,0.12)" }}
+              >
+                <div className="flex-1 sm:pr-5">
                   <p
-                    className="text-[10px] font-semibold uppercase tracking-wider"
-                    style={{ color: "#A78BDA" }}
+                    className="text-[10.5px] font-medium uppercase tracking-wider"
+                    style={{ color: "#9B8BC9" }}
                   >
                     Saldo bloqueado
                   </p>
                   <p
-                    className="mt-1 text-[18px] font-bold text-white"
+                    className="mt-1.5 text-[18px] font-semibold"
                     style={{
+                      color: "#2E1065",
                       fontFamily:
                         "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                     }}
@@ -498,27 +502,37 @@ function FinanceContent() {
                     {hideable(fmt(balance.blocked))}
                   </p>
                 </div>
-                <div>
+                <div
+                  className="flex-1 sm:border-l sm:pl-5"
+                  style={{ borderColor: "rgba(124,58,237,0.12)" }}
+                >
                   <p
-                    className="text-[10px] font-semibold uppercase tracking-wider"
-                    style={{ color: "#A78BDA" }}
+                    className="text-[10.5px] font-medium uppercase tracking-wider"
+                    style={{ color: "#9B8BC9" }}
                   >
                     Próximo repasse
                   </p>
-                  <p className="mt-1 text-[15px] font-bold text-white">
+                  <p
+                    className="mt-1.5 text-[15px] font-semibold"
+                    style={{ color: "#2E1065" }}
+                  >
                     {nextPayout}
                   </p>
                 </div>
-                <div>
+                <div
+                  className="flex-1 sm:border-l sm:pl-5"
+                  style={{ borderColor: "rgba(124,58,237,0.12)" }}
+                >
                   <p
-                    className="text-[10px] font-semibold uppercase tracking-wider"
-                    style={{ color: "#A78BDA" }}
+                    className="text-[10.5px] font-medium uppercase tracking-wider"
+                    style={{ color: "#9B8BC9" }}
                   >
                     Total já recebido
                   </p>
                   <p
-                    className="mt-1 text-[18px] font-bold text-white"
+                    className="mt-1.5 text-[18px] font-semibold"
                     style={{
+                      color: "#2E1065",
                       fontFamily:
                         "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                     }}
@@ -693,35 +707,90 @@ function FinanceContent() {
               </div>
             )}
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <FeeCard
-              icon={<Percent className="h-4 w-4" />}
-              iconColor={T.primary}
-              iconBg={T.primaryBg}
-              label="Taxa por venda"
-              value={`${fees.salePercent.toFixed(2)}%`}
-              hint={
-                fees.acquirerName
+          <div className="flex flex-col gap-5 sm:flex-row sm:gap-0">
+            <div className="flex-1 sm:pr-6">
+              <div className="flex items-center gap-2.5">
+                <span
+                  className="flex h-9 w-9 items-center justify-center rounded-lg"
+                  style={{ background: T.primaryBg, color: T.primary }}
+                >
+                  <Percent className="h-4 w-4" />
+                </span>
+                <p className="text-[11.5px] font-semibold text-slate-500">
+                  Taxa por venda
+                </p>
+              </div>
+              <p
+                className="mt-2.5 text-[22px] font-semibold text-slate-900"
+                style={{
+                  fontFamily:
+                    "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
+                }}
+              >
+                {`${fees.salePercent.toFixed(2)}%`}
+              </p>
+              <p className="mt-1 text-[11px] text-slate-400">
+                {fees.acquirerName
                   ? `Em cada venda ${fees.acquirerName}`
-                  : "Sobre o bruto de cada venda"
-              }
-            />
-            <FeeCard
-              icon={<Banknote className="h-4 w-4" />}
-              iconColor={T.amber}
-              iconBg="rgba(245,158,11,0.10)"
-              label="Taxa fixa por venda"
-              value={fmt(fees.saleFixed)}
-              hint="Cobrada uma vez em cada venda"
-            />
-            <FeeCard
-              icon={<ArrowDownToLine className="h-4 w-4" />}
-              iconColor={T.green}
-              iconBg="rgba(16,185,129,0.10)"
-              label="Taxa fixa por saque"
-              value={fmt(fees.withdrawFixed)}
-              hint="Descontada a cada saque solicitado"
-            />
+                  : "Sobre o bruto de cada venda"}
+              </p>
+            </div>
+            <div
+              className="flex-1 sm:border-l sm:pl-6"
+              style={{ borderColor: T.borderSoft }}
+            >
+              <div className="flex items-center gap-2.5">
+                <span
+                  className="flex h-9 w-9 items-center justify-center rounded-lg"
+                  style={{ background: "rgba(245,158,11,0.10)", color: T.amber }}
+                >
+                  <Banknote className="h-4 w-4" />
+                </span>
+                <p className="text-[11.5px] font-semibold text-slate-500">
+                  Taxa fixa por venda
+                </p>
+              </div>
+              <p
+                className="mt-2.5 text-[22px] font-semibold text-slate-900"
+                style={{
+                  fontFamily:
+                    "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
+                }}
+              >
+                {fmt(fees.saleFixed)}
+              </p>
+              <p className="mt-1 text-[11px] text-slate-400">
+                Cobrada uma vez em cada venda
+              </p>
+            </div>
+            <div
+              className="flex-1 sm:border-l sm:pl-6"
+              style={{ borderColor: T.borderSoft }}
+            >
+              <div className="flex items-center gap-2.5">
+                <span
+                  className="flex h-9 w-9 items-center justify-center rounded-lg"
+                  style={{ background: "rgba(16,185,129,0.10)", color: T.green }}
+                >
+                  <ArrowDownToLine className="h-4 w-4" />
+                </span>
+                <p className="text-[11.5px] font-semibold text-slate-500">
+                  Taxa fixa por saque
+                </p>
+              </div>
+              <p
+                className="mt-2.5 text-[22px] font-semibold text-slate-900"
+                style={{
+                  fontFamily:
+                    "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
+                }}
+              >
+                {fmt(fees.withdrawFixed)}
+              </p>
+              <p className="mt-1 text-[11px] text-slate-400">
+                Descontada a cada saque solicitado
+              </p>
+            </div>
           </div>
 
           {/* Exemplo de cálculo (mini educativo) */}
@@ -992,54 +1061,6 @@ function FinanceContent() {
 
       <ShadowPanel />
     </>
-  );
-}
-
-function FeeCard({
-  icon,
-  iconColor,
-  iconBg,
-  label,
-  value,
-  hint,
-}: {
-  icon: React.ReactNode;
-  iconColor: string;
-  iconBg: string;
-  label: string;
-  value: string;
-  hint: string;
-}) {
-  return (
-    <div
-      className="rounded-xl px-4 py-3"
-      style={{
-        background: "#FFFFFF",
-        border: `1px solid ${T.borderSoft}`,
-      }}
-    >
-      <div className="flex items-center gap-3">
-        <div
-          className="flex h-9 w-9 items-center justify-center rounded-lg"
-          style={{ background: iconBg, color: iconColor }}
-        >
-          {icon}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[11.5px] font-semibold text-slate-500">{label}</p>
-          <p
-            className="text-[18px] font-bold leading-none text-slate-900"
-            style={{
-              fontFamily:
-                "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
-            }}
-          >
-            {value}
-          </p>
-        </div>
-      </div>
-      <p className="mt-2 text-[11px] text-slate-500">{hint}</p>
-    </div>
   );
 }
 
