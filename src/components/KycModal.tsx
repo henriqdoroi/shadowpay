@@ -439,17 +439,70 @@ function Select({ label, value, onChange, options, placeholder }: { label: strin
   );
 }
 
+/**
+ * Lê um arquivo como data URL. Para IMAGENS, reduz pra no máx 1600px e
+ * reexporta como JPEG (~0,82) — uma foto de celular de 5MB vira ~200-400KB.
+ * Isso é essencial: os 4 documentos vão juntos num único JSON pro backend,
+ * e sem compressão o payload estoura o limite do servidor (erro ao salvar).
+ * PDF e outros formatos passam direto (não dá pra comprimir em canvas).
+ */
+async function fileToStoredUrl(file: File): Promise<string> {
+  const dataUrl: string = await new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result || ""));
+    fr.onerror = reject;
+    fr.readAsDataURL(file);
+  });
+  if (!file.type.startsWith("image/")) return dataUrl;
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const im = new Image();
+      im.onload = () => resolve(im);
+      im.onerror = reject;
+      im.src = dataUrl;
+    });
+    const maxDim = 1600;
+    let { width, height } = img;
+    if (width > maxDim || height > maxDim) {
+      if (width >= height) {
+        height = Math.round((height * maxDim) / width);
+        width = maxDim;
+      } else {
+        width = Math.round((width * maxDim) / height);
+        height = maxDim;
+      }
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return dataUrl;
+    ctx.drawImage(img, 0, 0, width, height);
+    const out = canvas.toDataURL("image/jpeg", 0.82);
+    // Se por acaso ficou maior que o original (imagem já pequena), mantém o original.
+    return out.length < dataUrl.length ? out : dataUrl;
+  } catch {
+    return dataUrl;
+  }
+}
+
 function Upload({ label, value, onChange, accept }: { label: string; value: string; onChange: (v: string) => void; accept?: string }) {
   const ref = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
+  const [reading, setReading] = useState(false);
   const has = !!value;
 
-  const read = (file?: File) => {
+  const read = async (file?: File) => {
     if (!file) return;
     if (file.size > 15 * 1024 * 1024) { toast.error("Arquivo muito grande (máx 15MB)."); return; }
-    const fr = new FileReader();
-    fr.onload = () => onChange(String(fr.result || ""));
-    fr.readAsDataURL(file);
+    setReading(true);
+    try {
+      onChange(await fileToStoredUrl(file));
+    } catch {
+      toast.error("Não consegui ler o arquivo. Tente outro.");
+    } finally {
+      setReading(false);
+    }
   };
 
   return (
@@ -470,15 +523,16 @@ function Upload({ label, value, onChange, accept }: { label: string; value: stri
       ) : (
         <button
           type="button"
+          disabled={reading}
           onClick={() => ref.current?.click()}
           onDragOver={(e) => { e.preventDefault(); setOver(true); }}
           onDragLeave={() => setOver(false)}
           onDrop={(e) => { e.preventDefault(); setOver(false); read(e.dataTransfer.files?.[0]); }}
-          className="flex w-full flex-col items-center justify-center gap-1.5 rounded-xl py-6 text-[13px] font-medium transition-colors"
+          className="flex w-full flex-col items-center justify-center gap-1.5 rounded-xl py-6 text-[13px] font-medium transition-colors disabled:opacity-60"
           style={{ border: `1.5px dashed ${over ? PRIMARY : "rgba(124,58,237,0.35)"}`, background: over ? "rgba(124,58,237,0.04)" : "rgba(124,58,237,0.02)", color: PRIMARY }}
         >
-          <UploadCloud className="h-5 w-5" />
-          Clique ou arraste seu arquivo aqui!
+          <UploadCloud className={`h-5 w-5 ${reading ? "animate-pulse" : ""}`} />
+          {reading ? "Processando arquivo…" : "Clique ou arraste seu arquivo aqui!"}
         </button>
       )}
     </div>
