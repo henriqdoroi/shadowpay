@@ -12,6 +12,11 @@ import { useRouter } from "next/router";
 import { useEffect } from "react";
 import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
 import KycGate from "@/components/KycGate";
+import { installAxiosErrorNormalizer } from "@/lib/axiosErrors";
+
+// Erros do backend vêm em { error: { message } } — normaliza pra todas as
+// telas lerem `e.response.data.message` e mostrarem o motivo real.
+installAxiosErrorNormalizer();
 
 const inter = Inter({
   subsets: ["latin"],

@@ -37,6 +37,7 @@ import {
   X,
 } from "lucide-react";
 import { ShadowLoader } from "@/components/ShadowLoader";
+import { apiErrorMessage, withRetry } from "@/lib/axiosErrors";
 
 const API = "https://shadowpay-backend.onrender.com";
 
@@ -122,10 +123,14 @@ export default function KycModal({ onApproved }: { onApproved?: () => void }) {
     (async () => {
       try {
         const token = localStorage.getItem("token");
-        const r = await axios.get(`${API}/api/user/kyc`, {
-          headers: { Authorization: `Bearer ${token}` },
-          timeout: 12000, // nunca prende o usuário no loader se a API travar
-        });
+        // Repete se o servidor estiver acordando (Render free); o timeout por
+        // tentativa evita prender o usuário no loader se a API travar.
+        const r = await withRetry(() =>
+          axios.get(`${API}/api/user/kyc`, {
+            headers: { Authorization: `Bearer ${token}` },
+            timeout: 20000,
+          }),
+        );
         const d = r.data?.data || {};
         const st = String(d.status || "NOT_STARTED");
         setStatus(st);
@@ -194,9 +199,16 @@ export default function KycModal({ onApproved }: { onApproved?: () => void }) {
     return null;
   };
 
+  // Falhas temporárias (servidor acordando/reiniciando, 429) são repetidas
+  // automaticamente; erros reais mostram a mensagem do backend.
   const save = async (s: number) => {
     const token = localStorage.getItem("token");
-    await axios.post(`${API}/api/user/kyc/wizard`, stepPayload(s), { headers: { Authorization: `Bearer ${token}` } });
+    await withRetry(() =>
+      axios.post(`${API}/api/user/kyc/wizard`, stepPayload(s), {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 60000,
+      }),
+    );
   };
 
   const next = async () => {
@@ -204,7 +216,7 @@ export default function KycModal({ onApproved }: { onApproved?: () => void }) {
     if (err) { toast.error(err); return; }
     setSaving(true);
     try { await save(step); setStep((s) => Math.min(7, s + 1)); }
-    catch { toast.error("Não consegui salvar. Tente de novo."); }
+    catch (e: any) { toast.error(apiErrorMessage(e, "Não consegui salvar. Tente de novo.")); }
     finally { setSaving(false); }
   };
 
@@ -213,7 +225,12 @@ export default function KycModal({ onApproved }: { onApproved?: () => void }) {
     try {
       await save(7);
       const token = localStorage.getItem("token");
-      const r = await axios.post(`${API}/api/user/kyc/submit`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      const r = await withRetry(() =>
+        axios.post(`${API}/api/user/kyc/submit`, {}, {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 60000,
+        }),
+      );
       if (r.data?.success) {
         if (typeof window !== "undefined") (window as any).__shadowKycStatus = "PENDING";
         setStatus("PENDING");
@@ -221,7 +238,7 @@ export default function KycModal({ onApproved }: { onApproved?: () => void }) {
         toast.error(r.data?.message || "Faltam informações.");
       }
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || "Erro ao enviar.");
+      toast.error(apiErrorMessage(e, "Não consegui enviar. Tente de novo."));
     } finally { setSubmitting(false); }
   };
 
