@@ -13,15 +13,12 @@
 import { useEffect, useRef, useState } from "react";
 import Head from "next/head";
 import axios from "axios";
-import { useRouter } from "next/router";
 import { toast } from "sonner";
 import {
   Check,
   FileText,
   CloudUpload,
-  AlertTriangle,
   Info,
-  Pencil,
   Upload,
   Clock,
 } from "lucide-react";
@@ -93,7 +90,6 @@ function SectionIcon({
 }
 
 function KycContent() {
-  const router = useRouter();
   const { token } = useAuth();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -155,7 +151,9 @@ function KycContent() {
     if (!addressComplete)
       return (
         <AddressIncompleteView
-          onGoToProfile={() => router.push("/v1/configs/profile")}
+          data={data}
+          token={token!}
+          onReload={fetchKyc}
         />
       );
     if (status === "PENDING" && allDocsUploaded) return <UnderReviewView />;
@@ -266,111 +264,230 @@ function ApprovedView() {
  * ============================================================ */
 
 function AddressIncompleteView({
-  onGoToProfile,
+  data,
+  token,
+  onReload,
 }: {
-  onGoToProfile: () => void;
+  data: any;
+  token: string;
+  onReload: () => void;
 }) {
+  const e = data?.endereco || {};
+  const [form, setForm] = useState({
+    zip: e.zip || "",
+    street: e.street || "",
+    number: e.number || "",
+    complement: e.complement || "",
+    neighborhood: e.neighborhood || "",
+    city: e.city || "",
+    state: e.state || "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [cepLoading, setCepLoading] = useState(false);
+
+  const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  const fmtCep = (v: string) => {
+    const d = v.replace(/\D/g, "").slice(0, 8);
+    return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
+  };
+
+  async function lookupCep(raw: string) {
+    const cep = raw.replace(/\D/g, "");
+    if (cep.length !== 8) return;
+    setCepLoading(true);
+    try {
+      const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const j = await r.json();
+      if (!j?.erro) {
+        setForm((f) => ({
+          ...f,
+          street: j.logradouro || f.street,
+          neighborhood: j.bairro || f.neighborhood,
+          city: j.localidade || f.city,
+          state: (j.uf || f.state || "").toUpperCase(),
+        }));
+      }
+    } catch {
+      /* silencioso — o usuário pode preencher à mão */
+    } finally {
+      setCepLoading(false);
+    }
+  }
+
+  async function save(ev: React.FormEvent) {
+    ev.preventDefault();
+    if (
+      !form.zip.trim() ||
+      !form.street.trim() ||
+      !form.number.trim() ||
+      !form.city.trim() ||
+      !form.state.trim()
+    ) {
+      toast.error("Preencha CEP, rua, número, cidade e UF.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const r = await axios.post(`${API}/api/user/kyc/address`, form, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (r.data?.success === false) {
+        toast.error(r.data?.message || "Não foi possível salvar o endereço.");
+        return;
+      }
+      toast.success("Endereço salvo! Agora envie seus documentos.");
+      onReload();
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.message ||
+          "Erro ao salvar o endereço. Tente novamente.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const labelCls = "mb-1 block text-[11px] font-semibold text-slate-600";
+  const inputCls =
+    "h-11 w-full rounded-xl px-3 text-[13px] text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-violet-400";
+  const inputStyle: React.CSSProperties = {
+    background: "#F8FAFC",
+    border: `1px solid ${T.borderSoft}`,
+  };
+
   return (
-    <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-5">
       <Card>
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <SectionIcon bg={T.blueSoft} color={T.blue}>
-              <FileText className="h-5 w-5" />
-            </SectionIcon>
-            <div>
-              <p className="text-[16px] font-bold text-slate-900">
-                Status da Verificação
-              </p>
-              <div className="mt-1">
-                <StatusPill label="Pendente" variant="blue" />
-              </div>
-            </div>
-          </div>
-        </div>
-        <p className="mb-4 text-[13.5px] text-slate-700">
-          Envie seus documentos para análise.
-        </p>
-
-        <div
-          className="rounded-xl p-4"
-          style={{
-            background: T.amberSoft,
-            border: `1px solid rgba(245,158,11,0.30)`,
-          }}
-        >
-          <div className="mb-2 flex items-center gap-2">
-            <AlertTriangle
-              className="h-4 w-4 shrink-0"
-              style={{ color: T.amber }}
-            />
-            <p
-              className="text-[13px] font-bold"
-              style={{ color: "#B45309" }}
-            >
-              Endereço incompleto
-            </p>
-          </div>
-          <p className="mb-3 text-[12.5px] text-slate-700">
-            Para enviar seus documentos, você precisa primeiro preencher seu
-            endereço completo.
-          </p>
-          <button
-            onClick={onGoToProfile}
-            className="inline-flex h-9 items-center gap-2 rounded-lg px-3 text-[11px] font-bold uppercase tracking-wider text-white"
-            style={{
-              background: T.amber,
-              boxShadow: `0 8px 20px -8px ${T.amber}`,
-            }}
-          >
-            <Pencil className="h-3.5 w-3.5" />
-            Preencher Endereço
-          </button>
-        </div>
-      </Card>
-
-      <Card>
-        <div className="mb-4 flex items-center gap-3">
+        <div className="mb-5 flex items-center gap-3">
           <SectionIcon bg={T.primarySoft} color={T.primary}>
-            <CloudUpload className="h-5 w-5" />
+            <FileText className="h-5 w-5" />
           </SectionIcon>
           <div>
             <p className="text-[16px] font-bold text-slate-900">
-              Upload de Documentos
+              Complete seu endereço
             </p>
             <p className="text-[12px] text-slate-500">
-              Envie seus documentos para liberar todas as funcionalidades da
-              plataforma.
+              Passo 1 de 2 — depois você envia os documentos para análise.
             </p>
           </div>
         </div>
 
-        <div className="flex flex-col items-center justify-center py-6">
-          <div
-            className="mb-3 flex h-16 w-16 items-center justify-center"
-            style={{ color: T.amber }}
-          >
-            <AlertTriangle className="h-12 w-12" />
+        <form onSubmit={save} className="grid grid-cols-1 gap-3 sm:grid-cols-6">
+          <div className="sm:col-span-2">
+            <label className={labelCls}>CEP</label>
+            <input
+              value={form.zip}
+              onChange={(ev) => {
+                const masked = fmtCep(ev.target.value);
+                set("zip", masked);
+                lookupCep(masked);
+              }}
+              placeholder="00000-000"
+              inputMode="numeric"
+              className={inputCls}
+              style={inputStyle}
+            />
+            {cepLoading && (
+              <p className="mt-1 text-[10px] text-slate-400">
+                buscando endereço…
+              </p>
+            )}
           </div>
-          <p className="text-[18px] font-bold text-slate-900">
-            Preencha seu endereço
-          </p>
-          <p className="mb-4 mt-1 max-w-[360px] text-center text-[12.5px] text-slate-600">
-            Para enviar seus documentos, você precisa primeiro completar seu
-            cadastro de endereço.
-          </p>
-          <button
-            onClick={onGoToProfile}
-            className="inline-flex h-11 items-center gap-2 rounded-xl px-5 text-[12px] font-bold uppercase tracking-wider text-white transition-transform hover:-translate-y-0.5"
-            style={{
-              background: T.primary,
-              boxShadow: "0 8px 20px -8px rgba(124,58,237,0.55)",
-            }}
-          >
-            <Pencil className="h-4 w-4" />
-            Ir para Minha Conta
-          </button>
-        </div>
+
+          <div className="sm:col-span-4">
+            <label className={labelCls}>Rua / Logradouro</label>
+            <input
+              value={form.street}
+              onChange={(ev) => set("street", ev.target.value)}
+              placeholder="Av. Paulista"
+              className={inputCls}
+              style={inputStyle}
+            />
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className={labelCls}>Número</label>
+            <input
+              value={form.number}
+              onChange={(ev) => set("number", ev.target.value)}
+              placeholder="123"
+              className={inputCls}
+              style={inputStyle}
+            />
+          </div>
+
+          <div className="sm:col-span-4">
+            <label className={labelCls}>Complemento (opcional)</label>
+            <input
+              value={form.complement}
+              onChange={(ev) => set("complement", ev.target.value)}
+              placeholder="Sala 45, Bloco B…"
+              className={inputCls}
+              style={inputStyle}
+            />
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className={labelCls}>Bairro</label>
+            <input
+              value={form.neighborhood}
+              onChange={(ev) => set("neighborhood", ev.target.value)}
+              placeholder="Centro"
+              className={inputCls}
+              style={inputStyle}
+            />
+          </div>
+
+          <div className="sm:col-span-3">
+            <label className={labelCls}>Cidade</label>
+            <input
+              value={form.city}
+              onChange={(ev) => set("city", ev.target.value)}
+              placeholder="São Paulo"
+              className={inputCls}
+              style={inputStyle}
+            />
+          </div>
+
+          <div className="sm:col-span-1">
+            <label className={labelCls}>UF</label>
+            <input
+              value={form.state}
+              onChange={(ev) =>
+                set("state", ev.target.value.toUpperCase().slice(0, 2))
+              }
+              placeholder="SP"
+              maxLength={2}
+              className={inputCls}
+              style={inputStyle}
+            />
+          </div>
+
+          <div className="mt-2 flex flex-col items-stretch justify-between gap-3 sm:col-span-6 sm:flex-row sm:items-center">
+            <p className="text-[11px] text-slate-400">
+              Digite o CEP que preenchemos o resto pra você.
+            </p>
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl px-6 text-[13px] font-bold text-white transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+              style={{
+                background: T.primary,
+                boxShadow: "0 10px 24px -10px rgba(124,58,237,0.6)",
+              }}
+            >
+              {saving ? (
+                "Salvando…"
+              ) : (
+                <>
+                  <Check className="h-4 w-4" />
+                  Salvar e continuar
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </Card>
     </div>
   );
