@@ -296,30 +296,31 @@ export function LightShell({
           <BrandLogo collapsed={sidebarCollapsed} />
         </Link>
 
-        {/* Saldo disponível (estilo BravoPay) — clica pro Financeiro */}
+        {/* Saldo disponível (estilo BravoPay — branco com roxo ShadowPay) */}
         {!sidebarCollapsed ? (
           <Link
             href="/v1/finance"
-            className="mx-3 mb-3 block overflow-hidden rounded-xl px-3.5 py-3 transition-transform hover:-translate-y-0.5"
+            className="mx-3 mb-3 block overflow-hidden rounded-2xl px-4 py-4 transition-transform hover:-translate-y-0.5"
             style={{
-              background: "linear-gradient(135deg, #10231A 0%, #0B1711 100%)",
-              border: "1px solid rgba(34,197,94,0.22)",
-              boxShadow: "0 4px 14px rgba(16,35,26,0.22)",
+              background: "#FFFFFF",
+              border: "1px solid rgba(124,58,237,0.22)",
+              boxShadow: "0 6px 18px -8px rgba(124,58,237,0.28)",
             }}
           >
             <p
-              className="flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-[0.14em]"
-              style={{ color: "#4ADE80" }}
+              className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em]"
+              style={{ color: "#7C3AED" }}
             >
               <span
                 className="inline-block h-1.5 w-1.5 rounded-full"
-                style={{ background: "#22C55E" }}
+                style={{ background: "#7C3AED" }}
               />
               Saldo disponível
             </p>
             <p
-              className="mt-1 text-[18px] font-bold leading-none tracking-tight text-white"
+              className="mt-2 text-[22px] font-bold leading-none tracking-tight"
               style={{
+                color: "#0F172A",
                 fontFamily:
                   "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
               }}
@@ -337,9 +338,10 @@ export function LightShell({
             title="Saldo disponível"
             className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl"
             style={{
-              background: "linear-gradient(135deg, #10231A 0%, #0B1711 100%)",
-              border: "1px solid rgba(34,197,94,0.22)",
-              color: "#4ADE80",
+              background: "#FFFFFF",
+              border: "1px solid rgba(124,58,237,0.22)",
+              color: "#7C3AED",
+              boxShadow: "0 6px 18px -8px rgba(124,58,237,0.28)",
             }}
           >
             <Wallet className="h-4 w-4" />
