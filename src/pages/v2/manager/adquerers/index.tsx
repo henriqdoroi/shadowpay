@@ -22,6 +22,8 @@ import {
   ArrowDownToLine,
   Percent,
   DollarSign,
+  KeyRound,
+  Copy,
 } from "lucide-react";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -1084,6 +1086,266 @@ function SellerEditor({
 }
 
 /* ============================================================
+ * PLUGGOU — configurar chaves do PIX pelo painel (sem Render)
+ * ============================================================ */
+function PluggouCredsModal({ onClose }: { onClose: () => void }) {
+  const [form, setForm] = useState({
+    publicKey: "",
+    secretKey: "",
+    webhookCode: "",
+  });
+  const [status, setStatus] = useState<{
+    configured: boolean;
+    active: boolean;
+    enabled: boolean;
+    publicKeyMasked: string | null;
+    webhookCodeSet: boolean;
+    webhookUrl: string;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const webhookUrl =
+    status?.webhookUrl ||
+    "https://shadowpay-backend.onrender.com/api/webhooks/psp/pluggou";
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await axios.get(`${API}/api/admin/psp/pluggou`, {
+          headers: authHeaders(),
+        });
+        if (r.data?.success) setStatus(r.data.data);
+      } catch {
+        /* ignora */
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.publicKey.trim() || !form.secretKey.trim()) {
+      toast.error("Cole a chave pública e a secreta.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const r = await axios.post(`${API}/api/admin/psp/pluggou`, form, {
+        headers: authHeaders(),
+      });
+      const test = r.data?.test;
+      if (test?.status === "valid") toast.success(test.message);
+      else if (test?.status === "invalid") toast.error(test.message);
+      else toast(test?.message || "Chaves salvas.");
+      if (r.data?.data) setStatus(r.data.data);
+      setForm({ publicKey: "", secretKey: "", webhookCode: "" });
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Erro ao salvar.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const inputStyle: React.CSSProperties = {
+    background: "#F8FAFC",
+    border: `1px solid ${T.borderSoft}`,
+    color: T.text,
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ background: "rgba(15, 23, 42, 0.55)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-2xl bg-white"
+        style={{
+          border: `1px solid ${T.border}`,
+          boxShadow: "0 24px 64px -20px rgba(15,23,42,0.30)",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          className="sticky top-0 z-10 flex items-center justify-between border-b bg-white px-5 py-4"
+          style={{ borderColor: T.borderSoft }}
+        >
+          <div className="flex items-center gap-2.5">
+            <span
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-white"
+              style={{
+                background: `linear-gradient(135deg, ${T.primary}, ${T.primaryStrong})`,
+              }}
+            >
+              <KeyRound className="h-4 w-4" />
+            </span>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Adquirente PIX
+              </p>
+              <h2 className="text-[16px] font-bold text-slate-900">
+                Configurar Pluggou
+              </h2>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-md p-1 text-slate-400 hover:bg-slate-100"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <form onSubmit={save} className="space-y-4 p-5">
+          {!loading && status?.configured && (
+            <div
+              className="flex items-center gap-2 rounded-xl p-3"
+              style={{
+                background: status.active ? T.successSoft : T.warnSoft,
+                border: `1px solid ${
+                  status.active
+                    ? "rgba(22,163,74,0.25)"
+                    : "rgba(245,158,11,0.25)"
+                }`,
+              }}
+            >
+              {status.active ? (
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              ) : (
+                <XCircle className="h-4 w-4 text-amber-600" />
+              )}
+              <span
+                className="text-[12.5px] font-semibold"
+                style={{ color: status.active ? "#15803D" : "#B45309" }}
+              >
+                {status.active
+                  ? "PIX ativo pela Pluggou"
+                  : "Chaves salvas, mas inativa"}
+              </span>
+              {status.publicKeyMasked && (
+                <span className="ml-auto font-mono text-[11px] text-slate-500">
+                  {status.publicKeyMasked}
+                </span>
+              )}
+            </div>
+          )}
+
+          <p className="text-[12.5px] leading-relaxed text-slate-600">
+            Cole as chaves do painel da <b>Pluggou</b> (pluggoucash.com → API).
+            Ao salvar, a Pluggou vira a adquirente que <b>gera e recebe os PIX</b>{" "}
+            automaticamente — sem precisar mexer no Render.
+          </p>
+
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+              Chave pública (X-Public-Key)
+            </label>
+            <input
+              value={form.publicKey}
+              onChange={(e) => setForm({ ...form, publicKey: e.target.value })}
+              placeholder="PAINEL_Public_..."
+              className="h-10 w-full rounded-lg px-3 font-mono text-[12.5px] outline-none focus:border-violet-400"
+              style={inputStyle}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+              Chave secreta (X-Secret-Key)
+            </label>
+            <input
+              value={form.secretKey}
+              onChange={(e) => setForm({ ...form, secretKey: e.target.value })}
+              placeholder="PAINEL_Private_..."
+              type="password"
+              className="h-10 w-full rounded-lg px-3 font-mono text-[12.5px] outline-none focus:border-violet-400"
+              style={inputStyle}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+              Código do webhook (recomendado)
+            </label>
+            <input
+              value={form.webhookCode}
+              onChange={(e) =>
+                setForm({ ...form, webhookCode: e.target.value })
+              }
+              placeholder="whk_..."
+              type="password"
+              className="h-10 w-full rounded-lg px-3 font-mono text-[12.5px] outline-none focus:border-violet-400"
+              style={inputStyle}
+            />
+          </div>
+
+          <div
+            className="rounded-xl p-3"
+            style={{ background: "#F8FAFC", border: `1px solid ${T.borderSoft}` }}
+          >
+            <p className="mb-1.5 text-[10.5px] font-bold uppercase tracking-wider text-slate-500">
+              Cadastre este webhook na Pluggou
+            </p>
+            <div className="flex items-center gap-2">
+              <code
+                className="flex-1 overflow-x-auto whitespace-nowrap rounded-md bg-white px-2 py-1.5 text-[11px] text-slate-700"
+                style={{ border: `1px solid ${T.borderSoft}` }}
+              >
+                {webhookUrl}
+              </code>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard?.writeText(webhookUrl);
+                  toast.success("Copiado!");
+                }}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-500 hover:bg-white"
+                style={{ border: `1px solid ${T.borderSoft}` }}
+              >
+                <Copy className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <p className="mt-1.5 text-[11px] text-slate-500">
+              Na Pluggou → Webhooks → cadastre essa URL. O <b>código</b> que
+              aparecer lá é o que vai no campo acima.
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-10 items-center rounded-lg px-4 text-[12.5px] font-semibold text-slate-600 hover:bg-slate-50"
+              style={{ border: `1px solid ${T.border}` }}
+            >
+              Fechar
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex h-10 items-center gap-1.5 rounded-lg px-5 text-[12.5px] font-semibold text-white disabled:opacity-50"
+              style={{
+                background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
+                boxShadow: "0 8px 20px -8px rgba(124,58,237,0.45)",
+              }}
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Salvando…
+                </>
+              ) : (
+                <>
+                  <Check className="h-3.5 w-3.5" /> Salvar e ativar
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
  * MAIN PAGE
  * ============================================================ */
 function AcquirersContent() {
@@ -1092,6 +1354,7 @@ function AcquirersContent() {
   const [editAcquirer, setEditAcquirer] = useState<Acquirer | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [managingSellers, setManagingSellers] = useState<Acquirer | null>(null);
+  const [showPluggou, setShowPluggou] = useState(false);
 
   async function fetchAll() {
     setLoading(true);
@@ -1179,17 +1442,31 @@ function AcquirersContent() {
             <b>fixa + percentual</b> e libere acesso por seller.
           </p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-[13px] font-semibold text-white"
-          style={{
-            background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
-            boxShadow: "0 8px 20px -8px rgba(124,58,237,0.45)",
-          }}
-        >
-          <Plus className="h-4 w-4" />
-          Nova adquirente
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setShowPluggou(true)}
+            className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-[13px] font-semibold"
+            style={{
+              background: T.primarySoft,
+              color: T.primary,
+              border: `1px solid ${T.primary}33`,
+            }}
+          >
+            <KeyRound className="h-4 w-4" />
+            Configurar PIX (Pluggou)
+          </button>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-[13px] font-semibold text-white"
+            style={{
+              background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
+              boxShadow: "0 8px 20px -8px rgba(124,58,237,0.45)",
+            }}
+          >
+            <Plus className="h-4 w-4" />
+            Nova adquirente
+          </button>
+        </div>
       </header>
 
       {loading ? (
@@ -1246,6 +1523,14 @@ function AcquirersContent() {
         <SellersManagerModal
           acquirer={managingSellers}
           onClose={() => setManagingSellers(null)}
+        />
+      )}
+      {showPluggou && (
+        <PluggouCredsModal
+          onClose={() => {
+            setShowPluggou(false);
+            fetchAll();
+          }}
         />
       )}
     </div>
