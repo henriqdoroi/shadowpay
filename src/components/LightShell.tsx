@@ -132,18 +132,37 @@ function buildNav(isAdmin: boolean): NavItem[] {
   return items;
 }
 
-/* Active-state matcher: exact or descendant path (with /v1/products excluded
-   from matching /v1/products/sales since they belong to different sections now). */
+/* Active-state matcher: exact or descendant path. Quando mais de um item casa
+   (ex.: Produtos e Transações em /v1/products/sales), pickActiveHref escolhe
+   o mais específico. */
 function isActive(pathname: string, href: string, alsoMatches: string[] = []): boolean {
   if (pathname === href) return true;
   if (alsoMatches.some((p) => pathname === p || pathname.startsWith(p + "/"))) return true;
-  if (href === "/v1/products") return false; // grupo Produtos NÃO casa com /v1/products/sales (Vendas)
   if (href === "/v1/dashboard") return false;
   if (href === "/v1/finance") {
     // /v1/finance/withdraw etc. ainda existe como redirect — marca o nav.
     return pathname.startsWith("/v1/finance");
   }
   return pathname.startsWith(href + "/");
+}
+
+/* Só UM item do menu fica ativo: o que casa com a rota de forma mais
+   específica (caminho mais longo). Ex.: em /v1/integrations/acquirers casam
+   "Integrações" (/v1/integrations) e "Nominal" — só o Nominal acende. Idem
+   Domínios e, no admin, Sellers/Nominal etc. não acendem junto do "Painel". */
+function pickActiveHref(pathname: string, items: NavItem[]): string | null {
+  let best: { href: string; len: number } | null = null;
+  for (const it of items) {
+    if (!isActive(pathname, it.href, it.alsoMatches)) continue;
+    const len = Math.max(
+      ...[it.href, ...(it.alsoMatches || [])]
+        .filter((p) => pathname === p || pathname.startsWith(p + "/"))
+        .map((p) => p.length),
+      0,
+    );
+    if (!best || len > best.len) best = { href: it.href, len };
+  }
+  return best?.href ?? null;
 }
 
 /**
@@ -253,6 +272,7 @@ export function LightShell({
     () => buildNav(!!user?.isAdministrator),
     [user?.isAdministrator]
   );
+  const activeHref = pickActiveHref(router.pathname, nav);
 
   const toggleExpanded = (key: string) => {
     setExpandedKeys((prev) => {
@@ -353,11 +373,7 @@ export function LightShell({
           <ul className="space-y-0.5">
             {nav.map((item) => {
               const Icon = item.icon;
-              const active = isActive(
-                router.pathname,
-                item.href,
-                item.alsoMatches
-              );
+              const active = item.href === activeHref;
               return (
                 <li key={item.href}>
                   <Link
@@ -546,11 +562,7 @@ export function LightShell({
               <ul className="space-y-0.5">
                 {nav.map((item) => {
                   const Icon = item.icon;
-                  const active = isActive(
-                    router.pathname,
-                    item.href,
-                    item.alsoMatches
-                  );
+                  const active = item.href === activeHref;
                   return (
                     <li key={item.href}>
                       <Link
