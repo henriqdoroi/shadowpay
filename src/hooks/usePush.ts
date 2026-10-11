@@ -192,17 +192,25 @@ export function usePush(token: string | null) {
     return true;
   }, [token]);
 
-  const sendTest = useCallback(async () => {
-    if (!token) return false;
+  const sendTest = useCallback(async (): Promise<{
+    ok: boolean;
+    delivered: number;
+    message?: string;
+  }> => {
+    if (!token) return { ok: false, delivered: 0, message: "Sem login." };
     try {
       const r = await fetch(`${API}/api/user/push/test`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
       const j = await r.json();
-      return !!j?.success && (j?.delivered ?? 0) > 0;
-    } catch {
-      return false;
+      return {
+        ok: !!j?.success && (j?.delivered ?? 0) > 0,
+        delivered: j?.delivered ?? 0,
+        message: j?.message,
+      };
+    } catch (e: any) {
+      return { ok: false, delivered: 0, message: e?.message };
     }
   }, [token]);
 

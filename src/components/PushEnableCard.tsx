@@ -93,10 +93,19 @@ export function PushEnableCard() {
           <button
             onClick={async () => {
               setLoading(true);
-              const ok = await sendTest();
+              const res = await sendTest();
               setLoading(false);
-              if (ok) toast.success("Notificação de teste enviada!");
-              else toast.error("Falha ao enviar teste — tente reativar.");
+              if (res.ok) {
+                toast.success(
+                  `Enviado a ${res.delivered} dispositivo(s)! 🔒 Bloqueie o celular agora — no iPhone a notificação só aparece com o app fora da tela.`,
+                  { duration: 8000 }
+                );
+              } else {
+                toast.error(
+                  res.message || "Falha ao enviar teste — tente reativar.",
+                  { duration: 8000 }
+                );
+              }
             }}
             disabled={loading}
             className="inline-flex h-8 items-center justify-center rounded-lg border bg-white px-3 text-[11.5px] font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
