@@ -1088,60 +1088,65 @@ function SellerEditor({
 /* ============================================================
  * PLUGGOU — configurar chaves do PIX pelo painel (sem Render)
  * ============================================================ */
-function PluggouCredsModal({ onClose }: { onClose: () => void }) {
+function ConnectNominalModal({ onClose }: { onClose: () => void }) {
   const [form, setForm] = useState({
+    name: "",
+    pspType: "pluggou" as "pluggou" | "pagpixhub",
     publicKey: "",
     secretKey: "",
     webhookCode: "",
+    apiKey: "",
+    webhookSecret: "",
+    feePercent: 0.99,
+    withdrawalFee: 3.5,
   });
-  const [status, setStatus] = useState<{
-    configured: boolean;
-    active: boolean;
-    enabled: boolean;
-    publicKeyMasked: string | null;
-    webhookCodeSet: boolean;
-    webhookUrl: string;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const webhookUrl =
-    status?.webhookUrl ||
-    "https://shadowpay-backend.onrender.com/api/webhooks/psp/pluggou";
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const r = await axios.get(`${API}/api/admin/psp/pluggou`, {
-          headers: authHeaders(),
-        });
-        if (r.data?.success) setStatus(r.data.data);
-      } catch {
-        /* ignora */
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+  const [result, setResult] = useState<{ webhookUrl: string } | null>(null);
+  const isPluggou = form.pspType === "pluggou";
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.publicKey.trim() || !form.secretKey.trim()) {
-      toast.error("Cole a chave pública e a secreta.");
+    if (!form.name.trim()) {
+      toast.error("Dê um nome à nominal (ex.: REBORN TECNOLOGIA).");
+      return;
+    }
+    if (isPluggou && (!form.publicKey.trim() || !form.secretKey.trim())) {
+      toast.error("Cole a chave pública e a secreta da Pluggou.");
+      return;
+    }
+    if (!isPluggou && !form.apiKey.trim()) {
+      toast.error("Cole o Bearer token da PagPixHub.");
       return;
     }
     setSaving(true);
     try {
-      const r = await axios.post(`${API}/api/admin/psp/pluggou`, form, {
-        headers: authHeaders(),
-      });
+      const payload: any = {
+        name: form.name.trim(),
+        pspType: form.pspType,
+        feePercent: Number(form.feePercent),
+        withdrawalFee: Number(form.withdrawalFee),
+        globalPool: true,
+      };
+      if (isPluggou) {
+        payload.publicKey = form.publicKey.trim();
+        payload.secretKey = form.secretKey.trim();
+        payload.webhookCode = form.webhookCode.trim();
+      } else {
+        payload.apiKey = form.apiKey.trim();
+        payload.webhookSecret = form.webhookSecret.trim();
+      }
+      const r = await axios.post(
+        `${API}/api/admin/acquirers/connect`,
+        payload,
+        { headers: authHeaders() }
+      );
       const test = r.data?.test;
       if (test?.status === "valid") toast.success(test.message);
       else if (test?.status === "invalid") toast.error(test.message);
-      else toast(test?.message || "Chaves salvas.");
-      if (r.data?.data) setStatus(r.data.data);
-      setForm({ publicKey: "", secretKey: "", webhookCode: "" });
+      else toast(test?.message || "Nominal salva.");
+      setResult({ webhookUrl: r.data?.webhookUrl || "" });
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Erro ao salvar.");
+      toast.error(err?.response?.data?.message || "Erro ao conectar.");
     } finally {
       setSaving(false);
     }
@@ -1152,6 +1157,8 @@ function PluggouCredsModal({ onClose }: { onClose: () => void }) {
     border: `1px solid ${T.borderSoft}`,
     color: T.text,
   };
+  const credCls =
+    "h-10 w-full rounded-lg px-3 font-mono text-[12.5px] outline-none focus:border-violet-400";
 
   return (
     <div
@@ -1182,10 +1189,10 @@ function PluggouCredsModal({ onClose }: { onClose: () => void }) {
             </span>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Adquirente PIX
+                Multi-adquirência
               </p>
               <h2 className="text-[16px] font-bold text-slate-900">
-                Configurar Pluggou
+                Conectar nominal
               </h2>
             </div>
           </div>
@@ -1198,117 +1205,193 @@ function PluggouCredsModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <form onSubmit={save} className="space-y-4 p-5">
-          {!loading && status?.configured && (
-            <div
-              className="flex items-center gap-2 rounded-xl p-3"
-              style={{
-                background: status.active ? T.successSoft : T.warnSoft,
-                border: `1px solid ${
-                  status.active
-                    ? "rgba(22,163,74,0.25)"
-                    : "rgba(245,158,11,0.25)"
-                }`,
-              }}
-            >
-              {status.active ? (
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              ) : (
-                <XCircle className="h-4 w-4 text-amber-600" />
-              )}
-              <span
-                className="text-[12.5px] font-semibold"
-                style={{ color: status.active ? "#15803D" : "#B45309" }}
-              >
-                {status.active
-                  ? "PIX ativo pela Pluggou"
-                  : "Chaves salvas, mas inativa"}
-              </span>
-              {status.publicKeyMasked && (
-                <span className="ml-auto font-mono text-[11px] text-slate-500">
-                  {status.publicKeyMasked}
-                </span>
-              )}
-            </div>
-          )}
-
           <p className="text-[12.5px] leading-relaxed text-slate-600">
-            Cole as chaves do painel da <b>Pluggou</b> (pluggoucash.com → API).
-            Ao salvar, a Pluggou vira a adquirente que <b>gera e recebe os PIX</b>{" "}
-            automaticamente — sem precisar mexer no Render.
+            Cada <b>sub-conta</b> da Pluggou/PagPixHub vira uma <b>nominal</b>.
+            Dê o nome da empresa, escolha o tipo e cole as chaves daquela
+            sub-conta. Ela entra no pool pros sellers escolherem.
           </p>
 
           <div>
             <label className="mb-1 block text-[11px] font-semibold text-slate-600">
-              Chave pública (X-Public-Key)
+              Nome da nominal
             </label>
             <input
-              value={form.publicKey}
-              onChange={(e) => setForm({ ...form, publicKey: e.target.value })}
-              placeholder="PAINEL_Public_..."
-              className="h-10 w-full rounded-lg px-3 font-mono text-[12.5px] outline-none focus:border-violet-400"
-              style={inputStyle}
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-[11px] font-semibold text-slate-600">
-              Chave secreta (X-Secret-Key)
-            </label>
-            <input
-              value={form.secretKey}
-              onChange={(e) => setForm({ ...form, secretKey: e.target.value })}
-              placeholder="PAINEL_Private_..."
-              type="password"
-              className="h-10 w-full rounded-lg px-3 font-mono text-[12.5px] outline-none focus:border-violet-400"
-              style={inputStyle}
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-[11px] font-semibold text-slate-600">
-              Código do webhook (recomendado)
-            </label>
-            <input
-              value={form.webhookCode}
-              onChange={(e) =>
-                setForm({ ...form, webhookCode: e.target.value })
-              }
-              placeholder="whk_..."
-              type="password"
-              className="h-10 w-full rounded-lg px-3 font-mono text-[12.5px] outline-none focus:border-violet-400"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Ex.: REBORN TECNOLOGIA SERVIÇOS LTDA"
+              className="h-10 w-full rounded-lg px-3 text-[13px] outline-none focus:border-violet-400"
               style={inputStyle}
             />
           </div>
 
-          <div
-            className="rounded-xl p-3"
-            style={{ background: "#F8FAFC", border: `1px solid ${T.borderSoft}` }}
-          >
-            <p className="mb-1.5 text-[10.5px] font-bold uppercase tracking-wider text-slate-500">
-              Cadastre este webhook na Pluggou
-            </p>
-            <div className="flex items-center gap-2">
-              <code
-                className="flex-1 overflow-x-auto whitespace-nowrap rounded-md bg-white px-2 py-1.5 text-[11px] text-slate-700"
-                style={{ border: `1px solid ${T.borderSoft}` }}
-              >
-                {webhookUrl}
-              </code>
-              <button
-                type="button"
-                onClick={() => {
-                  navigator.clipboard?.writeText(webhookUrl);
-                  toast.success("Copiado!");
-                }}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-500 hover:bg-white"
-                style={{ border: `1px solid ${T.borderSoft}` }}
-              >
-                <Copy className="h-3.5 w-3.5" />
-              </button>
-            </div>
-            <p className="mt-1.5 text-[11px] text-slate-500">
-              Na Pluggou → Webhooks → cadastre essa URL. O <b>código</b> que
-              aparecer lá é o que vai no campo acima.
-            </p>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+              Instituição (tipo)
+            </label>
+            <select
+              value={form.pspType}
+              onChange={(e) =>
+                setForm({ ...form, pspType: e.target.value as any })
+              }
+              className="h-10 w-full rounded-lg px-3 text-[13px] outline-none"
+              style={inputStyle}
+            >
+              <option value="pluggou">Pluggou</option>
+              <option value="pagpixhub">PagPixHub</option>
+            </select>
           </div>
+
+          {isPluggou ? (
+            <>
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+                  Chave pública (X-Public-Key)
+                </label>
+                <input
+                  value={form.publicKey}
+                  onChange={(e) =>
+                    setForm({ ...form, publicKey: e.target.value })
+                  }
+                  placeholder="PAINEL_Public_..."
+                  className={credCls}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+                  Chave secreta (X-Secret-Key)
+                </label>
+                <input
+                  value={form.secretKey}
+                  onChange={(e) =>
+                    setForm({ ...form, secretKey: e.target.value })
+                  }
+                  placeholder="PAINEL_Private_..."
+                  type="password"
+                  className={credCls}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+                  Código do webhook (recomendado)
+                </label>
+                <input
+                  value={form.webhookCode}
+                  onChange={(e) =>
+                    setForm({ ...form, webhookCode: e.target.value })
+                  }
+                  placeholder="whk_..."
+                  type="password"
+                  className={credCls}
+                  style={inputStyle}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+                  Bearer token (Authorization)
+                </label>
+                <input
+                  value={form.apiKey}
+                  onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
+                  placeholder="bp_live_..."
+                  type="password"
+                  className={credCls}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+                  Webhook secret (recomendado)
+                </label>
+                <input
+                  value={form.webhookSecret}
+                  onChange={(e) =>
+                    setForm({ ...form, webhookSecret: e.target.value })
+                  }
+                  placeholder="whsec_..."
+                  type="password"
+                  className={credCls}
+                  style={inputStyle}
+                />
+              </div>
+            </>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+                Taxa por venda (%)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min={0}
+                value={form.feePercent}
+                onChange={(e) =>
+                  setForm({ ...form, feePercent: Number(e.target.value) })
+                }
+                className="h-10 w-full rounded-lg px-3 text-[13px] font-bold tabular-nums outline-none focus:border-violet-400"
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+                Taxa de saque (R$)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min={0}
+                value={form.withdrawalFee}
+                onChange={(e) =>
+                  setForm({ ...form, withdrawalFee: Number(e.target.value) })
+                }
+                className="h-10 w-full rounded-lg px-3 text-[13px] font-bold tabular-nums outline-none focus:border-violet-400"
+                style={inputStyle}
+              />
+            </div>
+          </div>
+
+          {result?.webhookUrl && (
+            <div
+              className="rounded-xl p-3"
+              style={{
+                background: "#F8FAFC",
+                border: `1px solid ${T.borderSoft}`,
+              }}
+            >
+              <p className="mb-1.5 text-[10.5px] font-bold uppercase tracking-wider text-slate-500">
+                Cadastre ESTE webhook nesta sub-conta
+              </p>
+              <div className="flex items-center gap-2">
+                <code
+                  className="flex-1 overflow-x-auto whitespace-nowrap rounded-md bg-white px-2 py-1.5 text-[11px] text-slate-700"
+                  style={{ border: `1px solid ${T.borderSoft}` }}
+                >
+                  {result.webhookUrl}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(result.webhookUrl);
+                    toast.success("Copiado!");
+                  }}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-500 hover:bg-white"
+                  style={{ border: `1px solid ${T.borderSoft}` }}
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <p className="mt-1.5 text-[11px] text-slate-500">
+                Cada sub-conta tem a <b>própria</b> URL (com o id dela). Cadastre
+                essa URL na sub-conta correspondente, em Webhooks.
+              </p>
+            </div>
+          )}
 
           <div className="flex justify-end gap-2 pt-1">
             <button
@@ -1330,11 +1413,11 @@ function PluggouCredsModal({ onClose }: { onClose: () => void }) {
             >
               {saving ? (
                 <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Salvando…
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Conectando…
                 </>
               ) : (
                 <>
-                  <Check className="h-3.5 w-3.5" /> Salvar e ativar
+                  <Check className="h-3.5 w-3.5" /> Conectar nominal
                 </>
               )}
             </button>
@@ -1453,7 +1536,7 @@ function AcquirersContent() {
             }}
           >
             <KeyRound className="h-4 w-4" />
-            Configurar PIX (Pluggou)
+            Conectar nominal
           </button>
           <button
             onClick={() => setShowCreate(true)}
@@ -1526,7 +1609,7 @@ function AcquirersContent() {
         />
       )}
       {showPluggou && (
-        <PluggouCredsModal
+        <ConnectNominalModal
           onClose={() => {
             setShowPluggou(false);
             fetchAll();
