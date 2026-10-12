@@ -97,7 +97,9 @@ function AppContent({ Component, pageProps }: AppProps) {
           shadcn Sidebar Sheet (mobile drawer) via SidebarProvider.
           Nada de NavBottom/SidebarMobile antigos — substituídos pelos
           ShadowMobileNav e ShadowTopbar dentro do ShadowShell. */}
-      <main className="flex-grow">
+      {/* min-w-0: sem isso o <main> (item flex) não encolhe abaixo do conteúdo
+          — uma tabela larga empurrava o layout inteiro e cortava a direita. */}
+      <main className="min-w-0 flex-grow">
         <KycGate>
           <Component {...pageProps} />
         </KycGate>

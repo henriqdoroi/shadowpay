@@ -17,6 +17,7 @@ import {
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { LightShell } from "@/components/LightShell";
 import ShadowPanel from "@/components/ShadowPanel";
+import { txStatus, type TxStatus } from "@/lib/txStatus";
 
 const API = "https://shadowpay-backend.onrender.com";
 
@@ -28,7 +29,9 @@ interface Transaction {
   productId: string | null;
   customerId: string | null;
   amount: string;
-  status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
+  /** apelido ("approved", "pending"...); o valor do banco vem em statusRaw */
+  status: string;
+  statusRaw?: string;
   paymentMethod: "PIX" | "CARD" | "BOLETO" | "CRYPTO";
   transactionType: string;
   amountGross: string;
@@ -81,37 +84,17 @@ function TransactionsContent() {
       minute: "2-digit",
     });
 
-  const statusBadge = (s: string) => {
-    const map: Record<
-      string,
-      { color: string; label: string; Icon: any }
-    > = {
-      APPROVED: {
-        color: "bg-emerald-50 text-emerald-700 border-emerald-200",
-        label: "Aprovada",
-        Icon: CheckCircle,
-      },
-      PENDING: {
-        color: "bg-amber-50 text-amber-700 border-amber-200",
-        label: "Pendente",
-        Icon: Clock,
-      },
-      REJECTED: {
-        color: "bg-rose-50 text-rose-700 border-rose-200",
-        label: "Rejeitada",
-        Icon: XCircle,
-      },
-      CANCELLED: {
-        color: "bg-slate-50 text-slate-500 border-slate-200",
-        label: "Cancelada",
-        Icon: AlertCircle,
-      },
+  const statusBadge = (t: Pick<Transaction, "status" | "statusRaw">) => {
+    const map: Record<TxStatus, { color: string; label: string; Icon: any }> = {
+      PAID: { color: "bg-emerald-50 text-emerald-700 border-emerald-200", label: "Paga", Icon: CheckCircle },
+      PENDING: { color: "bg-amber-50 text-amber-700 border-amber-200", label: "Pendente", Icon: Clock },
+      PROCESSING: { color: "bg-blue-50 text-blue-700 border-blue-200", label: "Processando", Icon: Clock },
+      REFUNDED: { color: "bg-rose-50 text-rose-700 border-rose-200", label: "Reembolsada", Icon: XCircle },
+      CHARGEBACK: { color: "bg-rose-50 text-rose-700 border-rose-200", label: "Chargeback", Icon: XCircle },
+      FAILED: { color: "bg-slate-50 text-slate-500 border-slate-200", label: "Falhou", Icon: AlertCircle },
+      EXPIRED: { color: "bg-slate-50 text-slate-500 border-slate-200", label: "Expirada", Icon: AlertCircle },
     };
-    const cfg = map[s] ?? {
-      color: "bg-slate-50 text-slate-600 border-slate-200",
-      label: s,
-      Icon: AlertCircle,
-    };
+    const cfg = map[txStatus(t)];
     const Icon = cfg.Icon;
     return (
       <span
@@ -227,10 +210,10 @@ function TransactionsContent() {
                 onChange={(e) => filterChange("status", e.target.value)}
               >
                 <option value="all">Todos</option>
-                <option value="PENDING">Pendente</option>
-                <option value="APPROVED">Aprovada</option>
-                <option value="REJECTED">Rejeitada</option>
-                <option value="CANCELLED">Cancelada</option>
+                <option value="PAID">Pagas</option>
+                <option value="PENDING,PROCESSING">Pendentes</option>
+                <option value="REFUNDED,CHARGEBACK">Reembolsadas</option>
+                <option value="FAILED,EXPIRED">Expiradas / falhas</option>
               </select>
             </div>
             <div>
@@ -412,7 +395,7 @@ function TransactionsContent() {
                       <td className="px-3 py-3 text-xs text-slate-600">
                         {methodText(t.paymentMethod)}
                       </td>
-                      <td className="px-3 py-3">{statusBadge(t.status)}</td>
+                      <td className="px-3 py-3">{statusBadge(t)}</td>
                       <td className="px-3 py-3 text-xs text-slate-500">
                         {fmtDate(t.createdAt)}
                       </td>

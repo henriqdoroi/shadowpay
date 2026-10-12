@@ -22,6 +22,14 @@ import ShadowPanel from "@/components/ShadowPanel";
 import TwoFAModal from "./2faAuthentication";
 import { LightShell } from "@/components/LightShell";
 import { PushPromptBanner } from "@/components/PushPromptBanner";
+import {
+  EMPTY_STATS,
+  isPaidTx,
+  isPendingTx,
+  isRefundTx,
+  txStatus,
+  type SalesStats,
+} from "@/lib/txStatus";
 
 import {
   ChevronDown,
@@ -211,16 +219,24 @@ function DashboardContent() {
   }, [user, token]);
 
   /* ---------- transactions ----------
-   * limit alto pra manter histórico no front. O summary do backend
-   * agrega no banco inteiro, então mesmo passando do limit, "Máximo"
-   * exibe valor real (totalEntradas/totalSaidas).
+   * Busca as vendas DO DIA SELECIONADO + os totais desse dia calculados no
+   * banco (`stats`: pagas, conversão, ticket médio...). O `summary` traz os
+   * agregados da vida toda (usado na barra de premiação).
    */
+  const [dayStats, setDayStats] = useState<SalesStats>(EMPTY_STATS);
   const fetchTransactions = async () => {
     if (!token) return;
     setIsLoading(true);
     try {
+      const { start, end } = periodRanges.curr;
+      const params = new URLSearchParams({
+        page: "1",
+        limit: "1000",
+        startDate: start.toISOString(),
+        endDate: end.toISOString(),
+      });
       const r = await axios.get(
-        `${API}/api/user/transactions-report?page=1&limit=1000`,
+        `${API}/api/user/transactions-report?${params}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (r.data?.success) {
@@ -233,6 +249,7 @@ function DashboardContent() {
           },
           transactions: r.data.data.transactions || [],
         });
+        setDayStats(r.data.data.stats || EMPTY_STATS);
         setRefreshAt(new Date());
       }
     } catch (e) {
@@ -245,7 +262,7 @@ function DashboardContent() {
   useEffect(() => {
     if (user && token) fetchTransactions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, token]);
+  }, [user, token, selectedDate]);
 
   /* refresh suave a cada 30s pra venda nova entrar no painel sem reload */
   useEffect(() => {
@@ -255,7 +272,7 @@ function DashboardContent() {
     }, 30_000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, token]);
+  }, [user, token, selectedDate]);
 
   const fmt = (v: number) =>
     new Intl.NumberFormat("pt-BR", {
@@ -306,11 +323,9 @@ function DashboardContent() {
   const allTxs = txData.transactions;
   const matchStatus = (t: any) => {
     if (statusFilter === "all") return true;
-    const s = String(t.status).toUpperCase();
-    if (statusFilter === "PAID") return s === "PAID";
-    if (statusFilter === "PENDING") return s === "PENDING" || s === "PROCESSING";
-    if (statusFilter === "REFUNDED")
-      return s === "REFUNDED" || s === "CHARGEBACK";
+    if (statusFilter === "PAID") return isPaidTx(t);
+    if (statusFilter === "PENDING") return isPendingTx(t);
+    if (statusFilter === "REFUNDED") return isRefundTx(t);
     return true;
   };
   const txs = useMemo(
@@ -326,9 +341,9 @@ function DashboardContent() {
     [allTxs, periodRanges, statusFilter]
   );
 
-  const isPaid = (t: any) => String(t.status).toUpperCase() === "PAID";
-  const isRefund = (t: any) =>
-    ["REFUNDED", "CHARGEBACK"].includes(String(t.status).toUpperCase());
+  // status vem como apelido ("approved"); o tradutor usa statusRaw
+  const isPaid = (t: any) => isPaidTx(t);
+  const isRefund = (t: any) => isRefundTx(t);
   const isPix = (t: any) => String(t.method).toUpperCase() === "PIX";
 
   const computeBlock = (rows: any[]) => {
@@ -358,20 +373,20 @@ function DashboardContent() {
   const curr = useMemo(() => computeBlock(txs), [txs]);
   const prev = useMemo(() => computeBlock(prevTxs), [prevTxs]);
 
-  /* No "Máximo" usamos os agregados do banco (independente do limit
-   * de transactions retornadas). */
+  /* Métricas do dia: sem filtro de status, usa os totais EXATOS calculados
+   * no banco (`stats`); com filtro, calcula das vendas do dia filtradas. */
   const isMax = period === "max";
-  const grossSum = isMax ? Number(txData.totals.totalEntradas) || 0 : curr.grossSum;
-  const netSum = isMax
-    ? grossSum * 0.97 // sem agregado de netAmount no summary, mostra estimado
-    : curr.netSum;
+  const useServer = statusFilter === "all";
+  const grossSum = useServer ? dayStats.paid.gross : curr.grossSum;
+  const netSum = useServer ? dayStats.paid.net : curr.netSum;
   const paid = curr.paid;
+  const paidCount = useServer ? dayStats.paid.count : curr.paidCount;
   const refunded = curr.refunded;
   const pixGenerated = curr.pix;
-  const totalTx = curr.total;
-  const conv = curr.conv;
-  const avgTicket = curr.avgTicket;
-  const approvalRate = curr.approvalRate;
+  const totalTx = useServer ? dayStats.total : curr.total;
+  const conv = useServer ? dayStats.conversion : curr.conv;
+  const avgTicket = useServer ? dayStats.avgTicket : curr.avgTicket;
+  const approvalRate = conv;
 
   /* ---------- delta real (atual vs anterior) ----------
    *  Sempre devolve uma porcentagem. Quando o baseline é 0:
@@ -490,7 +505,7 @@ function DashboardContent() {
       )
       .slice(0, 8)
       .map((t) => {
-        const status = String(t.status).toUpperCase();
+        const status = txStatus(t);
         const method = String(t.method || "").toUpperCase();
         const paidNow = status === "PAID";
         return {
@@ -546,7 +561,7 @@ function DashboardContent() {
     },
     {
       label: "Pedidos pagos",
-      value: num(paid.length),
+      value: num(paidCount),
       delta: dPaid,
       icon: <CheckCircle2 className="h-4 w-4" />,
       color: T.blue,
@@ -588,7 +603,7 @@ function DashboardContent() {
       })}%`,
     },
     { label: "Ticket médio", value: hideable(fmt(avgTicket)) },
-    { label: "Vendas", value: num(paid.length) },
+    { label: "Vendas pagas", value: num(paidCount) },
   ];
 
   /* Próxima premiação — progresso do faturamento rumo aos prêmios da campanha
@@ -658,18 +673,20 @@ function DashboardContent() {
                 transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                 className="mb-6 p-0 sm:rounded-[12px] sm:border sm:border-[#E2E8F0] sm:bg-white sm:p-8 sm:shadow-[0_1px_1px_rgba(15,23,42,0.04)]"
               >
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-6 lg:grid-cols-5">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-6 md:grid-cols-3 xl:grid-cols-5">
                   {statStrip.map((s) => (
                     <div
                       key={s.label}
-                      className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-[0_1px_1px_rgba(15,23,42,0.04)] sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none"
+                      className="flex min-w-0 flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-[0_1px_1px_rgba(15,23,42,0.04)] sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none"
                     >
                       <p className="text-[14px] font-medium leading-tight text-slate-500">
                         {s.label}
                       </p>
                       <div className="mt-2 flex items-baseline gap-1.5">
                         <span
-                          className="text-[28px] font-semibold leading-none text-slate-900"
+                          className={`whitespace-nowrap font-semibold leading-none text-slate-900 tabular-nums ${
+                            s.value.length > 12 ? "text-[20px] 2xl:text-[24px]" : "text-[24px] 2xl:text-[28px]"
+                          }`}
                           style={{
                             fontFamily:
                               "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",

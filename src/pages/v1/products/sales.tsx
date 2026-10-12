@@ -1,28 +1,27 @@
 "use client";
 
 /**
- * /v1/products/sales — Vendas (pendentes + aprovadas + rejeitadas).
+ * /v1/products/sales — Transações: TODAS as vendas (pagas, pendentes,
+ * reembolsadas, expiradas/falhas).
  *
  * Colunas exibidas:
  *   Produto / Cliente / Email / Celular / Documento / Valor / Pagamento / Status / Data
  *
- * Filtros:
- *   - Status (Todos / Pendentes / Aprovados / Rejeitados)
- *   - Método (PIX / CARD / BOLETO / CRYPTO)
- *   - Busca livre (nome, email, CPF, ID)
- *   - Período (hoje / 7d / 30d)
+ * Abas de status com contagem + filtros de método, busca e período. Os
+ * cartões e as contagens vêm de `data.stats` (calculados no banco pro filtro
+ * inteiro — não só pra página exibida).
  *
  * Tudo conectado em /api/user/transactions-report (real, sem mock).
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import Head from "next/head";
 import {
-  ShoppingCart,
   CheckCircle2,
   Clock,
-  XCircle,
+  RotateCcw,
+  TrendingUp,
   Search,
   Filter,
   RefreshCw,
@@ -31,12 +30,23 @@ import {
   Eye,
   Copy,
   Receipt,
+  Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { LightShell } from "@/components/LightShell";
 import ShadowPanel from "@/components/ShadowPanel";
+import { EMPTY_STATS, TX_STATUS_STYLE, txStatus, type SalesStats } from "@/lib/txStatus";
+
+/** Abas de status -> valor enviado pro backend (aceita grupos com vírgula). */
+const STATUS_TABS: { key: string; label: string; filter: string; count: (s: SalesStats) => number }[] = [
+  { key: "all", label: "Todas", filter: "", count: (s) => s.total },
+  { key: "paid", label: "Pagas", filter: "PAID", count: (s) => s.paid.count },
+  { key: "pending", label: "Pendentes", filter: "PENDING,PROCESSING", count: (s) => s.pending.count },
+  { key: "refunded", label: "Reembolsadas", filter: "REFUNDED,CHARGEBACK", count: (s) => s.refunded.count },
+  { key: "failed", label: "Expiradas", filter: "FAILED,EXPIRED", count: (s) => s.failed.count },
+];
 
 const API = "https://shadowpay-backend.onrender.com";
 
@@ -58,6 +68,7 @@ type Tx = {
   id: string;
   externalId?: string | null;
   status: string;
+  statusRaw?: string | null;
   method: string;
   grossAmount: number | string;
   netAmount: number | string;
@@ -85,14 +96,7 @@ function SalesContent() {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [txs, setTxs] = useState<Tx[]>([]);
-  const [summary, setSummary] = useState({
-    total: 0,
-    paid: 0,
-    pending: 0,
-    rejected: 0,
-    pix: 0,
-    grossSum: 0,
-  });
+  const [stats, setStats] = useState<SalesStats>(EMPTY_STATS);
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [methodFilter, setMethodFilter] = useState<string>("");
   const [search, setSearch] = useState("");
@@ -144,21 +148,8 @@ function SalesContent() {
         setPage(data.pagination?.currentPage || 1);
         setTotalPages(data.pagination?.totalPages || 1);
         setTotalCount(data.pagination?.totalCount || 0);
-
-        // calcula summary local com a página (não totaliza tudo)
-        const paid = list.filter((t) => String(t.status).toUpperCase() === "PAID");
-        setSummary({
-          total: list.length,
-          paid: paid.length,
-          pending: list.filter((t) => String(t.status).toUpperCase() === "PENDING").length,
-          rejected: list.filter((t) =>
-            ["FAILED", "REFUNDED", "CHARGEBACK", "EXPIRED"].includes(
-              String(t.status).toUpperCase()
-            )
-          ).length,
-          pix: list.filter((t) => String(t.method).toUpperCase() === "PIX").length,
-          grossSum: paid.reduce((acc, t) => acc + Number(t.grossAmount || 0), 0),
-        });
+        // totais calculados no banco pro filtro inteiro (não só esta página)
+        setStats(data.stats || EMPTY_STATS);
       }
     } catch (e) {
       console.error(e);
@@ -220,28 +211,9 @@ function SalesContent() {
     return raw;
   };
 
-  // status pill
-  const statusPill = (s: string) => {
-    const k = (s || "").toUpperCase();
-    const map: Record<
-      string,
-      { label: string; bg: string; color: string; dot: string }
-    > = {
-      PAID: { label: "Aprovado", bg: "#ECFDF5", color: "#047857", dot: "#10B981" },
-      APPROVED: { label: "Aprovado", bg: "#ECFDF5", color: "#047857", dot: "#10B981" },
-      PENDING: { label: "Pendente", bg: "#FFFBEB", color: "#B45309", dot: "#F59E0B" },
-      PROCESSING: { label: "Processando", bg: "#EFF6FF", color: "#1D4ED8", dot: "#3B82F6" },
-      FAILED: { label: "Falhou", bg: "#FEF2F2", color: "#B91C1C", dot: "#EF4444" },
-      REFUNDED: { label: "Reembolsado", bg: "#FEF2F2", color: "#B91C1C", dot: "#EF4444" },
-      CHARGEBACK: { label: "Chargeback", bg: "#FEF2F2", color: "#B91C1C", dot: "#EF4444" },
-      EXPIRED: { label: "Expirado", bg: "#F8FAFC", color: "#475569", dot: "#94A3B8" },
-    };
-    const cfg = map[k] || {
-      label: s,
-      bg: "#F8FAFC",
-      color: "#475569",
-      dot: "#94A3B8",
-    };
+  // status pill (status vem como apelido; o tradutor usa statusRaw)
+  const statusPill = (t: Pick<Tx, "status" | "statusRaw">) => {
+    const cfg = TX_STATUS_STYLE[txStatus(t)];
     return (
       <span
         className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap"
@@ -296,7 +268,7 @@ function SalesContent() {
               Vendas
             </h1>
             <p className="mt-1 text-[13.5px] text-slate-500">
-              Pedidos pagos, pendentes e rejeitados em tempo real.
+              Todas as vendas — pagas, pendentes e reembolsadas — em tempo real.
             </p>
           </div>
           <button
@@ -313,33 +285,33 @@ function SalesContent() {
         <section className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
           {[
             {
-              label: "Faturamento (pagos)",
-              value: fmt(summary.grossSum),
-              icon: <CheckCircle2 className="h-4 w-4" />,
+              label: "Faturamento (pagas)",
+              value: fmt(stats.paid.gross),
+              icon: <Wallet className="h-4 w-4" />,
               color: T.green,
             },
             {
-              label: "Pedidos pagos",
-              value: summary.paid.toLocaleString("pt-BR"),
+              label: "Vendas pagas",
+              value: stats.paid.count.toLocaleString("pt-BR"),
               icon: <CheckCircle2 className="h-4 w-4" />,
               color: T.green,
             },
             {
               label: "Pendentes",
-              value: summary.pending.toLocaleString("pt-BR"),
+              value: stats.pending.count.toLocaleString("pt-BR"),
               icon: <Clock className="h-4 w-4" />,
               color: T.amber,
             },
             {
-              label: "Rejeitados",
-              value: summary.rejected.toLocaleString("pt-BR"),
-              icon: <XCircle className="h-4 w-4" />,
+              label: "Reembolsadas",
+              value: stats.refunded.count.toLocaleString("pt-BR"),
+              icon: <RotateCcw className="h-4 w-4" />,
               color: T.red,
             },
             {
-              label: "PIX gerados",
-              value: summary.pix.toLocaleString("pt-BR"),
-              icon: <ShoppingCart className="h-4 w-4" />,
+              label: "Conversão",
+              value: `${stats.conversion.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`,
+              icon: <TrendingUp className="h-4 w-4" />,
               color: T.primary,
             },
           ].map((c) => (
@@ -379,7 +351,7 @@ function SalesContent() {
               "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
           }}
         >
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-[2fr_1fr_1fr_1fr_auto] lg:items-end">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-[2fr_1fr_1fr_auto] lg:items-end">
             {/* Busca — full em mobile */}
             <div className="col-span-1 sm:col-span-2 lg:col-span-1">
               <label className="mb-1 block text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
@@ -401,25 +373,6 @@ function SalesContent() {
                   style={{ borderColor: T.border }}
                 />
               </div>
-            </div>
-            {/* Status */}
-            <div>
-              <label className="mb-1 block text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
-                Status
-              </label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="h-10 w-full rounded-xl border bg-white px-3 text-[13px] font-semibold outline-none"
-                style={{ borderColor: T.border, color: T.text }}
-              >
-                <option value="">Todos</option>
-                <option value="PAID">Aprovado</option>
-                <option value="PENDING">Pendente</option>
-                <option value="FAILED">Falhou</option>
-                <option value="REFUNDED">Reembolsado</option>
-                <option value="EXPIRED">Expirado</option>
-              </select>
             </div>
             {/* Método */}
             <div>
@@ -469,6 +422,40 @@ function SalesContent() {
             </button>
           </div>
         </section>
+
+        {/* ABAS DE STATUS (contagens do filtro inteiro) */}
+        <div className="-mx-3 mb-3 overflow-x-auto px-3 sm:mx-0 sm:px-0">
+          <div className="inline-flex min-w-full gap-1.5 sm:min-w-0" role="tablist" aria-label="Status das vendas">
+            {STATUS_TABS.map((tab) => {
+              const active = statusFilter === tab.filter;
+              return (
+                <button
+                  key={tab.key}
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setStatusFilter(tab.filter)}
+                  className="inline-flex h-9 shrink-0 items-center gap-2 rounded-xl px-3.5 text-[13px] font-semibold transition-colors"
+                  style={{
+                    background: active ? T.primary : T.card,
+                    color: active ? "#FFFFFF" : T.text2,
+                    border: `1px solid ${active ? T.primary : T.border}`,
+                  }}
+                >
+                  {tab.label}
+                  <span
+                    className="rounded-md px-1.5 py-0.5 text-[11px] font-bold"
+                    style={{
+                      background: active ? "rgba(255,255,255,0.22)" : "#F1F5F9",
+                      color: active ? "#FFFFFF" : T.text2,
+                    }}
+                  >
+                    {tab.count(stats).toLocaleString("pt-BR")}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* TABELA */}
         <section
@@ -558,7 +545,7 @@ function SalesContent() {
                           {fmt(t.grossAmount)}
                         </td>
                         <td className="px-4 py-3.5">{methodPill(t.method)}</td>
-                        <td className="px-4 py-3.5">{statusPill(t.status)}</td>
+                        <td className="px-4 py-3.5">{statusPill(t)}</td>
                         <td className="px-4 py-3.5 text-slate-600">
                           {fmtDate(t.createdAt)}
                         </td>
@@ -695,7 +682,7 @@ function SalesContent() {
                 )}
               />
               <Row label="Pagamento" value={methodPill(selected.method)} />
-              <Row label="Status" value={statusPill(selected.status)} />
+              <Row label="Status" value={statusPill(selected)} />
               <Row label="Valor bruto" value={fmt(selected.grossAmount)} />
               <Row label="Valor líquido" value={fmt(selected.netAmount)} />
               <Row label="Taxa" value={fmt(selected.feeAmount)} />

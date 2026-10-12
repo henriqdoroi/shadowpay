@@ -17,11 +17,13 @@ import {
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { LightShell } from "@/components/LightShell";
 import ShadowPanel from "@/components/ShadowPanel";
+import { EMPTY_STATS, isPaidTx } from "@/lib/txStatus";
 
 interface Transaction {
   id: string;
   method?: string;
   status: string;
+  statusRaw?: string;
   grossAmount?: string | number;
   netAmount?: string | number;
   customer?: { name?: string; email?: string };
@@ -81,23 +83,16 @@ function ReportsContent() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (r.data?.success) {
-        const approved: Transaction[] = (r.data.data.transactions || []).filter(
-          (t: Transaction) => String(t.status).toUpperCase() === "PAID"
-        );
+        // status vem como apelido ("approved"); o tradutor usa statusRaw
+        const approved: Transaction[] = (r.data.data.transactions || []).filter(isPaidTx);
+        // totais do período calculados no banco (não dependem do limit)
+        const s = r.data.data.stats || EMPTY_STATS;
         setStats((prev) => ({
           ...prev,
-          grossRevenue: approved.reduce(
-            (a, t) => a + Number(t.grossAmount || 0),
-            0
-          ),
-          netRevenue: approved.reduce(
-            (a, t) => a + Number(t.netAmount || 0),
-            0
-          ),
-          totalPixGenerated: approved.filter(
-            (t) => String(t.method).toUpperCase() === "PIX"
-          ).length,
-          totalSales: approved.length,
+          grossRevenue: s.paid.gross,
+          netRevenue: s.paid.net,
+          totalPixGenerated: s.total,
+          totalSales: s.paid.count,
           uniqueCustomers: new Set(
             approved.map((t) => t.customer?.email || t.customer?.name || t.id)
           ).size,
