@@ -1,11 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/router";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import Head from "next/head";
-import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   LineChart,
@@ -16,47 +14,29 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { Trophy } from "lucide-react";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ShadowPanel from "@/components/ShadowPanel";
 import TwoFAModal from "./2faAuthentication";
 import { LightShell } from "@/components/LightShell";
 import { PushPromptBanner } from "@/components/PushPromptBanner";
+import { PeriodPicker } from "@/components/PeriodPicker";
+import { EMPTY_STATS, type SalesStats } from "@/lib/txStatus";
 import {
-  EMPTY_STATS,
-  isPaidTx,
-  isPendingTx,
-  isRefundTx,
-  txStatus,
-  type SalesStats,
-} from "@/lib/txStatus";
-
-import {
-  ChevronDown,
-  Sparkles,
-  MessageSquare,
-  MoreHorizontal,
-  Plus,
-  Calendar,
-  ShieldCheck,
-  Activity,
-  ArrowUpRight,
-  RefreshCw,
-  TrendingUp,
-  CircleDollarSign,
-  Wallet,
-  CheckCircle2,
-  Percent,
-  Inbox,
-  ShoppingCart,
-  ReceiptText,
-  RotateCcw,
-  DollarSign,
-  Zap,
-  Trophy,
-} from "lucide-react";
+  PERIOD_PRESETS,
+  bucketTitle,
+  buildChartBuckets,
+  resolvePeriod,
+  ymd,
+  type ChartBucket,
+  type Period,
+  type SeriesPoint,
+} from "@/lib/period";
 
 const API = "https://shadowpay-backend.onrender.com";
+/** Último período escolhido neste aparelho. */
+const PERIOD_KEY = "sp_dash_period";
 
 /* ============================================================
  * TOKENS LIGHT — locais a essa página, ignora o ThemeProvider dark
@@ -71,113 +51,51 @@ const T = {
   textMuted: "#8A94A6",
   primary: "#7C3AED",
   primaryBg: "rgba(124, 58, 237, 0.08)",
-  blue: "#3B82F6",
-  green: "#1F8F4E",
-  orange: "#F59E0B",
-  red: "#D4351C",
   cardShadow: "0 1px 1px rgba(15, 23, 42, 0.04)",
-  cardShadowHover:
-    "0 4px 6px rgba(15, 23, 42, 0.05), 0 10px 15px rgba(15, 23, 42, 0.08)",
 };
+
+const BUCKET_TEXT = { hour: "por hora", day: "por dia", month: "por mês" } as const;
+
+/** Período salvo neste aparelho (ou "Hoje"). */
+function loadSavedPeriod(): Period {
+  const fallback: Period = { preset: "today" };
+  if (typeof window === "undefined") return fallback;
+  try {
+    const saved = JSON.parse(localStorage.getItem(PERIOD_KEY) || "null");
+    const isDay = (s: unknown) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
+    if (saved?.preset === "custom") return isDay(saved.from) ? { preset: "custom", from: saved.from, to: isDay(saved.to) ? saved.to : saved.from } : fallback;
+    if (PERIOD_PRESETS.some((p) => p.preset === saved?.preset)) return { preset: saved.preset };
+  } catch {
+    /* ignora */
+  }
+  return fallback;
+}
 
 /* ============================================================
  * MAIN DASHBOARD
  * ============================================================ */
 function DashboardContent() {
-  const router = useRouter();
-  const { user, token, logout } = useAuth();
+  const { user, token } = useAuth();
   const [localUser, setLocalUser] = useState<any>(user);
   const [valuesVisible, setValuesVisible] = useState(true);
-
-  const [walletStats, setWalletStats] = useState({
-    currentBalance: 0,
-    blockedBalance: 0,
-  });
-  const [txData, setTxData] = useState<{
-    totals: any;
-    transactions: any[];
-  }>({
-    totals: { totalTransacionado: 0, totalEntradas: 0, totalSaidas: 0 },
-    transactions: [],
-  });
-  const [isLoading, setIsLoading] = useState(false);
-  const [verification, setVerification] = useState<
-    "NOT_STARTED" | "PENDING" | "APPROVED" | "BANNED"
-  >("NOT_STARTED");
   const [is2FAModalOpen, setIs2FAModalOpen] = useState(false);
-  type PeriodKey =
-    | "today"
-    | "yesterday"
-    | "7d"
-    | "30d"
-    | "lastMonth"
-    | "max"
-    | "custom";
-  const [period, setPeriod] = useState<PeriodKey>("today");
-  const [refreshAt, setRefreshAt] = useState<Date>(new Date());
 
-  // Data selecionada no gráfico "Desempenho Diário" (estilo FlevoPay). A
-  // dashboard (métricas + gráfico) reflete esse dia. Default = hoje.
-  const ymdLocal = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-      d.getDate()
-    ).padStart(2, "0")}`;
-  const [selectedDate, setSelectedDate] = useState<string>(() =>
-    ymdLocal(new Date())
-  );
-
-  /* ---------- Drawer de Filtros (botão "Filtros" no topo) ----------
-   * Mantém estados PROVISÓRIOS (draftStatus / draftFrom / draftTo) que
-   * só viram efetivos quando o seller clica "Aplicar Filtros".
-   */
-  type StatusFilter = "all" | "PAID" | "PENDING" | "REFUNDED";
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [customRange, setCustomRange] = useState<{ from: string; to: string }>({
-    from: "",
-    to: "",
-  });
-
-  // estados de rascunho (só salva ao clicar Aplicar)
-  const [draftStatus, setDraftStatus] = useState<StatusFilter>("all");
-  const [draftRange, setDraftRange] = useState<{ from: string; to: string }>({
-    from: "",
-    to: "",
-  });
-  const [showCal, setShowCal] = useState(false);
-
-  // ao abrir o drawer, hidrata o rascunho com o estado atual
-  const openFilters = () => {
-    setDraftStatus(statusFilter);
-    setDraftRange(customRange);
-    setFiltersOpen(true);
-  };
-  const applyFilters = () => {
-    setStatusFilter(draftStatus);
-    setCustomRange(draftRange);
-    if (draftRange.from && draftRange.to) setPeriod("custom");
-    setFiltersOpen(false);
-  };
-  const clearFilters = () => {
-    setDraftStatus("all");
-    setDraftRange({ from: "", to: "" });
-    setStatusFilter("all");
-    setCustomRange({ from: "", to: "" });
-    if (period === "custom") setPeriod("today");
-    setFiltersOpen(false);
-  };
-
-  /* ---------- fetch user profile (2FA flags) ---------- */
-  useEffect(() => {
-    if (
-      user &&
-      (user as any).kycStatus &&
-      verification !== (user as any).kycStatus
-    ) {
-      setVerification((user as any).kycStatus);
+  /* ---------- período (Hoje, 7 dias, Máximo, personalizado...) ---------- */
+  const [period, setPeriod] = useState<Period>(loadSavedPeriod);
+  const changePeriod = (p: Period) => {
+    setPeriod(p);
+    try {
+      localStorage.setItem(PERIOD_KEY, JSON.stringify(p));
+    } catch {
+      /* ignora */
     }
-  }, [user, verification]);
+  };
+  // muda à meia-noite pra "Hoje"/"7 dias" acompanharem o dia novo sem recarregar
+  const [dayKey, setDayKey] = useState(() => ymd(new Date()));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const resolved = useMemo(() => resolvePeriod(period), [period, dayKey]);
 
+  /* ---------- perfil (flags do 2FA) ---------- */
   useEffect(() => {
     if (!token) return;
     (async () => {
@@ -198,81 +116,58 @@ function DashboardContent() {
     })();
   }, [token]);
 
-  /* ---------- wallet ---------- */
-  useEffect(() => {
-    if (!user || !token) return;
-    (async () => {
-      try {
-        const r = await axios.get(`${API}/api/user/dashboard-stats`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (r.data?.success) {
-          setWalletStats({
-            currentBalance: Number(r.data.data.currentBalance) || 0,
-            blockedBalance: Number(r.data.data.blockedBalance) || 0,
-          });
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    })();
-  }, [user, token]);
-
-  /* ---------- transactions ----------
-   * Busca as vendas DO DIA SELECIONADO + os totais desse dia calculados no
-   * banco (`stats`: pagas, conversão, ticket médio...). O `summary` traz os
-   * agregados da vida toda (usado na barra de premiação).
+  /* ---------- dados do período ----------
+   * Métricas: `stats` de /transactions-report (calculado no banco pro
+   * período inteiro). Gráfico: /sales-series (agrupado no banco no fuso do
+   * aparelho). `summary.totalEntradas` = líquido da vida toda (premiação).
    */
-  const [dayStats, setDayStats] = useState<SalesStats>(EMPTY_STATS);
-  const fetchTransactions = async () => {
+  const [stats, setStats] = useState<SalesStats>(EMPTY_STATS);
+  const [points, setPoints] = useState<SeriesPoint[]>([]);
+  const [lifetimeNet, setLifetimeNet] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const reqId = useRef(0);
+
+  const fetchData = async (silent: boolean) => {
     if (!token) return;
-    setIsLoading(true);
-    try {
-      const { start, end } = periodRanges.curr;
-      const params = new URLSearchParams({
-        page: "1",
-        limit: "1000",
-        startDate: start.toISOString(),
-        endDate: end.toISOString(),
-      });
-      const r = await axios.get(
-        `${API}/api/user/transactions-report?${params}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (r.data?.success) {
-        setTxData({
-          totals: {
-            totalTransacionado:
-              Number(r.data.data.summary?.totalTransactionado) || 0,
-            totalEntradas: Number(r.data.data.summary?.totalEntradas) || 0,
-            totalSaidas: Number(r.data.data.summary?.totalSaidas) || 0,
-          },
-          transactions: r.data.data.transactions || [],
-        });
-        setDayStats(r.data.data.stats || EMPTY_STATS);
-        setRefreshAt(new Date());
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsLoading(false);
+    const id = ++reqId.current;
+    if (!silent) setLoading(true);
+    const range = new URLSearchParams();
+    if (resolved.start) range.append("startDate", resolved.start.toISOString());
+    if (resolved.end) range.append("endDate", resolved.end.toISOString());
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Sao_Paulo";
+    const headers = { Authorization: `Bearer ${token}` };
+    const [rep, ser] = await Promise.allSettled([
+      axios.get(`${API}/api/user/transactions-report?page=1&limit=1&${range}`, { headers }),
+      axios.get(
+        `${API}/api/user/sales-series?bucket=${resolved.bucket}&tz=${encodeURIComponent(tz)}&${range}`,
+        { headers }
+      ),
+    ]);
+    if (id !== reqId.current) return; // trocou de período no meio: ignora resposta velha
+    if (rep.status === "fulfilled" && rep.value.data?.success) {
+      setStats(rep.value.data.data.stats || EMPTY_STATS);
+      setLifetimeNet(Number(rep.value.data.data.summary?.totalEntradas) || 0);
     }
+    if (ser.status === "fulfilled" && ser.value.data?.success) {
+      setPoints(ser.value.data.data.points || []);
+    }
+    setLoading(false);
   };
 
   useEffect(() => {
-    if (user && token) fetchTransactions();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, token, selectedDate]);
-
-  /* refresh suave a cada 30s pra venda nova entrar no painel sem reload */
-  useEffect(() => {
-    if (!user || !token) return;
-    const id = setInterval(() => {
-      fetchTransactions();
+    if (!token) return;
+    fetchData(false);
+    // atualiza sozinho a cada 30s pra venda nova entrar sem recarregar
+    const t = setInterval(() => {
+      const k = ymd(new Date());
+      if (k !== dayKey) setDayKey(k); // virou o dia → recalcula o período e busca de novo
+      else fetchData(true);
     }, 30_000);
-    return () => clearInterval(id);
+    return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, token, selectedDate]);
+  }, [token, period, dayKey]);
+
+  const chartData = useMemo(() => buildChartBuckets(resolved, points), [resolved, points]);
 
   const fmt = (v: number) =>
     new Intl.NumberFormat("pt-BR", {
@@ -281,329 +176,30 @@ function DashboardContent() {
     }).format(v || 0);
   const num = (v: number) => new Intl.NumberFormat("pt-BR").format(v || 0);
   const hideable = (v: string) => (valuesVisible ? v : "••••••");
-
-  /* ---------- helpers de período ----------
-   * Cada período tem uma janela `[start, end)` real, e o "período
-   * anterior" tem o MESMO tamanho imediatamente antes — assim a delta
-   * é uma comparação justa.
-   */
-  type Range = { start: Date; end: Date };
-
-  const periodRanges = useMemo((): { curr: Range; prev: Range } => {
-    // Janela = o DIA selecionado (estilo FlevoPay). "prev" = dia anterior,
-    // só pra manter os cálculos de delta válidos (não são mais exibidos).
-    const p = selectedDate.split("-");
-    const y = Number(p[0]);
-    const m = Number(p[1]);
-    const d = Number(p[2]);
-    const start = new Date(y, m - 1, d, 0, 0, 0, 0);
-    const end = new Date(y, m - 1, d, 23, 59, 59, 999);
-    const prevStart = new Date(y, m - 1, d - 1, 0, 0, 0, 0);
-    const prevEnd = new Date(y, m - 1, d - 1, 23, 59, 59, 999);
-    return { curr: { start, end }, prev: { start: prevStart, end: prevEnd } };
-  }, [selectedDate]);
-
-  const periodLabel: Record<PeriodKey, string> = {
-    today: "vs ontem",
-    yesterday: "vs anteontem",
-    "7d": "vs 7 dias antes",
-    "30d": "vs mês passado",
-    lastMonth: "vs mês anterior",
-    max: "histórico",
-    custom: "vs período anterior",
+  // eixo do gráfico: "R$ 750", "R$ 2,5K", "R$ 1,2M"
+  const axisMoney = (v: number) => {
+    if (!valuesVisible) return "•••";
+    const short = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+    if (v >= 1_000_000) return `R$ ${short(v / 1_000_000)}M`;
+    if (v >= 1000) return `R$ ${short(v / 1000)}K`;
+    return `R$ ${Math.round(v)}`;
   };
-
-  const inRange = (t: any, r: Range) => {
-    if (!t?.createdAt) return false;
-    const d = new Date(t.createdAt).getTime();
-    return d >= r.start.getTime() && d <= r.end.getTime();
-  };
-
-  /* ---------- derived computations (período-aware + filtro status) ---------- */
-  const allTxs = txData.transactions;
-  const matchStatus = (t: any) => {
-    if (statusFilter === "all") return true;
-    if (statusFilter === "PAID") return isPaidTx(t);
-    if (statusFilter === "PENDING") return isPendingTx(t);
-    if (statusFilter === "REFUNDED") return isRefundTx(t);
-    return true;
-  };
-  const txs = useMemo(
-    () =>
-      allTxs.filter((t) => inRange(t, periodRanges.curr) && matchStatus(t)),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [allTxs, periodRanges, statusFilter]
-  );
-  const prevTxs = useMemo(
-    () =>
-      allTxs.filter((t) => inRange(t, periodRanges.prev) && matchStatus(t)),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [allTxs, periodRanges, statusFilter]
-  );
-
-  // status vem como apelido ("approved"); o tradutor usa statusRaw
-  const isPaid = (t: any) => isPaidTx(t);
-  const isRefund = (t: any) => isRefundTx(t);
-  const isPix = (t: any) => String(t.method).toUpperCase() === "PIX";
-
-  const computeBlock = (rows: any[]) => {
-    const paid = rows.filter(isPaid);
-    const refunded = rows.filter(isRefund);
-    const pix = rows.filter(isPix);
-    const grossSum = paid.reduce((a, t) => a + Number(t.grossAmount || 0), 0);
-    const netSum = paid.reduce((a, t) => a + Number(t.netAmount || 0), 0);
-    const conv = rows.length > 0 ? (paid.length / rows.length) * 100 : 0;
-    const avgTicket = paid.length > 0 ? grossSum / paid.length : 0;
-    return {
-      total: rows.length,
-      paid,
-      refunded,
-      pix,
-      grossSum,
-      netSum,
-      conv,
-      avgTicket,
-      paidCount: paid.length,
-      pixCount: pix.length,
-      refundCount: refunded.length,
-      approvalRate: conv,
-    };
-  };
-
-  const curr = useMemo(() => computeBlock(txs), [txs]);
-  const prev = useMemo(() => computeBlock(prevTxs), [prevTxs]);
-
-  /* Métricas do dia: sem filtro de status, usa os totais EXATOS calculados
-   * no banco (`stats`); com filtro, calcula das vendas do dia filtradas. */
-  const isMax = period === "max";
-  const useServer = statusFilter === "all";
-  const grossSum = useServer ? dayStats.paid.gross : curr.grossSum;
-  const netSum = useServer ? dayStats.paid.net : curr.netSum;
-  const paid = curr.paid;
-  const paidCount = useServer ? dayStats.paid.count : curr.paidCount;
-  const refunded = curr.refunded;
-  const pixGenerated = curr.pix;
-  const totalTx = useServer ? dayStats.total : curr.total;
-  const conv = useServer ? dayStats.conversion : curr.conv;
-  const avgTicket = useServer ? dayStats.avgTicket : curr.avgTicket;
-  const approvalRate = conv;
-
-  /* ---------- delta real (atual vs anterior) ----------
-   *  Sempre devolve uma porcentagem. Quando o baseline é 0:
-   *    - currentVal > 0 → +100% (representação de "tudo veio agora")
-   *    - currentVal == 0 → 0%
-   *  Sem mais "novo" / "—".
-   */
-  function fmtDelta(
-    currentVal: number,
-    previousVal: number,
-    opts: { kind?: "pct" | "abs"; suffix?: "pp" } = {}
-  ): { text: string; direction: "up" | "down" | "flat" } | null {
-    if (isMax) return null; // "máximo" não tem baseline
-
-    // Delta absoluta (pp) — usada pra conversão / aprovação
-    if (opts.kind === "abs") {
-      const diff = currentVal - previousVal;
-      return {
-        text: `${diff >= 0 ? "+" : ""}${diff.toFixed(1)}${opts.suffix ?? ""}`,
-        direction: diff > 0 ? "up" : diff < 0 ? "down" : "flat",
-      };
-    }
-
-    // Sem nada nos dois períodos
-    if (previousVal === 0 && currentVal === 0) {
-      return { text: "0%", direction: "flat" };
-    }
-
-    // Baseline zero, hoje tem algo → considera 100% de crescimento
-    if (previousVal === 0) {
-      return currentVal > 0
-        ? { text: "+100%", direction: "up" }
-        : { text: "0%", direction: "flat" };
-    }
-
-    const pct = ((currentVal - previousVal) / previousVal) * 100;
-    return {
-      text: `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`,
-      direction: pct > 0 ? "up" : pct < 0 ? "down" : "flat",
-    };
-  }
-
-  const dGross = fmtDelta(grossSum, prev.grossSum);
-  const dNet = fmtDelta(netSum, prev.netSum);
-  const dConv = fmtDelta(conv, prev.conv, { kind: "abs", suffix: "pp" });
-  const dPaid = fmtDelta(curr.paidCount, prev.paidCount);
-  const dTotal = fmtDelta(curr.total, prev.total);
-  const dPix = fmtDelta(curr.pixCount, prev.pixCount);
-  const dRefund = fmtDelta(curr.refundCount, prev.refundCount);
-  const dTicket = fmtDelta(avgTicket, prev.avgTicket);
-  const dApproval = fmtDelta(approvalRate, prev.approvalRate, {
-    kind: "abs",
-    suffix: "pp",
-  });
-
-  /* "Próximo repasse" = D+1 útil (sex pula pra seg) */
-  const nextPayout = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
-    return d.toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  }, []);
-
-  /* ---------- buckets do gráfico — janela depende do período ----------
-   *  - today/yesterday  → 13 buckets de 2h
-   *  - 7d / 30d / mês   → buckets por dia
-   *  - máximo           → buckets por mês
-   */
-  type Bucket = { label: string; key: string; gross: number; paid: number; pix: number };
-
-  const chartData = useMemo<Bucket[]>(() => {
-    // Sempre por hora do dia selecionado (00:00 → 22:00, passos de 2h),
-    // igual ao "Desempenho Diário" da FlevoPay.
-    const buckets: Bucket[] = [];
-    for (let i = 0; i < 12; i++) {
-      buckets.push({
-        label: `${String(i * 2).padStart(2, "0")}:00`,
-        key: String(i),
-        gross: 0,
-        paid: 0,
-        pix: 0,
-      });
-    }
-    for (const t of txs) {
-      if (!t.createdAt) continue;
-      const d = new Date(t.createdAt);
-      const idx = Math.min(11, Math.floor(d.getHours() / 2));
-      const b = buckets[idx];
-      if (!b) continue;
-      b.gross += Number(t.grossAmount || 0);
-      if (isPaid(t)) b.paid += 1;
-      if (isPix(t)) b.pix += 1;
-    }
-    return buckets;
-  }, [txs]);
-
-  /* ---------- sparkline data (last N points per metric) ---------- */
-  const sparkGross = chartData.map((b) => b.gross);
-  const sparkPaid = chartData.map((b) => b.paid);
-  const sparkConv = chartData.map((b) =>
-    b.paid > 0 && b.gross > 0 ? (b.paid / Math.max(1, b.gross / 100)) * 100 : 0
-  );
-  const sparkPaidCount = chartData.map((b) => b.paid);
-
-  /* ---------- live feed (independente do período — atividade em si) ---------- */
-  const liveFeed = useMemo(() => {
-    return [...allTxs]
-      .sort(
-        (a, b) =>
-          new Date(b.createdAt || 0).getTime() -
-          new Date(a.createdAt || 0).getTime()
-      )
-      .slice(0, 8)
-      .map((t) => {
-        const status = txStatus(t);
-        const method = String(t.method || "").toUpperCase();
-        const paidNow = status === "PAID";
-        return {
-          id: t.id,
-          title: paidNow
-            ? "Venda aprovada"
-            : method === "PIX"
-            ? "PIX gerado"
-            : `Transação ${status}`,
-          name: t.customer?.name || t.customerName || "Cliente",
-          value: `+${fmt(Number(t.grossAmount || 0))}`,
-          at: t.createdAt,
-          kind: paidNow ? "paid" : "pix",
-          color: paidNow ? T.primary : T.green,
-        };
-      });
-  }, [allTxs]);
-
-  /* ---------- greeting ---------- */
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
 
   if (!user) return null;
 
-  /* ---------- KPI data ---------- */
-  const deltaText = periodLabel[period];
-
-  type Secondary = {
-    label: string;
-    value: string;
-    delta: { text: string; direction: "up" | "down" | "flat" } | null;
-    icon: any;
-    color: string;
-    /** quando true, "down" é bom (ex.: reembolsos caindo) */
-    negativeIsGood?: boolean;
-  };
-
-  const secondary: Secondary[] = [
-    {
-      label: "Pedidos totais",
-      value: num(totalTx),
-      delta: dTotal,
-      icon: <ShoppingCart className="h-4 w-4" />,
-      color: T.primary,
-    },
-    {
-      label: "PIX gerados",
-      value: num(pixGenerated.length),
-      delta: dPix,
-      icon: <Zap className="h-4 w-4" />,
-      color: T.green,
-    },
-    {
-      label: "Pedidos pagos",
-      value: num(paidCount),
-      delta: dPaid,
-      icon: <CheckCircle2 className="h-4 w-4" />,
-      color: T.blue,
-    },
-    {
-      label: "Reembolsos",
-      value: num(refunded.length),
-      delta: dRefund,
-      icon: <RotateCcw className="h-4 w-4" />,
-      color: T.red,
-      negativeIsGood: true,
-    },
-    {
-      label: "Ticket médio",
-      value: hideable(fmt(avgTicket)),
-      delta: dTicket,
-      icon: <ReceiptText className="h-4 w-4" />,
-      color: T.orange,
-    },
-    {
-      label: "Aprovação",
-      value: `${approvalRate.toFixed(1)}%`,
-      delta: dApproval,
-      icon: <ShieldCheck className="h-4 w-4" />,
-      color: T.green,
-    },
-  ];
-
-  /* Faixa de métricas do topo (design do Figma) — valores reais do período
-     selecionado. "Vendas" = pedidos pagos. */
+  /* Faixa de métricas — valores exatos do período selecionado. */
   const statStrip = [
-    { label: "Faturamento Bruto", value: hideable(fmt(grossSum)) },
-    { label: "Faturamento Líquido", value: hideable(fmt(netSum)) },
+    { label: "Faturamento Bruto", value: hideable(fmt(stats.paid.gross)) },
+    { label: "Faturamento Líquido", value: hideable(fmt(stats.paid.net)) },
     {
       label: "Taxa de conversão",
-      value: `${conv.toLocaleString("pt-BR", {
+      value: `${stats.conversion.toLocaleString("pt-BR", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       })}%`,
     },
-    { label: "Ticket médio", value: hideable(fmt(avgTicket)) },
-    { label: "Vendas pagas", value: num(paidCount) },
+    { label: "Ticket médio", value: hideable(fmt(stats.avgTicket)) },
+    { label: "Vendas pagas", value: num(stats.paid.count) },
   ];
 
   /* Próxima premiação — progresso do faturamento rumo aos prêmios da campanha
@@ -614,7 +210,7 @@ function DashboardContent() {
     { target: 1_000_000, prize: "iPhone 18 Pro Max" },
     { target: 2_000_000, prize: "Fix de R$ 10.000" },
   ];
-  const totalRevenue = Number(txData.totals.totalEntradas) || 0;
+  const totalRevenue = lifetimeNet;
   const lastPrize = prizes[prizes.length - 1]!;
   const nextPrize = prizes.find((p) => totalRevenue < p.target) ?? lastPrize;
   const prizeProgress = Math.min(100, (totalRevenue / nextPrize.target) * 100);
@@ -664,6 +260,17 @@ function DashboardContent() {
                 setUser={setLocalUser}
               />
 
+              {/* Período — controla as métricas e o gráfico */}
+              <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 className="text-[16px] font-bold tracking-tight text-slate-900">
+                    Resumo de vendas
+                  </h2>
+                  <p className="text-[12.5px] text-slate-500">{resolved.description}</p>
+                </div>
+                <PeriodPicker value={period} onChange={changePeriod} />
+              </div>
+
               {/* KPIs — faixa única. Espaçamentos iguais aos da FlevoPay:
                   padding 32px (p-8), gap 24px entre colunas (gap-6), radius
                   12px; rótulo 14px/500, valor 28px/800, gap rótulo→valor 8px. */}
@@ -672,6 +279,7 @@ function DashboardContent() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                 className="mb-6 p-0 sm:rounded-[12px] sm:border sm:border-[#E2E8F0] sm:bg-white sm:p-8 sm:shadow-[0_1px_1px_rgba(15,23,42,0.04)]"
+                style={{ opacity: loading ? 0.55 : 1, transition: "opacity 0.2s" }}
               >
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-6 md:grid-cols-3 xl:grid-cols-5">
                   {statStrip.map((s) => (
@@ -727,39 +335,29 @@ function DashboardContent() {
                     boxShadow: T.cardShadow,
                   }}
                 >
-                  <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <h2
-                        className="text-[15px] font-bold tracking-tight text-slate-900"
-                        style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
-                      >
-                        Desempenho Diário
-                      </h2>
-                      <p className="text-[12px] text-slate-500">
-                        Evolução financeira no período selecionado.
-                      </p>
-                    </div>
-                    {/* Seletor de data (estilo FlevoPay) — controla o dia exibido */}
-                    <div
-                      className="inline-flex h-9 items-center gap-2 rounded-lg px-3"
-                      style={{ border: `1px solid ${T.border}`, background: "#F8FAFC" }}
+                  <div className="mb-5">
+                    <h2
+                      className="text-[15px] font-bold tracking-tight text-slate-900"
+                      style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
                     >
-                      <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                      <input
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        className="bg-transparent text-[12.5px] font-semibold text-slate-700 outline-none"
-                      />
-                    </div>
+                      Desempenho
+                    </h2>
+                    <p className="text-[12px] text-slate-500">
+                      Faturamento {BUCKET_TEXT[resolved.bucket]} · {resolved.description}
+                    </p>
                   </div>
 
                   {/* Chart */}
-                  <div className="min-h-[280px] w-full flex-1">
+                  <div className="relative min-h-[280px] w-full flex-1">
+                    {!loading && stats.total === 0 && (
+                      <p className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-[13px] font-medium text-slate-400">
+                        Nenhuma venda neste período
+                      </p>
+                    )}
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart
                         data={chartData}
-                        margin={{ top: 8, right: 16, left: -10, bottom: 0 }}
+                        margin={{ top: 8, right: 16, left: 0, bottom: 0 }}
                       >
                         <CartesianGrid
                           strokeDasharray="3 3"
@@ -772,39 +370,40 @@ function DashboardContent() {
                           fontSize={10}
                           tickLine={false}
                           axisLine={false}
+                          interval="preserveStartEnd"
+                          minTickGap={14}
                         />
                         <YAxis
                           stroke="#94A3B8"
                           fontSize={10}
                           tickLine={false}
                           axisLine={false}
-                          width={50}
-                          tickFormatter={(v: number) =>
-                            v >= 1000
-                              ? `R$ ${(v / 1000).toFixed(0)}K`
-                              : `R$ ${v}`
-                          }
+                          width={54}
+                          allowDecimals={false}
+                          tickFormatter={axisMoney}
                         />
                         <Tooltip
-                          contentStyle={{
-                            background: "white",
-                            border: `1px solid ${T.border}`,
-                            borderRadius: 12,
-                            boxShadow:
-                              "0 12px 32px rgba(15, 23, 42, 0.08)",
-                            fontSize: 12,
-                            color: T.text,
-                          }}
-                          labelStyle={{
-                            color: T.text2,
-                            fontWeight: 600,
-                          }}
-                          formatter={(v: any, name: any) => {
-                            if (name === "gross")
-                              return [fmt(Number(v)), "Faturamento"];
-                            if (name === "paid")
-                              return [num(Number(v)), "Pedidos pagos"];
-                            return [num(Number(v)), "PIX gerados"];
+                          cursor={{ stroke: "rgba(124,58,237,0.25)", strokeWidth: 1 }}
+                          content={({ active, payload }: any) => {
+                            const b: ChartBucket | undefined = active ? payload?.[0]?.payload : undefined;
+                            if (!b) return null;
+                            return (
+                              <div
+                                className="rounded-xl bg-white px-3.5 py-2.5"
+                                style={{ border: `1px solid ${T.border}`, boxShadow: "0 12px 32px rgba(15, 23, 42, 0.10)" }}
+                              >
+                                <p className="text-[11.5px] font-semibold text-slate-500">
+                                  {bucketTitle(resolved.bucket, b.key)}
+                                </p>
+                                <p className="mt-0.5 text-[15px] font-bold tabular-nums text-slate-900">
+                                  {hideable(fmt(b.gross))}
+                                </p>
+                                <p className="mt-0.5 text-[11.5px] text-slate-500">
+                                  {num(b.paid)} {b.paid === 1 ? "venda paga" : "vendas pagas"} · {num(b.total)}{" "}
+                                  {b.total === 1 ? "gerada" : "geradas"}
+                                </p>
+                              </div>
+                            );
                           }}
                         />
                         <Line
@@ -812,7 +411,7 @@ function DashboardContent() {
                           dataKey="gross"
                           stroke={T.primary}
                           strokeWidth={2.4}
-                          dot={false}
+                          dot={chartData.length <= 3 ? { r: 3 } : false}
                           activeDot={{ r: 4 }}
                         />
                       </LineChart>
@@ -820,7 +419,7 @@ function DashboardContent() {
                   </div>
                 </motion.div>
 
-                {/* Coluna direita: próxima premiação + atividade ao vivo */}
+                {/* Coluna direita: próxima premiação */}
                 <div className="flex flex-col gap-4">
                 {/* Próxima premiação — card claro (cor da página), placa no meio */}
                 <motion.div
@@ -929,171 +528,9 @@ function DashboardContent() {
             </div>
       </LightShell>
 
-      {/* ============================================================
-          DRAWER DE FILTROS — slide-in da direita
-          ============================================================ */}
-      {filtersOpen && (
-        <div
-          className="fixed inset-0 z-50 flex justify-end"
-          onClick={() => setFiltersOpen(false)}
-          style={{ background: "rgba(15,23,42,0.35)", backdropFilter: "blur(2px)" }}
-        >
-          <motion.aside
-            initial={{ x: 380 }}
-            animate={{ x: 0 }}
-            exit={{ x: 380 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            onClick={(e) => e.stopPropagation()}
-            className="flex h-full w-full max-w-[380px] flex-col bg-white"
-            style={{ boxShadow: "-12px 0 32px rgba(15,23,42,0.10)" }}
-          >
-            {/* Header */}
-            <div
-              className="flex items-center justify-between px-5 py-4"
-              style={{ borderBottom: `1px solid ${T.border}` }}
-            >
-              <p className="text-[15px] font-bold text-slate-900">Filtros</p>
-              <button
-                onClick={() => setFiltersOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
-                aria-label="Fechar"
-              >
-                <span style={{ fontSize: 20, lineHeight: 1 }}>×</span>
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-5 py-4">
-              {/* Action buttons */}
-              <div className="mb-5 grid grid-cols-2 gap-2">
-                <button
-                  onClick={applyFilters}
-                  className="inline-flex h-10 items-center justify-center rounded-xl text-[13px] font-bold text-white transition-colors"
-                  style={{
-                    background: T.primary,
-                    boxShadow: "0 1px 2px rgba(13,37,61,0.10)",
-                  }}
-                >
-                  Aplicar Filtros
-                </button>
-                <button
-                  onClick={clearFilters}
-                  className="inline-flex h-10 items-center justify-center rounded-xl text-[13px] font-bold transition-colors hover:bg-slate-50"
-                  style={{
-                    background: "#FFFFFF",
-                    border: `1px solid ${T.border}`,
-                    color: T.text,
-                  }}
-                >
-                  Limpar
-                </button>
-              </div>
-
-              <div
-                className="my-5 h-px w-full"
-                style={{ background: T.border }}
-              />
-
-              {/* Status */}
-              <div className="mb-5">
-                <label className="mb-1.5 block text-[12px] font-semibold text-slate-600">
-                  Status
-                </label>
-                <select
-                  value={draftStatus}
-                  onChange={(e) =>
-                    setDraftStatus(e.target.value as StatusFilter)
-                  }
-                  className="h-11 w-full rounded-xl border bg-white px-3 text-[13px] font-semibold outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100"
-                  style={{ borderColor: T.border, color: T.text }}
-                >
-                  <option value="all">Todos os status</option>
-                  <option value="PAID">Concluído</option>
-                  <option value="PENDING">Pendente</option>
-                  <option value="REFUNDED">Estornada</option>
-                </select>
-              </div>
-
-              {/* Período personalizado */}
-              <div>
-                <label className="mb-1.5 block text-[12px] font-semibold text-slate-600">
-                  Período
-                </label>
-                <button
-                  onClick={() => setShowCal((v) => !v)}
-                  className="flex h-11 w-full items-center justify-between rounded-xl border bg-white px-3 text-[13px] font-semibold outline-none transition-colors hover:bg-slate-50 focus:border-violet-300 focus:ring-2 focus:ring-violet-100"
-                  style={{ borderColor: T.border, color: T.text }}
-                >
-                  <span>
-                    {draftRange.from && draftRange.to
-                      ? `${new Date(
-                          draftRange.from + "T00:00:00"
-                        ).toLocaleDateString("pt-BR")} - ${new Date(
-                          draftRange.to + "T00:00:00"
-                        ).toLocaleDateString("pt-BR")}`
-                      : "Selecione um período"}
-                  </span>
-                  <Calendar className="h-4 w-4" style={{ color: T.textMuted }} />
-                </button>
-
-                {showCal && (
-                  <div
-                    className="mt-2 rounded-xl border p-3"
-                    style={{
-                      borderColor: T.border,
-                      background: "#FFFFFF",
-                    }}
-                  >
-                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                      Data inicial
-                    </p>
-                    <input
-                      type="date"
-                      value={draftRange.from}
-                      max={draftRange.to || undefined}
-                      onChange={(e) =>
-                        setDraftRange({ ...draftRange, from: e.target.value })
-                      }
-                      className="h-9 w-full rounded-lg border bg-white px-3 text-[13px] outline-none"
-                      style={{ borderColor: T.border }}
-                    />
-                    <p className="mb-2 mt-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                      Data final
-                    </p>
-                    <input
-                      type="date"
-                      value={draftRange.to}
-                      min={draftRange.from || undefined}
-                      onChange={(e) =>
-                        setDraftRange({ ...draftRange, to: e.target.value })
-                      }
-                      className="h-9 w-full rounded-lg border bg-white px-3 text-[13px] outline-none"
-                      style={{ borderColor: T.border }}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          </motion.aside>
-        </div>
-      )}
-
       <ShadowPanel />
     </>
   );
-}
-
-/* helpers */
-function timeAgo(iso?: string) {
-  if (!iso) return "—";
-  const t = new Date(iso).getTime();
-  const diff = Date.now() - t;
-  if (diff < 60_000) return "agora";
-  const m = Math.floor(diff / 60_000);
-  if (m < 60) return `${m} min atrás`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h atrás`;
-  const d = Math.floor(h / 24);
-  return `${d}d atrás`;
 }
 
 export default function DashboardPage() {
