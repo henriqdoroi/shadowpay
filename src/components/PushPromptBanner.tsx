@@ -1,18 +1,25 @@
 "use client";
 
 /**
- * PushPromptBanner — convite compacto no dashboard pra ativar as notificações
- * neste aparelho. Só aparece quando dá pra ativar (ou no iPhone sem o app
- * instalado, com o caminho pra instalar). Some por 7 dias se o seller fechar.
+ * PushPromptBanner — convite no dashboard pra ativar as notificações neste
+ * aparelho. Aparece quando ainda não está ativo: pra ativar na hora, pra
+ * instalar o app (iPhone) ou pra liberar (bloqueado). Some por 7 dias se o
+ * seller fechar. "Ver como" abre o painel do sino com o passo a passo.
  */
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { BellRing, Loader2, Smartphone, X } from "lucide-react";
+import { BellOff, BellRing, Loader2, Smartphone, X } from "lucide-react";
 import { toast } from "sonner";
 import { enablePush, getPushState, prefetchVapidKey, type PushState } from "@/lib/push";
+import { openNotificationsPanel } from "@/components/NotificationsBell";
 
 const DISMISS_KEY = "sp_push_banner_dismissed_at";
 const DISMISS_MS = 7 * 24 * 60 * 60 * 1000;
+
+const COPY: Partial<Record<PushState, { title: string; text: string }>> = {
+  prompt: { title: "Receba suas vendas no celular", text: "Aviso na hora de PIX gerado e de venda aprovada." },
+  "ios-install": { title: "Instale o app e receba suas vendas", text: "No iPhone, as notificações chegam pelo app na Tela de Início." },
+  denied: { title: "Notificações bloqueadas neste aparelho", text: "Libere nas configurações pra receber suas vendas na hora." },
+};
 
 export function PushPromptBanner({ token }: { token: string | null }) {
   const [state, setState] = useState<PushState>("checking");
@@ -29,9 +36,9 @@ export function PushPromptBanner({ token }: { token: string | null }) {
     getPushState().then((s) => {
       if (!alive) return;
       setState(s);
-      if (s === "prompt" || s === "ios-install") {
+      if (COPY[s]) {
         setVisible(true);
-        prefetchVapidKey();
+        if (s === "prompt") prefetchVapidKey();
       }
     });
     return () => {
@@ -39,7 +46,8 @@ export function PushPromptBanner({ token }: { token: string | null }) {
     };
   }, []);
 
-  if (!visible || !token) return null;
+  const copy = COPY[state];
+  if (!visible || !token || !copy) return null;
 
   const dismiss = () => {
     try {
@@ -59,11 +67,11 @@ export function PushPromptBanner({ token }: { token: string | null }) {
       else toast.error(r.message, { duration: 8000 });
       const s = await getPushState();
       setState(s);
-      if (s !== "prompt") setVisible(false);
+      if (!COPY[s]) setVisible(false);
     });
   };
 
-  const ios = state === "ios-install";
+  const Icon = state === "ios-install" ? Smartphone : state === "denied" ? BellOff : BellRing;
   return (
     <div
       className="mb-6 flex items-center gap-3 rounded-2xl p-3.5 sm:p-4"
@@ -76,27 +84,13 @@ export function PushPromptBanner({ token }: { token: string | null }) {
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white"
         style={{ background: "linear-gradient(135deg, #7C3AED, #5B21B6)", boxShadow: "0 8px 20px -10px rgba(124,58,237,0.7)" }}
       >
-        {ios ? <Smartphone className="h-5 w-5" /> : <BellRing className="h-5 w-5" />}
+        <Icon className="h-5 w-5" />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[13.5px] font-bold text-slate-900">
-          {ios ? "Instale o app e receba suas vendas" : "Receba suas vendas no celular"}
-        </p>
-        <p className="text-[12px] leading-snug text-slate-500">
-          {ios
-            ? "No iPhone, as notificações chegam pelo app na Tela de Início."
-            : "Aviso na hora de PIX gerado e de venda aprovada."}
-        </p>
+        <p className="text-[13.5px] font-bold text-slate-900">{copy.title}</p>
+        <p className="text-[12px] leading-snug text-slate-500">{copy.text}</p>
       </div>
-      {ios ? (
-        <Link
-          href="/v1/configs/notifications"
-          className="inline-flex h-9 shrink-0 items-center rounded-xl px-4 text-[12.5px] font-bold text-white"
-          style={{ background: "#7C3AED" }}
-        >
-          Ver como
-        </Link>
-      ) : (
+      {state === "prompt" ? (
         <button
           onClick={activate}
           disabled={busy}
@@ -105,6 +99,14 @@ export function PushPromptBanner({ token }: { token: string | null }) {
         >
           {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
           {busy ? "Ativando…" : "Ativar"}
+        </button>
+      ) : (
+        <button
+          onClick={openNotificationsPanel}
+          className="inline-flex h-9 shrink-0 items-center rounded-xl px-4 text-[12.5px] font-bold text-white"
+          style={{ background: "#7C3AED" }}
+        >
+          Ver como
         </button>
       )}
       <button

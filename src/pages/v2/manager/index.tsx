@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { PushPromptBanner } from "@/components/PushPromptBanner";
 import { useRouter } from "next/router";
 import axios from "axios";
 import Head from "next/head";
@@ -156,7 +157,7 @@ function calcProfit(
 }
 
 function ManagerDashboardContent() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [filterStartDate, setFilterStartDate] = useState<string | null>(null);
@@ -436,6 +437,9 @@ function ManagerDashboardContent() {
             {loading ? "Atualizando…" : "Atualizar"}
           </button>
         </header>
+
+        {/* Convite pra ativar as notificações neste aparelho */}
+        <PushPromptBanner token={token} />
 
         {/* Filtros */}
         <form

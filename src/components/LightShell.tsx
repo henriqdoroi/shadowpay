@@ -4,9 +4,9 @@ import { ReactNode, useState, useEffect, useMemo, type CSSProperties } from "rea
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import { NotificationsBell } from "@/components/NotificationsBell";
 import {
   Search,
-  Bell,
   MessageCircle,
   HelpCircle,
   ChevronDown,
@@ -695,18 +695,8 @@ export function LightShell({
               >
                 <MessageCircle className="h-4 w-4" />
               </a>
-              <button
-                className="relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
-                style={{ border: `1px solid ${T.border}` }}
-              >
-                <Bell className="h-4 w-4" />
-                <span
-                  className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold text-white"
-                  style={{ background: T.primary }}
-                >
-                  3
-                </span>
-              </button>
+              {/* Sino: abre o painel de notificações push deste aparelho */}
+              <NotificationsBell borderColor={T.border} primary={T.primary} />
               <button
                 className="hidden h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 sm:flex"
                 style={{ border: `1px solid ${T.border}` }}

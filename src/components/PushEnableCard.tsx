@@ -142,10 +142,12 @@ export type PushSetupViewProps = {
   onTest: () => void;
   onDisable: () => void;
   onRefresh: () => void;
+  /** Layout empilhado (ex.: dentro do painel do sino), independente da tela. */
+  compact?: boolean;
 };
 
 export function PushSetupView(p: PushSetupViewProps) {
-  const card = "rounded-2xl bg-white p-5";
+  const card = p.compact ? "rounded-2xl bg-white p-4" : "rounded-2xl bg-white p-5";
   const cardStyle = { border: `1px solid ${T.border}` };
 
   if (p.state === "checking") {
@@ -247,10 +249,10 @@ export function PushSetupView(p: PushSetupViewProps) {
   if (p.state === "prompt") {
     return (
       <div
-        className="overflow-hidden rounded-2xl p-5"
+        className={`overflow-hidden rounded-2xl ${p.compact ? "p-4" : "p-5"}`}
         style={{ ...cardStyle, background: "radial-gradient(120% 140% at 100% 0%, rgba(124,58,237,0.10) 0%, #FFFFFF 55%)" }}
       >
-        <div className="grid items-center gap-5 sm:grid-cols-[1fr_280px]">
+        <div className={p.compact ? "grid gap-4" : "grid items-center gap-5 sm:grid-cols-[1fr_280px]"}>
           <div>
             <span className="flex h-11 w-11 items-center justify-center rounded-xl text-white" style={{ background: `linear-gradient(135deg, ${T.primary}, ${T.primaryDark})`, boxShadow: "0 10px 24px -10px rgba(124,58,237,0.7)" }}>
               <BellRing className="h-5 w-5" />
@@ -279,7 +281,7 @@ export function PushSetupView(p: PushSetupViewProps) {
   const devices = p.devices || [];
   return (
     <div className={card} style={cardStyle}>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+      <div className={p.compact ? "flex flex-col gap-3" : "flex flex-col gap-4 sm:flex-row sm:items-center"}>
         <div className="flex flex-1 items-start gap-3">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ background: T.greenSoft, color: T.green }}>
             <Check className="h-5 w-5" />
@@ -338,13 +340,14 @@ export function PushSetupView(p: PushSetupViewProps) {
   );
 }
 
-export function PushEnableCard() {
+export function PushEnableCard({ compact = false }: { compact?: boolean } = {}) {
   const { token } = useAuth();
   const push = usePush(token);
 
   return (
-    <div className="mb-5">
+    <div className={compact ? "" : "mb-5"}>
       <PushSetupView
+        compact={compact}
         state={push.state}
         platform={push.platform}
         busy={push.busy}
