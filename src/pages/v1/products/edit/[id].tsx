@@ -1,4 +1,5 @@
-import { AppSidebar } from "@/components/app-sidebar";
+import Head from "next/head";
+import { LightShell } from "@/components/LightShell";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -9,11 +10,6 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -736,46 +732,22 @@ export default function EditProduct() {
   };
   if (!product) {
     return (
-      <div className="min-h-screen">
-        <SidebarProvider>
-          <AppSidebar />
-          <SidebarInset>
-            <div className="flex items-center justify-center h-full">
-              <p>Carregando produto...</p>
-            </div>
-          </SidebarInset>
-        </SidebarProvider>
-      </div>
+      <LightShell>
+        <Head>
+          <title>ShadowPay — Editar produto</title>
+        </Head>
+        <div className="flex h-64 items-center justify-center text-[14px] text-slate-500">Carregando produto…</div>
+      </LightShell>
     );
   }
 
   return (
-    <div className="min-h-screen" style={{ color: "#0F172A" }}>
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset
-          style={{
-            background: "#F1F3F8",
-            color: "#0F172A",
-          }}
-        >
-          <header className="flex items-center gap-3 px-4 pt-6 lg:px-8">
-            <SidebarTrigger style={{ color: "#64748B" }} />
-            <div>
-              <h1
-                className="text-2xl font-bold tracking-tight md:text-[28px]"
-                style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif", color: "#0F172A" }}
-              >
-                Editar Produto
-              </h1>
-              <p className="mt-1 text-xs" style={{ color: "#64748B" }}>
-                Ajuste produto, checkout e formas de pagamento
-              </p>
-            </div>
-          </header>
-
-          <div className="flex flex-1 flex-col gap-6 p-4 pt-0 min-h-screen">
-            {/* Header */}
+    <LightShell>
+      <Head>
+        <title>ShadowPay — Editar produto</title>
+      </Head>
+          <div className="flex flex-col gap-6 pb-10" style={{ color: "#0F172A" }}>
+            {/* Header (mesmo padrão das outras páginas) */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <Button
@@ -783,23 +755,22 @@ export default function EditProduct() {
                   variant="outline"
                   size="icon"
                   onClick={handleBack}
+                  aria-label="Voltar para Produtos"
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <div>
-                  <h1 className="text-2xl font-bold">Editar Produto</h1>
-                  <p className="text-muted-foreground">
-                    Modifique as informações do seu produto
-                  </p>
+                  <h1 className="text-[22px] font-bold tracking-tight text-slate-900 sm:text-[28px]">Editar produto</h1>
+                  <p className="mt-0.5 text-[14px] text-slate-500">Ajuste o produto, o checkout e as formas de pagamento.</p>
                 </div>
               </div>
               <Button
                 onClick={handleSave}
                 disabled={isLoading}
-                className="flex items-center gap-2 cursor-pointer"
+                className="flex h-11 items-center gap-2 rounded-xl bg-[#7C3AED] px-5 font-semibold text-white hover:bg-[#6D28D9] cursor-pointer"
               >
                 <Save className="h-4 w-4" />
-                {isLoading ? "Salvando..." : "Salvar Alterações"}
+                {isLoading ? "Salvando..." : "Salvar alterações"}
               </Button>
             </div>
 
@@ -3561,8 +3532,6 @@ export default function EditProduct() {
               </TabsContent>
             </Tabs>
           </div>
-        </SidebarInset>
-      </SidebarProvider>
-    </div>
+    </LightShell>
   );
 }

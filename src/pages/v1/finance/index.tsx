@@ -258,6 +258,8 @@ function FinanceContent() {
   // ---- saque handlers
   const detectPixKeyType = (k: string): string | null => {
     if (!k) return null;
+    // chave aleatória (EVP) primeiro: um UUID também tem dígitos
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(k.trim())) return "EVP";
     const c = k.replace(/\D/g, "");
     if (c.length === 11) return "CPF";
     if (c.length === 14) return "CNPJ";
@@ -288,20 +290,20 @@ function FinanceContent() {
       toast.error("Chave PIX inválida.");
       return;
     }
-    // 2FA obrigatório se habilitado
-    if (localUser?.twofaEnabled && localUser?.twofaConfirmed) {
+    // 2FA ativo: o saque só sai com o código do app (o servidor confere)
+    if (localUser?.twofaEnabled) {
       setTwoFAOpen(true);
       return;
     }
     await persistWithdraw(kind);
   };
 
-  const persistWithdraw = async (kind: string) => {
+  const persistWithdraw = async (kind: string, code?: string): Promise<boolean> => {
     setProcessing(true);
     try {
       const r = await axios.post(
         `${API}/api/payments/internal/withdraw`,
-        { amount: sacarValor, pixKey: pixKey.trim(), pixKeyType: kind },
+        { amount: sacarValor, pixKey: pixKey.trim(), pixKeyType: kind, ...(code ? { code } : {}) },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (r.data?.success) {
@@ -310,45 +312,37 @@ function FinanceContent() {
         setAmountInput("");
         setPixKey("");
         setRefreshKey((k) => k + 1);
-      } else {
-        toast.error(r.data?.message || "Erro ao processar saque.");
+        return true;
       }
+      toast.error(r.data?.message || "Erro ao processar saque.");
+      return false;
     } catch (e: any) {
+      // 2FA ligado em outro aparelho: pede o código aqui também
+      if (e?.response?.data?.error?.code === "TWOFA_REQUIRED") {
+        setLocalUser((u: any) => (u ? { ...u, twofaEnabled: true } : u));
+        setTwoFAOpen(true);
+        return false;
+      }
       toast.error(e?.response?.data?.message || "Erro de conexão.");
+      return false;
     } finally {
       setProcessing(false);
     }
   };
 
   const confirm2FA = async () => {
-    if (!twoFACode.trim()) {
-      toast.error("Informe o código 2FA.");
+    if (twoFACode.length !== 6) {
+      toast.error("Informe o código de 6 dígitos do app.");
       return;
     }
+    const kind = detectPixKeyType(pixKey.trim());
+    if (!kind) return;
     setTwoFALoading(true);
-    try {
-      const res = await fetch(`${API}/api/pages/2fa/verify`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ code: twoFACode }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setTwoFAOpen(false);
-        setTwoFACode("");
-        const kind = detectPixKeyType(pixKey.trim());
-        if (kind) await persistWithdraw(kind);
-      } else {
-        toast.error(data.message || "Código 2FA inválido.");
-      }
-    } catch (e) {
-      console.error(e);
-      toast.error("Erro ao verificar 2FA.");
-    } finally {
-      setTwoFALoading(false);
+    const ok = await persistWithdraw(kind, twoFACode);
+    setTwoFALoading(false);
+    if (ok) {
+      setTwoFAOpen(false);
+      setTwoFACode("");
     }
   };
 

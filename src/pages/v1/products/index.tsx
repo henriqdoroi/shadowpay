@@ -8,7 +8,6 @@ import {
   Plus,
   Search,
   Package,
-  Upload,
   Download,
   Filter,
   ChevronLeft,
@@ -172,6 +171,29 @@ function ProductsContent() {
   /* ---------- handlers ---------- */
   const handleEdit = (id: string) => router.push(`/v1/products/edit/${id}`);
   const handleNew = () => router.push("/v1/products/create");
+
+  /** Baixa uma planilha (CSV, abre no Excel/Google Planilhas) com os produtos. */
+  const exportCsv = () => {
+    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const statusTxt: Record<string, string> = { ativo: "Ativo", inativo: "Inativo", rascunho: "Rascunho" };
+    const header = ["Nome", "Preço (R$)", "Status", "Vendas", "Criado em", "Link do checkout"];
+    const lines = products.map((p) => [
+      p.name,
+      (Number(p.price) || 0).toFixed(2).replace(".", ","),
+      statusTxt[p.status] || p.status,
+      p.sales || 0,
+      p.createdAt ? new Date(p.createdAt).toLocaleDateString("pt-BR") : "",
+      p.checkoutUrl || `${window.location.origin}/v1/checkout/${p.id}`,
+    ]);
+    // ";" + BOM: o Excel em português abre certinho, com acentos
+    const csv = "﻿" + [header, ...lines].map((l) => l.map(esc).join(";")).join("\r\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    a.download = `produtos-shadowpay-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    toast.success(`${products.length} ${products.length === 1 ? "produto exportado" : "produtos exportados"}.`);
+  };
   const handleLink = (p: Product) => {
     const url = p.checkoutUrl || `/v1/checkout/${p.id}`;
     window.open(url, "_blank");
@@ -314,53 +336,25 @@ function ProductsContent() {
         <title>ShadowPay — Produtos</title>
       </Head>
       <LightShell>
-        {/* HEADER */}
-        <section
-          className="mb-5 rounded-2xl p-5 sm:p-6"
-          style={{
-            background: "#FFFFFF",
-            border: "1px solid rgba(15,23,42,0.06)",
-            boxShadow:
-              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
-          }}
-        >
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3.5">
-              <span
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
-                style={{
-                  background: "rgba(124,58,237,0.10)",
-                  color: "#7C3AED",
-                }}
+        {/* HEADER — mesmo padrão das outras páginas */}
+        <header className="mb-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1
+                className="text-[22px] font-bold tracking-tight text-slate-900 sm:text-[28px]"
+                style={{ letterSpacing: "-0.005em" }}
               >
-                <Package className="h-5 w-5" />
-              </span>
-              <div>
-                <h1
-                  className="text-[24px] font-bold leading-none tracking-tight text-slate-900"
-                  style={{
-                    fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
-                    letterSpacing: "-0.005em",
-                  }}
-                >
-                  Produtos
-                </h1>
-                <p className="mt-1 text-[13px] text-slate-500">
-                  Gerencie seu catálogo de produtos
-                </p>
-              </div>
+                Produtos
+              </h1>
+              <p className="mt-1 text-[14px] text-slate-500">
+                Gerencie seu catálogo de produtos.
+              </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <button
-                onClick={() => toast("Importação em breve")}
-                className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-[13px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
-              >
-                <Upload className="h-4 w-4 text-slate-500" />
-                Importar
-              </button>
-              <button
-                onClick={() => toast("Exportação em breve")}
-                className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-[13px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                onClick={exportCsv}
+                disabled={!products.length}
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-[13px] font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
               >
                 <Download className="h-4 w-4 text-slate-500" />
                 Exportar
@@ -378,7 +372,7 @@ function ProductsContent() {
               </button>
             </div>
           </div>
-        </section>
+        </header>
 
         {/* FILTROS */}
         <section

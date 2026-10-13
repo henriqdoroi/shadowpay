@@ -28,6 +28,8 @@ import {
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { LightShell } from "@/components/LightShell";
 import ShadowPanel from "@/components/ShadowPanel";
+import { PeriodPicker } from "@/components/PeriodPicker";
+import { resolvePeriod, type Period } from "@/lib/period";
 
 const API = "https://shadowpay-backend.onrender.com";
 
@@ -160,8 +162,11 @@ function ManagerDashboardContent() {
   const { user, token } = useAuth();
   const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
-  const [filterStartDate, setFilterStartDate] = useState<string | null>(null);
-  const [filterEndDate, setFilterEndDate] = useState<string | null>(null);
+  // período (mesmo seletor do dashboard): "Máximo" = sem filtro de data
+  const [period, setPeriod] = useState<Period>({ preset: "max" });
+  const range = resolvePeriod(period);
+  const filterStartDate = range.start ? range.start.toISOString() : null;
+  const filterEndDate = range.end ? range.end.toISOString() : null;
   const [filterAdquirente, setFilterAdquirente] = useState("");
   const [filterSeller, setFilterSeller] = useState<string>("Todos");
   const [sellers, setSellers] = useState<{ id: string; name: string }[]>([]);
@@ -296,10 +301,11 @@ function ManagerDashboardContent() {
     if (user && !user.isAdministrator) router.push("/v1/dashboard");
   }, [user, router]);
 
+  // carrega na entrada e de novo quando o período muda (os outros filtros usam "Buscar")
   useEffect(() => {
     if (user?.isAdministrator) fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, period]);
 
   const inputCls =
     "h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100";
@@ -476,27 +482,11 @@ function ManagerDashboardContent() {
                 ))}
               </select>
             </div>
-            <div>
+            <div className="sm:col-span-2 lg:col-span-2">
               <label className="mb-1.5 block text-xs text-slate-500">
-                Data início
+                Período
               </label>
-              <input
-                type="date"
-                value={filterStartDate ?? ""}
-                onChange={(e) => setFilterStartDate(e.target.value || null)}
-                className={inputCls}
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs text-slate-500">
-                Data fim
-              </label>
-              <input
-                type="date"
-                value={filterEndDate ?? ""}
-                onChange={(e) => setFilterEndDate(e.target.value || null)}
-                className={inputCls}
-              />
+              <PeriodPicker value={period} onChange={setPeriod} block />
             </div>
             <div>
               <label className="mb-1.5 block text-xs text-slate-500">

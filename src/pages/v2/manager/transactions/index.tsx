@@ -17,7 +17,9 @@ import {
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { LightShell } from "@/components/LightShell";
 import ShadowPanel from "@/components/ShadowPanel";
+import { PeriodPicker } from "@/components/PeriodPicker";
 import { txStatus, type TxStatus } from "@/lib/txStatus";
+import { resolvePeriod, type Period } from "@/lib/period";
 
 const API = "https://shadowpay-backend.onrender.com";
 
@@ -150,6 +152,14 @@ function TransactionsContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, token]);
 
+  // período (mesmo seletor do dashboard) -> startDate/endDate em ISO
+  const [period, setPeriod] = useState<Period>({ preset: "max" });
+  const changePeriod = (p: Period) => {
+    setPeriod(p);
+    const r = resolvePeriod(p);
+    setFilters((f) => ({ ...f, page: 1, startDate: r.start?.toISOString(), endDate: r.end?.toISOString() }));
+  };
+
   const filterChange = (k: keyof Filters, v: string | number) => {
     const val = v === "all" ? undefined : v;
     setFilters((p) => ({
@@ -248,27 +258,11 @@ function TransactionsContent() {
                 <option value="WITHDRAW">Saques</option>
               </select>
             </div>
-            <div>
+            <div className="md:col-span-2 lg:col-span-2">
               <label className="mb-1.5 block text-xs text-slate-500">
-                Data inicial
+                Período
               </label>
-              <input
-                type="date"
-                value={filters.startDate || ""}
-                onChange={(e) => filterChange("startDate", e.target.value)}
-                className={inputCls}
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs text-slate-500">
-                Data final
-              </label>
-              <input
-                type="date"
-                value={filters.endDate || ""}
-                onChange={(e) => filterChange("endDate", e.target.value)}
-                className={inputCls}
-              />
+              <PeriodPicker value={period} onChange={changePeriod} block />
             </div>
           </div>
         </div>

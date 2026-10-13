@@ -1,213 +1,125 @@
 "use client";
 
-import { useState } from "react";
+/**
+ * /v2/manager/withdraw — Saques (admin), com dados REAIS.
+ *
+ * O saque automático pelo PSP ainda não existe: o seller pede, o saldo fica
+ * reservado e o admin faz o PIX por fora e marca aqui como pago (o seller
+ * recebe e-mail + notificação "Saque pago"). Recusar devolve o valor pro saldo.
+ *   GET   /api/admin/withdraw?status=&page=&pageSize=
+ *   PATCH /api/admin/withdraw/:id  { status: "PAID" | "FAILED" }
+ */
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import Head from "next/head";
-import {
-  Check,
-  X,
-  TrendingUp,
-  Users,
-  Clock,
-  CreditCard,
-  Mail,
-  Phone,
-  Hash,
-  Building,
-} from "lucide-react";
+import axios from "axios";
+import { toast } from "sonner";
+import { Check, CheckCircle2, ChevronLeft, ChevronRight, Clock, Copy, RefreshCw, Wallet, X, XCircle } from "lucide-react";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { LightShell } from "@/components/LightShell";
 import ShadowPanel from "@/components/ShadowPanel";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiErrorMessage } from "@/lib/axiosErrors";
+import { Button, C, Card, Pill } from "@/components/account/ui";
 
-interface WithdrawRequest {
+const API = "https://shadowpay-backend.onrender.com";
+const PAGE_SIZE = 20;
+
+type W = {
   id: string;
-  merchantId: string;
-  clientName: string;
-  pixKey: string;
-  pixKeyType: "CPF" | "CNPJ" | "EMAIL" | "TELEFONE" | "CHAVE_ALEATORIA";
-  amount: number;
-  netAmount: number;
-  profit: number;
-  status: "PENDING" | "APPROVED" | "REJECTED";
+  amount: string;
+  pixKey: string | null;
+  pixKeyType: string | null;
+  status: "PENDING" | "PROCESSING" | "PAID" | "FAILED";
   createdAt: string;
+  paidAt: string | null;
+  seller?: { id: string; companyName: string; email: string };
+};
+type Summary = { byStatus: Record<string, { count: number; amount: number }>; paidToday: { count: number; amount: number } };
+type Filter = "PENDING" | "PAID" | "FAILED" | "ALL";
+
+const brl = (v: number | string) => Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const when = (s?: string | null) =>
+  s ? new Date(s).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
+const KEY_LABEL: Record<string, string> = { cpf: "CPF", cnpj: "CNPJ", email: "E-mail", phone: "Telefone", random: "Aleatória" };
+
+function StatusPill({ s }: { s: W["status"] }) {
+  if (s === "PAID") return <Pill tone="green" icon={<CheckCircle2 className="h-3.5 w-3.5" />}>Pago</Pill>;
+  if (s === "FAILED") return <Pill tone="rose" icon={<XCircle className="h-3.5 w-3.5" />}>Recusado</Pill>;
+  if (s === "PROCESSING") return <Pill tone="blue">Processando</Pill>;
+  return <Pill tone="amber" icon={<Clock className="h-3.5 w-3.5" />}>Pendente</Pill>;
 }
 
-const mockData: WithdrawRequest[] = [
-  {
-    id: "WD001",
-    merchantId: "MERCH_001",
-    clientName: "João Silva Santos",
-    pixKey: "123.456.789-00",
-    pixKeyType: "CPF",
-    amount: 1500,
-    netAmount: 1485,
-    profit: 15,
-    status: "PENDING",
-    createdAt: "2024-01-15T10:30:00Z",
-  },
-  {
-    id: "WD002",
-    merchantId: "MERCH_002",
-    clientName: "Maria Oliveira Costa",
-    pixKey: "maria.oliveira@email.com",
-    pixKeyType: "EMAIL",
-    amount: 2300.5,
-    netAmount: 2277.5,
-    profit: 23,
-    status: "PENDING",
-    createdAt: "2024-01-15T09:15:00Z",
-  },
-  {
-    id: "WD003",
-    merchantId: "MERCH_003",
-    clientName: "Carlos Eduardo Lima",
-    pixKey: "+55 11 99999-8888",
-    pixKeyType: "TELEFONE",
-    amount: 850.75,
-    netAmount: 842.25,
-    profit: 8.5,
-    status: "APPROVED",
-    createdAt: "2024-01-15T08:45:00Z",
-  },
-  {
-    id: "WD004",
-    merchantId: "MERCH_001",
-    clientName: "Ana Paula Ferreira",
-    pixKey: "12.345.678/0001-90",
-    pixKeyType: "CNPJ",
-    amount: 5200,
-    netAmount: 5148,
-    profit: 52,
-    status: "PENDING",
-    createdAt: "2024-01-15T07:20:00Z",
-  },
-];
+function copy(text: string) {
+  navigator.clipboard
+    ?.writeText(text)
+    .then(() => toast.success("Chave PIX copiada."))
+    .catch(() => toast.error("Não consegui copiar."));
+}
 
 function WithdrawAdminContent() {
-  const [requests, setRequests] = useState<WithdrawRequest[]>(mockData);
-  const [loadingActions, setLoadingActions] = useState<{
-    [key: string]: boolean;
-  }>({});
+  const { token, user } = useAuth();
+  const headers = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token]);
+  const [filter, setFilter] = useState<Filter>("PENDING");
+  const [page, setPage] = useState(1);
+  const [items, setItems] = useState<W[] | null>(null);
+  const [total, setTotal] = useState(0);
+  const [summary, setSummary] = useState<Summary | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [acting, setActing] = useState<{ w: W; kind: "pay" | "reject" } | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  const handleApprove = async (id: string) => {
-    setLoadingActions((p) => ({ ...p, [id]: true }));
-    await new Promise((r) => setTimeout(r, 1500));
-    setRequests((p) =>
-      p.map((r) =>
-        r.id === id ? { ...r, status: "APPROVED" as const } : r
-      )
-    );
-    setLoadingActions((p) => ({ ...p, [id]: false }));
-  };
+  const load = useCallback(async () => {
+    if (!token) return;
+    setError(null);
+    try {
+      const q = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) });
+      if (filter !== "ALL") q.set("status", filter === "PENDING" ? "PENDING,PROCESSING" : filter);
+      const r = await axios.get(`${API}/api/admin/withdraw?${q}`, { headers });
+      setItems(r.data?.data || []);
+      setTotal(r.data?.pagination?.total || 0);
+      setSummary(r.data?.summary || null);
+    } catch (e) {
+      setItems((i) => i ?? []);
+      setError(apiErrorMessage(e, "Não consegui carregar os saques."));
+    }
+  }, [token, headers, filter, page]);
 
-  const handleReject = async (id: string) => {
-    setLoadingActions((p) => ({ ...p, [id]: true }));
-    await new Promise((r) => setTimeout(r, 1500));
-    setRequests((p) =>
-      p.map((r) =>
-        r.id === id ? { ...r, status: "REJECTED" as const } : r
-      )
-    );
-    setLoadingActions((p) => ({ ...p, [id]: false }));
-  };
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  const fmt = (v: number) =>
-    new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(v || 0);
-  const fmtDate = (s: string) =>
-    new Intl.DateTimeFormat("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(s));
-
-  const pixIcon = (t: string) => {
-    switch (t) {
-      case "CPF":
-      case "CNPJ":
-        return <Hash className="h-3.5 w-3.5" />;
-      case "EMAIL":
-        return <Mail className="h-3.5 w-3.5" />;
-      case "TELEFONE":
-        return <Phone className="h-3.5 w-3.5" />;
-      default:
-        return <CreditCard className="h-3.5 w-3.5" />;
+  const act = async () => {
+    if (!acting) return;
+    setBusy(true);
+    try {
+      await axios.patch(`${API}/api/admin/withdraw/${acting.w.id}`, { status: acting.kind === "pay" ? "PAID" : "FAILED" }, { headers });
+      toast.success(acting.kind === "pay" ? "Saque marcado como pago — o seller foi avisado." : "Saque recusado — o valor voltou para o saldo do seller.");
+      setActing(null);
+      await load();
+    } catch (e) {
+      toast.error(apiErrorMessage(e, "Não consegui atualizar o saque."));
+    } finally {
+      setBusy(false);
     }
   };
 
-  const statusPill = (s: string) => {
-    const map: Record<string, { color: string; text: string }> = {
-      PENDING: {
-        color: "bg-amber-50 text-amber-700 border-amber-200",
-        text: "Pendente",
-      },
-      APPROVED: {
-        color: "bg-emerald-50 text-emerald-700 border-emerald-200",
-        text: "Aprovado",
-      },
-      REJECTED: {
-        color: "bg-rose-50 text-rose-700 border-rose-200",
-        text: "Rejeitado",
-      },
-    };
-    const cfg = map[s] ?? {
-      color: "bg-slate-50 text-slate-600 border-slate-200",
-      text: s,
-    };
-    return (
-      <span
-        className={`inline-block rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide ${cfg.color}`}
-      >
-        {cfg.text}
-      </span>
-    );
-  };
-
-  const pending = requests.filter((r) => r.status === "PENDING");
-  const totalPending = pending.reduce((s, r) => s + r.amount, 0);
-  const totalProfit = requests.reduce((s, r) => s + r.profit, 0);
-  const approvedToday = requests.filter((r) => {
-    const today = new Date().toDateString();
-    return (
-      r.status === "APPROVED" &&
-      new Date(r.createdAt).toDateString() === today
-    );
-  }).length;
-
+  const s = summary?.byStatus || {};
+  const pending = { count: (s.PENDING?.count || 0) + (s.PROCESSING?.count || 0), amount: (s.PENDING?.amount || 0) + (s.PROCESSING?.amount || 0) };
   const kpis = [
-    {
-      label: "Saques pendentes",
-      value: String(pending.length),
-      sub: `${fmt(totalPending)} em análise`,
-      icon: <Clock className="h-4 w-4" />,
-      color: "#F59E0B",
-    },
-    {
-      label: "Aprovados hoje",
-      value: String(approvedToday),
-      sub: "Saques processados",
-      icon: <Check className="h-4 w-4" />,
-      color: "#22C55E",
-    },
-    {
-      label: "Lucro total",
-      value: fmt(totalProfit),
-      sub: "Em taxas",
-      icon: <TrendingUp className="h-4 w-4" />,
-      color: "#22D3EE",
-    },
-    {
-      label: "Total solicitações",
-      value: String(requests.length),
-      sub: "Todas",
-      icon: <Users className="h-4 w-4" />,
-      color: "#7C3AED",
-    },
+    { label: "Aguardando pagamento", value: String(pending.count), sub: `${brl(pending.amount)} reservados`, Icon: Clock, color: "#F59E0B" },
+    { label: "Pagos hoje", value: String(summary?.paidToday.count ?? 0), sub: brl(summary?.paidToday.amount ?? 0), Icon: Check, color: "#10B981" },
+    { label: "Total pago", value: brl(s.PAID?.amount || 0), sub: `${s.PAID?.count || 0} saques`, Icon: Wallet, color: "#7C3AED" },
+    { label: "Recusados", value: String(s.FAILED?.count || 0), sub: `${brl(s.FAILED?.amount || 0)} devolvidos`, Icon: X, color: "#F43F5E" },
   ];
+  const FILTERS: { id: Filter; label: string; count?: number }[] = [
+    { id: "PENDING", label: "Pendentes", count: pending.count },
+    { id: "PAID", label: "Pagos", count: s.PAID?.count || 0 },
+    { id: "FAILED", label: "Recusados", count: s.FAILED?.count || 0 },
+    { id: "ALL", label: "Todos" },
+  ];
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <>
@@ -215,179 +127,232 @@ function WithdrawAdminContent() {
         <title>ShadowPay — Saques (Admin)</title>
       </Head>
       <LightShell>
-        <header className="mb-6">
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
-            Admin
-          </p>
-          <h1
-            className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
-            style={{
-              fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
-              letterSpacing: "-0.005em",
-            }}
-          >
-            Gerenciamento de Saques
-          </h1>
-          <p className="mt-1 text-[14px] text-slate-500">
-            Aprove e rejeite solicitações de saque.
-          </p>
+        <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">Admin</p>
+            <h1 className="text-[22px] font-bold tracking-tight text-slate-900 sm:text-[28px]">Gerenciamento de Saques</h1>
+            <p className="mt-1 text-[14px] text-slate-500">Faça o PIX para a chave do seller e marque aqui como pago — ele é avisado na hora.</p>
+          </div>
+          <Button variant="outline" className="h-10 px-4 text-[13px]" onClick={load} icon={<RefreshCw className="h-4 w-4" />}>
+            Atualizar
+          </Button>
         </header>
 
-        <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {kpis.map((k) => (
-            <div
-              key={k.label}
-              className="rounded-2xl p-3 sm:p-4 md:p-5"
-              style={{
-                background: "#FFFFFF",
-                border: "1px solid rgba(15,23,42,0.06)",
-                boxShadow:
-                  "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-[11px] font-semibold text-slate-500">
-                  {k.label}
-                </p>
-                <span
-                  className="flex h-7 w-7 items-center justify-center rounded-lg"
-                  style={{ background: `${k.color}14`, color: k.color }}
-                >
-                  {k.icon}
-                </span>
-              </div>
-              <div
-                className="mt-2 text-[24px] font-bold leading-none tracking-tight text-slate-900"
-                style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
-              >
-                {k.value}
-              </div>
-              <p className="mt-1.5 text-xs text-slate-400">{k.sub}</p>
-            </div>
-          ))}
-        </section>
+        {!user?.isAdministrator ? (
+          <Card className="p-6 text-[14px] text-slate-600">Acesso restrito a administradores.</Card>
+        ) : (
+          <>
+            <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {kpis.map(({ label, value, sub, Icon, color }) => (
+                <Card key={label} className="p-4 sm:p-5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[13px] font-medium text-slate-500">{label}</p>
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: `${color}14`, color }}>
+                      <Icon className="h-4 w-4" />
+                    </span>
+                  </div>
+                  <p className="mt-2 whitespace-nowrap text-[24px] font-semibold leading-none tabular-nums text-slate-900">{summary ? value : "—"}</p>
+                  <p className="mt-1.5 text-[12px] text-slate-400">{summary ? sub : " "}</p>
+                </Card>
+              ))}
+            </section>
 
-        <div
-          className="overflow-hidden rounded-2xl"
-          style={{
-            background: "#FFFFFF",
-            border: "1px solid rgba(15,23,42,0.06)",
-            boxShadow:
-              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
-          }}
-        >
-          <div
-            className="px-5 py-4"
-            style={{ borderBottom: "1px solid rgba(15,23,42,0.06)" }}
-          >
-            <h2
-              className="text-[14px] font-semibold text-slate-900"
-              style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
-            >
-              Solicitações de saque
-            </h2>
-            <p className="mt-1 text-xs text-slate-400">
-              Lista de todas as solicitações dos usuários
-            </p>
-          </div>
-          <div className="overflow-x-auto p-2 sm:p-4">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="text-[10px] uppercase tracking-[0.16em] text-slate-400">
-                  <th className="px-3 py-2.5 font-semibold">ID</th>
-                  <th className="px-3 py-2.5 font-semibold">Merchant</th>
-                  <th className="px-3 py-2.5 font-semibold">Cliente</th>
-                  <th className="px-3 py-2.5 font-semibold">Chave PIX</th>
-                  <th className="px-3 py-2.5 font-semibold">Tipo</th>
-                  <th className="px-3 py-2.5 font-semibold">Bruto</th>
-                  <th className="px-3 py-2.5 font-semibold">Líquido</th>
-                  <th className="px-3 py-2.5 font-semibold">Lucro</th>
-                  <th className="px-3 py-2.5 font-semibold">Status</th>
-                  <th className="px-3 py-2.5 font-semibold">Data</th>
-                  <th className="px-3 py-2.5 text-right font-semibold">
-                    Ações
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {requests.map((r) => (
-                  <tr
-                    key={r.id}
-                    className="hover:bg-slate-50/50"
-                    style={{ borderTop: "1px solid rgba(15,23,42,0.04)" }}
-                  >
-                    <td className="px-3 py-3 font-mono text-xs text-slate-700">
-                      {r.id}
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-2 text-xs text-slate-600">
-                        <Building className="h-3.5 w-3.5 text-slate-400" />
-                        {r.merchantId}
-                      </div>
-                    </td>
-                    <td className="px-3 py-3 font-medium text-slate-900">
-                      {r.clientName}
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="max-w-[180px] truncate text-xs text-slate-600">
-                        {r.pixKey}
-                      </div>
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                        {pixIcon(r.pixKeyType)}
-                        {r.pixKeyType}
-                      </div>
-                    </td>
-                    <td className="px-3 py-3 font-medium text-slate-900">
-                      {fmt(r.amount)}
-                    </td>
-                    <td className="px-3 py-3 font-medium text-sky-600">
-                      {fmt(r.netAmount)}
-                    </td>
-                    <td className="px-3 py-3 font-medium text-emerald-600">
-                      {fmt(r.profit)}
-                    </td>
-                    <td className="px-3 py-3">{statusPill(r.status)}</td>
-                    <td className="px-3 py-3 text-xs text-slate-500">
-                      {fmtDate(r.createdAt)}
-                    </td>
-                    <td className="px-3 py-3 text-right">
-                      {r.status === "PENDING" ? (
-                        <div className="flex justify-end gap-1.5">
-                          <button
-                            onClick={() => handleApprove(r.id)}
-                            disabled={loadingActions[r.id]}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
-                          >
-                            {loadingActions[r.id] ? (
-                              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                            ) : (
-                              <Check className="h-3.5 w-3.5" />
-                            )}
-                          </button>
-                          <button
-                            onClick={() => handleReject(r.id)}
-                            disabled={loadingActions[r.id]}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 disabled:opacity-50"
-                          >
-                            {loadingActions[r.id] ? (
-                              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                            ) : (
-                              <X className="h-3.5 w-3.5" />
-                            )}
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-slate-400">—</span>
+            <Card className="mb-10 overflow-hidden">
+              <div className="flex flex-col gap-3 border-b border-[#E6E8EB] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                <div>
+                  <h2 className="text-[15px] font-bold text-slate-900">Solicitações de saque</h2>
+                  <p className="text-[12px] text-slate-500">O saldo fica reservado até você pagar ou recusar.</p>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {FILTERS.map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => {
+                        setFilter(f.id);
+                        setPage(1);
+                        setItems(null);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12.5px] font-semibold transition-colors"
+                      style={filter === f.id ? { background: C.primary, color: "#fff" } : { background: "#F1F5F9", color: "#475569" }}
+                    >
+                      {f.label}
+                      {f.count != null && summary && (
+                        <span className="rounded-full px-1.5 text-[11px]" style={{ background: filter === f.id ? "rgba(255,255,255,0.22)" : "#E2E8F0" }}>
+                          {f.count}
+                        </span>
                       )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {error ? (
+                <p className="px-5 py-10 text-center text-[14px] text-rose-600">{error}</p>
+              ) : items === null ? (
+                <div className="space-y-2 p-4">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="h-14 animate-pulse rounded-xl bg-slate-50" />
+                  ))}
+                </div>
+              ) : items.length === 0 ? (
+                <div className="flex flex-col items-center px-6 py-14 text-center">
+                  <Wallet className="h-7 w-7 text-slate-300" />
+                  <p className="mt-2 text-[14px] font-semibold text-slate-700">
+                    {filter === "PENDING" ? "Nenhum saque esperando pagamento" : "Nenhum saque aqui"}
+                  </p>
+                  <p className="mt-0.5 text-[12.5px] text-slate-500">Quando um seller pedir saque, ele aparece nesta lista.</p>
+                </div>
+              ) : (
+                <>
+                  {/* computador: tabela */}
+                  <div className="hidden overflow-x-auto md:block">
+                    <table className="w-full text-left text-[13px]">
+                      <thead>
+                        <tr className="text-[10.5px] uppercase tracking-[0.12em] text-slate-400">
+                          <th className="px-5 py-3 font-semibold">Seller</th>
+                          <th className="px-3 py-3 font-semibold">Valor</th>
+                          <th className="px-3 py-3 font-semibold">Chave PIX</th>
+                          <th className="px-3 py-3 font-semibold">Status</th>
+                          <th className="px-5 py-3 text-right font-semibold">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {items.map((w) => (
+                          <tr key={w.id} className="border-t border-slate-100 hover:bg-slate-50/60">
+                            <td className="max-w-[260px] px-5 py-3.5">
+                              <p className="truncate font-semibold text-slate-900">{w.seller?.companyName || "—"}</p>
+                              <p className="truncate text-[12px] text-slate-500">{w.seller?.email}</p>
+                              <p className="mt-0.5 text-[11.5px] text-slate-400">Pedido em {when(w.createdAt)}</p>
+                            </td>
+                            <td className="whitespace-nowrap px-3 py-3.5 font-semibold tabular-nums text-slate-900">{brl(w.amount)}</td>
+                            <td className="px-3 py-3.5">
+                              {w.pixKey ? (
+                                <button onClick={() => copy(w.pixKey!)} className="group flex max-w-[220px] items-center gap-1.5 text-left" title="Copiar chave">
+                                  <span className="truncate font-mono text-[12.5px] text-slate-700">{w.pixKey}</span>
+                                  <Copy className="h-3.5 w-3.5 shrink-0 text-slate-400 group-hover:text-violet-600" />
+                                </button>
+                              ) : (
+                                "—"
+                              )}
+                              <p className="text-[11.5px] text-slate-400">{KEY_LABEL[w.pixKeyType || ""] || w.pixKeyType || ""}</p>
+                            </td>
+                            <td className="px-3 py-3.5">
+                              <StatusPill s={w.status} />
+                              {w.status === "PAID" && <p className="mt-1 text-[11px] text-slate-400">{when(w.paidAt)}</p>}
+                            </td>
+                            <td className="px-5 py-3.5 text-right">
+                              {w.status === "PENDING" || w.status === "PROCESSING" ? (
+                                <div className="flex justify-end gap-1.5">
+                                  <Button className="h-9 px-3.5 text-[12.5px]" onClick={() => setActing({ w, kind: "pay" })} icon={<Check className="h-3.5 w-3.5" />}>
+                                    Marcar pago
+                                  </Button>
+                                  <Button variant="danger" className="h-9 px-3 text-[12.5px]" onClick={() => setActing({ w, kind: "reject" })}>
+                                    Recusar
+                                  </Button>
+                                </div>
+                              ) : (
+                                <span className="text-[12px] text-slate-400">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* celular: cartões */}
+                  <ul className="divide-y divide-slate-100 md:hidden">
+                    {items.map((w) => (
+                      <li key={w.id} className="px-4 py-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-[14px] font-semibold text-slate-900">{w.seller?.companyName || "—"}</p>
+                            <p className="truncate text-[12px] text-slate-500">{w.seller?.email}</p>
+                          </div>
+                          <p className="whitespace-nowrap text-[15px] font-bold tabular-nums text-slate-900">{brl(w.amount)}</p>
+                        </div>
+                        {w.pixKey && (
+                          <button onClick={() => copy(w.pixKey!)} className="mt-2 flex max-w-full items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 text-left">
+                            <span className="text-[11px] font-semibold text-slate-400">{KEY_LABEL[w.pixKeyType || ""] || "PIX"}</span>
+                            <span className="truncate font-mono text-[12px] text-slate-700">{w.pixKey}</span>
+                            <Copy className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                          </button>
+                        )}
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          <StatusPill s={w.status} />
+                          <span className="text-[11.5px] text-slate-400">{when(w.createdAt)}</span>
+                        </div>
+                        {(w.status === "PENDING" || w.status === "PROCESSING") && (
+                          <div className="mt-3 flex gap-2">
+                            <Button className="h-10 flex-1 text-[13px]" onClick={() => setActing({ w, kind: "pay" })} icon={<Check className="h-4 w-4" />}>
+                              Marcar como pago
+                            </Button>
+                            <Button variant="danger" className="h-10 px-4 text-[13px]" onClick={() => setActing({ w, kind: "reject" })}>
+                              Recusar
+                            </Button>
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+
+                  {pages > 1 && (
+                    <div className="flex items-center justify-between border-t border-[#E6E8EB] px-5 py-3 text-[12.5px] text-slate-500">
+                      <span>
+                        Página {page} de {pages} · {total} saques
+                      </span>
+                      <div className="flex gap-1.5">
+                        <Button variant="outline" className="h-9 w-9 px-0" disabled={page <= 1} onClick={() => setPage((p) => p - 1)} aria-label="Página anterior">
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" className="h-9 w-9 px-0" disabled={page >= pages} onClick={() => setPage((p) => p + 1)} aria-label="Próxima página">
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </Card>
+          </>
+        )}
+
+        {acting &&
+          createPortal(
+            <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-900/50 sm:items-center sm:p-4" onClick={() => !busy && setActing(null)}>
+              <div
+                role="dialog"
+                aria-modal="true"
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-md rounded-t-3xl bg-white p-6 pb-[max(24px,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-2xl"
+              >
+                <p className="text-[17px] font-bold text-slate-900">
+                  {acting.kind === "pay" ? `Confirmar pagamento de ${brl(acting.w.amount)}?` : `Recusar saque de ${brl(acting.w.amount)}?`}
+                </p>
+                <p className="mt-1 text-[13px] leading-relaxed text-slate-500">
+                  {acting.kind === "pay"
+                    ? `Faça o PIX para ${acting.w.seller?.companyName || "o seller"} antes de confirmar. Ao confirmar, ele recebe a notificação de saque pago.`
+                    : `O valor volta para o saldo disponível de ${acting.w.seller?.companyName || "o seller"}.`}
+                </p>
+                {acting.kind === "pay" && acting.w.pixKey && (
+                  <button onClick={() => copy(acting.w.pixKey!)} className="mt-4 flex w-full items-center gap-2 rounded-xl border border-[#E6E8EB] bg-slate-50 px-3.5 py-3 text-left">
+                    <span className="text-[11.5px] font-semibold text-slate-400">{KEY_LABEL[acting.w.pixKeyType || ""] || "PIX"}</span>
+                    <span className="flex-1 truncate font-mono text-[13px] font-semibold text-slate-800">{acting.w.pixKey}</span>
+                    <Copy className="h-4 w-4 shrink-0" style={{ color: C.primary }} />
+                  </button>
+                )}
+                <div className="mt-5 flex gap-2">
+                  <Button variant="outline" className="flex-1" onClick={() => setActing(null)} disabled={busy}>
+                    Cancelar
+                  </Button>
+                  <Button variant={acting.kind === "pay" ? "primary" : "danger"} className="flex-1" onClick={act} loading={busy}>
+                    {acting.kind === "pay" ? "Já paguei, confirmar" : "Recusar saque"}
+                  </Button>
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )}
       </LightShell>
       <ShadowPanel />
     </>

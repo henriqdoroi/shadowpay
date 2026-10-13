@@ -991,7 +991,7 @@ function AutomationContent() {
             className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
             style={{ letterSpacing: "-0.005em" }}
           >
-            Automations
+            Automações
           </h1>
         </div>
         <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 sm:overflow-visible">

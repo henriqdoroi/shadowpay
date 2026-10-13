@@ -75,6 +75,8 @@ interface Seller {
   credentials: Credentials[];
   kyc: KYC;
   statistics?: Statistics;
+  /** Foto de perfil (data URL) — vem do /api/user/profile. */
+  avatarUrl?: string | null;
 }
 
 interface LoginResponse {

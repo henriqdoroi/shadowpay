@@ -17,7 +17,9 @@ import {
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { LightShell } from "@/components/LightShell";
 import ShadowPanel from "@/components/ShadowPanel";
+import { PeriodPicker } from "@/components/PeriodPicker";
 import { EMPTY_STATS, isPaidTx } from "@/lib/txStatus";
+import { resolvePeriod, type Period } from "@/lib/period";
 
 interface Transaction {
   id: string;
@@ -42,8 +44,8 @@ function ReportsContent() {
     uniqueCustomers: 0,
   });
   const [loading, setLoading] = useState(false);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  // mesmo seletor de período do dashboard ("Máximo" = desde sempre)
+  const [period, setPeriod] = useState<Period>({ preset: "max" });
 
   const fetchDashboardStats = async () => {
     if (!token) return;
@@ -76,8 +78,10 @@ function ReportsContent() {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: "1", limit: "200" });
-      if (startDate) params.append("startDate", startDate);
-      if (endDate) params.append("endDate", endDate);
+      // início/fim do dia no horário do aparelho (ISO), igual ao dashboard
+      const range = resolvePeriod(period);
+      if (range.start) params.append("startDate", range.start.toISOString());
+      if (range.end) params.append("endDate", range.end.toISOString());
       const r = await axios.get(
         `https://shadowpay-backend.onrender.com/api/user/transactions-report?${params}`,
         { headers: { Authorization: `Bearer ${token}` } }
@@ -105,10 +109,13 @@ function ReportsContent() {
     }
   };
 
+  // escolheu um período: aplica na hora ("Máximo" = números de sempre)
   useEffect(() => {
-    if (user && token) fetchDashboardStats();
+    if (!user || !token) return;
+    if (period.preset === "max") fetchDashboardStats();
+    else fetchFiltered();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, token]);
+  }, [user, token, period]);
 
   const fmt = (v: number) =>
     new Intl.NumberFormat("pt-BR", {
@@ -162,9 +169,6 @@ function ReportsContent() {
     },
   ];
 
-  const inputCls =
-    "h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition-colors focus:border-violet-300 focus:ring-2 focus:ring-violet-100";
-
   return (
     <>
       <Head>
@@ -209,42 +213,14 @@ function ReportsContent() {
               "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
           }}
         >
-          <div className="mb-4 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-            <Filter className="h-3.5 w-3.5" /> Filtrar período
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <div className="flex-1">
-              <label className="mb-1.5 block text-xs text-slate-500">
-                Data inicial
-              </label>
-              <input
-                type="date"
-                className={inputCls}
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                <Filter className="h-3.5 w-3.5" /> Período
+              </div>
+              <p className="mt-1 text-[13px] text-slate-500">{resolvePeriod(period).description}</p>
             </div>
-            <div className="flex-1">
-              <label className="mb-1.5 block text-xs text-slate-500">
-                Data final
-              </label>
-              <input
-                type="date"
-                className={inputCls}
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
-            </div>
-            <button
-              onClick={fetchFiltered}
-              className="inline-flex h-10 items-center gap-2 rounded-xl px-5 text-[13px] font-semibold text-white transition-transform hover:-translate-y-0.5"
-              style={{
-                background: "#7C3AED",
-                boxShadow: "0 8px 20px -8px rgba(124,58,237,0.55)",
-              }}
-            >
-              Aplicar filtro
-            </button>
+            <PeriodPicker value={period} onChange={setPeriod} />
           </div>
         </div>
 

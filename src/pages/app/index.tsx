@@ -205,7 +205,7 @@ function AppHome() {
           </span>
         </div>
         <button
-          onClick={() => router.push("/v1/configs/notifications")}
+          onClick={() => router.push("/v1/configs/profile?tab=notificacoes")}
           className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white"
           style={{ border: "1px solid rgba(15,23,42,0.06)" }}
           aria-label="Notificações"

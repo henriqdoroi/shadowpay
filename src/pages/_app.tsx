@@ -14,6 +14,7 @@ import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
 import KycGate from "@/components/KycGate";
 import { installAxiosErrorNormalizer } from "@/lib/axiosErrors";
 import { registerServiceWorker } from "@/lib/push";
+import { initInstallPrompt } from "@/lib/install";
 
 // Erros do backend vêm em { error: { message } } — normaliza pra todas as
 // telas lerem `e.response.data.message` e mostrarem o motivo real.
@@ -54,6 +55,8 @@ function AppContent({ Component, pageProps }: AppProps) {
   // um toque do seller; ver src/lib/push.ts).
   useEffect(() => {
     registerServiceWorker();
+    // guarda o "instalar app" do navegador pro botão em Minha conta
+    initInstallPrompt();
   }, []);
 
   // Acorda o backend assim que o site abre (Render free "dorme" após ~15min

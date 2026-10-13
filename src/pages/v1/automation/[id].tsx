@@ -1579,13 +1579,26 @@ function FlowEditor({ id }: { id: string }) {
   );
   const edgeTypes = useMemo(() => ({ flow: FlowEdge as any }), []);
 
-  if (loading || !automation) {
+  if (loading) {
     return (
       <div
         className="flex h-screen items-center justify-center"
         style={{ background: T.bg, color: T.text2 }}
       >
         <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+
+  // id inválido / automação apagada: não fica girando pra sempre
+  if (!automation) {
+    return (
+      <div className="flex h-[60vh] flex-col items-center justify-center gap-3 text-center" style={{ color: T.text2 }}>
+        <p className="text-[15px] font-semibold text-slate-800">Automação não encontrada</p>
+        <p className="text-[13px] text-slate-500">Ela pode ter sido apagada. Volte e escolha outra na lista.</p>
+        <a href="/v1/automation" className="mt-1 inline-flex h-10 items-center rounded-xl bg-[#7C3AED] px-4 text-[13px] font-semibold text-white">
+          Ver automações
+        </a>
       </div>
     );
   }

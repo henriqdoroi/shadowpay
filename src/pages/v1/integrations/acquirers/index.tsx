@@ -8,7 +8,6 @@ import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import {
   Activity,
-  BarChart3,
   GripVertical,
   Loader2,
   Sparkles,
@@ -200,20 +199,6 @@ function AcquirersContent() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <input
-            type="date"
-            defaultValue={new Date().toISOString().slice(0, 10)}
-            className="h-10 rounded-xl bg-white px-3 text-[13px] font-semibold text-slate-700 outline-none"
-            style={{ border: `1px solid ${T.borderSoft}` }}
-            readOnly
-          />
-          <button
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-[13px] font-semibold text-slate-700 hover:bg-slate-50"
-            style={{ border: `1px solid ${T.borderSoft}` }}
-          >
-            <BarChart3 className="h-3.5 w-3.5" />
-            Modo Analítico
-          </button>
           <button
             onClick={() => setShowABModal(true)}
             className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-[13px] font-semibold text-white"

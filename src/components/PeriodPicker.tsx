@@ -47,7 +47,16 @@ function useIsDesktop() {
   return desktop;
 }
 
-export function PeriodPicker({ value, onChange }: { value: Period; onChange: (p: Period) => void }) {
+export function PeriodPicker({
+  value,
+  onChange,
+  block = false,
+}: {
+  value: Period;
+  onChange: (p: Period) => void;
+  /** Botão ocupando a largura toda (dentro de formulários de filtro). */
+  block?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [pos, setPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
@@ -326,11 +335,11 @@ export function PeriodPicker({ value, onChange }: { value: Period; onChange: (p:
         onClick={openPanel}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="inline-flex h-10 max-w-full items-center gap-2 rounded-xl bg-white px-3.5 text-[13px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+        className={`${block ? "flex w-full" : "inline-flex max-w-full"} h-10 items-center gap-2 rounded-xl bg-white px-3.5 text-[13px] font-semibold text-slate-700 transition-colors hover:bg-slate-50`}
         style={{ border: `1px solid ${BORDER}`, boxShadow: "0 1px 2px rgba(15,23,42,0.05)" }}
       >
         <CalendarIcon className="h-4 w-4 shrink-0" style={{ color: VIOLET }} />
-        <span className="truncate">{resolved.label}</span>
+        <span className={`truncate ${block ? "flex-1 text-left" : ""}`}>{resolved.label}</span>
         <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
       </button>
       {mounted && open && createPortal(panel, document.body)}

@@ -98,17 +98,17 @@ export function EventCard({
     const max = field === "title" ? TITLE_MAX : BODY_MAX;
     const next = (text.slice(0, start) + tag + text.slice(end)).slice(0, max);
     onChange({ ...value, [field]: next });
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       el?.focus();
       el?.setSelectionRange(start + tag.length, start + tag.length);
-    });
+    }, 0);
   };
 
   const input =
     "w-full rounded-xl border bg-white px-3 text-[13.5px] text-slate-800 outline-none transition-colors focus:border-violet-400 focus:ring-2 focus:ring-violet-100";
 
   return (
-    <section className="rounded-2xl bg-white p-5" style={{ border: `1px solid ${T.border}` }}>
+    <section className="rounded-xl border border-[#E6E8EB] bg-white p-5 shadow-[0_1px_1px_rgba(15,23,42,0.04)]">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <p className="text-[15px] font-bold text-slate-900">{info.label}</p>
@@ -169,6 +169,8 @@ export function EventCard({
               {info.variables.map((v) => (
                 <button
                   key={v.key}
+                  // não tira o foco do campo (o cursor fica onde estava)
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => insertVar(v.key)}
                   title={v.description}
                   className="rounded-lg px-2.5 py-1 text-[12px] font-semibold transition-colors hover:bg-violet-100"

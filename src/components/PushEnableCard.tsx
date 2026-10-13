@@ -89,7 +89,7 @@ function Step({ n, icon, children }: { n: number; icon: React.ReactNode; childre
   );
 }
 
-function DeviceRow({ d, isThis }: { d: PushDeviceInfo; isThis: boolean }) {
+export function DeviceRow({ d, isThis }: { d: PushDeviceInfo; isThis: boolean }) {
   const Icon = d.platform === "desktop" ? Monitor : Smartphone;
   const failing = !!d.lastError && !d.lastSuccessAt;
   return (
@@ -125,7 +125,7 @@ function DeviceRow({ d, isThis }: { d: PushDeviceInfo; isThis: boolean }) {
   );
 }
 
-function deniedHelp(platform: PushPlatform): string {
+export function deniedHelp(platform: PushPlatform): string {
   if (platform === "ios") return "Abra Ajustes → Notificações → ShadowPay e ative “Permitir Notificações”.";
   if (platform === "android")
     return "Toque e segure o ícone da ShadowPay → Informações do app → Notificações → Permitir. No navegador: toque no cadeado ao lado do endereço → Permissões → Notificações.";
@@ -144,11 +144,13 @@ export type PushSetupViewProps = {
   onRefresh: () => void;
   /** Layout empilhado (ex.: dentro do painel do sino), independente da tela. */
   compact?: boolean;
+  /** Sem moldura própria (quando já está dentro de outro cartão). */
+  bare?: boolean;
 };
 
 export function PushSetupView(p: PushSetupViewProps) {
-  const card = p.compact ? "rounded-2xl bg-white p-4" : "rounded-2xl bg-white p-5";
-  const cardStyle = { border: `1px solid ${T.border}` };
+  const card = p.bare ? "" : p.compact ? "rounded-2xl bg-white p-4" : "rounded-2xl bg-white p-5";
+  const cardStyle = p.bare ? {} : { border: `1px solid ${T.border}` };
 
   if (p.state === "checking") {
     return (
@@ -225,7 +227,7 @@ export function PushSetupView(p: PushSetupViewProps) {
 
   if (p.state === "denied") {
     return (
-      <div className={card} style={{ ...cardStyle, background: "linear-gradient(180deg, #FFF 0%, #FFF7F8 100%)" }}>
+      <div className={card} style={p.bare ? undefined : { ...cardStyle, background: "linear-gradient(180deg, #FFF 0%, #FFF7F8 100%)" }}>
         <div className="flex items-start gap-3">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ background: T.roseSoft, color: T.rose }}>
             <BellOff className="h-5 w-5" />
@@ -249,8 +251,8 @@ export function PushSetupView(p: PushSetupViewProps) {
   if (p.state === "prompt") {
     return (
       <div
-        className={`overflow-hidden rounded-2xl ${p.compact ? "p-4" : "p-5"}`}
-        style={{ ...cardStyle, background: "radial-gradient(120% 140% at 100% 0%, rgba(124,58,237,0.10) 0%, #FFFFFF 55%)" }}
+        className={p.bare ? "" : `overflow-hidden rounded-2xl ${p.compact ? "p-4" : "p-5"}`}
+        style={p.bare ? undefined : { ...cardStyle, background: "radial-gradient(120% 140% at 100% 0%, rgba(124,58,237,0.10) 0%, #FFFFFF 55%)" }}
       >
         <div className={p.compact ? "grid gap-4" : "grid items-center gap-5 sm:grid-cols-[1fr_280px]"}>
           <div>
@@ -340,14 +342,15 @@ export function PushSetupView(p: PushSetupViewProps) {
   );
 }
 
-export function PushEnableCard({ compact = false }: { compact?: boolean } = {}) {
+export function PushEnableCard({ compact = false, bare = false }: { compact?: boolean; bare?: boolean } = {}) {
   const { token } = useAuth();
   const push = usePush(token);
 
   return (
-    <div className={compact ? "" : "mb-5"}>
+    <div className={compact || bare ? "" : "mb-5"}>
       <PushSetupView
         compact={compact}
+        bare={bare}
         state={push.state}
         platform={push.platform}
         busy={push.busy}

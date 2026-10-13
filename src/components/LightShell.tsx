@@ -285,6 +285,7 @@ export function LightShell({
   };
 
   const initial = (user?.companyName?.[0] || "S").toUpperCase();
+  const avatarUrl = user?.avatarUrl || null;
 
 
   return (
@@ -479,12 +480,17 @@ export function LightShell({
                   footerMenuOpen ? "bg-slate-50" : ""
                 }`}
               >
-                <span
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-semibold text-white"
-                  style={{ background: "#7C3AED" }}
-                >
-                  {initial}
-                </span>
+                {avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={avatarUrl} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" draggable={false} />
+                ) : (
+                  <span
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-semibold text-white"
+                    style={{ background: "#7C3AED" }}
+                  >
+                    {initial}
+                  </span>
+                )}
                 <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold text-slate-800">
                   {user?.companyName || "Operador"}
                 </span>
@@ -499,12 +505,17 @@ export function LightShell({
             ) : (
               <button
                 onClick={() => setFooterMenuOpen((v) => !v)}
-                className="mx-auto flex h-9 w-9 items-center justify-center rounded-full text-[13px] font-semibold text-white"
+                className="mx-auto flex h-9 w-9 items-center justify-center overflow-hidden rounded-full text-[13px] font-semibold text-white"
                 style={{ background: "#7C3AED" }}
                 title={user?.companyName || "Operador"}
                 aria-label="Conta"
               >
-                {initial}
+                {avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={avatarUrl} alt="" className="h-full w-full object-cover" draggable={false} />
+                ) : (
+                  initial
+                )}
               </button>
             )}
           </div>
@@ -724,15 +735,20 @@ export function LightShell({
                   className="flex h-10 items-center gap-2 rounded-xl pl-1 pr-3 transition-colors hover:bg-slate-50"
                   style={{ border: `1px solid ${T.border}` }}
                 >
-                  <div
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold text-white"
-                    style={{
-                      background:
-                        "linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)",
-                    }}
-                  >
-                    {initial}
-                  </div>
+                  {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={avatarUrl} alt="" className="h-8 w-8 rounded-lg object-cover" draggable={false} />
+                  ) : (
+                    <div
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold text-white"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)",
+                      }}
+                    >
+                      {initial}
+                    </div>
+                  )}
                   <div className="hidden text-left leading-tight md:block">
                     <p className="text-[12px] font-semibold text-slate-800">
                       {(user?.companyName || "Operador").slice(0, 16)}

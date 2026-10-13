@@ -15,7 +15,6 @@ import axios from "axios";
 import {
   Search,
   ChevronDown,
-  Calendar,
   RefreshCw,
   TrendingUp,
 } from "lucide-react";
@@ -23,7 +22,9 @@ import {
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { LightShell } from "@/components/LightShell";
 import ShadowPanel from "@/components/ShadowPanel";
+import { PeriodPicker } from "@/components/PeriodPicker";
 import { useAuth } from "@/contexts/AuthContext";
+import { resolvePeriod, type Period } from "@/lib/period";
 
 const API = "https://shadowpay-backend.onrender.com";
 
@@ -69,15 +70,8 @@ function UtmsContent() {
   const [search, setSearch] = useState("");
   const [productId, setProductId] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
-  const [period, setPeriod] = useState<{ from: string; to: string }>(() => {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), 0, 1);
-    const end = new Date(now.getFullYear(), 11, 31);
-    return {
-      from: start.toISOString().slice(0, 10),
-      to: end.toISOString().slice(0, 10),
-    };
-  });
+  // mesmo seletor de período do dashboard ("Máximo" = desde sempre)
+  const [period, setPeriod] = useState<Period>({ preset: "max" });
   const [rows, setRows] = useState<Row[]>([]);
   const [emptyRow, setEmptyRow] = useState<Row | null>(null);
   const [totals, setTotals] = useState({ vendas: 0, faturamento: 0 });
@@ -123,8 +117,9 @@ function UtmsContent() {
       });
       if (search.trim()) params.append("search", search.trim());
       if (productId) params.append("productId", productId);
-      if (period.from) params.append("startDate", `${period.from}T00:00:00`);
-      if (period.to) params.append("endDate", `${period.to}T23:59:59`);
+      const range = resolvePeriod(period);
+      if (range.start) params.append("startDate", range.start.toISOString());
+      if (range.end) params.append("endDate", range.end.toISOString());
 
       const r = await axios.get(
         `${API}/api/tracking/analysis?${params}`,
@@ -154,7 +149,7 @@ function UtmsContent() {
   useEffect(() => {
     if (token) fetchAnalysis(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, groupBy, productId, period.from, period.to]);
+  }, [token, groupBy, productId, period]);
 
   const fmt = (v: number) =>
     new Intl.NumberFormat("pt-BR", {
@@ -168,17 +163,6 @@ function UtmsContent() {
     return products.find((p) => p.id === productId)?.name || "—";
   }, [productId, products]);
 
-  const periodLabel = useMemo(() => {
-    if (!period.from && !period.to) return "Tudo";
-    const fmtD = (s: string) =>
-      new Date(s + "T00:00:00").toLocaleDateString("pt-BR", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      });
-    return `${fmtD(period.from)} → ${fmtD(period.to)}`;
-  }, [period]);
-
   return (
     <>
       <Head>
@@ -189,7 +173,7 @@ function UtmsContent() {
         {/* HEADER */}
         <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <h1
-            className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
+            className="whitespace-nowrap text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
             style={{ letterSpacing: "-0.005em" }}
           >
             Análise de UTMs
@@ -298,39 +282,7 @@ function UtmsContent() {
             </FilterDropdown>
 
             {/* Período */}
-            <div
-              className="flex h-10 items-center gap-2 rounded-xl px-3"
-              style={{
-                background: T.card,
-                border: `1px solid ${T.border}`,
-              }}
-            >
-              <span
-                className="text-[10.5px] font-bold uppercase tracking-[0.16em]"
-                style={{ color: T.primary }}
-              >
-                PERÍODO
-              </span>
-              <input
-                type="date"
-                value={period.from}
-                onChange={(e) =>
-                  setPeriod((p) => ({ ...p, from: e.target.value }))
-                }
-                className="bg-transparent text-[12.5px] outline-none"
-                style={{ color: T.text }}
-              />
-              <span style={{ color: T.textMuted }}>→</span>
-              <input
-                type="date"
-                value={period.to}
-                onChange={(e) =>
-                  setPeriod((p) => ({ ...p, to: e.target.value }))
-                }
-                className="bg-transparent text-[12.5px] outline-none"
-                style={{ color: T.text }}
-              />
-            </div>
+            <PeriodPicker value={period} onChange={setPeriod} />
 
             <button
               onClick={() => fetchAnalysis(1)}

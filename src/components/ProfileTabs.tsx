@@ -1,19 +1,18 @@
 "use client";
 
 /**
- * Tabs do agrupamento "Perfil".
- * Reusado no topo de /v1/configs/profile, /security, /notifications e /v1/kyc.
+ * Atalhos da área "Minha conta" no topo da verificação (/v1/kyc).
+ * Perfil e Notificações são abas de /v1/configs/profile.
  */
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { UserCircle2, Shield, BellRing, IdCard } from "lucide-react";
+import { UserCircle2, BellRing, IdCard } from "lucide-react";
 
 const TABS = [
   { label: "Perfil", href: "/v1/configs/profile", icon: UserCircle2 },
-  { label: "Segurança", href: "/v1/configs/security", icon: Shield },
-  { label: "Notificações", href: "/v1/configs/notifications", icon: BellRing },
+  { label: "Notificações", href: "/v1/configs/profile?tab=notificacoes", icon: BellRing },
   {
-    label: "KYC",
+    label: "Verificação",
     href: "/v1/kyc",
     icon: IdCard,
     matches: ["/v1/kyc/"],
@@ -30,7 +29,7 @@ export function ProfileTabs() {
   return (
     <div className="mb-6 w-full sm:flex sm:justify-center">
       <div
-        className="grid w-full grid-cols-4 gap-0.5 rounded-2xl p-1 sm:inline-flex sm:w-auto sm:items-center sm:gap-1 sm:p-1.5"
+        className="grid w-full grid-cols-3 gap-0.5 rounded-2xl p-1 sm:inline-flex sm:w-auto sm:items-center sm:gap-1 sm:p-1.5"
         style={{
           background: "#FFFFFF",
           border: "1px solid rgba(15,23,42,0.06)",
