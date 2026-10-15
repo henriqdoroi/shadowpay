@@ -470,7 +470,13 @@ export default function EditProduct() {
           topbarText: checkoutConfig.customTimerText || prev.topbarText,
           footerText: checkoutConfig.customFooterText || prev.footerText,
           testimonials,
-          showTestimonials: orderBumps,
+          // Antes os bumps iam parar aqui por engano: salvar apagava os order
+          // bumps do produto e desligava os depoimentos.
+          showTestimonials:
+            checkoutConfig.showTestimonials === true ||
+            checkoutConfig.showTestimonials === "t" ||
+            checkoutConfig.showTestimonials === "true",
+          orderBumps: orderBumps.length ? orderBumps : prev.orderBumps,
           productImageUrl,
           bannerImage: bannerImageUrl,
           showProductImage: checkoutConfig.showImageProduct ?? true,
@@ -676,6 +682,9 @@ export default function EditProduct() {
         showImageProduct: appearanceSettings.showProductImage,
         showProductName: appearanceSettings.showProductName,
         showDescription: appearanceSettings.showProductDescription,
+        // No topo (como no criar produto): é daqui que o checkout e o servidor
+        // leem o desconto do PIX. Só dentro de customFields o desconto zerava.
+        paymentMethods,
         customFields: {
           ...(appearanceSettings.customFields || {}),
           links: (checkoutLinks || []).map((link) => ({

@@ -459,7 +459,7 @@ function UtmifyContent() {
                   </div>
                 )}
 
-                <div className="mt-5 flex flex-wrap gap-2">
+                <div className="mt-5 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                   <ActionButton onClick={testConnection} busy={busy === "test"} icon={<Send className="h-4 w-4" />}>
                     Testar conexão
                   </ActionButton>
@@ -700,7 +700,7 @@ function ActionButton({
     <button
       onClick={onClick}
       disabled={busy}
-      className={`inline-flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-[12.5px] font-semibold transition-colors disabled:opacity-60 ${
+      className={`inline-flex h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 text-[12.5px] font-semibold transition-colors disabled:opacity-60 ${
         danger ? "text-red-600 hover:bg-red-50" : "text-slate-700 hover:bg-slate-50"
       }`}
       style={{ border: `1px solid ${danger ? "#FECACA" : T.border}` }}
