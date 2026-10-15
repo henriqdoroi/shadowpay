@@ -223,19 +223,19 @@ function RevenueGoal({ value, hidden }: { value: number | null; hidden: boolean 
       title={`Faturamento (vendas pagas). Próxima meta: ${fmtGoal(goal)}`}
       className="flex h-9 min-w-0 max-w-full items-center gap-2.5 rounded-full px-3 transition-colors hover:border-white/15 sm:gap-3 sm:px-4"
       style={{
-        background: "#131315",
-        border: "1px solid rgba(255,255,255,0.08)",
+        background: "rgba(255,255,255,0.07)",
+        border: "1px solid rgba(196,181,253,0.22)",
       }}
     >
       <span
         className="hidden text-[10px] font-semibold uppercase tracking-[0.2em] lg:inline"
-        style={{ color: "#71717A" }}
+        style={{ color: "#C4B5FD" }}
       >
         Faturamento
       </span>
       <span
         className="relative h-[7px] w-10 shrink-0 overflow-hidden rounded-full sm:w-24 md:w-28 lg:w-48 xl:w-56"
-        style={{ background: "#27272A" }}
+        style={{ background: "rgba(15, 5, 40, 0.55)" }}
         role="progressbar"
         aria-valuemin={0}
         aria-valuemax={100}
@@ -246,15 +246,15 @@ function RevenueGoal({ value, hidden }: { value: number | null; hidden: boolean 
           className="absolute inset-y-0 left-0 rounded-full"
           style={{
             width: `${width}%`,
-            background: "linear-gradient(90deg, #4D7C0F 0%, #84CC16 55%, #BEF264 100%)",
-            boxShadow: "0 0 8px rgba(163, 230, 53, 0.55)",
+            background: "linear-gradient(90deg, #7C3AED 0%, #A78BFA 60%, #DDD6FE 100%)",
+            boxShadow: "0 0 8px rgba(167, 139, 250, 0.7)",
             transition: "width 0.8s cubic-bezier(0.22, 1, 0.36, 1)",
           }}
         />
       </span>
       <span className="whitespace-nowrap text-[12px] font-bold tabular-nums text-white sm:text-[12.5px]">
         {value == null ? "—" : hidden ? "R$ ••••" : brl(v)}
-        <span className="font-medium" style={{ color: "#71717A" }}>
+        <span className="font-medium" style={{ color: "#C4B5FD" }}>
           {" / "}
           {/* celular: "10K"; telas maiores: "R$ 10K" */}
           <span className="sm:hidden">{fmtGoal(goal).replace("R$ ", "")}</span>
@@ -708,17 +708,23 @@ export function LightShell({
           {/* ============================================================
               TOPBAR
               ============================================================ */}
+          {/* FIXA no topo (não "sticky": no celular o overflow-x do body
+              quebra o sticky). O espaço abaixo reserva a altura dela. */}
           <header
-            className="sticky top-0 z-40 flex h-14 items-center gap-1 px-3 md:px-6"
+            className="fixed inset-x-0 top-0 z-40 flex items-center gap-1 px-3 md:left-[var(--sidebar-w)] md:px-6"
             style={{
-              background: "#0B0B0C",
-              borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
+              height: "calc(3.5rem + env(safe-area-inset-top, 0px))",
+              paddingTop: "env(safe-area-inset-top, 0px)",
+              background: "linear-gradient(90deg, #1B0B38 0%, #2E1065 55%, #3B1480 100%)",
+              borderBottom: "1px solid rgba(167, 139, 250, 0.18)",
+              boxShadow: "0 6px 20px -12px rgba(46, 16, 101, 0.55)",
+              transition: "left 0.22s cubic-bezier(0.22, 1, 0.36, 1)",
             }}
           >
             {/* Hamburger mobile */}
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-zinc-300 transition-colors hover:bg-white/5 hover:text-white md:hidden"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-violet-100 transition-colors hover:bg-white/10 hover:text-white md:hidden"
               aria-label="Abrir menu"
             >
               <Menu className="h-5 w-5" />
@@ -727,7 +733,7 @@ export function LightShell({
             {/* Esquerda: olho (esconde valores) + tema */}
             <button
               onClick={toggleValues}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-violet-200 transition-colors hover:bg-white/10 hover:text-white"
               aria-label={visible ? "Esconder valores" : "Mostrar valores"}
               title={visible ? "Esconder valores" : "Mostrar valores"}
             >
@@ -735,7 +741,7 @@ export function LightShell({
             </button>
             <button
               onClick={() => setTheme(isDark ? "light" : "dark")}
-              className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-xl text-zinc-400 transition-colors hover:bg-white/5 hover:text-white sm:flex"
+              className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-xl text-violet-200 transition-colors hover:bg-white/10 hover:text-white sm:flex"
               aria-label="Alternar tema"
               title={isDark ? "Mudar para claro" : "Mudar para escuro"}
             >
@@ -826,6 +832,11 @@ export function LightShell({
               </div>
             </div>
           </header>
+          <div
+            aria-hidden="true"
+            className="shrink-0"
+            style={{ height: "calc(3.5rem + env(safe-area-inset-top, 0px))" }}
+          />
 
           {/* ============================================================
               MAIN

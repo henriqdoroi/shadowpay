@@ -256,7 +256,7 @@ export function NotificationsBell({
         aria-expanded={open}
         className={
           variant === "dark"
-            ? "relative flex h-9 w-9 items-center justify-center rounded-xl text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
+            ? "relative flex h-9 w-9 items-center justify-center rounded-xl text-violet-200 transition-colors hover:bg-white/10 hover:text-white"
             : "relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
         }
         style={variant === "dark" ? undefined : { border: `1px solid ${borderColor}` }}
@@ -265,7 +265,7 @@ export function NotificationsBell({
         {unread > 0 ? (
           <span
             className={`absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-white ring-2 ${
-              variant === "dark" ? "ring-[#0B0B0C]" : "ring-white"
+              variant === "dark" ? "ring-[#2E1065]" : "ring-white"
             }`}
             style={{ background: primary }}
           >
