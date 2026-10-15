@@ -226,10 +226,6 @@ export default function CreateProduct() {
 
   const [newCustomDomain, setNewCustomDomain] = useState("");
 
-  const [apiSettings, setApiSettings] = useState({
-    utmifyToken: "",
-  });
-
   const [isLoading, setIsLoading] = useState(false);
 
   // Wizard em etapas: converte as 4 abas existentes em passos guiados
@@ -267,13 +263,6 @@ export default function CreateProduct() {
     cpf: false,
     celular: false,
   });
-  const handleApiChange = (field: string, value: string) => {
-    setApiSettings((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
   const formDataToSend = new FormData();
   for (let [key, value] of formDataToSend.entries()) {
     console.log(key, value);
@@ -351,8 +340,7 @@ export default function CreateProduct() {
       );
       formDataToSend.append("whatsappSupport", formData.supportWhatsapp || "");
       formDataToSend.append("emailSupport", formData.supportEmail || "");
-      // ---------- UTMify (o pixel agora é global, em Integrações → Pixels) ----------
-      formDataToSend.append("utmifyToken", apiSettings.utmifyToken || "");
+      // UTMify e Pixel são da CONTA (Integrações), não do produto.
       // ---------- Imagem do produto ----------
       if (formData.productImageFile instanceof File) {
         formDataToSend.append("productImage", formData.productImageFile);
@@ -3005,49 +2993,31 @@ export default function CreateProduct() {
                         produtos — não precisa configurar aqui.
                       </div>
                     </div>
-                    {/* UTMify Token */}
-                    <div className="space-y-2">
-                      <Label htmlFor="utmifyToken">Token UTMify</Label>
-                      <Input
-                        id="utmifyToken"
-                        value={apiSettings.utmifyToken}
-                        onChange={(e) =>
-                          handleApiChange("utmifyToken", e.target.value)
-                        }
-                        placeholder="Digite seu token do UTMify"
-                        type="password"
+                    {/* UTMify agora é da conta — Integrações → UTMify */}
+                    <div
+                      className="flex items-start gap-3 rounded-xl p-3.5"
+                      style={{
+                        background: "rgba(245,158,11,0.06)",
+                        border: "1px solid rgba(15,23,42,0.06)",
+                      }}
+                    >
+                      <Zap
+                        className="mt-0.5 h-[18px] w-[18px] shrink-0"
+                        style={{ color: "#D97706" }}
                       />
-                      <p className="text-xs text-muted-foreground">
-                        Token para integração com UTMify para rastreamento
-                        avançado de campanhas.
-                      </p>
-                    </div>
-
-                    {/* Status das Integrações */}
-                    <div className="border-t pt-4">
-                      <h4 className="font-medium mb-3">
-                        Status das Integrações
-                      </h4>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between p-3 border rounded-lg">
-                          <div>
-                            <span className="font-medium">UTMify</span>
-                            <p className="text-sm text-muted-foreground">
-                              Rastreamento de Campanhas
-                            </p>
-                          </div>
-                          <span
-                            className={`px-2 py-1 text-xs rounded-full ${
-                              apiSettings.utmifyToken
-                                ? "bg-green-100 text-green-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {apiSettings.utmifyToken
-                              ? "Conectado"
-                              : "Não Conectado"}
-                          </span>
-                        </div>
+                      <div className="text-[12.5px] leading-relaxed text-slate-600">
+                        <b className="text-slate-900">A UTMify também é da conta.</b>{" "}
+                        Conecte seu token uma vez em{" "}
+                        <a
+                          href="/v1/integrations/utmify"
+                          className="font-semibold underline"
+                          style={{ color: "#7C3AED" }}
+                        >
+                          Integrações → UTMify
+                        </a>{" "}
+                        e todas as vendas deste e dos outros produtos vão pra
+                        UTMify automaticamente, com as UTMs — direto do nosso
+                        servidor, sem expor seu token no checkout.
                       </div>
                     </div>
                   </CardContent>

@@ -38,7 +38,7 @@ const T = {
   card: "#FFFFFF",
 };
 
-type StatusKind = "apikeys" | "webhooks" | "pixel" | "whatsapp";
+type StatusKind = "apikeys" | "webhooks" | "pixel" | "whatsapp" | "utmify";
 
 type Card = {
   id: string;
@@ -98,16 +98,12 @@ const CARDS: Card[] = [
     id: "utmify",
     title: "UTMify",
     provider: "UTMify",
-    description: "Envia vendas com UTMs pra sua conta UTMify, por produto.",
+    description:
+      "Envia todas as suas vendas, com as UTMs, pra sua conta UTMify — direto do servidor, com reenvio automático.",
     icon: BarChart3,
     color: "#F59E0B",
-    href: "#",
-    status: "provider",
-    providerCode: "UTMIFY",
-    fields: [
-      { key: "apiKey", label: "API Token", placeholder: "utmify_xxx...", type: "password" },
-    ],
-    docsUrl: "https://utmify.com.br",
+    href: "/v1/integrations/utmify",
+    status: "utmify",
   },
   {
     id: "xtracky",
@@ -270,6 +266,7 @@ function IntegrationsContent() {
   const { token } = useAuth();
   const router = useRouter();
   const [connected, setConnected] = useState<string[]>([]);
+  const [utmify, setUtmify] = useState<{ active: boolean; invalid: boolean } | null>(null);
   const [pixelCount, setPixelCount] = useState(0);
   const [modalFor, setModalFor] = useState<Card | null>(null);
 
@@ -279,12 +276,11 @@ function IntegrationsContent() {
     axios
       .get(`${API}/api/integrations/providers`, h)
       .then((r) => {
-        if (r.data?.success)
-          setConnected(
-            (r.data.data || [])
-              .filter((c: any) => c.active !== false)
-              .map((c: any) => c.provider)
-          );
+        if (!r.data?.success) return;
+        const rows: any[] = r.data.data || [];
+        setConnected(rows.filter((c) => c.active !== false).map((c) => c.provider));
+        const u = rows.find((c) => c.provider === "UTMIFY");
+        setUtmify(u ? { active: u.active !== false, invalid: !!u.credentialInvalid } : null);
       })
       .catch(() => {});
   }
@@ -304,7 +300,14 @@ function IntegrationsContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  function statusLine(c: Card): { text: string; active: boolean } {
+  function statusLine(c: Card): { text: string; active: boolean; warn?: boolean } {
+    if (c.status === "utmify") {
+      if (!utmify) return { text: "Não conectado", active: false };
+      if (utmify.invalid) return { text: "Token recusado — revise", active: false, warn: true };
+      return utmify.active
+        ? { text: "Integração ativa", active: true }
+        : { text: "Envios pausados", active: false, warn: true };
+    }
     if (c.status === "provider") {
       const on = !!c.providerCode && connected.includes(c.providerCode);
       return on
@@ -418,11 +421,11 @@ function IntegrationsContent() {
               <div className="flex items-center gap-1.5">
                 <Activity
                   className="h-3.5 w-3.5"
-                  style={{ color: st.active ? T.green : T.textMuted }}
+                  style={{ color: st.active ? T.green : st.warn ? "#D97706" : T.textMuted }}
                 />
                 <span
                   className="text-[12px] font-semibold"
-                  style={{ color: st.active ? T.green : T.textMuted }}
+                  style={{ color: st.active ? T.green : st.warn ? "#D97706" : T.textMuted }}
                 >
                   {st.text}
                 </span>

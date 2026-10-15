@@ -318,7 +318,6 @@ export default function EditProduct() {
   const [newCustomDomain, setNewCustomDomain] = useState("");
   const [apiSettings, setApiSettings] = useState({
     pixelAdsToken: "",
-    utmifyToken: "",
     fbpixelidToken: "",
   });
   const [formFields, setFormFields] = useState({
@@ -504,7 +503,6 @@ export default function EditProduct() {
         setApiSettings({
           pixelAdsToken: (p as any).pixelToken || "",
           fbpixelidToken: (p as any).fbpixelid || "",
-          utmifyToken: (p as any).utmifyToken || "",
         });
       } catch (err) {
         console.error("Erro ao carregar dados do produto:", err);
@@ -607,10 +605,9 @@ export default function EditProduct() {
       );
       formDataToSend.append("whatsappSupport", formData.supportWhatsapp || "");
       formDataToSend.append("emailSupport", formData.supportEmail || "");
-      // ---------- Pixel e UTMify ----------
+      // ---------- Pixel (UTMify agora é da conta: Integrações → UTMify) ----------
       formDataToSend.append("pixelToken", apiSettings.pixelAdsToken || "");
       formDataToSend.append("fbpixelid", apiSettings.fbpixelidToken || "");
-      formDataToSend.append("utmifyToken", apiSettings.utmifyToken || "");
       // ---------- Imagens ----------
       if (formData.productImageFile instanceof File) {
         formDataToSend.append("productImage", formData.productImageFile);
@@ -3292,22 +3289,34 @@ export default function EditProduct() {
                         rastreamento de conversões.
                       </p>
                     </div>
-                    {/* UTMify Token */}
-                    <div className="space-y-2">
-                      <Label htmlFor="utmifyToken">Token UTMify</Label>
-                      <Input
-                        id="utmifyToken"
-                        value={apiSettings.utmifyToken}
-                        onChange={(e) =>
-                          handleApiChange("utmifyToken", e.target.value)
-                        }
-                        placeholder="Digite seu token do UTMify"
-                        type="password"
+                    {/* UTMify agora é da conta — Integrações → UTMify */}
+                    <div
+                      className="flex items-start gap-3 rounded-xl p-3.5"
+                      style={{
+                        background: "rgba(245,158,11,0.06)",
+                        border: "1px solid rgba(15,23,42,0.06)",
+                      }}
+                    >
+                      <Zap
+                        className="mt-0.5 h-[18px] w-[18px] shrink-0"
+                        style={{ color: "#D97706" }}
                       />
-                      <p className="text-xs text-muted-foreground">
-                        Token para integração com UTMify para rastreamento
-                        avançado de campanhas.
-                      </p>
+                      <div className="text-[12.5px] leading-relaxed text-slate-600">
+                        <b className="text-slate-900">A UTMify agora é da conta.</b>{" "}
+                        Conecte seu token uma vez em{" "}
+                        <a
+                          href="/v1/integrations/utmify"
+                          className="font-semibold underline"
+                          style={{ color: "#7C3AED" }}
+                        >
+                          Integrações → UTMify
+                        </a>{" "}
+                        e todas as vendas deste e dos outros produtos vão pra
+                        UTMify automaticamente, com as UTMs — direto do nosso
+                        servidor, sem expor seu token no checkout. Se você tinha
+                        colocado um token aqui, a conexão foi passada pra lá —
+                        confira em Integrações → UTMify.
+                      </div>
                     </div>
 
                     {/* Status das Integrações */}
@@ -3331,26 +3340,6 @@ export default function EditProduct() {
                             }`}
                           >
                             {apiSettings.pixelAdsToken
-                              ? "Conectado"
-                              : "Não Conectado"}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between p-3 border rounded-lg">
-                          <div>
-                            <span className="font-medium">UTMify</span>
-                            <p className="text-sm text-muted-foreground">
-                              Rastreamento de Campanhas
-                            </p>
-                          </div>
-                          <span
-                            className={`px-2 py-1 text-xs rounded-full ${
-                              apiSettings.utmifyToken
-                                ? "bg-green-100 text-green-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {apiSettings.utmifyToken
                               ? "Conectado"
                               : "Não Conectado"}
                           </span>

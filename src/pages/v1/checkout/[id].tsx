@@ -8,10 +8,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import axios from "axios";
-import { trackUTMifyEvent } from "./trackeamento";
+import { Attribution, attributionPayload, captureAttribution } from "@/lib/attribution";
+import { OFFLINE_MSG } from "@/lib/axiosErrors";
 
 interface Product {
   id: string;
+  sellerId?: string;
   name: string;
   description: string;
   price: number;
@@ -24,8 +26,6 @@ interface Product {
   linkSalesPage?: string;
   productType?: string;
   paymentMethod?: string;
-  utmifyToken?: string | null;
-  pixelToken?: string | null;
   fbpixelid?: string;
 }
 
@@ -78,11 +78,6 @@ interface AppearanceSettings {
   footerText?: string;
 }
 
-interface ApiFeeData {
-  percentualin: number;
-  fixoin: number;
-}
-
 interface CreateSaleData {
   nome: string;
   email: string;
@@ -90,39 +85,6 @@ interface CreateSaleData {
   celular: string;
   paymentMethod: string;
   phone?: string;
-}
-
-interface FeesResponse {
-  success: boolean;
-  data: {
-    sellerId: string;
-    companyName: string;
-    fees: {
-      pix: ApiFeeData;
-      card: ApiFeeData;
-      boleto: ApiFeeData;
-      crypto: ApiFeeData;
-    };
-  };
-}
-
-interface FacebookEventCustomer {
-  email?: string;
-  phone?: string;
-  ip?: string;
-  userAgent?: string;
-}
-
-type PaymentStatus = "pending" | "approved";
-
-interface FacebookEventParams {
-  pixelId: string;
-  accessToken: string;
-  eventName: string;
-  value: number;
-  currency: string;
-  contents: any[];
-  customer: FacebookEventCustomer;
 }
 
 const productTypeMap: Record<string, string> = {
@@ -169,13 +131,8 @@ export default function CheckoutPage() {
   const [isClientSide, setIsClientSide] = useState(false);
 
   const { user, token } = useAuth();
-  const customerRef = useRef<any>(null);
-  const productRef = useRef<any>(null);
-  const amountRef = useRef<number>(0);
-  const pixelTokenRef = useRef<string | null>(null);
-  const utmifyTokenRef = useRef<string | null>(null);
-  const pixelIdRef = useRef<string | null>(null);
-  const [isLoadingFees, setIsLoadingFees] = useState(false);
+  // Origem da venda (UTMs etc.) — ver src/lib/attribution.ts
+  const attributionRef = useRef<Attribution | null>(null);
   const [isProcessingDeposit, setIsProcessingDeposit] = useState(false);
   const [transactionId, setTransactionId] = useState("");
   const [timeLeft, setTimeLeft] = useState(300);
@@ -197,8 +154,8 @@ export default function CheckoutPage() {
 
   const [pixData, setPixData] = useState<PixData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedBumps, setSelectedBumps] = useState<number[]>([]);
-  const [addedBumps, setAddedBumps] = useState<string[]>([]);
+  // ids (texto) dos order bumps escolhidos — o servidor recalcula o valor
+  const [selectedBumps, setSelectedBumps] = useState<string[]>([]);
   const [pixCode, setPixCode] = useState("");
   const [paymentMethods, setPaymentMethods] = useState({
     pix: { enabled: false, percent: 0 },
@@ -209,10 +166,6 @@ export default function CheckoutPage() {
     applepay: { enabled: false, percent: 0 },
   });
 
-  const [pixFees, setPixFees] = useState<ApiFeeData>({
-    percentualin: 0,
-    fixoin: 0,
-  });
   const backRedirect = formData.salesPageUrl;
 
   const [selectedPayment, setSelectedPayment] = useState<
@@ -238,41 +191,18 @@ export default function CheckoutPage() {
   //   setIsClientSide(true);
   // }, []);
 
+  // Só pra MOSTRAR: o valor cobrado é calculado no servidor (mesma regra).
   const totalPrice =
     parseFloat(formData.price ?? "0") +
     selectedBumps.reduce((sum, id) => {
-      const bump = appearanceSettings.orderBumps.find((b) => b.id === id);
+      const bump = appearanceSettings.orderBumps.find((b) => String(b.id) === id);
       return bump ? sum + parseFloat(bump.price ?? "0") : sum;
     }, 0);
 
   const toggleOrderBump = (id: string) => {
-    const bumpId = parseInt(id);
-    if (addedBumps.includes(id)) {
-      setAddedBumps((prev) => prev.filter((bid) => bid !== id));
-      setSelectedBumps((prev) => prev.filter((b) => b !== bumpId));
-    } else {
-      setAddedBumps((prev) => [...prev, id]);
-      setSelectedBumps((prev) => [...prev, bumpId]);
-    }
-  };
-
-  const fetchFees = async () => {
-    if (!token) return;
-    setIsLoadingFees(true);
-    try {
-      const response = await axios.get<FeesResponse>(
-        "https://shadowpay-backend.onrender.com/api/user/fees",
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (response.data.success) {
-        const { fees } = response.data.data;
-        setPixFees(fees.pix);
-      }
-    } catch (error) {
-      console.error("Erro ao buscar taxas:", error);
-    } finally {
-      setIsLoadingFees(false);
-    }
+    setSelectedBumps((prev) =>
+      prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id]
+    );
   };
 
   // Timer do modal PIX
@@ -295,19 +225,9 @@ export default function CheckoutPage() {
     return () => clearInterval(timer);
   }, [showPixModal, pixData]);
 
-  // UTMify script loading - só no cliente
-  useEffect(() => {
-    if (!isClientSide) return;
-
-    if (!document.getElementById("utmify-script")) {
-      const script = document.createElement("script");
-      script.id = "utmify-script";
-      script.src = "https://cdn.utmify.com.br/scripts/utms/latest.js";
-      script.async = true;
-      script.defer = true;
-      document.body.appendChild(script);
-    }
-  }, [isClientSide]);
+  // UTMify: as vendas vão pelo SERVIDOR (Integrações -> UTMify), com o token
+  // do seller guardado só no backend. Nada da UTMify roda no navegador do
+  // comprador — o script/eventos de navegador não são documentados por ela.
 
   /**
    * Registra a VISITA real no backend assim que o produto carrega
@@ -346,257 +266,21 @@ export default function CheckoutPage() {
     }).catch((e) => console.warn("tracking/visit fail:", e));
   }, [isClientSide, formData?.id]);
 
-  const waitForUtmify = (callback: () => void, attempts = 0) => {
-    if (isClientSide && (window as any).utmify?.track) {
-      callback();
-    } else if (attempts < 10) {
-      setTimeout(() => waitForUtmify(callback, attempts + 1), 500);
-    } else {
-      console.warn("UTMify não carregou a tempo.");
-    }
-  };
-
-  // Hash SHA256
-  const hashSHA256 = async (value: string): Promise<string> => {
-    if (!isClientSide) return "";
-
-    const encoder = new TextEncoder();
-    const data = encoder.encode(value);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-  };
-
-  // Send Facebook Event
-  const sendFacebookEvent = async ({
-    pixelId,
-    accessToken,
-    eventName,
-    value,
-    currency,
-    contents,
-    customer,
-  }: FacebookEventParams) => {
-    if (!isClientSide) return;
-
-    try {
-      const eventTime = Math.floor(Date.now() / 1000);
-
-      const hashedEmail = customer.email
-        ? [await hashSHA256(customer.email.trim().toLowerCase())]
-        : [];
-      const hashedPhone = customer.phone
-        ? [await hashSHA256(customer.phone.replace(/\D/g, ""))]
-        : [];
-
-      const fbc =
-        localStorage.getItem("_fbc") ||
-        document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("_fbc="))
-          ?.split("=")[1] ||
-        null;
-
-      const fbp =
-        localStorage.getItem("_fbp") ||
-        document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("_fbp="))
-          ?.split("=")[1] ||
-        null;
-
-      const payload = {
-        data: [
-          {
-            event_name: eventName,
-            event_time: eventTime,
-            action_source: "website",
-            event_source_url: window.location.href,
-            user_data: {
-              em: hashedEmail,
-              ph: hashedPhone,
-              client_ip_address: customer.ip || "0.0.0.0",
-              client_user_agent: customer.userAgent || navigator.userAgent,
-              fbc: fbc || undefined,
-              fbp: fbp || undefined,
-            },
-            custom_data: {
-              currency,
-              value,
-              contents,
-            },
-          },
-        ],
-      };
-
-      await axios.post(
-        `https://graph.facebook.com/v23.0/${pixelId}/events?access_token=${accessToken}`,
-        payload,
-        { headers: { "Content-Type": "application/json" } }
-      );
-    } catch (err) {
-      console.error(`[Facebook API] Erro ao enviar evento ${eventName}:`, err);
-    }
-  };
-
-  // Check Payment Status
-  const checkPaymentStatus = (saleId: string, productId: string) => {
+  // Check Payment Status — só ACOMPANHA: quem confirma o pagamento é o
+  // backend (webhook/consulta ao PSP), e ele mesmo avisa UTMify e pixels.
+  const checkPaymentStatus = (saleId: string) => {
     if (intervalRef.current) clearInterval(intervalRef.current);
-
-    const formatDate = (date: string | Date) => {
-      const d = new Date(date);
-      const pad = (n: number) => (n < 10 ? `0${n}` : n);
-      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
-        d.getDate()
-      )} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-    };
 
     intervalRef.current = setInterval(async () => {
       try {
         const txRes = await axios.get(
           `https://shadowpay-backend.onrender.com/api/payments/public/transaction/${saleId}`
         );
-
-        const approvedTx = txRes.data?.data;
-        if (!approvedTx || approvedTx.status?.toLowerCase() !== "approved")
-          return;
+        const tx = txRes.data?.data;
+        if (tx?.status?.toLowerCase() !== "approved") return;
 
         setPaymentStatus("approved");
         if (intervalRef.current) clearInterval(intervalRef.current);
-
-        const amountValue = parseFloat(
-          approvedTx.amountNet || approvedTx.amount || amountRef.current || 0
-        );
-
-        await axios.put(
-          `https://shadowpay-backend.onrender.com/api/sales/${saleId}`,
-          { status: "approved" },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        const productRes = await axios.get(
-          `https://shadowpay-backend.onrender.com/api/products/${productId}/checkout`
-        );
-        const productData = productRes.data.data.product;
-        const utmifyToken = productData.utmifyToken;
-        const gatewayFee = (amountValue * pixFees.percentualin) / 100;
-        const netAmount = amountValue - gatewayFee;
-
-        let storedParams: Record<string, any> = {};
-        if (isClientSide) {
-          storedParams = JSON.parse(localStorage.getItem("utmParams") || "{}");
-        }
-
-        const trackingParameters = {
-          src: storedParams.src || null,
-          sck: storedParams.sck || null,
-          utm_source: storedParams.utm_source || "safiracash",
-          utm_campaign: storedParams.utm_campaign || null,
-          utm_medium: storedParams.utm_medium || "checkout",
-          utm_content: storedParams.utm_content || null,
-          utm_term: storedParams.utm_term || null,
-          fbclid:
-            storedParams.fbclid ||
-            (isClientSide ? localStorage.getItem("fbclid") : null) ||
-            null,
-        };
-
-        if (utmifyToken) {
-          const payload = {
-            orderId: `sale-${saleId}`,
-            platform: "SafiraCash",
-            paymentMethod: "pix",
-            status: "paid",
-            createdAt: formatDate(approvedTx.createdAt || new Date()),
-            approvedDate: formatDate(new Date()),
-            refundedAt: null,
-            customer: {
-              name: approvedTx.customer?.name || "Cliente",
-              email:
-                approvedTx.customer?.email ||
-                customerRef.current?.email ||
-                "cliente@teste.com",
-              phone:
-                approvedTx.customer?.phone ||
-                customerRef.current?.phone ||
-                "00000000000",
-              document: approvedTx.customer?.cpf || "00000000000",
-              country: "BR",
-              ip: approvedTx.customer?.ip || customerRef.current?.ip || "",
-            },
-            products: [
-              {
-                id: productData.id,
-                name: productData.name,
-                planId: null,
-                planName: null,
-                quantity: 1,
-                priceInCents: Math.round(amountValue * 100),
-              },
-            ],
-            trackingParameters,
-            commission: {
-              totalPriceInCents: Math.round(amountValue * 100),
-              gatewayFeeInCents: Math.round(gatewayFee * 100),
-              userCommissionInCents: Math.round(netAmount * 100),
-            },
-            isTest: false,
-          };
-
-          await axios.post(
-            "https://api.utmify.com.br/api-credentials/orders",
-            payload,
-            {
-              headers: {
-                "Content-Type": "application/json",
-                "x-api-token": utmifyToken,
-              },
-            }
-          );
-        }
-
-        if (pixelIdRef.current && pixelTokenRef.current) {
-          await sendFacebookEvent({
-            pixelId: pixelIdRef.current,
-            accessToken: pixelTokenRef.current,
-            eventName: "Purchase",
-            value: amountValue,
-            currency: "BRL",
-            contents: [{ id: productRef.current.id, quantity: 1 }],
-            customer: customerRef.current,
-          });
-        }
-
-        // Persiste o Purchase REAL no nosso backend (auditável + agregado
-        // por seller na página /v1/tracking).
-        try {
-          await fetch(
-            "https://shadowpay-backend.onrender.com/api/tracking/event",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                eventName: "Purchase",
-                transactionId: saleId,
-                productId: productId,
-                value: amountValue,
-                currency: "BRL",
-                utm_source: trackingParameters.utm_source,
-                utm_medium: trackingParameters.utm_medium,
-                utm_campaign: trackingParameters.utm_campaign,
-                utm_content: trackingParameters.utm_content,
-                utm_term: trackingParameters.utm_term,
-                fbclid: trackingParameters.fbclid,
-                payload: {
-                  product: productRef.current?.name,
-                  customer: customerRef.current?.email,
-                },
-              }),
-            }
-          );
-        } catch (err) {
-          console.warn("tracking/event purchase:", err);
-        }
       } catch (err) {
         console.error("Erro ao checar pagamento:", err);
       }
@@ -613,47 +297,48 @@ export default function CheckoutPage() {
     cpf,
     celular,
     paymentMethod,
-    token,
   }: CreateSaleDataWithToken) => {
     if (!formData?.id || !formData?.name) {
       console.error("formData incompleto:", formData);
-      return null;
+      throw new Error("Produto ainda carregando. Tente de novo.");
     }
 
+    // O VALOR não vai daqui: o servidor calcula (produto + bumps - desconto).
+    // Vão só as escolhas do comprador, os dados que ele digitou e a origem
+    // da venda (UTMs, src, sck...).
+    let response;
     try {
-      const priceToSend = parseFloat(
-        ((discountPercent > 0 ? finalPrice : totalPrice) || 0).toFixed(2)
-      );
-
-      const response = await axios.post(
+      response = await axios.post(
         "https://shadowpay-backend.onrender.com/api/sales/public",
         {
           productId: formData.id,
-          productName: formData.name,
-          price: priceToSend,
+          bumpIds: selectedBumps,
           paymentType:
             selectedPayment?.toUpperCase() || paymentMethod?.toUpperCase(),
-          name: nome,
-          email,
-          celular,
-          document: cpf,
+          name: nome || undefined,
+          email: email || undefined,
+          celular: celular || undefined,
+          document: cpf || undefined,
+          ...attributionPayload(
+            attributionRef.current ?? captureAttribution(product?.sellerId)
+          ),
         },
         {
           headers: { "Content-Type": "application/json" },
           validateStatus: () => true,
         }
       );
-
-      if (!response.data?.id) {
-        console.error("Falha ao criar pedido público:", response.data);
-        return null;
-      }
-
-      return response.data;
-    } catch (error: any) {
-      console.error("Erro ao criar pedido público:", error?.message);
-      return null;
+    } catch {
+      throw new Error(OFFLINE_MSG);
     }
+
+    if (!response.data?.id) {
+      console.error("Falha ao criar pedido público:", response.data);
+      throw new Error(
+        response.data?.message || "Não foi possível gerar o PIX. Tente de novo."
+      );
+    }
+    return response.data;
   };
 
   // Handle Buy Now
@@ -663,39 +348,9 @@ export default function CheckoutPage() {
   ) => {
     if (!product?.id) throw new Error("Produto não definido");
 
-    const formatDate = (date: Date) => {
-      const pad = (n: number) => (n < 10 ? `0${n}` : n);
-      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-        date.getDate()
-      )} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(
-        date.getSeconds()
-      )}`;
-    };
-
     try {
-      const safeSaleData: CreateSaleData = {
-        nome: saleData.nome || "Cliente",
-        email: saleData.email || "cliente@teste.com",
-        cpf: saleData.cpf || "00000000000",
-        celular: saleData.celular || "+5500000000000",
-        paymentMethod: saleData.paymentMethod || "PIX",
-      };
-
-      if (isClientSide) {
-        if (safeSaleData.cpf) localStorage.setItem("userCPF", safeSaleData.cpf);
-        if (safeSaleData.celular)
-          localStorage.setItem("userPhone", safeSaleData.celular);
-      }
-
-      utmifyTokenRef.current = product.utmifyToken || null;
-      pixelIdRef.current = product?.fbpixelid || null;
-      pixelTokenRef.current = product?.pixelToken || null;
-      await fetchFees();
-
-      const amount = discountPercent > 0 ? finalPrice : totalPrice;
-
-      const createdSale = await handleCreateSale({ ...safeSaleData, token });
-      if (!createdSale) throw new Error("Não foi possível criar a venda");
+      // Só o que o comprador digitou — nada de nome/e-mail/CPF inventado.
+      const createdSale = await handleCreateSale({ ...saleData, token });
 
       const saleId = createdSale.id;
       const qrCode = createdSale.qrCode;
@@ -707,126 +362,19 @@ export default function CheckoutPage() {
       setTransactionId(transactionId);
       setSaleId(saleId);
 
-      const gatewayFee = (amount * pixFees.percentualin) / 100;
-      const netAmount = amount - gatewayFee;
-
+      // Valor que o SERVIDOR cobrou (é o que vai no QR Code).
+      const amount = Number(createdSale.amount) || (discountPercent > 0 ? finalPrice : totalPrice);
       setPixData({
         amount,
-        fee: pixFees.percentualin,
-        net: netAmount,
+        fee: 0,
+        net: amount,
         copiaCola: qrCode,
       });
 
       setShowPixModal(true);
       setPaymentStatus("pending");
 
-      if (isClientSide) {
-        customerRef.current = {
-          email: safeSaleData.email,
-          phone: safeSaleData.celular,
-          ip: "8.8.8.8",
-          userAgent: navigator.userAgent,
-        };
-      }
-
-      productRef.current = product;
-      amountRef.current = amount;
-
-      let storedParams: Record<string, any> = {};
-      if (isClientSide) {
-        storedParams = JSON.parse(localStorage.getItem("utmParams") || "{}");
-      }
-
-      if (utmifyTokenRef.current && product?.id) {
-        const payload = {
-          orderId: `sale-${saleId}`,
-          platform: "SafiraCash",
-          paymentMethod: "pix",
-          status: "waiting_payment",
-          ic: true,
-          createdAt: formatDate(new Date()),
-          approvedDate: null,
-          refundedAt: null,
-          customer: {
-            name: safeSaleData.nome,
-            email: safeSaleData.email,
-            phone: safeSaleData.celular,
-            document: safeSaleData.cpf,
-            country: "BR",
-            ip: "8.8.8.8",
-          },
-          products: [
-            {
-              id: product.id,
-              name: product.name,
-              planId: null,
-              planName: null,
-              quantity: 1,
-              priceInCents: Math.round(amount * 100),
-            },
-          ],
-          trackingParameters: {
-            src: storedParams.src || null,
-            sck: storedParams.sck || null,
-            utm_source: storedParams.utm_source || "safiracash",
-            utm_campaign: storedParams.utm_campaign || null,
-            utm_medium: storedParams.utm_medium || "checkout",
-            utm_content: storedParams.utm_content || null,
-            utm_term: storedParams.utm_term || null,
-            fbclid:
-              storedParams.fbclid ||
-              (isClientSide ? localStorage.getItem("fbclid") : null) ||
-              null,
-          },
-          commission: {
-            totalPriceInCents: Math.round(amount * 100),
-            gatewayFeeInCents: Math.round(gatewayFee * 100),
-            userCommissionInCents: Math.round(netAmount * 100),
-          },
-          isTest: false,
-        };
-
-        try {
-          await axios.post(
-            "https://api.utmify.com.br/api-credentials/orders",
-            payload,
-            {
-              headers: {
-                "Content-Type": "application/json",
-                "x-api-token": utmifyTokenRef.current,
-              },
-            }
-          );
-        } catch (err) {
-          if (axios.isAxiosError(err)) {
-            console.error("Erro UTMify:", err.response?.data || err.message);
-          } else {
-            console.error("Erro UTMify:", err);
-          }
-        }
-      }
-
-      if (pixelIdRef.current && pixelTokenRef.current) {
-        await sendFacebookEvent({
-          pixelId: pixelIdRef.current,
-          accessToken: pixelTokenRef.current,
-          eventName: "InitiateCheckout",
-          value: product?.price || 0,
-          currency: "BRL",
-          contents: [{ id: product?.id, quantity: 1 }],
-          customer: {
-            email: safeSaleData.email,
-            phone: safeSaleData.celular,
-            ip: await fetch("https://api.ipify.org?format=json")
-              .then((res) => res.json())
-              .then((data) => data.ip)
-              .catch(() => ""),
-            userAgent: isClientSide ? navigator.userAgent : "",
-          },
-        });
-      }
-
-      checkPaymentStatus(saleId, product.id);
+      checkPaymentStatus(saleId);
 
       return { qrCode, saleId, transactionId };
     } catch (err) {
@@ -836,22 +384,6 @@ export default function CheckoutPage() {
       setIsProcessingDeposit(false);
     }
   };
-
-  // Persistência de bumps - só no cliente
-  useEffect(() => {
-    if (!isClientSide) return;
-
-    const storedBumps = localStorage.getItem("selectedBumps");
-    if (storedBumps) {
-      setSelectedBumps(JSON.parse(storedBumps));
-      setAddedBumps(JSON.parse(storedBumps).map(String));
-    }
-  }, [isClientSide]);
-
-  useEffect(() => {
-    if (!isClientSide) return;
-    localStorage.setItem("selectedBumps", JSON.stringify(selectedBumps));
-  }, [selectedBumps, isClientSide]);
 
   const discountPercent =
     paymentMethods[selectedPayment as keyof typeof paymentMethods]?.percent ||
@@ -889,23 +421,13 @@ export default function CheckoutPage() {
     }
   }, [paymentStatus, saleId, isClientSide]);
 
-  // UTM params - só no cliente
+  // Origem da venda: lê UTMs/src/sck/ids de clique da URL assim que o produto
+  // (e o seller) é conhecido. Último clique com parâmetro, por seller, 30 dias
+  // — visita sem parâmetros não apaga a campanha salva.
   useEffect(() => {
-    if (!isClientSide) return;
-
-    const params = new URLSearchParams(window.location.search);
-    const utmData = {
-      src: params.get("src"),
-      sck: params.get("sck"),
-      utm_source: params.get("utm_source"),
-      utm_campaign: params.get("utm_campaign"),
-      utm_medium: params.get("utm_medium"),
-      utm_content: params.get("utm_content"),
-      utm_term: params.get("utm_term"),
-      fbclid: params.get("fbclid"),
-    };
-    localStorage.setItem("utmParams", JSON.stringify(utmData));
-  }, [isClientSide]);
+    if (!product?.id) return;
+    attributionRef.current = captureAttribution(product.sellerId);
+  }, [product?.id, product?.sellerId]);
 
   // Função para enviar eventos ao Facebook Pixel
   const trackFacebookPixelEvent = (
@@ -952,15 +474,6 @@ export default function CheckoutPage() {
 
   // Fetch product - consolidado em um único useEffect
   useEffect(() => {
-    const formatDate = (date: Date) => {
-      const pad = (n: number) => (n < 10 ? `0${n}` : n);
-      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-        date.getDate()
-      )} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(
-        date.getSeconds()
-      )}`;
-    };
-
     const buildUrl = (input?: string | { filename: string } | null) => {
       if (!input) return undefined;
       const filename =
@@ -1003,121 +516,6 @@ export default function CheckoutPage() {
         }
 
         setProduct(p);
-        utmifyTokenRef.current = p.utmifyToken || null;
-        pixelTokenRef.current = p.pixelToken || null;
-        pixelIdRef.current = p.fbpixelid || null;
-
-        // Envio do evento Facebook Pixel
-        if (pixelIdRef.current && pixelTokenRef.current) {
-          try {
-            const ipData = await fetch("https://api.ipify.org?format=json")
-              .then((res) => res.json())
-              .then((data) => data.ip)
-              .catch(() => "0.0.0.0");
-
-            await sendFacebookEvent({
-              pixelId: pixelIdRef.current,
-              accessToken: pixelTokenRef.current,
-              eventName: "InitiateCheckout",
-              value: p.price || 0,
-              currency: "BRL",
-              contents: [{ id: p.id, quantity: 1 }],
-              customer: {
-                email: undefined,
-                phone: undefined,
-                ip: ipData,
-                userAgent: navigator.userAgent,
-              },
-            });
-          } catch (err) {
-            console.error("[Facebook] Erro ao enviar IC:", err);
-          }
-        }
-
-        // Tracking UTMify e transações aprovadas
-        const savedSaleId = localStorage.getItem("lastSaleId");
-        if (savedSaleId && utmifyTokenRef.current) {
-          try {
-            const txRes = await axios.get(
-              `https://shadowpay-backend.onrender.com/api/admin/transactions?saleIds=${savedSaleId}`,
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-
-            const approvedTx = txRes.data.data.transactions?.find(
-              (tx: any) =>
-                tx.saleId === savedSaleId &&
-                tx.status?.toLowerCase() === "approved"
-            );
-
-            if (approvedTx) {
-              const amountValue = parseFloat(
-                approvedTx.amountNet || approvedTx.amount || 0
-              );
-              const gatewayFee = (amountValue * pixFees.percentualin) / 100;
-              const netAmount = amountValue - gatewayFee;
-
-              const utmParams = JSON.parse(
-                localStorage.getItem("utmParams") || "{}"
-              );
-
-              const payload = {
-                orderId: `sale-${savedSaleId}`,
-                platform: "SafiraCash",
-                paymentMethod: "pix",
-                status: "paid",
-                createdAt: formatDate(
-                  new Date(approvedTx.createdAt || Date.now())
-                ),
-                approvedDate: formatDate(new Date()),
-                refundedAt: null,
-                customer: {
-                  name: approvedTx.customer?.name || "Cliente",
-                  email: approvedTx.customer?.email || "cliente@teste.com",
-                  phone: approvedTx.customer?.phone || "00000000000",
-                  document: approvedTx.customer?.cpf || "00000000000",
-                  country: "BR",
-                  ip: approvedTx.customer?.ip || "0.0.0.0",
-                },
-                products: [
-                  {
-                    id: p.id,
-                    name: p.name,
-                    planId: null,
-                    planName: null,
-                    quantity: 1,
-                    priceInCents: Math.round(amountValue * 100),
-                  },
-                ],
-                trackingParameters: {
-                  src: utmParams.src || null,
-                  sck: utmParams.sck || null,
-                  utm_source: utmParams.utm_source || null,
-                  utm_campaign: utmParams.utm_campaign || null,
-                  utm_medium: utmParams.utm_medium || null,
-                  utm_content: utmParams.utm_content || null,
-                  utm_term: utmParams.utm_term || null,
-                },
-                commission: {
-                  totalPriceInCents: Math.round(amountValue * 100),
-                  gatewayFeeInCents: Math.round(gatewayFee * 100),
-                  userCommissionInCents: Math.round(netAmount * 100),
-                },
-                isTest: false,
-              };
-
-              await fetch("/api/track-utmify", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  payload,
-                  token: utmifyTokenRef.current,
-                }),
-              });
-            }
-          } catch (err) {
-            console.error("[UTMify] Erro ao enviar CPA:", err);
-          }
-        }
 
         // Configurações de checkout
         const checkoutConfig = p?.checkoutConfig || {};
@@ -1486,18 +884,8 @@ export default function CheckoutPage() {
                   )?.value || ""
                 ).trim();
 
-                trackFacebookPixelEvent("Lead", { field: "name", value: nome });
-                trackFacebookPixelEvent("Lead", {
-                  field: "email",
-                  value: email,
-                });
-                trackFacebookPixelEvent("Lead", {
-                  field: "phone",
-                  value: celular,
-                });
-
-                localStorage.setItem("userCPF", cpf);
-
+                // Dados pessoais (nome, e-mail, telefone, CPF) não vão pra
+                // pixel nem ficam salvos no navegador (LGPD).
                 const saleData: CreateSaleData = {
                   nome,
                   email,
@@ -1506,28 +894,12 @@ export default function CheckoutPage() {
                   paymentMethod: "pix",
                 };
 
-                trackUTMifyEvent("clicked_buy_now", {
-                  productId: product?.id,
-                });
                 trackFacebookPixelEvent("InitiateCheckout", {
                   value: product?.price,
                   currency: "BRL",
                 });
 
-                const sale: any = await handleBuyNow(saleData, token);
-
-                if (
-                  (sale as unknown as { status: string })?.status === "approved"
-                ) {
-                  trackUTMifyEvent("purchase_completed", {
-                    productId: sale.product_id,
-                  });
-                  trackFacebookPixelEvent("Purchase", {
-                    value: sale.amount,
-                    currency: "BRL",
-                    transactionId: sale.id,
-                  });
-                }
+                await handleBuyNow(saleData, token);
               }}
             >
               {/* Formulário de Identificação */}
@@ -1774,8 +1146,8 @@ export default function CheckoutPage() {
                     (ob) => ob.active && ob.title && ob.description && ob.price
                   )
                   .map((orderBump) => {
-                    const isAdded = addedBumps.includes(
-                      orderBump.id.toString()
+                    const isAdded = selectedBumps.includes(
+                      String(orderBump.id)
                     );
                     return (
                       <div
@@ -1837,8 +1209,9 @@ export default function CheckoutPage() {
                                   .replace(".", ",")}
                               </p>
                               <button
+                                type="button"
                                 onClick={() =>
-                                  toggleOrderBump(orderBump.id.toString())
+                                  toggleOrderBump(String(orderBump.id))
                                 }
                                 className={`mt-2 cursor-pointer text-sm py-1 px-3 rounded font-semibold transition ${
                                   isAdded
@@ -2318,9 +1691,7 @@ export default function CheckoutPage() {
                       </h2>
                       <p className="text-black font-semibold mb-4">
                         Valor a pagar: R${" "}
-                        {discountPercent > 0
-                          ? finalPrice.toFixed(2).replace(".", ",")
-                          : totalPrice.toFixed(2).replace(".", ",")}
+                        {pixData.amount.toFixed(2).replace(".", ",")}
                       </p>
 
                       <p className="text-sm text-gray-700 mb-2">
@@ -2389,15 +1760,8 @@ export default function CheckoutPage() {
                       <div className="flex justify-between mt-4">
                         <button
                           onClick={() => {
-                            const productId: string | null =
-                              product !== null && product !== undefined
-                                ? product.toString()
-                                : null;
-
-                            if (productId && saleId != null) {
-                              checkPaymentStatus(saleId.toString(), productId);
-                            } else {
-                              console.warn("Produto ou saleId inválido");
+                            if (saleId != null) {
+                              checkPaymentStatus(String(saleId));
                             }
                           }}
                           className="cursor-pointer"
@@ -2461,12 +1825,7 @@ export default function CheckoutPage() {
                             </span>
                             <span className="text-base text-green-700 font-bold">
                               R${" "}
-                              {(discountPercent > 0
-                                ? finalPrice
-                                : totalPrice
-                              )
-                                .toFixed(2)
-                                .replace(".", ",")}
+                              {pixData.amount.toFixed(2).replace(".", ",")}
                             </span>
                           </div>
                           {saleId && (
