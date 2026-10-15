@@ -6,11 +6,6 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificationsBell } from "@/components/NotificationsBell";
 import {
-  Search,
-  MessageCircle,
-  HelpCircle,
-  ChevronDown,
-  ChevronRight,
   LayoutDashboard,
   Package,
   Wallet,
@@ -47,6 +42,7 @@ import {
   Moon,
 } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useValuesVisible } from "@/lib/useValuesVisible";
 
 const T = {
   text: "#0F172A",
@@ -203,6 +199,72 @@ function BrandLogo({ collapsed }: { collapsed: boolean }) {
   );
 }
 
+/* Metas de faturamento (placas): a barra mostra o caminho até a próxima. */
+// Mesmas placas da campanha do dashboard (100K, 500K, 1M, 2M) + a primeira, 10K.
+const REVENUE_GOALS = [10_000, 100_000, 500_000, 1_000_000, 2_000_000, 5_000_000, 10_000_000];
+
+const brl = (v: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
+
+function fmtGoal(goal: number): string {
+  return goal >= 1_000_000 ? `R$ ${goal / 1_000_000}M` : `R$ ${goal / 1_000}K`;
+}
+
+/** Pílula "FATURAMENTO ▬▬▬ R$ 622,25 / R$ 10K" do centro da barra do topo. */
+function RevenueGoal({ value, hidden }: { value: number | null; hidden: boolean }) {
+  const v = value ?? 0;
+  const goal = REVENUE_GOALS.find((g) => v < g) ?? REVENUE_GOALS[REVENUE_GOALS.length - 1]!;
+  const pct = Math.min(100, (v / goal) * 100);
+  // um pedacinho mínimo pra aparecer quando já tem venda
+  const width = v > 0 ? Math.max(pct, 2.5) : 0;
+  return (
+    <Link
+      href="/v1/dashboard"
+      title={`Faturamento (vendas pagas). Próxima meta: ${fmtGoal(goal)}`}
+      className="flex h-9 min-w-0 max-w-full items-center gap-2.5 rounded-full px-3 transition-colors hover:border-white/15 sm:gap-3 sm:px-4"
+      style={{
+        background: "#131315",
+        border: "1px solid rgba(255,255,255,0.08)",
+      }}
+    >
+      <span
+        className="hidden text-[10px] font-semibold uppercase tracking-[0.2em] lg:inline"
+        style={{ color: "#71717A" }}
+      >
+        Faturamento
+      </span>
+      <span
+        className="relative h-[7px] w-10 shrink-0 overflow-hidden rounded-full sm:w-24 md:w-28 lg:w-48 xl:w-56"
+        style={{ background: "#27272A" }}
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(pct)}
+        aria-label="Progresso até a próxima meta de faturamento"
+      >
+        <span
+          className="absolute inset-y-0 left-0 rounded-full"
+          style={{
+            width: `${width}%`,
+            background: "linear-gradient(90deg, #4D7C0F 0%, #84CC16 55%, #BEF264 100%)",
+            boxShadow: "0 0 8px rgba(163, 230, 53, 0.55)",
+            transition: "width 0.8s cubic-bezier(0.22, 1, 0.36, 1)",
+          }}
+        />
+      </span>
+      <span className="whitespace-nowrap text-[12px] font-bold tabular-nums text-white sm:text-[12.5px]">
+        {value == null ? "—" : hidden ? "R$ ••••" : brl(v)}
+        <span className="font-medium" style={{ color: "#71717A" }}>
+          {" / "}
+          {/* celular: "10K"; telas maiores: "R$ 10K" */}
+          <span className="sm:hidden">{fmtGoal(goal).replace("R$ ", "")}</span>
+          <span className="hidden sm:inline">{fmtGoal(goal)}</span>
+        </span>
+      </span>
+    </Link>
+  );
+}
+
 export function LightShell({
   children,
   valuesVisible,
@@ -226,6 +288,8 @@ export function LightShell({
     const w = (user as any)?.wallet?.[0]?.balance;
     return w != null && !isNaN(Number(w)) ? Number(w) : null;
   });
+  // Faturamento (soma das vendas pagas) — pílula do centro da barra do topo.
+  const [revenue, setRevenue] = useState<number | null>(null);
   useEffect(() => {
     if (!token) return;
     fetch("https://shadowpay-backend.onrender.com/api/user/dashboard-stats", {
@@ -233,10 +297,18 @@ export function LightShell({
     })
       .then((r) => r.json())
       .then((d) => {
-        if (d?.success) setBalance(Number(d.data?.currentBalance) || 0);
+        if (!d?.success) return;
+        setBalance(Number(d.data?.currentBalance) || 0);
+        setRevenue(Number(d.data?.grossRevenue) || 0);
       })
       .catch(() => {});
   }, [token]);
+
+  // Olho: a página pode controlar (dashboard/financeiro); nas outras a barra
+  // usa a mesma escolha salva no navegador.
+  const [ownVisible, toggleOwnVisible] = useValuesVisible();
+  const visible = valuesVisible ?? ownVisible;
+  const toggleValues = onToggleValues ?? toggleOwnVisible;
   const fmtBRL = (v: number) =>
     new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -347,7 +419,7 @@ export function LightShell({
                   "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
               }}
             >
-              {valuesVisible === false
+              {!visible
                 ? "••••••"
                 : balance == null
                 ? "—"
@@ -637,127 +709,68 @@ export function LightShell({
               TOPBAR
               ============================================================ */}
           <header
-            className="sticky top-0 z-40 flex h-16 items-center gap-3 px-3 md:px-8"
+            className="sticky top-0 z-40 flex h-14 items-center gap-1 px-3 md:px-6"
             style={{
-              background: "rgba(255, 255, 255, 0.85)",
-              backdropFilter: "blur(12px)",
-              borderBottom: `1px solid ${T.border}`,
+              background: "#0B0B0C",
+              borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
             }}
           >
             {/* Hamburger mobile */}
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-600 transition-colors hover:bg-slate-100 md:hidden"
-              style={{ border: `1px solid ${T.border}` }}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-zinc-300 transition-colors hover:bg-white/5 hover:text-white md:hidden"
               aria-label="Abrir menu"
             >
               <Menu className="h-5 w-5" />
             </button>
 
-            <div className="hidden max-w-2xl flex-1 sm:block">
-              <div
-                className="group relative flex h-10 items-center rounded-xl px-3"
-                style={{
-                  background: "#F1F2F6",
-                  border: `1px solid ${T.border}`,
-                }}
-              >
-                <Search className="mr-2 h-4 w-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Pesquisar, criar produto, abrir checkout..."
-                  className="flex-1 bg-transparent text-[13px] text-slate-700 placeholder-slate-400 outline-none"
-                />
-                <kbd
-                  className="ml-2 hidden items-center gap-0.5 rounded-md px-1.5 py-0.5 font-mono text-[10px] sm:flex"
-                  style={{
-                    background: "white",
-                    border: `1px solid ${T.border}`,
-                    color: T.text2,
-                  }}
-                >
-                  Ctrl K
-                </kbd>
-              </div>
+            {/* Esquerda: olho (esconde valores) + tema */}
+            <button
+              onClick={toggleValues}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
+              aria-label={visible ? "Esconder valores" : "Mostrar valores"}
+              title={visible ? "Esconder valores" : "Mostrar valores"}
+            >
+              {visible ? <Eye className="h-[18px] w-[18px]" /> : <EyeOff className="h-[18px] w-[18px]" />}
+            </button>
+            <button
+              onClick={() => setTheme(isDark ? "light" : "dark")}
+              className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-xl text-zinc-400 transition-colors hover:bg-white/5 hover:text-white sm:flex"
+              aria-label="Alternar tema"
+              title={isDark ? "Mudar para claro" : "Mudar para escuro"}
+            >
+              {isDark ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
+            </button>
+
+            {/* Centro: faturamento rumo à próxima meta */}
+            <div className="flex min-w-0 flex-1 justify-center px-1 md:absolute md:left-1/2 md:top-1/2 md:flex-none md:-translate-x-1/2 md:-translate-y-1/2 md:px-0">
+              <RevenueGoal value={revenue} hidden={!visible} />
             </div>
 
-            <div className="ml-auto flex items-center gap-2">
-              {onToggleValues && (
-                <button
-                  onClick={onToggleValues}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
-                  style={{ border: `1px solid ${T.border}` }}
-                  aria-label="Alternar valores"
-                >
-                  {valuesVisible ? (
-                    <Eye className="h-4 w-4" />
-                  ) : (
-                    <EyeOff className="h-4 w-4" />
-                  )}
-                </button>
-              )}
-
-              <a
-                href="https://wa.me/559991519044?text=Ol%C3%A1%20preciso%20de%20ajuda%20com%20a%20ShadowPay."
-                target="_blank"
-                rel="noreferrer"
-                className="hidden h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 sm:flex"
-                style={{ border: `1px solid ${T.border}` }}
-              >
-                <MessageCircle className="h-4 w-4" />
-              </a>
+            {/* Direita: sino + foto */}
+            <div className="ml-auto flex shrink-0 items-center gap-1.5">
               {/* Sino: abre o painel de notificações push deste aparelho */}
-              <NotificationsBell borderColor={T.border} primary={T.primary} />
-              <button
-                className="hidden h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 sm:flex"
-                style={{ border: `1px solid ${T.border}` }}
-              >
-                <HelpCircle className="h-4 w-4" />
-              </button>
-
-              {/* Toggle tema (sol/lua) */}
-              <button
-                onClick={() => setTheme(isDark ? "light" : "dark")}
-                className="flex h-9 w-9 items-center justify-center rounded-xl transition-colors hover:bg-slate-50"
-                style={{
-                  border: `1px solid ${T.border}`,
-                  color: isDark ? "#94A3B8" : "#F59E0B",
-                }}
-                aria-label="Alternar tema"
-                title={isDark ? "Mudar para claro" : "Mudar para escuro"}
-              >
-                {isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-              </button>
+              <NotificationsBell borderColor={T.border} primary={T.primary} variant="dark" />
 
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen((v) => !v)}
-                  className="flex h-10 items-center gap-2 rounded-xl pl-1 pr-3 transition-colors hover:bg-slate-50"
-                  style={{ border: `1px solid ${T.border}` }}
+                  className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full transition-opacity hover:opacity-85"
+                  style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.12)" }}
+                  aria-label="Conta"
+                  title={user?.companyName || "Conta"}
                 >
                   {avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={avatarUrl} alt="" className="h-8 w-8 rounded-lg object-cover" draggable={false} />
+                    <img src={avatarUrl} alt="" className="h-full w-full object-cover" draggable={false} />
                   ) : (
-                    <div
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold text-white"
-                      style={{
-                        background:
-                          "linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)",
-                      }}
+                    <span
+                      className="flex h-full w-full items-center justify-center text-[13px] font-bold text-white"
+                      style={{ background: "linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)" }}
                     >
                       {initial}
-                    </div>
+                    </span>
                   )}
-                  <div className="hidden text-left leading-tight md:block">
-                    <p className="text-[12px] font-semibold text-slate-800">
-                      {(user?.companyName || "Operador").slice(0, 16)}
-                    </p>
-                    <p className="text-[10px] text-slate-500">
-                      {user?.isAdministrator ? "Administrador" : "Seller Bronze"}
-                    </p>
-                  </div>
-                  <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
                 </button>
                 {userMenuOpen && (
                   <>
@@ -766,9 +779,18 @@ export function LightShell({
                       onClick={() => setUserMenuOpen(false)}
                     />
                     <div
-                      className="absolute right-0 top-12 z-40 w-48 overflow-hidden rounded-xl bg-white p-1.5 shadow-xl"
+                      className="absolute right-0 top-11 z-40 w-56 overflow-hidden rounded-xl bg-white p-1.5 shadow-xl"
                       style={{ border: `1px solid ${T.border}` }}
                     >
+                      <div className="px-3 pb-2 pt-1.5">
+                        <p className="truncate text-[13px] font-semibold text-slate-800">
+                          {user?.companyName || "Operador"}
+                        </p>
+                        <p className="text-[11px] text-slate-500">
+                          {user?.isAdministrator ? "Administrador" : "Seller Bronze"}
+                        </p>
+                      </div>
+                      <div className="mx-2 mb-1 h-px bg-slate-100" />
                       {now && (
                         <p className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-slate-400">
                           {new Intl.DateTimeFormat("pt-BR", {

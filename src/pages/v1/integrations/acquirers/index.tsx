@@ -44,9 +44,22 @@ type AcquirerRow = {
   priority: number;
   active: boolean;
   autoOptimize: boolean;
+  /** suas vendas nessa adquirente (PIX gerados / pagos) */
   attempts: number;
   approved: number;
   conversionRate: number;
+  /** conversão geral da adquirente (todas as vendas da plataforma) */
+  globalAttempts?: number;
+  globalApproved?: number;
+  globalConversionRate?: number;
+};
+
+type PerfRange = "1h" | "today" | "3d" | "all";
+const RANGE_LABEL: Record<PerfRange, string> = {
+  "1h": "1 Hora",
+  today: "Hoje",
+  "3d": "3 Dias",
+  all: "Total",
 };
 
 type ABTest = {
@@ -71,14 +84,14 @@ function AcquirersContent() {
   const [lastTest, setLastTest] = useState<ABTest | null>(null);
   const [showABModal, setShowABModal] = useState(false);
 
-  // perf range filter ("1h" | "today" | "3d")
-  const [perfRange, setPerfRange] = useState<"1h" | "today" | "3d">("today");
+  // período das estatísticas (tentativas, aprovadas e conversão)
+  const [perfRange, setPerfRange] = useState<PerfRange>("all");
 
-  async function fetchAll() {
+  async function fetchAll(range: PerfRange = perfRange) {
     if (!token) return;
     try {
       const [r1, r2] = await Promise.all([
-        axios.get(`${API}/api/adquerers`, {
+        axios.get(`${API}/api/adquerers?range=${range}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
         axios
@@ -100,9 +113,9 @@ function AcquirersContent() {
   }
 
   useEffect(() => {
-    fetchAll();
+    fetchAll(perfRange);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [token, perfRange]);
 
   /* ------- drag & drop pra reordenar prioridade ------- */
   const [dragIdx, setDragIdx] = useState<number | null>(null);
@@ -170,12 +183,16 @@ function AcquirersContent() {
     }
   }
 
-  /* ------- classificação de performance (top 5 por conversão) ------- */
+  /* ------- classificação de performance (top 5 por conversão geral) ------- */
   const ranking = useMemo(
     () =>
       [...rows]
-        .filter((r) => r.active)
-        .sort((a, b) => b.conversionRate - a.conversionRate)
+        .filter((r) => r.active && (r.globalAttempts ?? 0) > 0)
+        .sort(
+          (a, b) =>
+            (b.globalConversionRate ?? 0) - (a.globalConversionRate ?? 0) ||
+            (b.globalApproved ?? 0) - (a.globalApproved ?? 0)
+        )
         .slice(0, 5),
     [rows]
   );
@@ -404,8 +421,8 @@ function AcquirersContent() {
           <span className="px-2 text-slate-400 uppercase tracking-wider">
             Calcular em:
           </span>
-          {(["1h", "today", "3d"] as const).map((r) => {
-            const label = r === "1h" ? "1 Hora" : r === "today" ? "Hoje" : "3 Dias";
+          {(["1h", "today", "3d", "all"] as const).map((r) => {
+            const label = RANGE_LABEL[r];
             const active = perfRange === r;
             return (
               <button
@@ -478,6 +495,12 @@ function AcquirersContent() {
                     </span>
                   )}
                 </div>
+                <p className="mt-2 font-mono text-[15px] font-bold text-emerald-700">
+                  {(r.globalConversionRate ?? 0).toFixed(2)}%
+                </p>
+                <p className="text-[10.5px] text-slate-400">
+                  {r.globalApproved ?? 0} pagas de {r.globalAttempts ?? 0} PIX
+                </p>
               </div>
             ))}
       </div>
@@ -510,7 +533,8 @@ function AcquirersContent() {
             </p>
           </div>
         ) : (
-          <table className="w-full text-[13px]">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] text-[13px]">
             <thead>
               <tr
                 className="text-left text-[10px] font-bold uppercase tracking-wider"
@@ -569,7 +593,11 @@ function AcquirersContent() {
                     {r.approved}
                   </td>
                   <td className="px-5 py-3">
-                    <div className="flex items-center gap-2">
+                    {/* Barra = conversão geral da adquirente (plataforma toda) */}
+                    <div
+                      className="flex items-center gap-2"
+                      title={`Conversão geral: ${r.globalApproved ?? 0} pagas de ${r.globalAttempts ?? 0} PIX gerados nessa adquirente`}
+                    >
                       <div
                         className="h-2 flex-1 overflow-hidden rounded-full"
                         style={{ background: "#E2E8F0" }}
@@ -577,15 +605,21 @@ function AcquirersContent() {
                         <div
                           className="h-full rounded-full transition-all"
                           style={{
-                            width: `${Math.min(100, r.conversionRate)}%`,
+                            width: `${Math.min(100, r.globalConversionRate ?? 0)}%`,
                             background: `linear-gradient(90deg, ${T.primary}, #06B6D4)`,
                           }}
                         />
                       </div>
                       <span className="w-16 text-right font-mono font-semibold text-slate-700">
-                        {r.conversionRate.toFixed(2)}%
+                        {(r.globalConversionRate ?? 0).toFixed(2)}%
                       </span>
                     </div>
+                    <p className="mt-1 whitespace-nowrap text-[10.5px] text-slate-400">
+                      Geral · suas vendas:{" "}
+                      <b className="font-semibold text-slate-600">
+                        {r.conversionRate.toFixed(2)}%
+                      </b>
+                    </p>
                   </td>
                   <td className="px-5 py-3 text-right">
                     <button
@@ -606,6 +640,7 @@ function AcquirersContent() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

@@ -50,7 +50,16 @@ function ago(iso: string): string {
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
 }
 
-export function NotificationsBell({ borderColor, primary }: { borderColor: string; primary: string }) {
+export function NotificationsBell({
+  borderColor,
+  primary,
+  variant = "light",
+}: {
+  borderColor: string;
+  primary: string;
+  /** "dark": botão sem borda pra barra do topo escura */
+  variant?: "light" | "dark";
+}) {
   const { token, user } = useAuth();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -245,13 +254,19 @@ export function NotificationsBell({ borderColor, primary }: { borderColor: strin
           unread ? `Notificações (${unread} ${unread === 1 ? "aviso novo" : "avisos novos"})` : needsAction ? "Notificações (não ativadas neste aparelho)" : "Notificações"
         }
         aria-expanded={open}
-        className="relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
-        style={{ border: `1px solid ${borderColor}` }}
+        className={
+          variant === "dark"
+            ? "relative flex h-9 w-9 items-center justify-center rounded-xl text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
+            : "relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
+        }
+        style={variant === "dark" ? undefined : { border: `1px solid ${borderColor}` }}
       >
-        <Bell className="h-4 w-4" />
+        <Bell className={variant === "dark" ? "h-[18px] w-[18px]" : "h-4 w-4"} />
         {unread > 0 ? (
           <span
-            className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-white ring-2 ring-white"
+            className={`absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-white ring-2 ${
+              variant === "dark" ? "ring-[#0B0B0C]" : "ring-white"
+            }`}
             style={{ background: primary }}
           >
             {unread > 9 ? "9+" : unread}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useValuesVisible } from "@/lib/useValuesVisible";
 import { useAuth } from "@/contexts/AuthContext";
 import { PushPromptBanner } from "@/components/PushPromptBanner";
 import { useRouter } from "next/router";
@@ -173,7 +174,8 @@ function ManagerDashboardContent() {
   const [adquirentes, setAdquirentes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [visible, setVisible] = useState(true);
+  // Olho da barra do topo (salvo no navegador, igual em todas as páginas)
+  const [visible, toggleVisible] = useValuesVisible();
   const [saldoFilter, setSaldoFilter] = useState<"all" | "positivos" | "negativos">(
     "all"
   );
@@ -413,7 +415,7 @@ function ManagerDashboardContent() {
       </Head>
       <LightShell
         valuesVisible={visible}
-        onToggleValues={() => setVisible((v) => !v)}
+        onToggleValues={toggleVisible}
       >
         <header className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:gap-4 sm:items-end sm:justify-between">
           <div>

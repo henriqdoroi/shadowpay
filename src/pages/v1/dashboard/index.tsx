@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
+import { useValuesVisible } from "@/lib/useValuesVisible";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import Head from "next/head";
@@ -77,7 +78,8 @@ function loadSavedPeriod(): Period {
 function DashboardContent() {
   const { user, token } = useAuth();
   const [localUser, setLocalUser] = useState<any>(user);
-  const [valuesVisible, setValuesVisible] = useState(true);
+  // Olho da barra do topo (salvo no navegador, igual em todas as páginas)
+  const [valuesVisible, toggleValues] = useValuesVisible();
   const [is2FAModalOpen, setIs2FAModalOpen] = useState(false);
 
   /* ---------- período (Hoje, 7 dias, Máximo, personalizado...) ---------- */
@@ -229,7 +231,7 @@ function DashboardContent() {
         <title>ShadowPay — Command Center</title>
       </Head>
 
-      <LightShell valuesVisible={valuesVisible} onToggleValues={() => setValuesVisible((v) => !v)}>
+      <LightShell valuesVisible={valuesVisible} onToggleValues={toggleValues}>
             <div style={{ fontFeatureSettings: '"tnum" 1' }}>
               {/* BANNER promocional — largura total do conteúdo (igual à faixa
                   de métricas). Arquivo em public/dashboard-banner.webp. */}

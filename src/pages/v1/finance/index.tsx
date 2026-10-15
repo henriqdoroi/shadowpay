@@ -4,7 +4,8 @@
  * /v1/finance — página única do Financeiro.
  *
  * Antes era: /v1/finance/withdraw + /v1/finance/compliance + /v1/configs/fee
- * Agora: uma única tela com Saldo, Simulador de saque, Taxas e Histórico.
+ * Agora: uma única tela com o Saldo (botões de saque e extrato dentro) e o
+ * Histórico de saques. Valor e chave PIX são informados na janela de saque.
  *
  * Tudo conectado às APIs reais — sem mock.
  *  - /api/user/dashboard-stats   (saldo / blocked / reserved)
@@ -16,9 +17,11 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { useValuesVisible } from "@/lib/useValuesVisible";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import Head from "next/head";
+import Link from "next/link";
 import { toast } from "sonner";
 import {
   Wallet,
@@ -26,9 +29,6 @@ import {
   ShieldCheck,
   FileText,
   Receipt,
-  Banknote,
-  Percent,
-  ArrowDownToLine,
   Filter,
   RefreshCw,
 } from "lucide-react";
@@ -80,7 +80,8 @@ function FinanceContent() {
   const { user, token } = useAuth();
 
   // ---- state
-  const [valuesVisible, setValuesVisible] = useState(true);
+  // Olho da barra do topo (salvo no navegador, igual em todas as páginas)
+  const [valuesVisible, toggleValues] = useValuesVisible();
   const [balance, setBalance] = useState({ current: 0, blocked: 0 });
   const [totalReceived, setTotalReceived] = useState(0);
   const [fees, setFees] = useState<{
@@ -127,7 +128,6 @@ function FinanceContent() {
   // ---- compute simulator
   const sacarValor =
     parseFloat((amountInput || "").replace(/\./g, "").replace(",", ".")) || 0;
-  const feePctVal = sacarValor * (fees.salePercent / 100);
   const totalFee = fees.withdrawFixed; // taxa fixa de saque (mocada por venda nao se aplica)
   const liquido = Math.max(0, sacarValor - totalFee);
 
@@ -268,7 +268,10 @@ function FinanceContent() {
     return null;
   };
 
-  const triggerWithdraw = () => {
+  // Abre a janela de saque (valor + chave PIX são preenchidos nela).
+  const openWithdraw = () => setWithdrawOpen(true);
+
+  const submitWithdraw = async () => {
     if (sacarValor <= 0) {
       toast.error("Informe um valor para sacar.");
       return;
@@ -277,10 +280,6 @@ function FinanceContent() {
       toast.error("Valor maior que o saldo disponível.");
       return;
     }
-    setWithdrawOpen(true);
-  };
-
-  const submitWithdraw = async () => {
     if (!pixKey.trim()) {
       toast.error("Informe a chave PIX.");
       return;
@@ -385,49 +384,25 @@ function FinanceContent() {
 
       <LightShell
         valuesVisible={valuesVisible}
-        onToggleValues={() => setValuesVisible((v) => !v)}
+        onToggleValues={toggleValues}
       >
         {/* HEADER */}
-        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1
-              className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
-              style={{ letterSpacing: "-0.005em" }}
-            >
-              Financeiro
-            </h1>
-            <p className="mt-1 text-[13.5px] text-slate-500">
-              Acompanhe seu saldo, taxas e saques.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setRefreshKey((k) => k + 1)}
-              className="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-[13px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
-              style={{ borderColor: T.border }}
-            >
-              <FileText className="h-4 w-4" style={{ color: T.textMuted }} />
-              Extrato completo
-            </button>
-            <button
-              onClick={triggerWithdraw}
-              className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-[13px] font-semibold text-white transition-transform hover:-translate-y-0.5"
-              style={{
-                background: T.primary,
-                boxShadow: "0 8px 20px -8px rgba(124, 58, 237, 0.55)",
-              }}
-            >
-              <ArrowUpFromLine className="h-4 w-4" />
-              Solicitar saque
-            </button>
-          </div>
+        <header className="mb-6">
+          <h1
+            className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
+            style={{ letterSpacing: "-0.005em" }}
+          >
+            Financeiro
+          </h1>
+          <p className="mt-1 text-[13.5px] text-slate-500">
+            Acompanhe seu saldo e seus saques.
+          </p>
         </header>
 
-        {/* SALDO + SIMULADOR */}
-        <section className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_420px]">
-          {/* ----- Card Saldo (esquerda, large) ----- */}
+        {/* SALDO — largura total (igual ao Histórico), com os botões dentro */}
+        <section className="mb-6">
           <div
-            className="relative overflow-hidden rounded-[22px] p-7"
+            className="relative overflow-hidden rounded-[22px] p-5 sm:p-7"
             style={{
               background:
                 "linear-gradient(135deg, #FBFAFF 0%, #F4F1FE 58%, #EEF1FF 100%)",
@@ -446,32 +421,59 @@ function FinanceContent() {
             />
 
             <div className="relative">
-              <p
-                className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em]"
-                style={{ color: "#8B5CF6" }}
-              >
-                <span
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{ background: "#22C55E" }}
-                />
-                Saldo disponível
-              </p>
-              <p
-                className="mt-3 text-[46px] font-semibold leading-none"
-                style={{
-                  color: "#2E1065",
-                  letterSpacing: "-0.02em",
-                  fontFamily:
-                    "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
-                }}
-              >
-                {hideable(fmt(balance.current))}
-              </p>
-              <p className="mt-3 text-[12.5px]" style={{ color: "#7C6AAE" }}>
-                Pronto pra saque · taxa{" "}
-                <b style={{ color: "#2E1065" }}>{fmt(fees.withdrawFixed)}</b> por
-                PIX
-              </p>
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <p
+                    className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em]"
+                    style={{ color: "#8B5CF6" }}
+                  >
+                    <span
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{ background: "#22C55E" }}
+                    />
+                    Saldo disponível
+                  </p>
+                  <p
+                    className="mt-3 text-[38px] font-semibold leading-none sm:text-[46px]"
+                    style={{
+                      color: "#2E1065",
+                      letterSpacing: "-0.02em",
+                      fontFamily:
+                        "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
+                    }}
+                  >
+                    {hideable(fmt(balance.current))}
+                  </p>
+                  <p className="mt-3 text-[12.5px]" style={{ color: "#7C6AAE" }}>
+                    Pronto pra saque · taxa{" "}
+                    <b style={{ color: "#2E1065" }}>{fmt(fees.withdrawFixed)}</b> por
+                    PIX
+                  </p>
+                </div>
+
+                {/* Ações dentro do card */}
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
+                  <Link
+                    href="/v1/products/sales"
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white/80 px-4 text-[13px] font-semibold text-slate-700 transition-colors hover:bg-white"
+                    style={{ border: "1px solid rgba(124,58,237,0.16)" }}
+                  >
+                    <FileText className="h-4 w-4" style={{ color: "#8B5CF6" }} />
+                    Extrato
+                  </Link>
+                  <button
+                    onClick={openWithdraw}
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold text-white transition-transform hover:-translate-y-0.5"
+                    style={{
+                      background: T.primary,
+                      boxShadow: "0 8px 20px -8px rgba(124, 58, 237, 0.55)",
+                    }}
+                  >
+                    <ArrowUpFromLine className="h-4 w-4" />
+                    Solicitar saque
+                  </button>
+                </div>
+              </div>
 
               {/* sub-stats com divisórias finas (arejado) */}
               <div
@@ -538,283 +540,6 @@ function FinanceContent() {
             </div>
           </div>
 
-          {/* ----- Simulador de saque (direita) ----- */}
-          <div
-            className="rounded-2xl p-4 sm:p-5"
-            style={{
-              background: T.card,
-              border: `1px solid ${T.borderSoft}`,
-              boxShadow:
-                "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
-            }}
-          >
-            <p className="text-[13px] font-semibold text-slate-900">
-              Simulador de saque
-            </p>
-            <p className="mt-0.5 text-[12px] text-slate-500">
-              Quanto você gostaria de sacar?
-            </p>
-
-            <div
-              className="mt-3 flex items-center gap-2 rounded-xl px-3"
-              style={{
-                background: "#F8FAFC",
-                border: `1px solid ${T.border}`,
-                height: 52,
-              }}
-            >
-              <span
-                className="text-[14px] font-semibold"
-                style={{ color: T.textMuted }}
-              >
-                R$
-              </span>
-              <input
-                value={amountInput}
-                onChange={(e) => {
-                  const v = e.target.value
-                    .replace(/[^\d,.]/g, "")
-                    .replace(".", ",");
-                  setAmountInput(v);
-                }}
-                placeholder={fmt(balance.current).replace("R$", "").trim()}
-                className="h-full flex-1 bg-transparent text-[17px] font-bold text-slate-900 outline-none"
-              />
-              <button
-                onClick={() =>
-                  setAmountInput(
-                    balance.current
-                      .toFixed(2)
-                      .replace(".", ",")
-                  )
-                }
-                className="rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-                style={{ color: T.primary, background: T.primaryBg }}
-              >
-                Max
-              </button>
-            </div>
-
-            {/* breakdown */}
-            <div className="mt-4 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[12.5px] text-slate-500">
-                  Saldo disponível
-                </span>
-                <span className="text-[13px] font-semibold text-slate-700">
-                  {hideable(fmt(balance.current))}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[12.5px] text-slate-500">
-                  Taxa de saque
-                </span>
-                <span
-                  className="text-[13px] font-semibold"
-                  style={{ color: T.red }}
-                >
-                  - {fmt(totalFee)}
-                </span>
-              </div>
-              <div
-                className="my-1 h-px w-full"
-                style={{ background: T.borderSoft }}
-              />
-              <div className="flex items-center justify-between">
-                <span className="text-[12.5px] font-semibold text-slate-700">
-                  Você receberá
-                </span>
-                <span
-                  className="text-[15px] font-bold"
-                  style={{ color: T.green }}
-                >
-                  {fmt(liquido)}
-                </span>
-              </div>
-            </div>
-
-            <button
-              onClick={triggerWithdraw}
-              disabled={sacarValor <= 0 || sacarValor > balance.current}
-              className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-[13.5px] font-bold text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
-              style={{
-                background: T.primary,
-                boxShadow: "0 8px 20px -8px rgba(124, 58, 237, 0.55)",
-              }}
-            >
-              Solicitar saque agora
-            </button>
-          </div>
-        </section>
-
-        {/* TAXAS DA PLATAFORMA */}
-        <section
-          className="mb-6 rounded-2xl p-5"
-          style={{
-            background: T.card,
-            border: `1px solid ${T.borderSoft}`,
-            boxShadow:
-              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
-          }}
-        >
-          <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-[14px] font-bold text-slate-900">
-                Taxas da plataforma
-              </p>
-              <p className="mt-0.5 text-[12px] text-slate-500">
-                Aplicadas em tempo real conforme a adquirente que processa
-                sua venda.
-              </p>
-            </div>
-            {fees.acquirerName && (
-              <div
-                className="inline-flex items-center gap-1.5 self-start rounded-lg px-2.5 py-1 text-[11px] font-semibold"
-                style={{
-                  background:
-                    fees.acquirerSource === "seller_acquirer"
-                      ? "rgba(124,58,237,0.10)"
-                      : "rgba(15,23,42,0.04)",
-                  color:
-                    fees.acquirerSource === "seller_acquirer"
-                      ? T.primary
-                      : T.text2,
-                  border: `1px solid ${T.borderSoft}`,
-                }}
-                title={
-                  fees.acquirerSource === "seller_acquirer"
-                    ? "Taxas customizadas para você"
-                    : "Taxas padrão da plataforma"
-                }
-              >
-                <span
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{
-                    background:
-                      fees.acquirerSource === "seller_acquirer"
-                        ? T.primary
-                        : T.textMuted,
-                  }}
-                />
-                {fees.acquirerName}
-                {fees.acquirerSource === "seller_acquirer" && " • personalizada"}
-              </div>
-            )}
-          </div>
-          <div className="flex flex-col gap-5 sm:flex-row sm:gap-0">
-            <div className="flex-1 sm:pr-6">
-              <div className="flex items-center gap-2.5">
-                <span
-                  className="flex h-9 w-9 items-center justify-center rounded-lg"
-                  style={{ background: T.primaryBg, color: T.primary }}
-                >
-                  <Percent className="h-4 w-4" />
-                </span>
-                <p className="text-[11.5px] font-semibold text-slate-500">
-                  Taxa por venda
-                </p>
-              </div>
-              <p
-                className="mt-2.5 text-[22px] font-semibold text-slate-900"
-                style={{
-                  fontFamily:
-                    "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
-                }}
-              >
-                {`${fees.salePercent.toFixed(2)}%`}
-              </p>
-              <p className="mt-1 text-[11px] text-slate-400">
-                {fees.acquirerName
-                  ? `Em cada venda ${fees.acquirerName}`
-                  : "Sobre o bruto de cada venda"}
-              </p>
-            </div>
-            <div
-              className="flex-1 sm:border-l sm:pl-6"
-              style={{ borderColor: T.borderSoft }}
-            >
-              <div className="flex items-center gap-2.5">
-                <span
-                  className="flex h-9 w-9 items-center justify-center rounded-lg"
-                  style={{ background: "rgba(245,158,11,0.10)", color: T.amber }}
-                >
-                  <Banknote className="h-4 w-4" />
-                </span>
-                <p className="text-[11.5px] font-semibold text-slate-500">
-                  Taxa fixa por venda
-                </p>
-              </div>
-              <p
-                className="mt-2.5 text-[22px] font-semibold text-slate-900"
-                style={{
-                  fontFamily:
-                    "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
-                }}
-              >
-                {fmt(fees.saleFixed)}
-              </p>
-              <p className="mt-1 text-[11px] text-slate-400">
-                Cobrada uma vez em cada venda
-              </p>
-            </div>
-            <div
-              className="flex-1 sm:border-l sm:pl-6"
-              style={{ borderColor: T.borderSoft }}
-            >
-              <div className="flex items-center gap-2.5">
-                <span
-                  className="flex h-9 w-9 items-center justify-center rounded-lg"
-                  style={{ background: "rgba(16,185,129,0.10)", color: T.green }}
-                >
-                  <ArrowDownToLine className="h-4 w-4" />
-                </span>
-                <p className="text-[11.5px] font-semibold text-slate-500">
-                  Taxa fixa por saque
-                </p>
-              </div>
-              <p
-                className="mt-2.5 text-[22px] font-semibold text-slate-900"
-                style={{
-                  fontFamily:
-                    "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
-                }}
-              >
-                {fmt(fees.withdrawFixed)}
-              </p>
-              <p className="mt-1 text-[11px] text-slate-400">
-                Descontada a cada saque solicitado
-              </p>
-            </div>
-          </div>
-
-          {/* Exemplo de cálculo (mini educativo) */}
-          {(fees.salePercent > 0 || fees.saleFixed > 0) && (
-            <div
-              className="mt-4 rounded-xl p-3.5"
-              style={{
-                background: "#F8FAFC",
-                border: `1px solid ${T.borderSoft}`,
-              }}
-            >
-              <p className="mb-1 text-[10.5px] font-bold uppercase tracking-wider text-slate-500">
-                Exemplo prático
-              </p>
-              <p className="text-[12.5px] text-slate-700">
-                Numa venda de <b>R$ 100,00</b> você recebe{" "}
-                <b style={{ color: T.green }}>
-                  {fmt(
-                    Math.max(
-                      0,
-                      100 -
-                        (100 * fees.salePercent) / 100 -
-                        fees.saleFixed
-                    )
-                  )}
-                </b>
-                {" "}após {fees.salePercent.toFixed(2)}% + {fmt(fees.saleFixed)}.
-              </p>
-            </div>
-          )}
         </section>
 
         {/* HISTÓRICO DE SAQUES */}
@@ -973,20 +698,46 @@ function FinanceContent() {
           </DialogHeader>
           <div className="space-y-4 pt-1">
             <div>
-              <label className="mb-1 block text-[12px] font-semibold text-slate-600">
-                Valor
-              </label>
-              <input
-                value={amountInput}
-                onChange={(e) =>
-                  setAmountInput(
-                    e.target.value.replace(/[^\d,.]/g, "").replace(".", ",")
-                  )
-                }
-                className="h-11 w-full rounded-xl border bg-white px-3 text-[14px] outline-none"
+              <div className="mb-1 flex items-center justify-between">
+                <label className="block text-[12px] font-semibold text-slate-600">
+                  Valor
+                </label>
+                <span className="text-[11.5px] text-slate-500">
+                  Disponível: <b className="text-slate-700">{hideable(fmt(balance.current))}</b>
+                </span>
+              </div>
+              <div
+                className="flex h-11 items-center gap-2 rounded-xl border bg-white px-3"
                 style={{ borderColor: T.border }}
-                placeholder="0,00"
-              />
+              >
+                <span className="text-[13px] font-semibold" style={{ color: T.textMuted }}>
+                  R$
+                </span>
+                <input
+                  value={amountInput}
+                  onChange={(e) =>
+                    setAmountInput(
+                      e.target.value.replace(/[^\d,.]/g, "").replace(".", ",")
+                    )
+                  }
+                  inputMode="decimal"
+                  className="h-full min-w-0 flex-1 bg-transparent text-[14px] outline-none"
+                  placeholder="0,00"
+                />
+                <button
+                  type="button"
+                  onClick={() => setAmountInput(balance.current.toFixed(2).replace(".", ","))}
+                  className="rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                  style={{ color: T.primary, background: T.primaryBg }}
+                >
+                  Máx
+                </button>
+              </div>
+              {sacarValor > balance.current && (
+                <p className="mt-1 text-[11px] font-medium" style={{ color: T.red }}>
+                  Valor maior que o saldo disponível.
+                </p>
+              )}
             </div>
             <div>
               <label className="mb-1 block text-[12px] font-semibold text-slate-600">
@@ -1006,7 +757,7 @@ function FinanceContent() {
             </div>
             <button
               onClick={submitWithdraw}
-              disabled={processing || !pixKey.trim() || sacarValor <= 0}
+              disabled={processing || !pixKey.trim() || sacarValor <= 0 || sacarValor > balance.current}
               className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-[13.5px] font-bold text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
               style={{
                 background: T.primary,
