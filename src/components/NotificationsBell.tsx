@@ -57,9 +57,10 @@ export function NotificationsBell({
 }: {
   borderColor: string;
   primary: string;
-  /** "dark": botão sem borda pra barra do topo escura */
-  variant?: "light" | "dark";
+  /** "plain": botão sem borda (barra do topo branca); "dark": idem pra fundo escuro */
+  variant?: "light" | "dark" | "plain";
 }) {
+  const borderless = variant !== "light";
   const { token, user } = useAuth();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -257,11 +258,13 @@ export function NotificationsBell({
         className={
           variant === "dark"
             ? "relative flex h-9 w-9 items-center justify-center rounded-xl text-violet-200 transition-colors hover:bg-white/10 hover:text-white"
+            : variant === "plain"
+            ? "relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-violet-50 hover:text-violet-700"
             : "relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
         }
-        style={variant === "dark" ? undefined : { border: `1px solid ${borderColor}` }}
+        style={borderless ? undefined : { border: `1px solid ${borderColor}` }}
       >
-        <Bell className={variant === "dark" ? "h-[18px] w-[18px]" : "h-4 w-4"} />
+        <Bell className={borderless ? "h-[18px] w-[18px]" : "h-4 w-4"} />
         {unread > 0 ? (
           <span
             className={`absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-white ring-2 ${

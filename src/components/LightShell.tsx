@@ -221,21 +221,21 @@ function RevenueGoal({ value, hidden }: { value: number | null; hidden: boolean 
     <Link
       href="/v1/dashboard"
       title={`Faturamento (vendas pagas). Próxima meta: ${fmtGoal(goal)}`}
-      className="flex h-9 min-w-0 max-w-full items-center gap-2.5 rounded-full px-3 transition-colors hover:border-white/15 sm:gap-3 sm:px-4"
+      className="flex h-9 min-w-0 max-w-full items-center gap-3 rounded-full px-4 transition-colors hover:bg-violet-100/60"
       style={{
-        background: "rgba(255,255,255,0.07)",
-        border: "1px solid rgba(196,181,253,0.22)",
+        background: "#F5F3FF",
+        border: "1px solid rgba(124, 58, 237, 0.18)",
       }}
     >
       <span
-        className="hidden text-[10px] font-semibold uppercase tracking-[0.2em] lg:inline"
-        style={{ color: "#C4B5FD" }}
+        className="hidden text-[10px] font-bold uppercase tracking-[0.2em] lg:inline"
+        style={{ color: "#7C3AED" }}
       >
         Faturamento
       </span>
       <span
-        className="relative h-[7px] w-10 shrink-0 overflow-hidden rounded-full sm:w-24 md:w-28 lg:w-48 xl:w-56"
-        style={{ background: "rgba(15, 5, 40, 0.55)" }}
+        className="relative h-[7px] w-28 shrink-0 overflow-hidden rounded-full lg:w-48 xl:w-56"
+        style={{ background: "#E4DCFB" }}
         role="progressbar"
         aria-valuemin={0}
         aria-valuemax={100}
@@ -246,19 +246,17 @@ function RevenueGoal({ value, hidden }: { value: number | null; hidden: boolean 
           className="absolute inset-y-0 left-0 rounded-full"
           style={{
             width: `${width}%`,
-            background: "linear-gradient(90deg, #7C3AED 0%, #A78BFA 60%, #DDD6FE 100%)",
-            boxShadow: "0 0 8px rgba(167, 139, 250, 0.7)",
+            background: "linear-gradient(90deg, #6D28D9 0%, #8B5CF6 60%, #A78BFA 100%)",
+            boxShadow: "0 0 8px rgba(124, 58, 237, 0.35)",
             transition: "width 0.8s cubic-bezier(0.22, 1, 0.36, 1)",
           }}
         />
       </span>
-      <span className="whitespace-nowrap text-[12px] font-bold tabular-nums text-white sm:text-[12.5px]">
+      <span className="whitespace-nowrap text-[12.5px] font-bold tabular-nums" style={{ color: "#2E1065" }}>
         {value == null ? "—" : hidden ? "R$ ••••" : brl(v)}
-        <span className="font-medium" style={{ color: "#C4B5FD" }}>
+        <span className="font-medium" style={{ color: "#8B7FC0" }}>
           {" / "}
-          {/* celular: "10K"; telas maiores: "R$ 10K" */}
-          <span className="sm:hidden">{fmtGoal(goal).replace("R$ ", "")}</span>
-          <span className="hidden sm:inline">{fmtGoal(goal)}</span>
+          {fmtGoal(goal)}
         </span>
       </span>
     </Link>
@@ -715,16 +713,18 @@ export function LightShell({
             style={{
               height: "calc(3.5rem + env(safe-area-inset-top, 0px))",
               paddingTop: "env(safe-area-inset-top, 0px)",
-              background: "linear-gradient(90deg, #1B0B38 0%, #2E1065 55%, #3B1480 100%)",
-              borderBottom: "1px solid rgba(167, 139, 250, 0.18)",
-              boxShadow: "0 6px 20px -12px rgba(46, 16, 101, 0.55)",
+              background: "rgba(255, 255, 255, 0.94)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              borderBottom: "1px solid rgba(124, 58, 237, 0.10)",
+              boxShadow: "0 6px 20px -16px rgba(124, 58, 237, 0.35)",
               transition: "left 0.22s cubic-bezier(0.22, 1, 0.36, 1)",
             }}
           >
             {/* Hamburger mobile */}
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-violet-100 transition-colors hover:bg-white/10 hover:text-white md:hidden"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-600 transition-colors hover:bg-violet-50 hover:text-violet-700 md:hidden"
               aria-label="Abrir menu"
             >
               <Menu className="h-5 w-5" />
@@ -733,7 +733,7 @@ export function LightShell({
             {/* Esquerda: olho (esconde valores) + tema */}
             <button
               onClick={toggleValues}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-violet-200 transition-colors hover:bg-white/10 hover:text-white"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-violet-50 hover:text-violet-700"
               aria-label={visible ? "Esconder valores" : "Mostrar valores"}
               title={visible ? "Esconder valores" : "Mostrar valores"}
             >
@@ -741,7 +741,7 @@ export function LightShell({
             </button>
             <button
               onClick={() => setTheme(isDark ? "light" : "dark")}
-              className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-xl text-violet-200 transition-colors hover:bg-white/10 hover:text-white sm:flex"
+              className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-violet-50 hover:text-violet-700 sm:flex"
               aria-label="Alternar tema"
               title={isDark ? "Mudar para claro" : "Mudar para escuro"}
             >
@@ -749,20 +749,20 @@ export function LightShell({
             </button>
 
             {/* Centro: faturamento rumo à próxima meta */}
-            <div className="flex min-w-0 flex-1 justify-center px-1 md:absolute md:left-1/2 md:top-1/2 md:flex-none md:-translate-x-1/2 md:-translate-y-1/2 md:px-0">
+            <div className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 md:flex" style={{ marginTop: "calc(env(safe-area-inset-top, 0px) / 2)" }}>
               <RevenueGoal value={revenue} hidden={!visible} />
             </div>
 
             {/* Direita: sino + foto */}
             <div className="ml-auto flex shrink-0 items-center gap-1.5">
               {/* Sino: abre o painel de notificações push deste aparelho */}
-              <NotificationsBell borderColor={T.border} primary={T.primary} variant="dark" />
+              <NotificationsBell borderColor={T.border} primary={T.primary} variant="plain" />
 
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen((v) => !v)}
                   className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full transition-opacity hover:opacity-85"
-                  style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.12)" }}
+                  style={{ boxShadow: "0 0 0 2px #FFFFFF, 0 0 0 3.5px rgba(124,58,237,0.35)" }}
                   aria-label="Conta"
                   title={user?.companyName || "Conta"}
                 >
