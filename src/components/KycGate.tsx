@@ -19,7 +19,7 @@ import KycModal from "@/components/KycModal";
 const API = "https://shadowpay-backend.onrender.com";
 
 // Páginas onde o popup NÃO aparece (login/cadastro, telas standalone).
-const EXCLUDED = ["/auth", "/shadow", "/oauth-ads"];
+const EXCLUDED = ["/auth", "/shadow", "/oauth-ads", "/v1/checkout", "/termos", "/privacidade"];
 const isExcluded = (p: string) =>
   EXCLUDED.some((x) => p === x || p.startsWith(x + "/"));
 

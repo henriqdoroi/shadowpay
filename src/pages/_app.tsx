@@ -126,38 +126,15 @@ export default function App(props: AppProps) {
 
         {/* Favicon padrão e fallback */}
         <link rel="icon" type="image/png" href="/logoshadowpay.png" />
-        <link rel="shortcut icon" href="/favicon.ico" />
+        <link rel="shortcut icon" href="/pwa/icon-192.png" />
 
         {/* Manifest PWA */}
         <link rel="manifest" href="/manifest.json" />
 
         <link rel="apple-touch-icon" sizes="180x180" href="/pwa/apple-touch-icon.png" />
 
-        <link
-          rel="apple-touch-startup-image"
-          href="/safira-logo.png"
-          media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)"
-        />
-        <link
-          rel="apple-touch-startup-image"
-          href="/safira-logo.png"
-          media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)"
-        />
-        <link
-          rel="apple-touch-startup-image"
-          href="/safira-logo.png"
-          media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)"
-        />
-        <link
-          rel="apple-touch-startup-image"
-          href="/safira-logo.png"
-          media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)"
-        />
-        <link
-          rel="apple-touch-startup-image"
-          href="/safira-logo.png"
-          media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)"
-        />
+        {/* Tela de abertura do app no iPhone: fundo da marca (theme-color);
+            as imagens antigas eram de outra marca. */}
 
         {/* Cor da barra de status no Android e iOS — usa violeta da marca */}
         <meta name="theme-color" content="#7C3AED" />

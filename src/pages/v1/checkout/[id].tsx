@@ -11,6 +11,18 @@ import axios from "axios";
 import { Attribution, attributionPayload, captureAttribution } from "@/lib/attribution";
 import { OFFLINE_MSG } from "@/lib/axiosErrors";
 
+/** Só links http(s) saem do checkout (nada de "javascript:..."). */
+function safeLink(v: unknown): string | null {
+  const s = typeof v === "string" ? v.trim() : "";
+  if (!s) return null;
+  try {
+    const u = new URL(/^[a-z][a-z0-9+.-]*:/i.test(s) ? s : `https://${s}`);
+    return u.protocol === "https:" || u.protocol === "http:" ? u.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 interface Product {
   id: string;
   sellerId?: string;
@@ -24,6 +36,7 @@ interface Product {
   logoUrl?: string;
   isActive?: boolean;
   linkSalesPage?: string;
+  backRedirectUrl?: string | null;
   productType?: string;
   paymentMethod?: string;
   fbpixelid?: string;
@@ -166,7 +179,6 @@ export default function CheckoutPage() {
     applepay: { enabled: false, percent: 0 },
   });
 
-  const backRedirect = formData.salesPageUrl;
 
   const [selectedPayment, setSelectedPayment] = useState<
     keyof typeof paymentMethods | null
@@ -186,10 +198,11 @@ export default function CheckoutPage() {
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // // Detectar lado do cliente
-  // useEffect(() => {
-  //   setIsClientSide(true);
-  // }, []);
+  // Lado do cliente: timer, registro da visita e redirecionamento pós-pagamento
+  // só rodam depois de montar no navegador.
+  useEffect(() => {
+    setIsClientSide(true);
+  }, []);
 
   // Só pra MOSTRAR: o valor cobrado é calculado no servidor (mesma regra).
   const totalPrice =
@@ -397,28 +410,28 @@ export default function CheckoutPage() {
     };
   }, []);
 
-  // Redirecionamento depois de aprovado
+  // Pago: busca o link de upsell do produto e leva o comprador pra lá
+  // depois de 5s (tempo de ver o "Pagamento aprovado").
+  const [upsellLink, setUpsellLink] = useState<string | null>(null);
   useEffect(() => {
-    if (paymentStatus === "approved") {
-      const timer = setTimeout(async () => {
-        try {
-          const saleRes = await axios.get(
-            `https://shadowpay-backend.onrender.com/api/sales/public/${saleId}`
-          );
-
-          if (saleRes.data?.linkUpSell) {
-            setShowPixModal(false);
-            if (isClientSide) {
-              window.location.assign(saleRes.data.linkUpSell);
-            }
-          }
-        } catch (err) {
-          console.error("Erro ao buscar link de upsell:", err);
-        }
-      }, 5000);
-
-      return () => clearTimeout(timer);
-    }
+    if (paymentStatus !== "approved" || !saleId) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    axios
+      .get(`https://shadowpay-backend.onrender.com/api/sales/public/${saleId}`)
+      .then((saleRes) => {
+        const link = safeLink(saleRes.data?.linkUpSell);
+        if (cancelled || !link) return;
+        setUpsellLink(link);
+        timer = setTimeout(() => {
+          if (isClientSide) window.location.assign(link);
+        }, 5000);
+      })
+      .catch((err) => console.error("Erro ao buscar link de upsell:", err));
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
   }, [paymentStatus, saleId, isClientSide]);
 
   // Origem da venda: lê UTMs/src/sck/ids de clique da URL assim que o produto
@@ -439,37 +452,45 @@ export default function CheckoutPage() {
     }
   };
 
-  // Timer
+  // Timer da oferta — um relógio por produto, que continua se o comprador
+  // recarregar a página (e recomeça depois que expira).
   useEffect(() => {
-    if (!appearanceSettings.showTimer || !isClientSide) return;
+    if (!appearanceSettings.showTimer || !isClientSide || !formData?.id) return;
 
-    const totalSeconds = appearanceSettings.timerMinutes * 60;
-    const storedStartTime = localStorage.getItem("checkoutStartTime");
-    let startTime: number = storedStartTime
-      ? parseInt(storedStartTime, 10)
-      : Date.now();
+    const key = `checkoutStartTime:${formData.id}`;
+    const totalSeconds = Math.max(1, Number(appearanceSettings.timerMinutes) || 10) * 60;
+    let startTime = Date.now();
+    try {
+      const stored = Number(localStorage.getItem(key));
+      if (stored && Date.now() - stored < totalSeconds * 1000) startTime = stored;
+      else localStorage.setItem(key, String(startTime));
+    } catch {
+      /* modo privado: conta só nesta visita */
+    }
 
-    if (!storedStartTime)
-      localStorage.setItem("checkoutStartTime", startTime.toString());
-
+    let interval: ReturnType<typeof setInterval> | undefined;
     const updateTimer = () => {
-      const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
-      const remaining = totalSeconds - elapsedSeconds;
+      const remaining = totalSeconds - Math.floor((Date.now() - startTime) / 1000);
       if (remaining > 0) setTimer(remaining);
       else {
         setTimer(0);
-        localStorage.removeItem("checkoutStartTime");
-        clearInterval(interval);
+        try {
+          localStorage.removeItem(key);
+        } catch {
+          /* ignora */
+        }
+        if (interval) clearInterval(interval);
       }
     };
 
     updateTimer();
-    const interval = setInterval(updateTimer, 1000);
+    interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
   }, [
     appearanceSettings.showTimer,
     appearanceSettings.timerMinutes,
     isClientSide,
+    formData?.id,
   ]);
 
   // Fetch product - consolidado em um único useEffect
@@ -572,7 +593,7 @@ export default function CheckoutPage() {
           description: p.description || "",
           price: p.price?.toString() || "0",
           status: p.isActive ? "ativo" : "inativo",
-          checkoutUrl: p.linkSalesPage || "",
+          checkoutUrl: "",
           productType:
             (Object.keys(productTypeMap).find(
               (key) => productTypeMap[key] === p.productType
@@ -581,7 +602,8 @@ export default function CheckoutPage() {
             p.paymentMethod?.toLowerCase() === "unique"
               ? "unico"
               : "recorrente",
-          salesPageUrl: p.linkSalesPage || "",
+          // "Back Redirect" do produto (pra onde vai quem tenta sair)
+          salesPageUrl: safeLink(p.backRedirectUrl ?? p.linkSalesPage) || "",
           productImage: productImageUrl,
           bannerImageUrl,
           bannerImage: null,
@@ -679,6 +701,9 @@ export default function CheckoutPage() {
   const [showExitModal, setShowExitModal] = useState(false);
   const [pendingRedirect, setPendingRedirect] = useState(false);
   useEffect(() => {
+    // Sem Back Redirect configurado, o "voltar" funciona normal (antes o
+    // comprador ficava preso: "Sair" recarregava a mesma página).
+    if (!formData.salesPageUrl) return;
     // Adiciona um estado falso no histórico para capturar o "voltar"
     history.pushState(null, "", window.location.href);
 
@@ -708,7 +733,8 @@ export default function CheckoutPage() {
   }, [formData.salesPageUrl]);
 
   const confirmExit = () => {
-    window.location.href = formData.salesPageUrl;
+    if (formData.salesPageUrl) window.location.href = formData.salesPageUrl;
+    else history.go(-2);
   };
 
   const cancelExit = () => {
@@ -1864,9 +1890,8 @@ export default function CheckoutPage() {
                       <button
                         onClick={() => {
                           setShowPixModal(false);
-                          if (backRedirect) {
-                            window.location.assign(backRedirect);
-                          }
+                          // pago: segue pro upsell do produto (se tiver)
+                          if (upsellLink) window.location.assign(upsellLink);
                         }}
                         className="w-full py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold text-sm hover:from-green-600 hover:to-green-700 transition-all shadow-lg shadow-green-500/30"
                       >
@@ -1909,7 +1934,7 @@ export default function CheckoutPage() {
                 Ao clicar em <strong>Finalizar pagamento</strong>, você concorda
                 com os{" "}
                 <a
-                  href="https://safiracash.com.br/termos"
+                  href="/termos"
                   className="underline hover:text-blue-600"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -1918,7 +1943,7 @@ export default function CheckoutPage() {
                 </a>{" "}
                 e{" "}
                 <a
-                  href="https://safiracash.com.br/privacidade"
+                  href="/privacidade"
                   className="underline hover:text-blue-600"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -2054,7 +2079,7 @@ export default function CheckoutPage() {
               >
                 <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16zm0-14a6 6 0 100 12 6 6 0 000-12zm0 10a4 4 0 110-8 4 4 0 010 8z" />
               </svg>
-              SafiraCash todos os direitos reservados
+              Pagamento processado pela ShadowPay
             </p>
           </div>
         </div>

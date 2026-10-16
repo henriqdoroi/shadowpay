@@ -152,7 +152,8 @@ function ProductsContent() {
             status: p.isActive ? "ativo" : "inativo",
             sales: byProduct[pid] || 0,
             createdAt: p.createdAt,
-            checkoutUrl: p.linkSalesPage,
+            // sempre o checkout da ShadowPay (linkSalesPage era o Back Redirect)
+            checkoutUrl: "",
             category: p.category || "Finanças e Com",
             type: p.type || "Curso",
             imageUrl: img,

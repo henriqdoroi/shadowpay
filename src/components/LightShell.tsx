@@ -18,13 +18,13 @@ import {
   Building2,
   Megaphone,
   Workflow,
-  Settings,
   Code,
   Target,
   Globe,
   UserCircle2,
   Shield,
   BellRing,
+  KeyRound,
   Percent,
   IdCard,
   ShieldCheck,
@@ -106,11 +106,8 @@ function buildNav(isAdmin: boolean): NavItem[] {
     { label: "Produtos", href: "/v1/products", icon: Package },
     { label: "Domínios", href: "/v1/integrations/domains", icon: Globe },
     { label: "Integrações", href: "/v1/integrations", icon: Plug },
-    {
-      label: "Nominal",
-      href: isAdmin ? "/v2/manager/adquerers" : "/v1/integrations/acquirers",
-      icon: PixIcon,
-    },
+    // Nominal: a mesma tela pra todos (admin configura as chaves em PSP Keys)
+    { label: "Nominal", href: "/v1/integrations/acquirers", icon: PixIcon },
     { label: "Automações", href: "/v1/automation", icon: Workflow },
     { label: "API & Docs", href: "/v1/configs/apikey", icon: Code },
   ];
@@ -122,7 +119,7 @@ function buildNav(isAdmin: boolean): NavItem[] {
       { label: "Todas transações", href: "/v2/manager/transactions", icon: Activity },
       { label: "Saques admin", href: "/v2/manager/withdraw", icon: ArrowUpFromLine },
       { label: "Notificações", href: "/v2/manager/notifications", icon: BellRing },
-      { label: "PSP Keys", href: "/v2/manager/psp-key", icon: Settings },
+      { label: "PSP Keys", href: "/v2/manager/psp-key", icon: KeyRound },
     );
   }
 

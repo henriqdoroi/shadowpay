@@ -209,15 +209,11 @@ export default function CreateProduct() {
       [key]: { ...prev[key], percent: Number(value) },
     }));
   };
-  const [checkoutLinks, setCheckoutLinks] = useState([
-    {
-      id: 1,
-      url: "https://dash.safira.cash/produto-" + (id || "1"),
-      domain: "dash.safira.cash",
-      isCustomDomain: false,
-      createdAt: new Date().toISOString(),
-    },
-  ]);
+  // Só domínios personalizados entram aqui; o link padrão do checkout
+  // (/v1/checkout/<id>) só existe depois que o produto é salvo.
+  const [checkoutLinks, setCheckoutLinks] = useState<
+    { id: number; url: string; domain: string; isCustomDomain: boolean; createdAt: string }[]
+  >([]);
   const productTypeMap: Record<string, "DIGITAL" | "PHYSICAL" | "SERVICE"> = {
     digital: "DIGITAL",
     fisico: "PHYSICAL",
@@ -746,7 +742,7 @@ export default function CreateProduct() {
                                   e.target.value
                                 )
                               }
-                              placeholder="https://vendas.safiracash.com/seu-produto"
+                              placeholder="https://seusite.com/oferta-especial"
                             />
                           </div>
 
@@ -758,7 +754,7 @@ export default function CreateProduct() {
                               onChange={(e) =>
                                 handleInputChange("upsellUrl", e.target.value)
                               }
-                              placeholder="https://upsell.safiracash.com/seu-produto"
+                              placeholder="https://seusite.com/upsell"
                             />
                           </div>
                         </div>
@@ -811,7 +807,7 @@ export default function CreateProduct() {
                                   e.target.value
                                 )
                               }
-                              placeholder="suporte@payquick.com"
+                              placeholder="suporte@seusite.com"
                             />
                           </div>
                         </div>

@@ -2102,7 +2102,7 @@ function UsersManagerContent() {
             })()}
 
             <p className="text-xs text-slate-500">
-              Taxa diferente só numa adquirente? Use Adquirentes &gt; vincular seller. Taxa de saque é definida por adquirente.
+              Taxa diferente só numa adquirente? Use PSP Keys &gt; liberar seller. Taxa de saque é definida por adquirente.
             </p>
 
             <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">

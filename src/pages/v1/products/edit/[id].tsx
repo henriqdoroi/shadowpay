@@ -50,6 +50,8 @@ interface Product {
   sales?: number;
   createdAt?: string;
   checkoutUrl?: string;
+  backRedirectUrl?: string | null;
+  upsellUrl?: string | null;
   showProductName?: boolean;
   showProductDescription?: boolean;
   // CAMPOS OPCIONAIS DA API
@@ -299,15 +301,26 @@ export default function EditProduct() {
     }));
   };
 
+  // Link real do checkout deste produto (domínio onde o painel está aberto)
   const [checkoutLinks, setCheckoutLinks] = useState([
     {
       id: 1,
-      url: "https://dash.safira.cash/v1/checkout/" + (id || "1"),
-      domain: "dash.safira.cash",
+      url: "",
+      domain: "",
       isCustomDomain: false,
       createdAt: new Date().toISOString(),
     },
   ]);
+  useEffect(() => {
+    if (typeof window === "undefined" || !id) return;
+    setCheckoutLinks((prev) =>
+      prev.map((l, i) =>
+        i === 0 && !l.isCustomDomain
+          ? { ...l, url: `${window.location.origin}/v1/checkout/${id}`, domain: window.location.host }
+          : l
+      )
+    );
+  }, [id]);
 
   const productTypeMap: Record<string, "DIGITAL" | "PHYSICAL" | "SERVICE"> = {
     digital: "DIGITAL",
@@ -430,8 +443,8 @@ export default function EditProduct() {
             p.paymentMethod?.toLowerCase() === "unique"
               ? "unico"
               : "recorrente",
-          salesPageUrl: p.linkSalesPage || "",
-          upsellUrl: p.linkUpSell || "",
+          salesPageUrl: p.backRedirectUrl || p.linkSalesPage || "",
+          upsellUrl: p.linkUpSell || p.upsellUrl || "",
           warrantyDays: p.daysGuarantee?.toString() || "",
           supportWhatsapp: p.whatsappSupport || "",
           supportEmail: p.emailSupport || "",
@@ -968,7 +981,7 @@ export default function EditProduct() {
                                   e.target.value
                                 )
                               }
-                              placeholder="https://vendas.payquick.com/seu-produto"
+                              placeholder="https://seusite.com/oferta-especial"
                             />
                           </div>
 
@@ -980,7 +993,7 @@ export default function EditProduct() {
                               onChange={(e) =>
                                 handleInputChange("upsellUrl", e.target.value)
                               }
-                              placeholder="https://upsell.payquick.com/seu-produto"
+                              placeholder="https://seusite.com/upsell"
                             />
                           </div>
                         </div>
@@ -1033,7 +1046,7 @@ export default function EditProduct() {
                                   e.target.value
                                 )
                               }
-                              placeholder="suporte@payquick.com"
+                              placeholder="suporte@seusite.com"
                             />
                           </div>
                         </div>
