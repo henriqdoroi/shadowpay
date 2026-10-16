@@ -28,6 +28,7 @@ import {
   PERIOD_PRESETS,
   bucketTitle,
   buildChartBuckets,
+  chartBucketFor,
   resolvePeriod,
   ymd,
   type ChartBucket,
@@ -170,6 +171,8 @@ function DashboardContent() {
   }, [token, period, dayKey]);
 
   const chartData = useMemo(() => buildChartBuckets(resolved, points), [resolved, points]);
+  // no "Máximo" vira por dia ou por mês conforme o histórico
+  const chartBucket = useMemo(() => chartBucketFor(resolved, points), [resolved, points]);
 
   const fmt = (v: number) =>
     new Intl.NumberFormat("pt-BR", {
@@ -345,7 +348,7 @@ function DashboardContent() {
                       Desempenho
                     </h2>
                     <p className="text-[12px] text-slate-500">
-                      Faturamento {BUCKET_TEXT[resolved.bucket]} · {resolved.description}
+                      Faturamento {BUCKET_TEXT[chartBucket]} · {resolved.description}
                     </p>
                   </div>
 
@@ -395,7 +398,7 @@ function DashboardContent() {
                                 style={{ border: `1px solid ${T.border}`, boxShadow: "0 12px 32px rgba(15, 23, 42, 0.10)" }}
                               >
                                 <p className="text-[11.5px] font-semibold text-slate-500">
-                                  {bucketTitle(resolved.bucket, b.key)}
+                                  {bucketTitle(chartBucket, b.key)}
                                 </p>
                                 <p className="mt-0.5 text-[15px] font-bold tabular-nums text-slate-900">
                                   {hideable(fmt(b.gross))}

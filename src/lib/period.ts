@@ -11,7 +11,10 @@ export type Bucket = "hour" | "day" | "month";
 export type ResolvedPeriod = {
   start: Date | null; // null = desde o começo (Máximo)
   end: Date | null;
+  /** Agrupamento pedido ao backend. */
   bucket: Bucket;
+  /** Máximo: o gráfico escolhe dia ou mês conforme o histórico (chartBucketFor). */
+  auto?: boolean;
   /** Texto curto pro botão: "Hoje", "Últimos 7 dias", "13 – 19 out". */
   label: string;
   /** Texto descritivo: "Hoje, 12 de outubro", "6 – 12 de out", "Todo o período". */
@@ -85,7 +88,8 @@ export function resolvePeriod(p: Period, now = new Date()): ResolvedPeriod {
       return { start: s, end: endOfDay(e), bucket: "day", label: "Mês passado", description: `${MONTHS[s.getMonth()]} de ${s.getFullYear()}` };
     }
     case "max":
-      return { start: null, end: null, bucket: "month", label: "Máximo", description: "Todo o período" };
+      // busca por DIA; o gráfico junta em meses se o histórico for longo
+      return { start: null, end: null, bucket: "day", auto: true, label: "Máximo", description: "Todo o período" };
     case "custom":
     default: {
       let a = p.from ? parseYmd(p.from) : today;
@@ -121,14 +125,57 @@ export function bucketTitle(bucket: Bucket, key: string, now = new Date()): stri
 export type SeriesPoint = { k: string; total: number; paid: number; gross: number };
 export type ChartBucket = { key: string; label: string; gross: number; paid: number; total: number };
 
+/** Até quantos dias de histórico o Máximo mostra por dia (acima: por mês). */
+const AUTO_DAY_LIMIT = 92;
+/** Mínimo de dias no gráfico do Máximo (com 1 dia só não há linha). */
+const AUTO_MIN_DAYS = 7;
+
+/** Primeiro dia com movimento (chaves "YYYY-MM-DD..."), ou null. */
+function firstDayOf(points: SeriesPoint[]): Date | null {
+  let first: string | null = null;
+  for (const p of points) if (first === null || p.k < first) first = p.k;
+  return first ? parseYmd(first.slice(0, 10).length === 10 ? first.slice(0, 10) : `${first.slice(0, 7)}-01`) : null;
+}
+
+/** Agrupamento que o gráfico usa de fato (no Máximo depende do histórico). */
+export function chartBucketFor(r: ResolvedPeriod, points: SeriesPoint[], now = new Date()): Bucket {
+  if (!r.auto) return r.bucket;
+  const first = firstDayOf(points);
+  if (!first) return "day";
+  const days = Math.round((startOfDay(now).getTime() - startOfDay(first).getTime()) / 86_400_000) + 1;
+  return days <= AUTO_DAY_LIMIT ? "day" : "month";
+}
+
 /**
  * Monta os baldes do gráfico do período (preenchendo os vazios com zero):
  *  - hour: 12 baldes de 2h (00:00…22:00)
- *  - day:  um por dia do intervalo ("12/10")
+ *  - day:  um por dia do intervalo ("12/10"); no Máximo, do 1º dia com venda
+ *          (pelo menos 7 dias) até hoje
  *  - month: um por mês ("out/26"); no Máximo, do 1º mês com venda até hoje.
  */
 export function buildChartBuckets(r: ResolvedPeriod, points: SeriesPoint[], now = new Date()): ChartBucket[] {
   const out: ChartBucket[] = [];
+  if (r.auto) {
+    const bucket = chartBucketFor(r, points, now);
+    if (bucket === "day") {
+      const today = startOfDay(now);
+      const minStart = addDays(today, -(AUTO_MIN_DAYS - 1));
+      const first = firstDayOf(points);
+      const start = first && first < minStart ? first : minStart;
+      return buildChartBuckets({ ...r, auto: false, bucket: "day", start, end: endOfDay(today) }, points, now);
+    }
+    // histórico longo: soma os dias em meses
+    const byMonth = new Map<string, SeriesPoint>();
+    for (const p of points) {
+      const k = p.k.slice(0, 7);
+      const acc = byMonth.get(k) ?? { k, total: 0, paid: 0, gross: 0 };
+      acc.total += Number(p.total) || 0;
+      acc.paid += Number(p.paid) || 0;
+      acc.gross += Number(p.gross) || 0;
+      byMonth.set(k, acc);
+    }
+    return buildChartBuckets({ ...r, auto: false, bucket: "month" }, Array.from(byMonth.values()), now);
+  }
   if (r.bucket === "hour") {
     for (let i = 0; i < 12; i++) out.push({ key: String(i), label: `${pad(i * 2)}:00`, gross: 0, paid: 0, total: 0 });
     for (const p of points) {

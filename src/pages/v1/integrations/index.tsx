@@ -288,13 +288,13 @@ function IntegrationsContent() {
   useEffect(() => {
     if (!token) return;
     refetch();
-    // Pixels conectados (endpoint da Fase 2 — falha graciosa enquanto não existe)
+    // Pixels conectados (só os ativos contam)
     axios
-      .get(`${API}/api/user/pixels`, {
+      .get(`${API}/api/integrations/pixels`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((r) => {
-        if (r.data?.success) setPixelCount((r.data.data || []).length);
+        if (r.data?.success) setPixelCount((r.data.data || []).filter((p: any) => p.active !== false).length);
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -26,6 +26,7 @@ import {
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { LightShell } from "@/components/LightShell";
+import { apiErrorMessage } from "@/lib/axiosErrors";
 import ShadowPanel from "@/components/ShadowPanel";
 
 const API = "https://shadowpay-backend.onrender.com";
@@ -105,6 +106,7 @@ interface ApiKey {
   id: string;
   publicKey: string;
   privateKey?: string;
+  privateKeyHint?: string;
   seller_ip?: string;
   createdAt: string;
   lastUsedAt?: string;
@@ -119,6 +121,7 @@ function ApiKeyContent() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [renewingId, setRenewingId] = useState<string | null>(null);
   const [sellerIp, setSellerIp] = useState<string>("");
+  const [savingIp, setSavingIp] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
 
   const fetchCredentials = async () => {
@@ -159,16 +162,19 @@ function ApiKeyContent() {
 
   const updateSellerIp = async () => {
     if (!token || !credentials[0]) return;
+    setSavingIp(true);
     try {
-      await axios.put(
+      const r = await axios.put(
         `${API}/api/credentials/${credentials[0].id}/ip`,
         { seller_ip: sellerIp },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success("IP atualizado com sucesso!");
+      setSellerIp(r.data?.data?.seller_ip ?? sellerIp);
+      toast.success(r.data?.message || "IP atualizado com sucesso!");
     } catch (e) {
-      console.error(e);
-      toast.error("Erro ao atualizar IP");
+      toast.error(apiErrorMessage(e, "Erro ao atualizar IP"));
+    } finally {
+      setSavingIp(false);
     }
   };
 
@@ -325,13 +331,13 @@ function ApiKeyContent() {
                   Private key
                 </label>
                 <input
-                  type="password"
-                  value="••••••••••••••••••••••••••••••••••••"
+                  value={`sk_live_••••••••••••••••••••••••${(current.privateKeyHint || "").replace(/^•+/, "")}`}
                   readOnly
+                  aria-label="Chave privada (oculta)"
                   className={inputCls}
                 />
                 <p className="mt-1.5 text-xs text-slate-400">
-                  Por segurança, a chave privada só é exibida no momento da criação.
+                  Por segurança, a chave privada só é exibida no momento da criação. Perdeu? Renove as credenciais.
                 </p>
               </div>
 
@@ -343,20 +349,26 @@ function ApiKeyContent() {
                   <input
                     value={sellerIp}
                     onChange={(e) => setSellerIp(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && updateSellerIp()}
                     placeholder="Ex: 187.45.123.67"
+                    inputMode="decimal"
                     className={inputCls}
                   />
                   <button
                     onClick={updateSellerIp}
-                    className="inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white"
+                    disabled={savingIp}
+                    className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white disabled:opacity-60"
                     style={{
                       background: "#7C3AED",
                       boxShadow: "0 8px 20px -8px rgba(124,58,237,0.55)",
                     }}
                   >
-                    Salvar IP
+                    {savingIp ? "Salvando…" : "Salvar IP"}
                   </button>
                 </div>
+                <p className="mt-1.5 text-xs text-slate-400">
+                  Só esses IPs (do seu servidor) poderão usar a chave. Vários? Separe por vírgula. Deixe vazio pra liberar qualquer IP.
+                </p>
               </div>
 
               <div

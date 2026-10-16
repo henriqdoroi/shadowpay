@@ -12,7 +12,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import bcrypt from "bcryptjs";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -175,6 +174,28 @@ const formatCurrency = (value: number) => {
   }).format(value);
 };
 
+/** "1.234,56" / "1234,56" / "1234.56" -> 1234.56 (null se não for valor). */
+const parseBRL = (v: string): number | null => {
+  const s = String(v ?? "").replace(/[R$\s]/g, "").trim();
+  if (!s) return null;
+  const norm = s.includes(",") ? s.replace(/\./g, "").replace(",", ".") : s;
+  const n = Number(norm);
+  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : null;
+};
+
+/** Mensagem de erro do backend ({ message } ou { error: { message } }). */
+const readApiError = async (res: Response, fallback: string): Promise<string> => {
+  try {
+    const j = await res.json();
+    const m = j?.error?.message ?? j?.message;
+    if (Array.isArray(m)) return m.join(" ");
+    if (typeof m === "string" && m.trim()) return m;
+  } catch {
+    /* corpo vazio */
+  }
+  return fallback;
+};
+
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString("pt-BR", {
     day: "2-digit",
@@ -314,18 +335,9 @@ function UsersManagerContent() {
   const [processingKyc, setProcessingKyc] = useState(false);
   const [editFeesModalOpen, setEditFeesModalOpen] = useState(false);
   const [editingSellerId, setEditingSellerId] = useState<string | null>(null);
-  const [fees, setFees] = useState({
-    feePercentPix: 0,
-    feeFixedPix: 0,
-    feePercentPixCashOut: 0,
-    feeFixedPixCashOut: 0,
-    feePercentCard: 0,
-    feeFixedCard: 0,
-    feePercentBoleto: 0,
-    feeFixedBoleto: 0,
-    feePercentCrypto: 0,
-    feeFixedCrypto: 0,
-  });
+  // Taxa PIX própria do seller ("" = usa a taxa da adquirente)
+  const [fees, setFees] = useState({ pixFeePercent: "", pixFeeFixed: "" });
+  const [feesSellerName, setFeesSellerName] = useState("");
   const [updatingFees, setUpdatingFees] = useState(false);
   const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
   const [userFormData, setUserFormData] = useState({
@@ -337,6 +349,8 @@ function UsersManagerContent() {
     saldo: "",
     adquererId: "",
   });
+  // saldo quando o modal abriu (pra só ajustar se o admin mudou)
+  const [originalBalance, setOriginalBalance] = useState<number | null>(null);
   const [changePassword, setChangePassword] = useState(false);
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
@@ -372,21 +386,15 @@ function UsersManagerContent() {
         }
       );
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Erro na API: ${response.status} - ${errorText}`);
-      }
+      if (!response.ok) throw new Error(await readApiError(response, "Erro ao excluir seller."));
 
-      // Usando toast ao invés de alert
-      toast.success(`Seller "${sellerName}" excluído com sucesso!`);
+      toast.success(`Seller "${sellerName}" excluído.`);
     } catch (err) {
-      console.error("Erro ao deletar seller:", err);
-      toast.error(
-        "Erro ao excluir seller: " +
-          (err instanceof Error ? err.message : "Erro desconhecido")
-      );
+      toast.error(err instanceof Error ? err.message : "Erro ao excluir seller.");
     }
   };
+
+  const [savingUser, setSavingUser] = useState(false);
 
   const handleUserFormSubmit = async () => {
     if (!userFormData.id) {
@@ -395,8 +403,8 @@ function UsersManagerContent() {
     }
 
     if (changePassword) {
-      if (!password) {
-        toast.error("Por favor, digite a nova senha.");
+      if (password.length < 8) {
+        toast.error("A nova senha precisa de pelo menos 8 caracteres.");
         return;
       }
       if (password !== passwordConfirm) {
@@ -405,32 +413,28 @@ function UsersManagerContent() {
       }
     }
 
-    // Gera hash da senha se for para alterar
-    let hashedPassword = undefined;
-    if (changePassword) {
-      const saltRounds = 10;
-      hashedPassword = await bcrypt.hash(password, saltRounds);
+    const newBalance = parseBRL(userFormData.saldo);
+    if (userFormData.saldo.trim() && newBalance === null) {
+      toast.error("Saldo inválido. Use o formato 1234,56.");
+      return;
     }
 
-    const dataToSend = {
-      ...userFormData,
-      ...(changePassword ? { password: hashedPassword } : {}),
-    };
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Token não encontrado. Faça login novamente.");
+      return;
+    }
 
+    setSavingUser(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error("Token não encontrado. Faça login novamente.");
-        return;
-      }
-
+      // A senha vai em texto (HTTPS) e o servidor faz o hash.
       const sellerPayload = {
-        companyName: dataToSend.companyName,
-        email: dataToSend.email,
-        number: dataToSend.number,
-        cpf_cnpj: dataToSend.cpf_cnpj,
-        adquererId: dataToSend.adquererId || null,
-        ...(changePassword ? { password: dataToSend.password } : {}),
+        companyName: userFormData.companyName,
+        email: userFormData.email,
+        number: userFormData.number,
+        cpf_cnpj: userFormData.cpf_cnpj,
+        adquererId: userFormData.adquererId || null,
+        ...(changePassword ? { password } : {}),
       };
 
       const sellerResponse = await fetch(
@@ -444,25 +448,11 @@ function UsersManagerContent() {
           body: JSON.stringify(sellerPayload),
         }
       );
-      if (!sellerResponse.ok) {
-        const errorText = await sellerResponse.text();
-        throw new Error(`Erro ao atualizar seller: ${errorText}`);
-      }
+      if (!sellerResponse.ok) throw new Error(await readApiError(sellerResponse, "Erro ao atualizar seller."));
 
-      const saldoNumber = Number(
-        (dataToSend.saldo ?? "0")
-          .toString()
-          .replace(/\./g, "") // remove pontos (milhares)
-          .replace(",", ".") // troca vírgula por ponto
-      );
-
-      if (!Number.isNaN(saldoNumber)) {
-        const payload = {
-          amount: saldoNumber,
-          type: "SET",
-          reason: "Ajuste manual via painel admin",
-        };
-
+      // Saldo: só mexe se o admin mudou o valor. expectedBalance impede de
+      // sobrescrever uma venda/saque que caiu enquanto o modal estava aberto.
+      if (newBalance !== null && originalBalance !== null && Math.abs(newBalance - originalBalance) >= 0.005) {
         const walletResponse = await fetch(
           `https://shadowpay-backend.onrender.com/api/admin/wallets/${userFormData.id}/adjust-balance`,
           {
@@ -471,23 +461,29 @@ function UsersManagerContent() {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({
+              amount: newBalance,
+              type: "SET",
+              expectedBalance: originalBalance,
+              reason: "Ajuste manual via painel admin",
+            }),
           }
         );
-
         if (!walletResponse.ok) {
-          const errorText = await walletResponse.text();
-          console.error("Erro API:", errorText);
-          throw new Error(`Erro ao atualizar saldo da wallet: ${errorText}`);
+          throw new Error(await readApiError(walletResponse, "Dados salvos, mas o saldo não foi alterado."));
         }
       }
 
       toast.success("Seller atualizado com sucesso!");
       setIsEditUserModalOpen(false);
-      fetchSellers();
+      setChangePassword(false);
+      setPassword("");
+      setPasswordConfirm("");
+      fetchSellers(pagination.page);
     } catch (error: unknown) {
-      if (error instanceof Error) toast.error(error.message);
-      else toast.error("Erro ao salvar os dados do usuário.");
+      toast.error(error instanceof Error ? error.message : "Erro ao salvar os dados do usuário.");
+    } finally {
+      setSavingUser(false);
     }
   };
   //funcao para buscar adquerers
@@ -865,6 +861,13 @@ function UsersManagerContent() {
   };
 
   const updateSellerFees = async (sellerId: string, feesData: typeof fees) => {
+    const toNum = (v: string) => (v.trim() === "" ? null : Number(v.replace(",", ".")));
+    const pixFeePercent = toNum(feesData.pixFeePercent);
+    const pixFeeFixed = toNum(feesData.pixFeeFixed);
+    if ((pixFeePercent !== null && !(pixFeePercent >= 0 && pixFeePercent <= 50)) || (pixFeeFixed !== null && !(pixFeeFixed >= 0))) {
+      toast.error("Confira as taxas: use números (ex.: 4,99 e 1,00).");
+      return;
+    }
     try {
       setUpdatingFees(true);
       const token = localStorage.getItem("token");
@@ -880,31 +883,18 @@ function UsersManagerContent() {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(feesData),
+          body: JSON.stringify({ pixFeePercent, pixFeeFixed }),
         }
       );
 
-      if (!response.ok) {
-        throw new Error(
-          `Erro na API: ${response.status} - ${response.statusText}`
-        );
-      }
+      if (!response.ok) throw new Error(await readApiError(response, "Erro ao atualizar taxas."));
 
-      const result = await response.json();
-      if (result.success) {
-        toast.success("Taxas atualizadas com sucesso!");
-        setEditFeesModalOpen(false);
-        setEditingSellerId(null);
-        fetchSellers(pagination.page);
-      } else {
-        throw new Error("Erro ao atualizar taxas");
-      }
+      toast.success("Taxas atualizadas! Valem para as próximas vendas.");
+      setEditFeesModalOpen(false);
+      setEditingSellerId(null);
+      fetchSellers(pagination.page);
     } catch (err) {
-      console.error("Erro ao atualizar taxas:", err);
-      toast.error(
-        "Erro ao atualizar taxas: " +
-          (err instanceof Error ? err.message : "Erro desconhecido")
-      );
+      toast.error(err instanceof Error ? err.message : "Erro ao atualizar taxas.");
     } finally {
       setUpdatingFees(false);
     }
@@ -939,19 +929,13 @@ function UsersManagerContent() {
 
       const result = await response.json();
       if (result.success && result.data) {
-        // Preencher os campos com as taxas existentes
+        // Preencher com a taxa própria atual (vazio = taxa da adquirente)
+        const show = (v: unknown) => (v === null || v === undefined || v === "" ? "" : String(v).replace(".", ","));
         setFees({
-          feePercentPix: result.data.feePercentPix || 0,
-          feeFixedPix: parseFloat(result.data.feeFixedPix) || 0,
-          feePercentPixCashOut: result.data.feePercentPixCashOut || 0,
-          feeFixedPixCashOut: parseFloat(result.data.feeFixedPixCashOut) || 0,
-          feePercentCard: result.data.feePercentCard || 0,
-          feeFixedCard: parseFloat(result.data.feeFixedCard) || 0,
-          feePercentBoleto: result.data.feePercentBoleto || 0,
-          feeFixedBoleto: parseFloat(result.data.feeFixedBoleto) || 0,
-          feePercentCrypto: result.data.feePercentCrypto || 0,
-          feeFixedCrypto: parseFloat(result.data.feeFixedCrypto) || 0,
+          pixFeePercent: show(result.data.pixFeePercentOverride),
+          pixFeeFixed: show(result.data.pixFeeFixedOverride),
         });
+        setFeesSellerName(result.data.companyName || "");
         setEditFeesModalOpen(true);
       } else {
         throw new Error("Resposta inválida da API");
@@ -980,19 +964,8 @@ function UsersManagerContent() {
   }
 
   const handleFeeChange = (field: keyof typeof fees, value: string) => {
-    const numValue = parseFloat(value) || 0;
-    setFees((prev) => ({ ...prev, [field]: numValue }));
-  };
-
-  const formatCurrencyInput = (value: string): string => {
-    const onlyDigits = value.replace(/\D/g, ""); // remove tudo que não for número
-
-    const numeric = Number(onlyDigits) / 100;
-
-    return numeric.toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    });
+    const clean = value.replace(/\./g, ",").replace(/[^\d,]/g, "");
+    setFees((prev) => ({ ...prev, [field]: clean }));
   };
 
   const handleAction = (action: string, sellerId: string) => {
@@ -1005,11 +978,6 @@ function UsersManagerContent() {
         break;
       case "kyc":
         fetchKycDetails(sellerId);
-        break;
-      case "delete":
-        if (confirm("Tem certeza que deseja excluir este seller?")) {
-          alert(`Seller ${sellerId} excluído`);
-        }
         break;
     }
   };
@@ -1300,6 +1268,13 @@ function UsersManagerContent() {
                                       variant="ghost"
                                       size="sm"
                                       onClick={() => {
+                                        // "1000" (Decimal sem casas) era lido como R$ 10,00
+                                        const bal = Number(seller.wallet?.[0]?.balance ?? 0);
+                                        const safeBal = Number.isFinite(bal) ? bal : 0;
+                                        setOriginalBalance(safeBal);
+                                        setChangePassword(false);
+                                        setPassword("");
+                                        setPasswordConfirm("");
                                         setUserFormData({
                                           id: seller.id,
                                           companyName: seller.companyName,
@@ -1307,14 +1282,7 @@ function UsersManagerContent() {
                                           number: seller.number ?? "",
                                           cpf_cnpj: seller.cpf_cnpj ?? "",
                                           adquererId: seller.adquererId || "",
-                                          saldo:
-                                            seller.wallet?.[0]?.balance !==
-                                              undefined &&
-                                            seller.wallet?.[0]?.balance !== null
-                                              ? formatCurrencyInput(
-                                                  seller.wallet[0].balance.toString()
-                                                )
-                                              : "",
+                                          saldo: safeBal.toFixed(2).replace(".", ","),
                                         });
                                         setIsEditUserModalOpen(true);
                                       }}
@@ -1379,25 +1347,25 @@ function UsersManagerContent() {
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    <p>Editar seller</p>
+                                    <p>Taxas do seller</p>
                                   </TooltipContent>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() =>
-                                          confirmDeleteSeller(seller)
-                                        }
-                                        className="cursor-pointer h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>Excluir Usuário</p>
-                                    </TooltipContent>
-                                  </Tooltip>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        confirmDeleteSeller(seller)
+                                      }
+                                      className="cursor-pointer h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Excluir Usuário</p>
+                                  </TooltipContent>
                                 </Tooltip>
                               </div>
                             </TooltipProvider>
@@ -1700,8 +1668,9 @@ function UsersManagerContent() {
             <DialogTitle>Confirmação de Exclusão</DialogTitle>
             <DialogDescription>
               Tem certeza que deseja excluir o seller{" "}
-              <strong>{sellerToDelete?.companyName}</strong>? Esta ação não
-              poderá ser desfeita.
+              <strong>{sellerToDelete?.companyName}</strong>? A conta deixa de
+              entrar, as chaves de API são revogadas e o checkout para de vender.
+              Vendas e extrato ficam guardados. Só dá pra excluir com saldo zerado.
             </DialogDescription>
           </DialogHeader>
 
@@ -1990,41 +1959,25 @@ function UsersManagerContent() {
               <Label className="text-sm font-medium">Saldo</Label>
               <Input
                 value={userFormData.saldo}
+                inputMode="decimal"
                 onChange={(e) => {
-                  let raw = e.target.value;
-
-                  // Permite apenas dígitos, vírgula e o sinal de menos
-                  raw = raw.replace(/[^\d,-]/g, "");
-
-                  // Garante que o sinal de menos só apareça no início
-                  if (raw.includes("-")) {
-                    raw = "-" + raw.replace(/-/g, "");
-                  }
-
-                  // Se tiver mais de uma vírgula, mantém só a primeira
+                  // só dígitos e UMA vírgula (saldo não fica negativo)
+                  let raw = e.target.value.replace(/\./g, ",").replace(/[^\d,]/g, "");
                   const parts = raw.split(",");
-                  if (parts.length > 2) {
-                    raw = parts[0] + "," + parts[1];
-                  }
-
+                  if (parts.length > 2) raw = parts[0] + "," + parts.slice(1).join("");
                   handleUserFormChange("saldo", raw);
                 }}
                 onBlur={() => {
-                  let saldoStr = userFormData.saldo || "0";
-
-                  // Converte vírgula em ponto para parseFloat
-                  const parsed = parseFloat(saldoStr.replace(",", "."));
-
-                  // Se não for número válido, zera
-                  const safeValue = isNaN(parsed) ? 0 : parsed;
-
-                  // Formata como moeda brasileira (2 casas decimais)
-                  const formatted = safeValue.toFixed(2).replace(".", ",");
-
-                  handleUserFormChange("saldo", formatted);
+                  const parsed = parseBRL(userFormData.saldo);
+                  if (parsed !== null) handleUserFormChange("saldo", parsed.toFixed(2).replace(".", ","));
                 }}
-                placeholder="R$ 0,00"
+                placeholder="0,00"
               />
+              {originalBalance !== null && (
+                <p className="mt-1 text-xs text-slate-500">
+                  Saldo atual: {formatCurrency(originalBalance)}. Mudar aqui gera um ajuste no extrato do seller.
+                </p>
+              )}
             </div>
             <div>
               <Label className="text-sm font-medium">Adquirente</Label>
@@ -2091,218 +2044,76 @@ function UsersManagerContent() {
               <Button
                 className="cursor-pointer w-full"
                 onClick={handleUserFormSubmit}
+                disabled={savingUser}
               >
-                Salvar
+                {savingUser ? "Salvando..." : "Salvar"}
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
-      {/* Modal de Edição de Taxas */}
+      {/* Modal de Edição de Taxas — taxa PIX própria do seller */}
       <Dialog open={editFeesModalOpen} onOpenChange={setEditFeesModalOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Editar Taxas do Seller</DialogTitle>
+            <DialogTitle>Taxas do seller</DialogTitle>
             <DialogDescription>
-              Configure as taxas de transação para este seller.
+              {feesSellerName ? <strong>{feesSellerName}</strong> : "Este seller"} paga esta taxa em cada venda PIX
+              aprovada, em qualquer adquirente. Deixe em branco pra usar a taxa padrão da adquirente.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6">
-            {/* Taxas PIX */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">PIX</h3>
-
-              {/* Linha 1: Percentuais (Cash In e Cash Out) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="feePercentPix">% Cash Out</Label>
-                  <Input
-                    id="feePercentPix"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="Ex: 1.5"
-                    value={fees.feePercentPix}
-                    onChange={(e) =>
-                      handleFeeChange("feePercentPix", e.target.value)
-                    }
-                    disabled={updatingFees}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="feePercentPixCashOut">% Cash In</Label>
-                  <Input
-                    id="feePercentPixCashOut"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="Ex: 1.5"
-                    value={fees.feePercentPixCashOut}
-                    onChange={(e) =>
-                      handleFeeChange("feePercentPixCashOut", e.target.value)
-                    }
-                    disabled={updatingFees}
-                  />
-                </div>
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="pixFeePercent">PIX recebido — percentual (%)</Label>
+                <Input
+                  id="pixFeePercent"
+                  inputMode="decimal"
+                  placeholder="Padrão da adquirente"
+                  value={fees.pixFeePercent}
+                  onChange={(e) => handleFeeChange("pixFeePercent", e.target.value)}
+                  disabled={updatingFees}
+                />
               </div>
-
-              {/* Linha 2: Fixas (Cash In e Cash Out) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="feeFixedPix">Fixa Cash Out (R$)</Label>
-                  <Input
-                    id="feeFixedPix"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="Ex: 0.50"
-                    value={fees.feeFixedPix}
-                    onChange={(e) =>
-                      handleFeeChange("feeFixedPix", e.target.value)
-                    }
-                    disabled={updatingFees}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="feeFixedPixCashOut">Fixa Cash In (R$)</Label>
-                  <Input
-                    id="feeFixedPixCashOut"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="Ex: 0.50"
-                    value={fees.feeFixedPixCashOut}
-                    onChange={(e) =>
-                      handleFeeChange("feeFixedPixCashOut", e.target.value)
-                    }
-                    disabled={updatingFees}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="pixFeeFixed">PIX recebido — fixa (R$)</Label>
+                <Input
+                  id="pixFeeFixed"
+                  inputMode="decimal"
+                  placeholder="Padrão da adquirente"
+                  value={fees.pixFeeFixed}
+                  onChange={(e) => handleFeeChange("pixFeeFixed", e.target.value)}
+                  disabled={updatingFees}
+                />
               </div>
             </div>
 
-            <Separator />
+            {(() => {
+              const p = fees.pixFeePercent.trim() === "" ? null : Number(fees.pixFeePercent.replace(",", "."));
+              const x = fees.pixFeeFixed.trim() === "" ? null : Number(fees.pixFeeFixed.replace(",", "."));
+              if (p === null && x === null) return null;
+              const fee = Math.round((100 * (p ?? 0) / 100 + (x ?? 0)) * 100) / 100;
+              return (
+                <p className="rounded-lg bg-violet-50 px-3 py-2 text-xs text-violet-800">
+                  Exemplo: numa venda de R$ 100,00 o seller paga {formatCurrency(fee)} e recebe {formatCurrency(Math.max(0, 100 - fee))}.
+                </p>
+              );
+            })()}
 
-            {/* Taxas Cartão */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Cartão</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="feePercentCard">Taxa Percentual (%)</Label>
-                  <Input
-                    id="feePercentCard"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="Ex: 3.2"
-                    value={fees.feePercentCard}
-                    onChange={(e) =>
-                      handleFeeChange("feePercentCard", e.target.value)
-                    }
-                    disabled={updatingFees}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="feeFixedCard">Taxa Fixa (R$)</Label>
-                  <Input
-                    id="feeFixedCard"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="Ex: 0.30"
-                    value={fees.feeFixedCard}
-                    onChange={(e) =>
-                      handleFeeChange("feeFixedCard", e.target.value)
-                    }
-                    disabled={updatingFees}
-                  />
-                </div>
-              </div>
-            </div>
+            <p className="text-xs text-slate-500">
+              Taxa diferente só numa adquirente? Use Adquirentes &gt; vincular seller. Taxa de saque é definida por adquirente.
+            </p>
 
-            <Separator />
-
-            {/* Taxas Boleto */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Boleto</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="feePercentBoleto">Taxa Percentual (%)</Label>
-                  <Input
-                    id="feePercentBoleto"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="Ex: 2.8"
-                    value={fees.feePercentBoleto}
-                    onChange={(e) =>
-                      handleFeeChange("feePercentBoleto", e.target.value)
-                    }
-                    disabled={updatingFees}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="feeFixedBoleto">Taxa Fixa (R$)</Label>
-                  <Input
-                    id="feeFixedBoleto"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="Ex: 2.00"
-                    value={fees.feeFixedBoleto}
-                    onChange={(e) =>
-                      handleFeeChange("feeFixedBoleto", e.target.value)
-                    }
-                    disabled={updatingFees}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Taxas Crypto */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Criptomoedas</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="feePercentCrypto">Taxa Percentual (%)</Label>
-                  <Input
-                    id="feePercentCrypto"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="Ex: 2.0"
-                    value={fees.feePercentCrypto}
-                    onChange={(e) =>
-                      handleFeeChange("feePercentCrypto", e.target.value)
-                    }
-                    disabled={updatingFees}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="feeFixedCrypto">Taxa Fixa (R$)</Label>
-                  <Input
-                    id="feeFixedCrypto"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="Ex: 1.00"
-                    value={fees.feeFixedCrypto}
-                    onChange={(e) =>
-                      handleFeeChange("feeFixedCrypto", e.target.value)
-                    }
-                    disabled={updatingFees}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Botões de Ação */}
-            <div className="flex justify-end gap-3 pt-4">
+            <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+              <Button
+                className="cursor-pointer"
+                variant="outline"
+                onClick={() => setFees({ pixFeePercent: "", pixFeeFixed: "" })}
+                disabled={updatingFees}
+              >
+                Usar padrão
+              </Button>
               <Button
                 className="cursor-pointer"
                 variant="outline"
@@ -2314,13 +2125,8 @@ function UsersManagerContent() {
               >
                 Cancelar
               </Button>
-              <Button
-                className="cursor-pointer"
-                variant="default"
-                onClick={handleSaveFees}
-                disabled={updatingFees}
-              >
-                {updatingFees ? "Salvando..." : "Salvar Taxas"}
+              <Button className="cursor-pointer" variant="default" onClick={handleSaveFees} disabled={updatingFees}>
+                {updatingFees ? "Salvando..." : "Salvar taxas"}
               </Button>
             </div>
           </div>
