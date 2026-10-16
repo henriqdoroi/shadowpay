@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { apiErrorMessage } from "@/lib/axiosErrors";
 
 const API = "https://shadowpay-backend.onrender.com";
 
@@ -60,6 +61,12 @@ const RANGE_LABEL: Record<PerfRange, string> = {
   today: "Hoje",
   "3d": "3 Dias",
   all: "Total",
+};
+
+const AB_STATUS_LABEL: Record<string, string> = {
+  RUNNING: "Em andamento",
+  COMPLETED: "Concluído",
+  CANCELLED: "Cancelado",
 };
 
 type ABTest = {
@@ -177,9 +184,36 @@ function AcquirersContent() {
         { enabled: !autoOpt },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      if (r.data?.success) setAutoOpt(r.data.autoOptimize);
+      if (r.data?.success) {
+        setAutoOpt(r.data.autoOptimize);
+        if (r.data.autoOptimize) {
+          toast.success(
+            r.data.reordered
+              ? "Otimização ligada: ordem atualizada pela melhor conversão."
+              : "Otimização ligada. A ordem muda quando houver vendas suficientes pra comparar."
+          );
+          if (r.data.reordered) fetchAll(perfRange);
+        }
+      }
     } catch (e: any) {
       toast.error("Erro ao salvar.");
+    }
+  }
+
+  async function cancelTest() {
+    if (!lastTest) return;
+    try {
+      const r = await axios.post(
+        `${API}/api/adquerers/ab-test/${lastTest.id}/cancel`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (r.data?.success) {
+        setLastTest(r.data.data);
+        toast.success("Teste cancelado. As vendas voltam a seguir a sua ordem.");
+      }
+    } catch {
+      toast.error("Não foi possível cancelar o teste.");
     }
   }
 
@@ -276,7 +310,7 @@ function AcquirersContent() {
                       : "#64748B",
                 }}
               >
-                {lastTest.status}
+                {AB_STATUS_LABEL[lastTest.status] ?? lastTest.status}
               </span>
               <span className="text-slate-500">
                 Meta: {lastTest.goalPerAcquirer} transações por adquirente ·
@@ -288,7 +322,23 @@ function AcquirersContent() {
                   minute: "2-digit",
                 })}
               </span>
+              {lastTest.status === "RUNNING" && (
+                <button
+                  type="button"
+                  onClick={cancelTest}
+                  className="ml-auto rounded-lg px-2.5 py-1 text-[12px] font-semibold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                >
+                  Cancelar teste
+                </button>
+              )}
             </div>
+            <p className="mb-3 text-[12px] text-slate-500">
+              {lastTest.status === "RUNNING"
+                ? "Suas próximas vendas vão se alternando entre as adquirentes do teste até cada uma bater a meta. A que converter mais vira a 1ª da sua fila."
+                : lastTest.status === "COMPLETED"
+                ? "Teste concluído: a vencedora foi colocada em 1º lugar na sua fila."
+                : "Teste cancelado."}
+            </p>
             <div className="grid gap-2 md:grid-cols-2">
               {lastTest.participantsJson.map((p) => {
                 const acq = rows.find((r) => r.acquirerId === p.acquirerId);
@@ -702,11 +752,11 @@ function ABTestModal({
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (r.data?.success) {
-        toast.success("Teste A/B iniciado!");
+        toast.success("Teste A/B iniciado! As próximas vendas vão se alternando entre as adquirentes escolhidas.");
         onCreated();
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Erro ao iniciar teste.");
+      toast.error(apiErrorMessage(err, "Erro ao iniciar teste."));
     } finally {
       setSaving(false);
     }
