@@ -46,7 +46,7 @@ export default function DashboardPanel() {
   return (
     <div className="pd">
       <div className="pd-nav">
-        <span className="pd-brand"><img src="/logoshadowpay.png" alt="" /> ShadowPay</span>
+        <span className="pd-brand"><img src="/shadow-ninja-icon.png" alt="" /> ShadowPay</span>
         <div className="pd-tabs">
           {tabs.map(([I, t], k) => <span key={t} className={k === 0 ? "on" : ""}><I size={13} /> {t}</span>)}
         </div>
@@ -60,10 +60,10 @@ export default function DashboardPanel() {
           <h4>CONTE COM NOSSO<br /><em>SUPORTE SHADOWPAY</em></h4>
         </div>
         <div className="pd-banner-r">
-          <span className="pd-brand lg"><img src="/logoshadowpay.png" alt="" /> ShadowPay</span>
+          <span className="pd-brand lg"><img src="/shadow-ninja-icon.png" alt="" /> ShadowPay</span>
           <span className="pd-chip"><Headphones size={14} /> Gerente dedicado</span>
         </div>
-        <img src="/logoshadowpay1.png" alt="" className="pd-banner-ninja" />
+        <img src="/shadow-ninja.png" alt="" className="pd-banner-ninja" />
       </div>
 
       <div className="pd-kpis">
@@ -95,7 +95,7 @@ export default function DashboardPanel() {
         <div className="pd-card pd-meta">
           <div className="pd-kh"><h5>Meta de premiação</h5><span className="pd-tag">META: 500K</span></div>
           <small>Conquista por faturamento</small>
-          <div className="pd-plaque"><img src="/logoshadowpay1.png" alt="" /><b>500K</b><em>iPad</em></div>
+          <div className="pd-plaque"><img src="/shadow-ninja.png" alt="" /><b>500K</b><em>iPad</em></div>
           <div className="pd-mrow"><span>R$ 421.320,00 faturados</span><b>84%</b></div>
           <div className="pd-bar"><i style={{ width: "84%" }} /></div>
           <div className="pd-mrow"><span>Próximo marco</span><span>faltam R$ 78.680,00</span></div>
