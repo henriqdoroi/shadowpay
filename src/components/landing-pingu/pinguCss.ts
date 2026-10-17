@@ -86,8 +86,6 @@ html:has(.sx){scroll-behavior:smooth;background:#050409}
 @keyframes sxPulse{50%{transform:scale(1.06);opacity:.8}}
 .sx-hero-ninja{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 30px 60px rgba(0,0,0,.6));animation:sxBob 6s ease-in-out infinite}
 @keyframes sxBob{50%{transform:translateY(-14px) rotate(-1.5deg)}}
-.sx-hero-3d{position:absolute;inset:-6% -8% -10% -8%;z-index:2}
-.sx-hero-3d canvas{touch-action:pan-y}
 .sx-hero-ninja{inset:-2% 40% 30% -6%!important;width:66%!important;height:auto!important;z-index:1}
 .sx-hero-phone{position:absolute;right:4%;top:2%;width:min(280px,50%);z-index:2;rotate:4deg;
   filter:drop-shadow(0 40px 60px rgba(0,0,0,.65)) drop-shadow(0 0 40px rgba(124,58,237,.35));animation:sxPhone 7s ease-in-out infinite}
