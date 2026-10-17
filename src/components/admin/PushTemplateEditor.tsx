@@ -54,7 +54,7 @@ export function PhonePreview({ title, body, enabled }: { title: string; body: st
       style={{ background: "linear-gradient(160deg, #1E1B4B 0%, #312E81 45%, #6D28D9 100%)", opacity: enabled ? 1 : 0.45 }}
     >
       <p className="mb-2 text-center text-[11px] font-medium text-white/70">agora</p>
-      <div className="flex items-start gap-2.5 rounded-2xl p-3" style={{ background: "rgba(255,255,255,0.88)", backdropFilter: "blur(10px)" }}>
+      <div className="sp-keep-light flex items-start gap-2.5 rounded-2xl p-3" style={{ background: "rgba(255,255,255,0.88)", backdropFilter: "blur(10px)" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/pwa/icon-192.png" alt="" className="h-8 w-8 shrink-0 rounded-[9px]" />
         <div className="min-w-0 flex-1">

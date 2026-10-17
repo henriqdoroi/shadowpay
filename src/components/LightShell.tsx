@@ -174,7 +174,8 @@ function BrandLogo({ collapsed }: { collapsed: boolean }) {
       draggable={false}
       onDragStart={(e) => e.preventDefault()}
       onContextMenu={(e) => e.preventDefault()}
-      className="pointer-events-auto select-none"
+      className="sp-logo pointer-events-auto select-none"
+      data-collapsed={collapsed ? "true" : "false"}
       style={
         {
           width: collapsed ? 40 : 178,
@@ -218,20 +219,20 @@ function RevenueGoal({ value, hidden }: { value: number | null; hidden: boolean 
     <Link
       href="/v1/dashboard"
       title={`Faturamento (vendas pagas). Próxima meta: ${fmtGoal(goal)}`}
-      className="flex h-9 min-w-0 max-w-full items-center gap-3 rounded-full px-4 transition-colors hover:bg-violet-100/60"
+      className="sp-goal flex h-9 min-w-0 max-w-full items-center gap-3 rounded-full px-4 transition-colors hover:bg-violet-100/60"
       style={{
         background: "#F5F3FF",
         border: "1px solid rgba(124, 58, 237, 0.18)",
       }}
     >
       <span
-        className="hidden text-[10px] font-bold uppercase tracking-[0.2em] lg:inline"
+        className="sp-goal-label hidden text-[10px] font-bold uppercase tracking-[0.2em] lg:inline"
         style={{ color: "#7C3AED" }}
       >
         Faturamento
       </span>
       <span
-        className="relative h-[7px] w-28 shrink-0 overflow-hidden rounded-full lg:w-48 xl:w-56"
+        className="sp-goal-track relative h-[7px] w-28 shrink-0 overflow-hidden rounded-full lg:w-48 xl:w-56"
         style={{ background: "#E4DCFB" }}
         role="progressbar"
         aria-valuemin={0}
@@ -249,7 +250,7 @@ function RevenueGoal({ value, hidden }: { value: number | null; hidden: boolean 
           }}
         />
       </span>
-      <span className="whitespace-nowrap text-[12.5px] font-bold tabular-nums" style={{ color: "#2E1065" }}>
+      <span className="sp-goal-value whitespace-nowrap text-[12.5px] font-bold tabular-nums" style={{ color: "#2E1065" }}>
         {value == null ? "—" : hidden ? "R$ ••••" : brl(v)}
         <span className="font-medium" style={{ color: "#8B7FC0" }}>
           {" / "}
@@ -357,7 +358,7 @@ export function LightShell({
 
   return (
     <div
-      className="relative min-h-screen w-full"
+      className="sp-shell relative min-h-screen w-full"
       style={{
         background: "#F1F3F8",
         color: T.text,
@@ -368,7 +369,7 @@ export function LightShell({
           SIDEBAR (FIXED — never scrolls com o conteúdo)
           ============================================================ */}
       <aside
-        className="fixed inset-y-0 left-0 z-30 hidden flex-col md:flex"
+        className="sp-sidebar fixed inset-y-0 left-0 z-30 hidden flex-col md:flex"
         style={{
           width: sidebarWidth,
           background: "#FFFFFF",
@@ -389,7 +390,7 @@ export function LightShell({
         {!sidebarCollapsed ? (
           <Link
             href="/v1/finance"
-            className="mx-3 mb-3 block overflow-hidden rounded-2xl px-4 py-4 transition-transform hover:-translate-y-0.5"
+            className="sp-balance mx-3 mb-3 block overflow-hidden rounded-2xl px-4 py-4 transition-transform hover:-translate-y-0.5"
             style={{
               background: "#FFFFFF",
               border: "1px solid rgba(124,58,237,0.22)",
@@ -407,7 +408,7 @@ export function LightShell({
               Saldo disponível
             </p>
             <p
-              className="mt-2 text-[22px] font-bold leading-none tracking-tight"
+              className="sp-balance-value mt-2 text-[22px] font-bold leading-none tracking-tight"
               style={{
                 color: "#0F172A",
                 fontFamily:
@@ -425,7 +426,7 @@ export function LightShell({
           <Link
             href="/v1/finance"
             title="Saldo disponível"
-            className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl"
+            className="sp-balance mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl"
             style={{
               background: "#FFFFFF",
               border: "1px solid rgba(124,58,237,0.22)",
@@ -448,7 +449,8 @@ export function LightShell({
                   <Link
                     href={item.href}
                     title={sidebarCollapsed ? item.label : undefined}
-                    className="group flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-colors"
+                    data-active={active ? "true" : "false"}
+                    className="sp-nav-item group flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-colors"
                     style={{
                       padding: sidebarCollapsed ? "10px" : "8px 12px",
                       justifyContent: sidebarCollapsed ? "center" : "flex-start",
@@ -510,7 +512,7 @@ export function LightShell({
                     className="flex w-full items-center gap-3 px-3.5 py-2.5 text-[13px] font-medium text-slate-700 transition-colors hover:bg-slate-50"
                   >
                     <Moon className="h-[18px] w-[18px] text-slate-500" />
-                    <span className="flex-1 text-left">Modo claro</span>
+                    <span className="flex-1 text-left">Modo escuro</span>
                     <span
                       className="relative inline-flex h-[18px] w-8 shrink-0 items-center rounded-full transition-colors"
                       style={{ background: isDark ? "#7C3AED" : "#CBD5E1" }}
@@ -613,7 +615,7 @@ export function LightShell({
         >
           <aside
             onClick={(e) => e.stopPropagation()}
-            className="flex h-full w-72 flex-col"
+            className="sp-sidebar flex h-full w-72 flex-col"
             style={{
               background: "#FFFFFF",
               boxShadow: "12px 0 32px rgba(15,23,42,0.15)",
@@ -647,7 +649,8 @@ export function LightShell({
                       <Link
                         href={item.href}
                         onClick={() => setMobileMenuOpen(false)}
-                        className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13.5px] font-medium"
+                        data-active={active ? "true" : "false"}
+                        className="sp-nav-item flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13.5px] font-medium"
                         style={{
                           background: active ? T.primaryBg : "transparent",
                           color: active ? T.primary : T.text2,
@@ -686,7 +689,7 @@ export function LightShell({
           MAIN COLUMN — shifts pra direita da sidebar fixa
           ============================================================ */}
       <div
-        className="relative flex min-h-screen min-w-0 flex-col md:ml-[var(--sidebar-w)]"
+        className="sp-main relative flex min-h-screen min-w-0 flex-col md:ml-[var(--sidebar-w)]"
         style={
           {
             ["--sidebar-w" as any]: `${sidebarWidth}px`,
@@ -706,7 +709,7 @@ export function LightShell({
           {/* FIXA no topo (não "sticky": no celular o overflow-x do body
               quebra o sticky). O espaço abaixo reserva a altura dela. */}
           <header
-            className="fixed inset-x-0 top-0 z-40 flex items-center gap-1 px-3 md:left-[var(--sidebar-w)] md:px-6"
+            className="sp-topbar fixed inset-x-0 top-0 z-40 flex items-center gap-1 px-3 md:left-[var(--sidebar-w)] md:px-6"
             style={{
               height: "calc(3.5rem + env(safe-area-inset-top, 0px))",
               paddingTop: "env(safe-area-inset-top, 0px)",
@@ -738,8 +741,8 @@ export function LightShell({
             </button>
             <button
               onClick={() => setTheme(isDark ? "light" : "dark")}
-              className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-violet-50 hover:text-violet-700 sm:flex"
-              aria-label="Alternar tema"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-violet-50 hover:text-violet-700"
+              aria-label={isDark ? "Mudar para o tema claro" : "Mudar para o tema escuro"}
               title={isDark ? "Mudar para claro" : "Mudar para escuro"}
             >
               {isDark ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
@@ -758,7 +761,7 @@ export function LightShell({
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen((v) => !v)}
-                  className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full transition-opacity hover:opacity-85"
+                  className="sp-avatar-ring flex h-9 w-9 items-center justify-center overflow-hidden rounded-full transition-opacity hover:opacity-85"
                   style={{ boxShadow: "0 0 0 2px #FFFFFF, 0 0 0 3.5px rgba(124,58,237,0.35)" }}
                   aria-label="Conta"
                   title={user?.companyName || "Conta"}

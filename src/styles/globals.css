@@ -1,7 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+/* dark: só no painel (telas com o LightShell). Checkout/login seguem claros
+   mesmo com o tema escuro ligado — ver src/styles/dark.css. */
+@custom-variant dark (&:where(html.dark:has(.sp-shell) *));
 .no-scroll {
   overflow: hidden;
   height: 100vh;

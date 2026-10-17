@@ -1,0 +1,607 @@
+/* ==========================================================================
+ * TEMA ESCURO do painel (botão da lua no topo / "Modo escuro" no menu).
+ *
+ * Só vale nas telas do painel (as que usam o LightShell → .sp-shell). O
+ * checkout do comprador, login, cadastro e termos continuam claros mesmo com
+ * o tema escuro ligado.
+ *
+ * As páginas usam muitas cores fixas (classes Tailwind e style={{...}}), então
+ * esta camada troca essas cores por equivalentes escuros. Estilos inline só
+ * cedem com !important; o navegador grava "#FFFFFF" como "rgb(255, 255, 255)",
+ * por isso os seletores [style*=...] usam esse formato.
+ * ========================================================================== */
+
+html.dark:has(.sp-shell) {
+  color-scheme: dark;
+
+  --d-bg: #0c0a14;
+  --d-sidebar: #110e1b;
+  --d-card: #16131f;
+  --d-card-2: #1c1828;
+  --d-hover: #241f33;
+  --d-active: #2c2640;
+  --d-border: rgba(255, 255, 255, 0.08);
+  --d-border-strong: rgba(255, 255, 255, 0.14);
+  --d-text: #f3f1fa;
+  --d-text-2: #cdc8de;
+  --d-muted: #9d97b6;
+  --d-faint: #7b7595;
+  --d-violet: #a78bfa;
+  --d-violet-text: #c4b5fd;
+  --d-violet-soft: rgba(139, 92, 246, 0.16);
+  --d-violet-soft-2: rgba(139, 92, 246, 0.24);
+
+  /* tokens do shadcn (Card, Dialog, Select, Input...) */
+  --background: var(--d-bg);
+  --foreground: var(--d-text);
+  --card: var(--d-card);
+  --card-foreground: var(--d-text);
+  --popover: var(--d-card);
+  --popover-foreground: var(--d-text);
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
+  --secondary: var(--d-card-2);
+  --secondary-foreground: var(--d-text);
+  --muted: var(--d-card-2);
+  --muted-foreground: var(--d-muted);
+  --accent: var(--d-hover);
+  --accent-foreground: var(--d-text);
+  --border: var(--d-border);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: rgba(167, 139, 250, 0.45);
+  --sidebar: var(--d-sidebar);
+  --sidebar-foreground: var(--d-text-2);
+  --sidebar-accent: var(--d-hover);
+  --sidebar-accent-foreground: var(--d-text);
+  --sidebar-border: var(--d-border);
+  /* tokens próprios do design system */
+  --bg-base: var(--d-bg);
+  --bg-secondary: var(--d-card-2);
+  --surface: var(--d-card);
+  --surface-2: var(--d-card-2);
+  --border-strong: var(--d-border-strong);
+  --text: var(--d-text);
+  --text-2: var(--d-text-2);
+  --text-muted: var(--d-muted);
+}
+
+html.dark:has(.sp-shell) body {
+  background: var(--d-bg);
+  color: var(--d-text);
+}
+
+/* ---------- Estrutura (LightShell) ---------- */
+html.dark:has(.sp-shell) .sp-shell,
+html.dark:has(.sp-shell) .sp-main {
+  background: var(--d-bg) !important;
+  color: var(--d-text) !important;
+  box-shadow: none !important;
+}
+html.dark:has(.sp-shell) .sp-sidebar {
+  background: var(--d-sidebar) !important;
+  border-right-color: var(--d-border) !important;
+  box-shadow: none !important;
+}
+html.dark:has(.sp-shell) .sp-topbar {
+  background: rgba(17, 14, 27, 0.86) !important;
+  border-bottom-color: rgba(139, 92, 246, 0.18) !important;
+  box-shadow: 0 8px 24px -18px rgba(0, 0, 0, 0.9) !important;
+}
+/* logo: versão de fundo preto; "screen" some com o preto no fundo escuro */
+html.dark:has(.sp-shell) .sp-logo[data-collapsed="false"] {
+  background-image: url(/logo-menu-black.jpg) !important;
+  mix-blend-mode: screen !important;
+}
+html.dark:has(.sp-shell) .sp-logo[data-collapsed="true"] {
+  mix-blend-mode: normal !important;
+}
+html.dark:has(.sp-shell) .sp-balance {
+  background: linear-gradient(160deg, rgba(139, 92, 246, 0.16), rgba(139, 92, 246, 0.04)) !important;
+  border-color: rgba(167, 139, 250, 0.32) !important;
+  box-shadow: 0 10px 26px -14px rgba(124, 58, 237, 0.55) !important;
+  color: var(--d-violet-text) !important;
+}
+html.dark:has(.sp-shell) .sp-balance .sp-balance-value {
+  color: var(--d-text) !important;
+}
+html.dark:has(.sp-shell) .sp-nav-item[data-active="true"] {
+  background: var(--d-violet-soft) !important;
+  color: var(--d-violet-text) !important;
+}
+html.dark:has(.sp-shell) .sp-nav-item[data-active="true"] svg {
+  color: var(--d-violet-text) !important;
+}
+html.dark:has(.sp-shell) .sp-nav-item[data-active="false"] {
+  color: var(--d-text-2) !important;
+}
+html.dark:has(.sp-shell) .sp-nav-item[data-active="false"]:hover {
+  background: var(--d-hover) !important;
+}
+html.dark:has(.sp-shell) .sp-nav-item[data-active="false"] svg {
+  color: var(--d-faint) !important;
+}
+html.dark:has(.sp-shell) .sp-goal {
+  background: rgba(139, 92, 246, 0.12) !important;
+  border-color: rgba(167, 139, 250, 0.28) !important;
+}
+html.dark:has(.sp-shell) .sp-goal-track {
+  background: rgba(255, 255, 255, 0.09) !important;
+}
+html.dark:has(.sp-shell) .sp-goal-value {
+  color: var(--d-text) !important;
+}
+html.dark:has(.sp-shell) .sp-goal-label {
+  color: var(--d-violet) !important;
+}
+html.dark:has(.sp-shell) .sp-avatar-ring {
+  box-shadow: 0 0 0 2px var(--d-bg), 0 0 0 3.5px rgba(167, 139, 250, 0.55) !important;
+}
+/* botão flutuante (Shadow AI) */
+html.dark:has(.sp-shell) .sp-fab {
+  background: var(--d-card-2) !important;
+  border-color: rgba(167, 139, 250, 0.3) !important;
+}
+html.dark:has(.sp-shell) .sp-loader-overlay {
+  background: var(--d-bg);
+}
+
+/* ---------- Fundos (classes) ---------- */
+html.dark:has(.sp-shell) .bg-white:not(.rounded-full),
+html.dark:has(.sp-shell) .bg-card {
+  background-color: var(--d-card) !important;
+}
+html.dark:has(.sp-shell) .bg-slate-50,
+html.dark:has(.sp-shell) .bg-gray-50,
+html.dark:has(.sp-shell) .bg-\[\#F8FAFC\],
+html.dark:has(.sp-shell) .bg-\[\#F6F8FB\],
+html.dark:has(.sp-shell) .bg-muted {
+  background-color: var(--d-card-2) !important;
+}
+html.dark:has(.sp-shell) .bg-slate-100,
+html.dark:has(.sp-shell) .bg-gray-100 {
+  background-color: var(--d-hover) !important;
+}
+html.dark:has(.sp-shell) .bg-slate-200,
+html.dark:has(.sp-shell) .bg-gray-200,
+html.dark:has(.sp-shell) .bg-slate-300 {
+  background-color: var(--d-active) !important;
+}
+html.dark:has(.sp-shell) .bg-white\/95:not(.rounded-full),
+html.dark:has(.sp-shell) .bg-white\/90:not(.rounded-full),
+html.dark:has(.sp-shell) .bg-white\/80:not(.rounded-full),
+html.dark:has(.sp-shell) .bg-white\/70:not(.rounded-full),
+html.dark:has(.sp-shell) .bg-white\/60:not(.rounded-full),
+html.dark:has(.sp-shell) .bg-white\/50:not(.rounded-full) {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+html.dark:has(.sp-shell) .bg-slate-50\/60,
+html.dark:has(.sp-shell) .bg-slate-50\/50 {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+html.dark:has(.sp-shell) .hover\:bg-slate-50:hover,
+html.dark:has(.sp-shell) .hover\:bg-slate-100:hover,
+html.dark:has(.sp-shell) .hover\:bg-white:hover,
+html.dark:has(.sp-shell) .hover\:bg-gray-50:hover,
+html.dark:has(.sp-shell) .hover\:bg-gray-100:hover,
+html.dark:has(.sp-shell) .hover\:bg-slate-50\/60:hover,
+html.dark:has(.sp-shell) .hover\:bg-slate-50\/50:hover,
+html.dark:has(.sp-shell) .hover\:bg-slate-200\/70:hover,
+html.dark:has(.sp-shell) .hover\:bg-slate-200\/60:hover,
+html.dark:has(.sp-shell) .hover\:bg-accent:hover {
+  background-color: var(--d-hover) !important;
+}
+html.dark:has(.sp-shell) .bg-violet-50,
+html.dark:has(.sp-shell) .bg-purple-50 {
+  background-color: var(--d-violet-soft) !important;
+}
+html.dark:has(.sp-shell) .bg-violet-50\/30,
+html.dark:has(.sp-shell) .bg-violet-50\/40,
+html.dark:has(.sp-shell) .bg-violet-50\/50,
+html.dark:has(.sp-shell) .bg-violet-50\/60,
+html.dark:has(.sp-shell) .bg-violet-50\/70,
+html.dark:has(.sp-shell) .bg-violet-50\/80 {
+  background-color: rgba(139, 92, 246, 0.1) !important;
+}
+html.dark:has(.sp-shell) .bg-violet-100 {
+  background-color: var(--d-violet-soft-2) !important;
+}
+html.dark:has(.sp-shell) .hover\:bg-violet-50:hover,
+html.dark:has(.sp-shell) .hover\:bg-violet-100:hover,
+html.dark:has(.sp-shell) .hover\:bg-violet-100\/60:hover {
+  background-color: var(--d-violet-soft-2) !important;
+}
+html.dark:has(.sp-shell) .bg-emerald-50,
+html.dark:has(.sp-shell) .bg-green-50,
+html.dark:has(.sp-shell) .bg-green-100,
+html.dark:has(.sp-shell) .bg-emerald-100 {
+  background-color: rgba(16, 185, 129, 0.13) !important;
+}
+html.dark:has(.sp-shell) .bg-rose-50,
+html.dark:has(.sp-shell) .bg-red-50,
+html.dark:has(.sp-shell) .bg-red-100,
+html.dark:has(.sp-shell) .bg-rose-100,
+html.dark:has(.sp-shell) .hover\:bg-rose-50:hover,
+html.dark:has(.sp-shell) .hover\:bg-red-50:hover {
+  background-color: rgba(244, 63, 94, 0.13) !important;
+}
+html.dark:has(.sp-shell) .bg-amber-50,
+html.dark:has(.sp-shell) .bg-yellow-50,
+html.dark:has(.sp-shell) .bg-amber-100,
+html.dark:has(.sp-shell) .bg-yellow-100 {
+  background-color: rgba(245, 158, 11, 0.13) !important;
+}
+html.dark:has(.sp-shell) .bg-blue-50,
+html.dark:has(.sp-shell) .bg-blue-100,
+html.dark:has(.sp-shell) .bg-sky-50 {
+  background-color: rgba(59, 130, 246, 0.14) !important;
+}
+
+/* mesmas cores com prefixo de tela (sm:/md:/lg:) */
+@media (min-width: 640px) {
+  html.dark:has(.sp-shell) .sm\:bg-white { background-color: var(--d-card) !important; }
+  html.dark:has(.sp-shell) .sm\:bg-slate-50 { background-color: var(--d-card-2) !important; }
+  html.dark:has(.sp-shell) .sm\:border-\[\#E2E8F0\],
+  html.dark:has(.sp-shell) .sm\:border-\[\#E6E8EB\],
+  html.dark:has(.sp-shell) .sm\:border-slate-200 { border-color: var(--d-border) !important; }
+}
+@media (min-width: 768px) {
+  html.dark:has(.sp-shell) .md\:bg-white { background-color: var(--d-card) !important; }
+  html.dark:has(.sp-shell) .md\:bg-slate-50 { background-color: var(--d-card-2) !important; }
+  html.dark:has(.sp-shell) .md\:border-\[\#E2E8F0\],
+  html.dark:has(.sp-shell) .md\:border-\[\#E6E8EB\],
+  html.dark:has(.sp-shell) .md\:border-slate-200 { border-color: var(--d-border) !important; }
+}
+@media (min-width: 1024px) {
+  html.dark:has(.sp-shell) .lg\:bg-white { background-color: var(--d-card) !important; }
+  html.dark:has(.sp-shell) .lg\:border-slate-200 { border-color: var(--d-border) !important; }
+}
+
+/* ---------- Textos (classes) ---------- */
+html.dark:has(.sp-shell) .text-slate-900,
+html.dark:has(.sp-shell) .text-slate-800,
+html.dark:has(.sp-shell) .text-gray-900,
+html.dark:has(.sp-shell) .text-gray-800,
+html.dark:has(.sp-shell) .text-neutral-900,
+html.dark:has(.sp-shell) .text-foreground,
+html.dark:has(.sp-shell) .text-card-foreground {
+  color: var(--d-text) !important;
+}
+html.dark:has(.sp-shell) .text-slate-700,
+html.dark:has(.sp-shell) .text-slate-600,
+html.dark:has(.sp-shell) .text-gray-700,
+html.dark:has(.sp-shell) .text-gray-600,
+html.dark:has(.sp-shell) .text-neutral-600,
+html.dark:has(.sp-shell) .hover\:text-slate-700:hover,
+html.dark:has(.sp-shell) .hover\:text-slate-600:hover,
+html.dark:has(.sp-shell) .hover\:text-slate-900:hover {
+  color: var(--d-text-2) !important;
+}
+html.dark:has(.sp-shell) .text-slate-500,
+html.dark:has(.sp-shell) .text-gray-500,
+html.dark:has(.sp-shell) .text-muted-foreground {
+  color: var(--d-muted) !important;
+}
+html.dark:has(.sp-shell) .text-slate-400,
+html.dark:has(.sp-shell) .text-gray-400,
+html.dark:has(.sp-shell) .text-slate-300 {
+  color: var(--d-faint) !important;
+}
+html.dark:has(.sp-shell) .text-violet-700,
+html.dark:has(.sp-shell) .text-violet-800,
+html.dark:has(.sp-shell) .text-purple-700,
+html.dark:has(.sp-shell) .hover\:text-violet-700:hover {
+  color: var(--d-violet-text) !important;
+}
+html.dark:has(.sp-shell) .text-violet-600,
+html.dark:has(.sp-shell) .text-violet-500,
+html.dark:has(.sp-shell) .text-purple-600 {
+  color: var(--d-violet) !important;
+}
+html.dark:has(.sp-shell) .text-emerald-700,
+html.dark:has(.sp-shell) .text-emerald-800,
+html.dark:has(.sp-shell) .text-green-700,
+html.dark:has(.sp-shell) .text-green-800 {
+  color: #6ee7b7 !important;
+}
+html.dark:has(.sp-shell) .text-emerald-600,
+html.dark:has(.sp-shell) .text-green-600 {
+  color: #34d399 !important;
+}
+html.dark:has(.sp-shell) .text-rose-700,
+html.dark:has(.sp-shell) .text-red-700,
+html.dark:has(.sp-shell) .text-red-800,
+html.dark:has(.sp-shell) .hover\:text-red-700:hover,
+html.dark:has(.sp-shell) .hover\:text-rose-700:hover {
+  color: #fda4af !important;
+}
+html.dark:has(.sp-shell) .text-rose-600,
+html.dark:has(.sp-shell) .text-rose-500,
+html.dark:has(.sp-shell) .text-red-600,
+html.dark:has(.sp-shell) .text-red-500 {
+  color: #fb7185 !important;
+}
+html.dark:has(.sp-shell) .text-amber-700,
+html.dark:has(.sp-shell) .text-amber-800,
+html.dark:has(.sp-shell) .text-yellow-800 {
+  color: #fcd34d !important;
+}
+html.dark:has(.sp-shell) .text-amber-600 {
+  color: #fbbf24 !important;
+}
+html.dark:has(.sp-shell) .text-blue-700,
+html.dark:has(.sp-shell) .text-blue-800,
+html.dark:has(.sp-shell) .text-blue-600 {
+  color: #93c5fd !important;
+}
+
+/* ---------- Bordas (classes) ---------- */
+html.dark:has(.sp-shell) .border-slate-100,
+html.dark:has(.sp-shell) .border-slate-200,
+html.dark:has(.sp-shell) .border-slate-300,
+html.dark:has(.sp-shell) .border-gray-100,
+html.dark:has(.sp-shell) .border-gray-200,
+html.dark:has(.sp-shell) .border-gray-300,
+html.dark:has(.sp-shell) .border-\[\#E6E8EB\],
+html.dark:has(.sp-shell) .border-\[\#E2E8F0\],
+html.dark:has(.sp-shell) .border-border,
+html.dark:has(.sp-shell) .border-input {
+  border-color: var(--d-border) !important;
+}
+html.dark:has(.sp-shell) .divide-slate-100 > :not(:last-child),
+html.dark:has(.sp-shell) .divide-slate-200 > :not(:last-child),
+html.dark:has(.sp-shell) .divide-gray-100 > :not(:last-child),
+html.dark:has(.sp-shell) .divide-y > :not(:last-child) {
+  border-color: var(--d-border) !important;
+}
+html.dark:has(.sp-shell) .border-emerald-200,
+html.dark:has(.sp-shell) .border-green-200 {
+  border-color: rgba(16, 185, 129, 0.32) !important;
+}
+html.dark:has(.sp-shell) .border-rose-200,
+html.dark:has(.sp-shell) .border-red-200 {
+  border-color: rgba(244, 63, 94, 0.32) !important;
+}
+html.dark:has(.sp-shell) .border-amber-200 {
+  border-color: rgba(245, 158, 11, 0.32) !important;
+}
+html.dark:has(.sp-shell) .border-violet-200,
+html.dark:has(.sp-shell) .border-violet-100 {
+  border-color: rgba(167, 139, 250, 0.35) !important;
+}
+
+/* ---------- Estilos inline (style={{...}}) ---------- */
+/* blocos que forçam os tokens do shadcn no claro (style={{ "--foreground": ... }}) */
+html.dark:has(.sp-shell) [style*="--foreground"],
+html.dark:has(.sp-shell) [style*="--background"] {
+  --background: var(--d-bg) !important;
+  --foreground: var(--d-text) !important;
+  --card: var(--d-card) !important;
+  --card-foreground: var(--d-text) !important;
+  --popover: var(--d-card) !important;
+  --popover-foreground: var(--d-text) !important;
+  --secondary: var(--d-card-2) !important;
+  --secondary-foreground: var(--d-text) !important;
+  --muted: var(--d-card-2) !important;
+  --muted-foreground: var(--d-muted) !important;
+  --accent: var(--d-hover) !important;
+  --accent-foreground: var(--d-text) !important;
+  --border: var(--d-border) !important;
+  --input: rgba(255, 255, 255, 0.12) !important;
+  color: var(--d-text) !important;
+}
+/* fundos brancos / quase brancos */
+html.dark:has(.sp-shell) [style*="background: rgb(255, 255, 255)"]:not(.rounded-full),
+html.dark:has(.sp-shell) [style*="background-color: rgb(255, 255, 255)"]:not(.rounded-full),
+html.dark:has(.sp-shell) [style*="background: white"]:not(.rounded-full),
+html.dark:has(.sp-shell) [style*="background-color: white"]:not(.rounded-full) {
+  background: var(--d-card) !important;
+}
+html.dark:has(.sp-shell) [style*="background: rgb(248, 250, 252)"],
+html.dark:has(.sp-shell) [style*="background-color: rgb(248, 250, 252)"],
+html.dark:has(.sp-shell) [style*="background: rgb(246, 248, 251)"],
+html.dark:has(.sp-shell) [style*="background-color: rgb(246, 248, 251)"],
+html.dark:has(.sp-shell) [style*="background: rgb(249, 250, 251)"],
+html.dark:has(.sp-shell) [style*="background: rgb(241, 243, 248)"],
+html.dark:has(.sp-shell) [style*="background: rgb(250, 250, 250)"] {
+  background: var(--d-card-2) !important;
+}
+html.dark:has(.sp-shell) [style*="background: rgb(241, 245, 249)"],
+html.dark:has(.sp-shell) [style*="background-color: rgb(241, 245, 249)"],
+html.dark:has(.sp-shell) [style*="background: rgb(226, 232, 240)"],
+html.dark:has(.sp-shell) [style*="background: rgb(229, 231, 235)"] {
+  background: var(--d-hover) !important;
+}
+/* tons claros de roxo usados em fundos (chips, cards) */
+html.dark:has(.sp-shell) [style*="background: rgb(245, 243, 255)"],
+html.dark:has(.sp-shell) [style*="background: rgb(237, 233, 254)"],
+html.dark:has(.sp-shell) [style*="background: rgb(250, 245, 255)"] {
+  background: var(--d-violet-soft) !important;
+}
+/* gradientes lilás bem claros (cartão de saldo do Financeiro, destaques) */
+html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(251, 250, 255)"],
+html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(244, 241, 254)"],
+html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(245, 243, 255)"],
+html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(250, 245, 255)"],
+html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(238, 241, 255)"],
+html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(237, 233, 254)"],
+html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(243, 240, 255)"],
+html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(248, 247, 255)"] {
+  background: linear-gradient(135deg, #1e1733 0%, #18132a 58%, #151327 100%) !important;
+  border-color: rgba(167, 139, 250, 0.22) !important;
+}
+/* gradientes claros de card (inclusive os que vão de um roxinho até branco) */
+html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(255, 255, 255)"]:not([style*="background-clip"]):not(.rounded-full),
+html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(248, 250, 252)"]:not([style*="background-clip"]) {
+  background: linear-gradient(100deg, rgba(139, 92, 246, 0.14) 0%, var(--d-card) 70%) !important;
+}
+
+/* textos escuros → claros (o " " antes evita pegar background-color) */
+html.dark:has(.sp-shell) [style^="color: rgb(15, 23, 42)"],
+html.dark:has(.sp-shell) [style*=" color: rgb(15, 23, 42)"],
+html.dark:has(.sp-shell) [style^="color: rgb(26, 31, 54)"],
+html.dark:has(.sp-shell) [style*=" color: rgb(26, 31, 54)"],
+html.dark:has(.sp-shell) [style^="color: rgb(17, 24, 39)"],
+html.dark:has(.sp-shell) [style*=" color: rgb(17, 24, 39)"],
+html.dark:has(.sp-shell) [style^="color: rgb(31, 41, 55)"],
+html.dark:has(.sp-shell) [style*=" color: rgb(31, 41, 55)"],
+html.dark:has(.sp-shell) [style^="color: rgb(0, 0, 0)"],
+html.dark:has(.sp-shell) [style*=" color: rgb(0, 0, 0)"],
+html.dark:has(.sp-shell) [style^="color: rgb(46, 16, 101)"],
+html.dark:has(.sp-shell) [style*=" color: rgb(46, 16, 101)"] {
+  color: var(--d-text) !important;
+}
+html.dark:has(.sp-shell) [style^="color: rgb(51, 65, 85)"],
+html.dark:has(.sp-shell) [style*=" color: rgb(51, 65, 85)"],
+html.dark:has(.sp-shell) [style^="color: rgb(71, 85, 105)"],
+html.dark:has(.sp-shell) [style*=" color: rgb(71, 85, 105)"],
+html.dark:has(.sp-shell) [style^="color: rgb(55, 65, 81)"],
+html.dark:has(.sp-shell) [style*=" color: rgb(55, 65, 81)"],
+html.dark:has(.sp-shell) [style^="color: rgb(75, 85, 99)"],
+html.dark:has(.sp-shell) [style*=" color: rgb(75, 85, 99)"] {
+  color: var(--d-text-2) !important;
+}
+html.dark:has(.sp-shell) [style^="color: rgb(100, 116, 139)"],
+html.dark:has(.sp-shell) [style*=" color: rgb(100, 116, 139)"],
+html.dark:has(.sp-shell) [style^="color: rgb(107, 114, 128)"],
+html.dark:has(.sp-shell) [style*=" color: rgb(107, 114, 128)"],
+html.dark:has(.sp-shell) [style^="color: rgb(138, 148, 166)"],
+html.dark:has(.sp-shell) [style*=" color: rgb(138, 148, 166)"] {
+  color: var(--d-muted) !important;
+}
+/* roxo da marca em TEXTO fica um tom mais claro no fundo escuro */
+html.dark:has(.sp-shell) [style^="color: rgb(124, 58, 237)"],
+html.dark:has(.sp-shell) [style*=" color: rgb(124, 58, 237)"] {
+  color: var(--d-violet) !important;
+}
+/* roxo escuro de texto (#6D28D9/#5B21B6) fica mais claro pra ler */
+html.dark:has(.sp-shell) [style^="color: rgb(109, 40, 217)"],
+html.dark:has(.sp-shell) [style*=" color: rgb(109, 40, 217)"],
+html.dark:has(.sp-shell) [style^="color: rgb(91, 33, 182)"],
+html.dark:has(.sp-shell) [style*=" color: rgb(91, 33, 182)"] {
+  color: var(--d-violet-text) !important;
+}
+
+/* bordas claras inline */
+html.dark:has(.sp-shell) [style*="rgba(15, 23, 42, 0.04)"],
+html.dark:has(.sp-shell) [style*="rgba(15, 23, 42, 0.05)"],
+html.dark:has(.sp-shell) [style*="rgba(15, 23, 42, 0.06)"],
+html.dark:has(.sp-shell) [style*="rgba(15, 23, 42, 0.08)"],
+html.dark:has(.sp-shell) [style*="rgba(15, 23, 42, 0.1)"],
+html.dark:has(.sp-shell) [style*="rgba(15, 23, 42, 0.12)"],
+html.dark:has(.sp-shell) [style*="solid rgb(230, 232, 235)"],
+html.dark:has(.sp-shell) [style*="solid rgb(226, 232, 240)"],
+html.dark:has(.sp-shell) [style*="solid rgb(229, 231, 235)"],
+html.dark:has(.sp-shell) [style*="solid rgb(209, 213, 219)"],
+html.dark:has(.sp-shell) [style*="solid rgb(203, 213, 225)"],
+html.dark:has(.sp-shell) [style*="solid rgb(241, 245, 249)"] {
+  border-color: var(--d-border) !important;
+}
+/* linhas divisórias de 1px feitas com background claro */
+html.dark:has(.sp-shell) .h-px[style*="background: rgba(15, 23, 42"] {
+  background: var(--d-border) !important;
+}
+
+/* ---------- Componentes do shadcn (data-slot) — inclusive os que a página
+   pinta de branco no próprio CSS (ex.: .wiz-premium em Criar/Editar produto) ---------- */
+html.dark:has(.sp-shell) [data-slot="card"] {
+  background: var(--d-card) !important;
+  border-color: var(--d-border) !important;
+  color: var(--d-text);
+}
+html.dark:has(.sp-shell) [data-slot="card-title"] {
+  color: var(--d-text) !important;
+}
+html.dark:has(.sp-shell) [data-slot="card-description"] {
+  color: var(--d-muted) !important;
+}
+html.dark:has(.sp-shell) [data-slot="label"] {
+  color: var(--d-text-2) !important;
+}
+html.dark:has(.sp-shell) [data-slot="input"]:not([type="color"]):not([type="file"]),
+html.dark:has(.sp-shell) [data-slot="textarea"],
+html.dark:has(.sp-shell) [data-slot="select-trigger"] {
+  background: var(--d-card-2) !important;
+  border-color: var(--d-border-strong) !important;
+  color: var(--d-text) !important;
+}
+html.dark:has(.sp-shell) [data-slot="select-content"],
+html.dark:has(.sp-shell) [data-slot="dropdown-menu-content"],
+html.dark:has(.sp-shell) [data-slot="popover-content"],
+html.dark:has(.sp-shell) [data-slot="dialog-content"],
+html.dark:has(.sp-shell) [data-slot="sheet-content"],
+html.dark:has(.sp-shell) [data-slot="alert-dialog-content"] {
+  background: var(--d-card) !important;
+  border-color: var(--d-border) !important;
+  color: var(--d-text) !important;
+}
+html.dark:has(.sp-shell) [data-slot="select-item"]:hover,
+html.dark:has(.sp-shell) [data-slot="select-item"][data-highlighted],
+html.dark:has(.sp-shell) [data-slot="dropdown-menu-item"][data-highlighted] {
+  background: var(--d-hover) !important;
+}
+html.dark:has(.sp-shell) [data-slot="tabs-list"] {
+  background: var(--d-card-2) !important;
+}
+html.dark:has(.sp-shell) [data-slot="tabs-trigger"][data-state="active"] {
+  background: var(--d-active) !important;
+  color: var(--d-text) !important;
+}
+html.dark:has(.sp-shell) [data-slot="table-row"]:hover {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+html.dark:has(.sp-shell) [data-slot="separator"] {
+  background: var(--d-border) !important;
+}
+
+/* ---------- Formulários ---------- */
+html.dark:has(.sp-shell) .sp-main input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+html.dark:has(.sp-shell) .sp-main textarea,
+html.dark:has(.sp-shell) .sp-main select,
+html.dark:has(.sp-shell) [role="dialog"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+html.dark:has(.sp-shell) [role="dialog"] textarea,
+html.dark:has(.sp-shell) [role="dialog"] select {
+  color: var(--d-text);
+  border-color: var(--d-border-strong);
+}
+html.dark:has(.sp-shell) input::placeholder,
+html.dark:has(.sp-shell) textarea::placeholder {
+  color: var(--d-faint) !important;
+}
+html.dark:has(.sp-shell) select option {
+  background: var(--d-card);
+  color: var(--d-text);
+}
+
+/* ---------- Gráficos (recharts) ---------- */
+html.dark:has(.sp-shell) .recharts-cartesian-grid line {
+  stroke: rgba(255, 255, 255, 0.06) !important;
+}
+html.dark:has(.sp-shell) .recharts-text {
+  fill: var(--d-faint);
+}
+
+/* ---------- Sombras: um pouco mais fundas no escuro ---------- */
+html.dark:has(.sp-shell) .shadow-xl,
+html.dark:has(.sp-shell) .shadow-2xl,
+html.dark:has(.sp-shell) .shadow-lg {
+  --tw-shadow-color: rgba(0, 0, 0, 0.6);
+}
+
+/* prévias que imitam o celular (notificação na tela de bloqueio) ficam claras */
+html.dark:has(.sp-shell) .sp-keep-light .text-slate-900,
+html.dark:has(.sp-shell) .sp-keep-light .text-slate-800 {
+  color: #0f172a !important;
+}
+html.dark:has(.sp-shell) .sp-keep-light .text-slate-700,
+html.dark:has(.sp-shell) .sp-keep-light .text-slate-600 {
+  color: #334155 !important;
+}
+html.dark:has(.sp-shell) .sp-keep-light .text-slate-500,
+html.dark:has(.sp-shell) .sp-keep-light .text-slate-400 {
+  color: #64748b !important;
+}
+
+/* barras de rolagem */
+html.dark:has(.sp-shell) * {
+  scrollbar-color: rgba(167, 139, 250, 0.3) transparent;
+}

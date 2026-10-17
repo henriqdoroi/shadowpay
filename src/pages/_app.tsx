@@ -1,6 +1,7 @@
 "use client";
 
 import "@/styles/globals.css";
+import "@/styles/dark.css";
 import type { AppProps } from "next/app";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
@@ -149,6 +150,9 @@ export default function App(props: AppProps) {
         attribute="class"
         defaultTheme="light"
         enableSystem={false}
+        // color-scheme fica por conta do dark.css (só no painel): o checkout
+        // do comprador continua claro com o tema escuro ligado
+        enableColorScheme={false}
         disableTransitionOnChange
       >
         <AuthProvider>
