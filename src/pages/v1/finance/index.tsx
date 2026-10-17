@@ -276,6 +276,10 @@ function FinanceContent() {
       toast.error("Informe um valor para sacar.");
       return;
     }
+    if (sacarValor <= totalFee) {
+      toast.error(`O saque precisa ser maior que a taxa de ${fmt(totalFee)}.`);
+      return;
+    }
     if (sacarValor > balance.current) {
       toast.error("Valor maior que o saldo disponível.");
       return;

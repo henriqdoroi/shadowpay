@@ -29,6 +29,7 @@ const PAGE_SIZE = 20;
 type W = {
   id: string;
   amount: string;
+  feeAmount?: string | number | null;
   pixKey: string | null;
   pixKeyType: string | null;
   status: "PENDING" | "PROCESSING" | "PAID" | "FAILED";
@@ -40,6 +41,9 @@ type Summary = { byStatus: Record<string, { count: number; amount: number }>; pa
 type Filter = "PENDING" | "PAID" | "FAILED" | "ALL";
 
 const brl = (v: number | string) => Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+/** Valor a fazer no PIX = pedido - taxa de saque (a taxa fica com a plataforma). */
+const netOf = (w: { amount: string; feeAmount?: string | number | null }) =>
+  Math.max(0, Math.round((Number(w.amount || 0) - Number(w.feeAmount || 0)) * 100) / 100);
 const when = (s?: string | null) =>
   s ? new Date(s).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
 const KEY_LABEL: Record<string, string> = { cpf: "CPF", cnpj: "CNPJ", email: "E-mail", phone: "Telefone", random: "Aleatória" };
@@ -210,7 +214,7 @@ function WithdrawAdminContent() {
                       <thead>
                         <tr className="text-[10.5px] uppercase tracking-[0.12em] text-slate-400">
                           <th className="px-5 py-3 font-semibold">Seller</th>
-                          <th className="px-3 py-3 font-semibold">Valor</th>
+                          <th className="px-3 py-3 font-semibold">A pagar</th>
                           <th className="px-3 py-3 font-semibold">Chave PIX</th>
                           <th className="px-3 py-3 font-semibold">Status</th>
                           <th className="px-5 py-3 text-right font-semibold">Ações</th>
@@ -224,7 +228,10 @@ function WithdrawAdminContent() {
                               <p className="truncate text-[12px] text-slate-500">{w.seller?.email}</p>
                               <p className="mt-0.5 text-[11.5px] text-slate-400">Pedido em {when(w.createdAt)}</p>
                             </td>
-                            <td className="whitespace-nowrap px-3 py-3.5 font-semibold tabular-nums text-slate-900">{brl(w.amount)}</td>
+                            <td className="whitespace-nowrap px-3 py-3.5">
+                              <p className="font-semibold tabular-nums text-slate-900">{brl(netOf(w))}</p>
+                              {Number(w.feeAmount || 0) > 0 && (<p className="text-[11.5px] tabular-nums text-slate-400">pedido {brl(w.amount)} · taxa {brl(w.feeAmount!)}</p>)}
+                            </td>
                             <td className="px-3 py-3.5">
                               {w.pixKey ? (
                                 <button onClick={() => copy(w.pixKey!)} className="group flex max-w-[220px] items-center gap-1.5 text-left" title="Copiar chave">
@@ -269,7 +276,10 @@ function WithdrawAdminContent() {
                             <p className="truncate text-[14px] font-semibold text-slate-900">{w.seller?.companyName || "—"}</p>
                             <p className="truncate text-[12px] text-slate-500">{w.seller?.email}</p>
                           </div>
-                          <p className="whitespace-nowrap text-[15px] font-bold tabular-nums text-slate-900">{brl(w.amount)}</p>
+                          <div className="text-right">
+                            <p className="whitespace-nowrap text-[15px] font-bold tabular-nums text-slate-900">{brl(netOf(w))}</p>
+                            {Number(w.feeAmount || 0) > 0 && (<p className="whitespace-nowrap text-[11px] tabular-nums text-slate-400">taxa {brl(w.feeAmount!)}</p>)}
+                          </div>
                         </div>
                         {w.pixKey && (
                           <button onClick={() => copy(w.pixKey!)} className="mt-2 flex max-w-full items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 text-left">
@@ -327,11 +337,11 @@ function WithdrawAdminContent() {
                 className="w-full max-w-md rounded-t-3xl bg-white p-6 pb-[max(24px,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-2xl"
               >
                 <p className="text-[17px] font-bold text-slate-900">
-                  {acting.kind === "pay" ? `Confirmar pagamento de ${brl(acting.w.amount)}?` : `Recusar saque de ${brl(acting.w.amount)}?`}
+                  {acting.kind === "pay" ? `Confirmar pagamento de ${brl(netOf(acting.w))}?` : `Recusar saque de ${brl(acting.w.amount)}?`}
                 </p>
                 <p className="mt-1 text-[13px] leading-relaxed text-slate-500">
                   {acting.kind === "pay"
-                    ? `Faça o PIX para ${acting.w.seller?.companyName || "o seller"} antes de confirmar. Ao confirmar, ele recebe a notificação de saque pago.`
+                    ? `Faça um PIX de ${brl(netOf(acting.w))} para ${acting.w.seller?.companyName || "o seller"} antes de confirmar${Number(acting.w.feeAmount || 0) > 0 ? ` (pedido ${brl(acting.w.amount)} − taxa ${brl(acting.w.feeAmount!)})` : ""}. Ao confirmar, ele recebe a notificação de saque pago.`
                     : `O valor volta para o saldo disponível de ${acting.w.seller?.companyName || "o seller"}.`}
                 </p>
                 {acting.kind === "pay" && acting.w.pixKey && (
