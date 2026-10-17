@@ -14,13 +14,14 @@
 html.dark:has(.sp-shell) {
   color-scheme: dark;
 
-  /* preto de verdade; o roxo fica só nos detalhes da marca */
+  /* preto puro no fundo, no menu e no topo; cards só um tiquinho acima pra
+     não sumirem (separados pela borda). O roxo fica só nos detalhes. */
   --d-bg: #000000;
-  --d-sidebar: #050505;
-  --d-card: #101010;
-  --d-card-2: #171717;
-  --d-hover: #1e1e1e;
-  --d-active: #262626;
+  --d-sidebar: #000000;
+  --d-card: #0a0a0a;
+  --d-card-2: #121212;
+  --d-hover: #1a1a1a;
+  --d-active: #222222;
   --d-border: rgba(255, 255, 255, 0.08);
   --d-border-strong: rgba(255, 255, 255, 0.14);
   --d-text: #f5f5f5;
@@ -71,20 +72,22 @@ html.dark:has(.sp-shell) body {
   color: var(--d-text);
 }
 
-/* ---------- Estrutura (LightShell) ---------- */
-html.dark:has(.sp-shell) .sp-shell,
-html.dark:has(.sp-shell) .sp-main {
+/* ---------- Estrutura (LightShell) ----------
+   [class][style] só pra ganhar das regras genéricas de estilo inline lá de
+   baixo (antes a área do painel e o menu ficavam cinza e o topo preto). */
+html.dark:has(.sp-shell) .sp-shell[class][style],
+html.dark:has(.sp-shell) .sp-main[class][style] {
   background: var(--d-bg) !important;
   color: var(--d-text) !important;
   box-shadow: none !important;
 }
-html.dark:has(.sp-shell) .sp-sidebar {
+html.dark:has(.sp-shell) .sp-sidebar[class][style] {
   background: var(--d-sidebar) !important;
-  border-right-color: var(--d-border) !important;
+  border-right: 1px solid var(--d-border) !important;
   box-shadow: none !important;
 }
-html.dark:has(.sp-shell) .sp-topbar {
-  background: rgba(0, 0, 0, 0.82) !important;
+html.dark:has(.sp-shell) .sp-topbar[class][style] {
+  background: rgba(0, 0, 0, 0.92) !important;
   border-bottom-color: rgba(255, 255, 255, 0.08) !important;
   box-shadow: 0 8px 24px -18px rgba(0, 0, 0, 0.9) !important;
 }
@@ -96,13 +99,13 @@ html.dark:has(.sp-shell) .sp-logo[data-collapsed="false"] {
 html.dark:has(.sp-shell) .sp-logo[data-collapsed="true"] {
   mix-blend-mode: normal !important;
 }
-html.dark:has(.sp-shell) .sp-balance {
-  background: linear-gradient(160deg, rgba(139, 92, 246, 0.12), #0d0d0d 70%) !important;
+html.dark:has(.sp-shell) .sp-balance[class][style] {
+  background: linear-gradient(160deg, rgba(139, 92, 246, 0.14), #050505 70%) !important;
   border-color: rgba(167, 139, 250, 0.3) !important;
   box-shadow: 0 10px 26px -14px rgba(124, 58, 237, 0.55) !important;
   color: var(--d-violet-text) !important;
 }
-html.dark:has(.sp-shell) .sp-balance .sp-balance-value {
+html.dark:has(.sp-shell) .sp-balance .sp-balance-value[class][style] {
   color: var(--d-text) !important;
 }
 html.dark:has(.sp-shell) .sp-nav-item[data-active="true"] {
@@ -121,14 +124,14 @@ html.dark:has(.sp-shell) .sp-nav-item[data-active="false"]:hover {
 html.dark:has(.sp-shell) .sp-nav-item[data-active="false"] svg {
   color: var(--d-faint) !important;
 }
-html.dark:has(.sp-shell) .sp-goal {
+html.dark:has(.sp-shell) .sp-goal[class][style] {
   background: rgba(139, 92, 246, 0.12) !important;
   border-color: rgba(167, 139, 250, 0.28) !important;
 }
-html.dark:has(.sp-shell) .sp-goal-track {
+html.dark:has(.sp-shell) .sp-goal-track[class][style] {
   background: rgba(255, 255, 255, 0.09) !important;
 }
-html.dark:has(.sp-shell) .sp-goal-value {
+html.dark:has(.sp-shell) .sp-goal-value[class][style] {
   color: var(--d-text) !important;
 }
 html.dark:has(.sp-shell) .sp-goal-label {
@@ -427,7 +430,7 @@ html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(238, 241, 255)"],
 html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(237, 233, 254)"],
 html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(243, 240, 255)"],
 html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(248, 247, 255)"] {
-  background: radial-gradient(120% 140% at 0% 0%, rgba(124, 58, 237, 0.2) 0%, #0f0f0f 55%, #0a0a0a 100%) !important;
+  background: radial-gradient(120% 140% at 0% 0%, rgba(124, 58, 237, 0.2) 0%, #070707 55%, #030303 100%) !important;
   border-color: rgba(167, 139, 250, 0.22) !important;
 }
 /* gradientes claros de card (inclusive os que vão de um roxinho até branco) */
