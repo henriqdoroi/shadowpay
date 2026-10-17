@@ -9,7 +9,8 @@ import {
   Zap, Trophy, Plus, Lock, LockOpen, ShieldCheck, QrCode, ChevronDown, Bell,
 } from "lucide-react";
 import DashboardPanel from "./DashboardPanel";
-import PhoneSales from "@/components/PhoneSales";
+import dynamic from "next/dynamic";
+const HeroPhone3D = dynamic(() => import("@/components/three/HeroPhone3D"), { ssr: false });
 import { PINGU_CSS } from "./pinguCss";
 import { SHADOW } from "@/components/landing/Simulator";
 
@@ -172,10 +173,8 @@ function Hero() {
         </div>
         <motion.div className="sx-hero-art" style={{ y: ninjaY }} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}>
           <div className="sx-halo" />
-          <img src={NINJA} alt="Mascote ninja da ShadowPay" className="sx-hero-ninja" />
-          <div className="sx-hero-phone">
-            <PhoneSales every={2200} max={4} />
-          </div>
+          {/* iPhone 18 Pro Max + ninja em 3D (WebGL) */}
+          <div className="sx-hero-3d"><HeroPhone3D /></div>
         </motion.div>
       </div>
       <a href="#integracoes" className="sx-scroll" aria-label="Rolar"><ChevronDown size={18} /></a>

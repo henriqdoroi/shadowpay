@@ -3,7 +3,7 @@
 /**
  * /auth/jwt/login — split:
  *   LEFT  · formulário branco (craft Stripe) — lógica de auth mantida.
- *   RIGHT · filme 3D da ShadowPay (lg+) — ver components/login/Film3D.tsx.
+ *   RIGHT · filme 3D em WebGL (lg+) — ver components/three/LoginScene3D.tsx.
  */
 
 import Head from "next/head";
@@ -15,7 +15,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { ArrowRight, Loader2, Lock } from "lucide-react";
-import Film3D from "@/components/login/Film3D";
+import dynamic from "next/dynamic";
+// cena WebGL (three.js) — só no navegador
+const LoginScene3D = dynamic(() => import("@/components/three/LoginScene3D"), { ssr: false });
 
 const T = {
   ink: "#0F172A",
@@ -131,7 +133,7 @@ export default function Login() {
 
         {/* ===== DIREITA — o filme ===== */}
         <section className="relative hidden overflow-hidden lg:block" style={{ background: "#05030b" }}>
-          <Film3D />
+          <LoginScene3D />
         </section>
 
         <ForgotPasswordModal isOpen={isForgotPasswordOpen} onClose={() => setIsForgotPasswordOpen(false)} />
