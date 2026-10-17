@@ -398,6 +398,16 @@ export default function CheckoutPage() {
     }
   };
 
+  // Só uma forma de pagamento ligada (hoje, o PIX): já vem marcada — antes o
+  // comprador clicava em "Finalizar" e levava "Selecione uma forma de pagamento".
+  useEffect(() => {
+    if (selectedPayment) return;
+    const enabled = (Object.keys(paymentMethods) as (keyof typeof paymentMethods)[]).filter(
+      (k) => paymentMethods[k]?.enabled
+    );
+    if (enabled.length === 1) setSelectedPayment(enabled[0]!);
+  }, [paymentMethods, selectedPayment]);
+
   const discountPercent =
     paymentMethods[selectedPayment as keyof typeof paymentMethods]?.percent ||
     0;
@@ -1107,6 +1117,7 @@ export default function CheckoutPage() {
                       <div className="flex">
                         <select
                           ref={paisRef}
+                          defaultValue="+55"
                           className="p-3 border rounded-l-lg text-sm cursor-pointer"
                           style={{
                             backgroundColor:
@@ -1124,9 +1135,7 @@ export default function CheckoutPage() {
                                 : "#d1d5db",
                           }}
                         >
-                          <option value="+55" selected>
-                            🇧🇷 +55
-                          </option>
+                          <option value="+55">🇧🇷 +55</option>
                           <option value="+1">🇺🇸 +1</option>
                         </select>
                         <input

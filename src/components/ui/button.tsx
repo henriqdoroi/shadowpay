@@ -35,25 +35,26 @@ const buttonVariants = cva(
   }
 )
 
-function Button({
-  className,
-  variant,
-  size,
-  asChild = false,
-  ...props
-}: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-  }) {
+// forwardRef: no React 18 o ref não chega em componente de função, e os
+// gatilhos do Radix (Tooltip/Dropdown/Dialog com asChild) precisam dele pra
+// posicionar o balão e devolver o foco.
+const Button = React.forwardRef<
+  HTMLButtonElement,
+  React.ComponentProps<"button"> &
+    VariantProps<typeof buttonVariants> & {
+      asChild?: boolean
+    }
+>(function Button({ className, variant, size, asChild = false, ...props }, ref) {
   const Comp = asChild ? Slot : "button"
 
   return (
     <Comp
+      ref={ref}
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     />
   )
-}
+})
 
 export { Button, buttonVariants }

@@ -71,7 +71,9 @@
   /* Tabs/pill rows com botoes que estouram (Automations:
      Automacoes | Contas WhatsApp | + Criar) — viram scroll
      horizontal interno */
-  main header > .flex.items-center.gap-2:has(button),
+  /* (linhas com flex-wrap quebram linha: dentro de um scroll os menus
+     suspensos — ex. filtros de Análise de UTMs — ficavam cortados) */
+  main header > .flex.items-center.gap-2:has(button):not(.flex-wrap),
   main header > div > .inline-flex.rounded-xl.p-1 {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
