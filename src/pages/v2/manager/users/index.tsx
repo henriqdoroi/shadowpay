@@ -118,6 +118,11 @@ interface SellerDetails {
     documentBackImage: string;
     selfieImage: string;
     companyDocumentImage: string;
+    facePhotoImage?: string;
+    contratoSocialImage?: string;
+    tipoPessoa?: "PF" | "PJ" | null;
+    representante?: { nome?: string; cpf?: string; nascimento?: string | null; telefone?: string };
+    empresa?: { razaoSocial?: string; cnpj?: string };
     status: string;
     reason: string | null;
     approvedAt: string | null;
@@ -1718,11 +1723,34 @@ function UsersManagerContent() {
               {/* Informações Básicas do KYC */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Empresa</Label>
-                  <p className="text-sm">
-                    {kycSeller?.kyc?.[0]?.companyName ?? "—"}
+                  <Label className="text-sm font-medium">Tipo de conta</Label>
+                  <p className="text-sm font-semibold">
+                    {kycSeller?.kyc?.[0]?.tipoPessoa === "PF"
+                      ? "Pessoa Física (CPF)"
+                      : kycSeller?.kyc?.[0]?.tipoPessoa === "PJ"
+                      ? "Pessoa Jurídica (CNPJ)"
+                      : "—"}
                   </p>
                 </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">
+                    {kycSeller?.kyc?.[0]?.tipoPessoa === "PF" ? "Titular" : "Empresa"}
+                  </Label>
+                  <p className="text-sm">
+                    {kycSeller?.kyc?.[0]?.tipoPessoa === "PF"
+                      ? kycSeller?.kyc?.[0]?.representante?.nome || "—"
+                      : kycSeller?.kyc?.[0]?.empresa?.razaoSocial || kycSeller?.kyc?.[0]?.companyName || "—"}
+                  </p>
+                </div>
+                {kycSeller?.kyc?.[0]?.tipoPessoa !== "PF" && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Representante</Label>
+                    <p className="text-sm">
+                      {kycSeller?.kyc?.[0]?.representante?.nome || "—"}
+                      {kycSeller?.kyc?.[0]?.representante?.cpf ? ` · CPF ${kycSeller.kyc[0].representante.cpf}` : ""}
+                    </p>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">cpf/cnpj</Label>
                   <p className="text-sm">
@@ -1802,18 +1830,29 @@ function UsersManagerContent() {
                     </div>
                   </div>
 
-                  {/* Documento da Empresa */}
+                  {/* Foto do rosto */}
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">
-                      Documento da Empresa
-                    </Label>
+                    <Label className="text-sm font-medium">Foto do rosto</Label>
                     <div className="border rounded-lg p-2 bg-muted">
                       <KycDocPreview
-                        url={kycSeller?.kyc?.[0]?.companyDocumentImage}
-                        label="Documento da Empresa"
+                        url={kycSeller?.kyc?.[0]?.facePhotoImage}
+                        label="Foto do rosto"
                       />
                     </div>
                   </div>
+
+                  {/* Contrato social (só PJ) */}
+                  {kycSeller?.kyc?.[0]?.tipoPessoa !== "PF" && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Contrato social</Label>
+                      <div className="border rounded-lg p-2 bg-muted">
+                        <KycDocPreview
+                          url={kycSeller?.kyc?.[0]?.contratoSocialImage || kycSeller?.kyc?.[0]?.companyDocumentImage}
+                          label="Contrato social"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

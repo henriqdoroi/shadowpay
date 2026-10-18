@@ -38,24 +38,41 @@ import {
 } from "lucide-react";
 import { ShadowLoader } from "@/components/ShadowLoader";
 import { apiErrorMessage, withRetry } from "@/lib/axiosErrors";
+import { ageFrom, isValidCnpj, isValidCpf } from "@/lib/brDocs";
 
 const API = "https://shadowpay-backend.onrender.com";
 
 const PRIMARY = "#7C3AED";
 const BORDER = "rgba(15,23,42,0.12)";
 
-const STEPS = [
-  { n: 1, icon: Building2, title: "Dados da empresa", sub: "Precisamos dessas informações para garantir que sua empresa está regularizada." },
-  { n: 2, icon: MapPin, title: "Endereço da empresa", sub: "Informe o endereço completo da sua empresa." },
-  { n: 3, icon: UserRound, title: "Dados do representante", sub: "Quem responde legalmente pela empresa e autoriza movimentações." },
-  { n: 4, icon: MapPin, title: "Endereço do representante", sub: "Endereço completo do representante legal." },
-  { n: 5, icon: IdCard, title: "Confirme sua identidade", sub: "Envie seus documentos pessoais para validar sua conta de forma segura." },
-  { n: 6, icon: CreditCard, title: "Conta para recebimentos", sub: "Informe onde deseja receber os valores processados via ShadowPay." },
-  { n: 7, icon: Briefcase, title: "Nos conte sobre o seu negócio", sub: "Essas informações nos ajudam a entender o perfil da sua operação." },
-];
+/**
+ * Pessoa Física (vende no CPF) ou Jurídica (CNPJ). A PF guarda os dados do
+ * titular nos campos rep* e o endereço nos address* — o backend valida por
+ * tipo em /kyc/submit.
+ */
+type Tipo = "PF" | "PJ";
+type Section = "empresa" | "enderecoEmpresa" | "representante" | "enderecoRep" | "pessoa" | "enderecoPessoa" | "docs" | "pix" | "negocio";
+
+const SECTION_INFO: Record<Section, { icon: React.ComponentType<{ className?: string }>; title: string; sub: string }> = {
+  empresa: { icon: Building2, title: "Dados da empresa", sub: "Precisamos dessas informações para garantir que sua empresa está regularizada." },
+  enderecoEmpresa: { icon: MapPin, title: "Endereço da empresa", sub: "Informe o endereço completo da sua empresa." },
+  representante: { icon: UserRound, title: "Dados do representante", sub: "Quem responde legalmente pela empresa e autoriza movimentações." },
+  enderecoRep: { icon: MapPin, title: "Endereço do representante", sub: "Endereço completo do representante legal." },
+  pessoa: { icon: UserRound, title: "Seus dados", sub: "Preencha exatamente como está no seu documento (RG ou CNH)." },
+  enderecoPessoa: { icon: MapPin, title: "Seu endereço", sub: "Informe o endereço onde você mora." },
+  docs: { icon: IdCard, title: "Confirme sua identidade", sub: "Envie seus documentos pessoais para validar sua conta de forma segura." },
+  pix: { icon: CreditCard, title: "Conta para recebimentos", sub: "Informe onde deseja receber os valores processados via ShadowPay." },
+  negocio: { icon: Briefcase, title: "Nos conte sobre o seu negócio", sub: "Essas informações nos ajudam a entender o perfil da sua operação." },
+};
+
+const FLOW: Record<Tipo, Section[]> = {
+  PJ: ["empresa", "enderecoEmpresa", "representante", "enderecoRep", "docs", "pix", "negocio"],
+  PF: ["pessoa", "enderecoPessoa", "docs", "pix", "negocio"],
+};
 
 const COMPANY_TYPES = ["MEI (Microempreendedor Individual)", "ME (Microempresa)", "EIRELI", "LTDA", "S.A.", "Outro"];
-const PIX_TYPES = ["Email", "CPF", "CNPJ", "Telefone", "Chave aleatória"];
+const PIX_TYPES_PJ = ["Email", "CPF", "CNPJ", "Telefone", "Chave aleatória"];
+const PIX_TYPES_PF = ["CPF", "Email", "Telefone", "Chave aleatória"];
 const BUSINESS_TYPES = ["E-commerce", "Infoproduto", "Serviços", "SaaS / Software", "Dropshipping", "Assinatura", "Outro"];
 const PRODUCT_INTERESTS = ["Conta digital", "Checkout", "Link de pagamento", "API de pagamentos", "Tudo"];
 
@@ -103,6 +120,8 @@ const moneyToNumber = (v: string) => Number(onlyDigits(v)) / 100;
 
 export default function KycModal({ onApproved }: { onApproved?: () => void }) {
   const [status, setStatus] = useState<string>("LOADING");
+  const [tipo, setTipo] = useState<Tipo | null>(null);
+  const [choosing, setChoosing] = useState(false);
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<Form>(EMPTY);
   const [saving, setSaving] = useState(false);
@@ -135,6 +154,7 @@ export default function KycModal({ onApproved }: { onApproved?: () => void }) {
         const st = String(d.status || "NOT_STARTED");
         setStatus(st);
         if (st === "APPROVED") { onApproved?.(); return; }
+        if (d.tipoPessoa === "PF" || d.tipoPessoa === "PJ") setTipo(d.tipoPessoa);
         const emp = d.empresa || {}, en = d.endereco || {}, rep = d.representante || {}, re = d.repEndereco || {}, doc = d.documentos || {}, rec = d.recebimento || {}, neg = d.negocio || {};
         setForm((f) => ({
           ...f,
@@ -150,7 +170,7 @@ export default function KycModal({ onApproved }: { onApproved?: () => void }) {
           repAddressZip: re.zip ? maskCep(re.zip) : "", repAddressStreet: re.street || "", repAddressNumber: re.number || "",
           repAddressNeighborhood: re.neighborhood || "", repAddressComplement: re.complement || "", repAddressCity: re.city || "", repAddressState: re.state || "",
           documentFrontUrl: doc.documentFrontUrl || "", documentBackUrl: doc.documentBackUrl || "", selfieUrl: doc.selfieUrl || "", facePhotoUrl: doc.facePhotoUrl || "",
-          pixKeyType: rec.pixKeyType || "", pixKey: rec.pixKey || "", destinatarioDoc: rec.destinatarioDoc ? maskCnpj(rec.destinatarioDoc) : "",
+          pixKeyType: rec.pixKeyType || "", pixKey: rec.pixKey || "", destinatarioDoc: "",
           monthlyRevenue: neg.monthlyRevenue ? Number(neg.monthlyRevenue).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "",
           avgTicket: neg.avgTicket ? Number(neg.avgTicket).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "",
           businessType: neg.businessType || "", productInterest: neg.productInterest || "", siteUrl: neg.siteUrl || "",
@@ -175,47 +195,86 @@ export default function KycModal({ onApproved }: { onApproved?: () => void }) {
     } catch { /* silencioso */ } finally { setCepLoading(null); }
   };
 
-  // payload por passo
-  const stepPayload = (s: number): Record<string, any> => {
+  const flow = FLOW[tipo ?? "PJ"];
+  const section: Section = flow[Math.min(step, flow.length) - 1]!;
+  const lastStep = flow.length;
+
+  const addressPayload = () => ({ addressZip: onlyDigits(form.addressZip), addressStreet: form.addressStreet, addressNumber: form.addressNumber, addressNeighborhood: form.addressNeighborhood, addressComplement: form.addressComplement, addressCity: form.addressCity, addressState: form.addressState });
+  const personPayload = () => ({ repName: form.repName, repCpf: onlyDigits(form.repCpf), repBirthDate: form.repBirthDate || null, repPhone: onlyDigits(form.repPhone) });
+
+  // payload por seção
+  const stepPayload = (s: Section): Record<string, any> => {
     switch (s) {
-      case 1: return { contratoSocialUrl: form.contratoSocialUrl, companyType: form.companyType, razaoSocial: form.razaoSocial, nomeFantasia: form.nomeFantasia, cnpj: onlyDigits(form.cnpj) };
-      case 2: return { addressZip: onlyDigits(form.addressZip), addressStreet: form.addressStreet, addressNumber: form.addressNumber, addressNeighborhood: form.addressNeighborhood, addressComplement: form.addressComplement, addressCity: form.addressCity, addressState: form.addressState };
-      case 3: return { repName: form.repName, repCpf: onlyDigits(form.repCpf), repBirthDate: form.repBirthDate || null, repPhone: onlyDigits(form.repPhone) };
-      case 4: return { repAddressZip: onlyDigits(form.repAddressZip), repAddressStreet: form.repAddressStreet, repAddressNumber: form.repAddressNumber, repAddressNeighborhood: form.repAddressNeighborhood, repAddressComplement: form.repAddressComplement, repAddressCity: form.repAddressCity, repAddressState: form.repAddressState };
-      case 5: return { documentFrontUrl: form.documentFrontUrl, documentBackUrl: form.documentBackUrl, selfieUrl: form.selfieUrl, facePhotoUrl: form.facePhotoUrl };
-      case 6: return { pixKeyType: form.pixKeyType, pixKey: form.pixKey };
-      case 7: return { monthlyRevenue: moneyToNumber(form.monthlyRevenue), avgTicket: moneyToNumber(form.avgTicket), businessType: form.businessType, productInterest: form.productInterest, siteUrl: form.siteUrl };
+      case "empresa": return { tipoPessoa: "PJ", contratoSocialUrl: form.contratoSocialUrl, companyType: form.companyType, razaoSocial: form.razaoSocial, nomeFantasia: form.nomeFantasia, cnpj: onlyDigits(form.cnpj) };
+      case "enderecoEmpresa": return addressPayload();
+      case "representante": return personPayload();
+      case "enderecoRep": return { repAddressZip: onlyDigits(form.repAddressZip), repAddressStreet: form.repAddressStreet, repAddressNumber: form.repAddressNumber, repAddressNeighborhood: form.repAddressNeighborhood, repAddressComplement: form.repAddressComplement, repAddressCity: form.repAddressCity, repAddressState: form.repAddressState };
+      case "pessoa": return { tipoPessoa: "PF", ...personPayload() };
+      case "enderecoPessoa": return addressPayload();
+      case "docs": return { documentFrontUrl: form.documentFrontUrl, documentBackUrl: form.documentBackUrl, selfieUrl: form.selfieUrl, facePhotoUrl: form.facePhotoUrl };
+      case "pix": return { pixKeyType: form.pixKeyType, pixKey: form.pixKey };
+      case "negocio": return { monthlyRevenue: moneyToNumber(form.monthlyRevenue), avgTicket: moneyToNumber(form.avgTicket), businessType: form.businessType, productInterest: form.productInterest, siteUrl: form.siteUrl };
       default: return {};
     }
   };
 
-  const validateStep = (s: number): string | null => {
-    if (s === 1) { if (!form.razaoSocial.trim()) return "Informe a razão social."; if (onlyDigits(form.cnpj).length !== 14) return "CNPJ inválido."; if (!form.companyType) return "Selecione o tipo de empresa."; }
-    if (s === 2) { if (onlyDigits(form.addressZip).length !== 8) return "CEP inválido."; if (!form.addressNumber.trim()) return "Informe o número."; }
-    if (s === 3) { if (!form.repName.trim()) return "Informe o nome do representante."; if (onlyDigits(form.repCpf).length !== 11) return "CPF inválido."; }
-    if (s === 4) { if (onlyDigits(form.repAddressZip).length !== 8) return "CEP inválido."; if (!form.repAddressNumber.trim()) return "Informe o número."; }
-    if (s === 5) { if (!form.documentFrontUrl || !form.documentBackUrl || !form.selfieUrl || !form.facePhotoUrl) return "Envie os 4 itens."; }
-    if (s === 6) { if (!form.pixKeyType) return "Escolha o tipo de chave Pix."; if (!form.pixKey.trim()) return "Informe a chave Pix."; }
+  // PJ (representante): nome + CPF válido, como antes. PF (titular): também
+  // nascimento (18+) e telefone.
+  const validatePerson = (who: string, full: boolean): string | null => {
+    if (!form.repName.trim() || (full && form.repName.trim().split(/\s+/).length < 2)) return `Informe o nome completo ${who}.`;
+    if (!isValidCpf(form.repCpf)) return "CPF inválido — confira os números.";
+    if (!full) return null;
+    const age = ageFrom(form.repBirthDate);
+    if (age === null) return "Informe a data de nascimento.";
+    if (age < 18) return "É preciso ter 18 anos ou mais para abrir a conta.";
+    if (onlyDigits(form.repPhone).length < 10) return "Informe um telefone com DDD.";
+    return null;
+  };
+
+  const validateStep = (s: Section): string | null => {
+    if (s === "empresa") { if (!form.razaoSocial.trim()) return "Informe a razão social."; if (!isValidCnpj(form.cnpj)) return "CNPJ inválido — confira os números."; if (!form.companyType) return "Selecione o tipo de empresa."; }
+    if (s === "enderecoEmpresa" || s === "enderecoPessoa") { if (onlyDigits(form.addressZip).length !== 8) return "CEP inválido."; if (!form.addressNumber.trim()) return "Informe o número."; if (!form.addressCity.trim() || !form.addressState.trim()) return "Confira a cidade e o estado (UF)."; }
+    if (s === "representante") return validatePerson("do representante", false);
+    if (s === "pessoa") return validatePerson("(igual ao documento)", true);
+    if (s === "enderecoRep") { if (onlyDigits(form.repAddressZip).length !== 8) return "CEP inválido."; if (!form.repAddressNumber.trim()) return "Informe o número."; }
+    if (s === "docs") { if (!form.documentFrontUrl || !form.documentBackUrl || !form.selfieUrl || !form.facePhotoUrl) return "Envie os 4 itens."; }
+    if (s === "pix") { if (!form.pixKeyType) return "Escolha o tipo de chave Pix."; if (!form.pixKey.trim()) return "Informe a chave Pix."; }
     return null;
   };
 
   // Falhas temporárias (servidor acordando/reiniciando, 429) são repetidas
   // automaticamente; erros reais mostram a mensagem do backend.
-  const save = async (s: number) => {
+  const postWizard = async (payload: Record<string, any>) => {
     const token = localStorage.getItem("token");
-    await withRetry(() =>
-      axios.post(`${API}/api/user/kyc/wizard`, stepPayload(s), {
+    const r = await withRetry(() =>
+      axios.post(`${API}/api/user/kyc/wizard`, payload, {
         headers: { Authorization: `Bearer ${token}` },
         timeout: 60000,
       }),
     );
+    if (r.data && r.data.success === false) throw new Error(r.data.message || "Não consegui salvar.");
+  };
+  const save = (s: Section) => postWizard(stepPayload(s));
+
+  /** Escolha PF/PJ (primeira tela). */
+  const chooseTipo = async (t: Tipo) => {
+    setChoosing(true);
+    try {
+      await postWizard({ tipoPessoa: t });
+      setTipo(t);
+      setStep(1);
+    } catch (e: any) {
+      toast.error(apiErrorMessage(e, "Não consegui salvar. Tente de novo."));
+    } finally {
+      setChoosing(false);
+    }
   };
 
   const next = async () => {
-    const err = validateStep(step);
+    const err = validateStep(section);
     if (err) { toast.error(err); return; }
     setSaving(true);
-    try { await save(step); setStep((s) => Math.min(7, s + 1)); }
+    try { await save(section); setStep((s) => Math.min(lastStep, s + 1)); }
     catch (e: any) { toast.error(apiErrorMessage(e, "Não consegui salvar. Tente de novo.")); }
     finally { setSaving(false); }
   };
@@ -223,7 +282,7 @@ export default function KycModal({ onApproved }: { onApproved?: () => void }) {
   const finish = async () => {
     setSubmitting(true);
     try {
-      await save(7);
+      await save(section);
       const token = localStorage.getItem("token");
       const r = await withRetry(() =>
         axios.post(`${API}/api/user/kyc/submit`, {}, {
@@ -264,21 +323,74 @@ export default function KycModal({ onApproved }: { onApproved?: () => void }) {
     );
   }
 
+  // ---- Escolha: Pessoa Física ou Jurídica ----
+  if (!tipo) {
+    const Option = ({ t, icon: Icon, title, desc }: { t: Tipo; icon: React.ComponentType<{ className?: string }>; title: string; desc: string }) => (
+      <button
+        type="button"
+        onClick={() => chooseTipo(t)}
+        disabled={choosing}
+        className="group flex w-full items-center gap-4 rounded-xl px-4 py-4 text-left transition-colors hover:bg-violet-50 disabled:opacity-60"
+        style={{ border: `1px solid ${BORDER}` }}
+      >
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(124,58,237,0.10)", color: PRIMARY }}>
+          <Icon className="h-5 w-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[14.5px] font-bold text-slate-900">{title}</span>
+          <span className="mt-0.5 block text-[12.5px] leading-snug text-slate-500">{desc}</span>
+        </span>
+        <span className="text-[18px] font-bold text-slate-300 transition-colors group-hover:text-violet-500" aria-hidden="true">›</span>
+      </button>
+    );
+    return (
+      <Backdrop>
+        <div className="w-full max-w-[520px] rounded-2xl bg-white px-6 py-7 sm:px-7" style={cardShadow}>
+          <p className="text-[20px] font-bold tracking-[-0.01em] text-slate-900">Verificação</p>
+          <p className="mt-1 text-[13.5px] leading-relaxed text-slate-500">
+            Como você vai vender na ShadowPay? Escolha o tipo de conta pra liberarmos seus recebimentos.
+          </p>
+          <div className="mt-5 space-y-3">
+            <Option t="PF" icon={UserRound} title="Pessoa Física (CPF)" desc="Vendo no meu nome: autônomo, produtor, afiliado." />
+            <Option t="PJ" icon={Building2} title="Pessoa Jurídica (CNPJ)" desc="Tenho empresa aberta: MEI, ME, LTDA..." />
+          </div>
+          {choosing && <p className="mt-4 text-center text-[12.5px] text-slate-500">Salvando…</p>}
+        </div>
+      </Backdrop>
+    );
+  }
+
   // ---- Wizard ----
-  const cur = STEPS[step - 1]!;
+  const cur = SECTION_INFO[section];
+  const isPf = tipo === "PF";
+  const pixTypes = isPf ? PIX_TYPES_PF : PIX_TYPES_PJ;
+  const ownerDoc = isPf ? form.repCpf : form.cnpj;
   return (
     <Backdrop>
       <div className="flex max-h-[92vh] w-full max-w-[640px] flex-col overflow-hidden rounded-2xl bg-white" style={cardShadow}>
         {/* Header */}
         <div className="shrink-0 px-7 pt-6">
-          <p className="text-[20px] font-bold tracking-[-0.01em] text-slate-900">Verificação</p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[20px] font-bold tracking-[-0.01em] text-slate-900">Verificação</p>
+            <span className="flex items-center gap-2 text-[12px] font-semibold text-slate-500">
+              <span className="rounded-full px-2.5 py-1" style={{ background: "rgba(124,58,237,0.08)", color: PRIMARY }}>
+                {isPf ? "Pessoa Física" : "Pessoa Jurídica"}
+              </span>
+              {step === 1 && (
+                <button type="button" onClick={() => setTipo(null)} className="underline-offset-2 hover:text-slate-700 hover:underline">
+                  Trocar
+                </button>
+              )}
+            </span>
+          </div>
           <div className="mt-4 h-px" style={{ background: "rgba(15,23,42,0.08)" }} />
           {/* Stepper */}
           <div className="flex items-center justify-center py-5">
-            {STEPS.map((s, i) => {
-              const done = step > s.n, active = step === s.n;
+            {flow.map((s, i) => {
+              const n = i + 1;
+              const done = step > n, active = step === n;
               return (
-                <div key={s.n} className="flex items-center">
+                <div key={s} className="flex items-center">
                   <span
                     className="flex h-8 w-8 items-center justify-center rounded-full text-[12.5px] font-bold transition-colors"
                     style={{
@@ -287,22 +399,24 @@ export default function KycModal({ onApproved }: { onApproved?: () => void }) {
                       boxShadow: active ? "0 0 0 4px rgba(124,58,237,0.14)" : "none",
                     }}
                   >
-                    {done ? <Check className="h-4 w-4" /> : s.n}
+                    {done ? <Check className="h-4 w-4" /> : n}
                   </span>
-                  {i < STEPS.length - 1 && (
-                    <span className="h-[2px] w-4 sm:w-6" style={{ background: step > s.n ? PRIMARY : "#E6E8EB" }} />
+                  {i < flow.length - 1 && (
+                    <span className="h-[2px] w-4 sm:w-6" style={{ background: step > n ? PRIMARY : "#E6E8EB" }} />
                   )}
                 </div>
               );
             })}
           </div>
-          <p className="text-[16px] font-bold text-slate-900">{cur.title}</p>
+          <p className="text-[16px] font-bold text-slate-900">
+            {section === "negocio" && isPf ? "Nos conte sobre suas vendas" : cur.title}
+          </p>
           <p className="mt-1 text-[13px] leading-relaxed text-slate-400">{cur.sub}</p>
         </div>
 
         {/* Body */}
         <div className="min-h-0 flex-1 overflow-y-auto px-7 py-5">
-          {step === 1 && (
+          {section === "empresa" && (
             <div className="space-y-4">
               <Upload label="Contrato Social" value={form.contratoSocialUrl} accept="application/pdf,image/*" onChange={(v) => set("contratoSocialUrl", v)} />
               <Select label="Tipo de empresa" value={form.companyType} onChange={(v) => set("companyType", v)} options={COMPANY_TYPES} placeholder="Selecione o tipo" />
@@ -312,31 +426,32 @@ export default function KycModal({ onApproved }: { onApproved?: () => void }) {
             </div>
           )}
 
-          {step === 2 && (
+          {(section === "enderecoEmpresa" || section === "enderecoPessoa") && (
             <AddressBlock
               prefix="address" form={form} set={set}
               cepLoading={cepLoading === "company"} onCep={(v) => lookupCep(v, "company")}
             />
           )}
 
-          {step === 3 && (
+          {(section === "representante" || section === "pessoa") && (
             <div className="space-y-4">
-              <Field label="Nome completo do representante"><Input value={form.repName} onChange={(v) => set("repName", v)} placeholder="Nome completo" /></Field>
-              <Field label="CPF do representante"><Input value={form.repCpf} onChange={(v) => set("repCpf", maskCpf(v))} placeholder="000.000.000-00" inputMode="numeric" /></Field>
+              <Field label={isPf ? "Nome completo" : "Nome completo do representante"}><Input value={form.repName} onChange={(v) => set("repName", v)} placeholder="Nome completo" /></Field>
+              <Field label={isPf ? "CPF" : "CPF do representante"}><Input value={form.repCpf} onChange={(v) => set("repCpf", maskCpf(v))} placeholder="000.000.000-00" inputMode="numeric" /></Field>
               <Field label="Data de nascimento"><Input value={form.repBirthDate} onChange={(v) => set("repBirthDate", v)} type="date" /></Field>
-              <Field label="Telefone"><Input value={form.repPhone} onChange={(v) => set("repPhone", maskPhone(v))} placeholder="(00) 00000-0000" inputMode="tel" /></Field>
+              <Field label="Telefone (WhatsApp)"><Input value={form.repPhone} onChange={(v) => set("repPhone", maskPhone(v))} placeholder="(00) 00000-0000" inputMode="tel" /></Field>
             </div>
           )}
 
-          {step === 4 && (
+          {section === "enderecoRep" && (
             <AddressBlock
               prefix="repAddress" form={form} set={set}
               cepLoading={cepLoading === "rep"} onCep={(v) => lookupCep(v, "rep")}
             />
           )}
 
-          {step === 5 && (
+          {section === "docs" && (
             <div className="space-y-4">
+              <p className="text-[12.5px] leading-snug text-slate-500">Vale RG ou CNH{isPf ? " do titular (o mesmo CPF informado)" : " do representante"}.</p>
               <Upload label="Frente do documento" value={form.documentFrontUrl} accept="image/*" onChange={(v) => set("documentFrontUrl", v)} />
               <Upload label="Verso do documento" value={form.documentBackUrl} accept="image/*" onChange={(v) => set("documentBackUrl", v)} />
               <Upload label="Selfie segurando o documento" value={form.selfieUrl} accept="image/*" onChange={(v) => set("selfieUrl", v)} />
@@ -344,25 +459,25 @@ export default function KycModal({ onApproved }: { onApproved?: () => void }) {
             </div>
           )}
 
-          {step === 6 && (
+          {section === "pix" && (
             <div className="space-y-4">
               <div className="flex items-start gap-3 rounded-xl px-4 py-3" style={{ background: "rgba(244,63,94,0.06)", border: "1px solid rgba(244,63,94,0.18)" }}>
                 <AlertCircle className="mt-0.5 h-[18px] w-[18px] shrink-0 text-rose-500" />
                 <p className="text-[12.5px] leading-snug text-rose-700">
-                  <b>Alerta</b><br />a chave Pix para recebimento dos saques deve estar vinculada ao mesmo CPF/CNPJ cadastrado na conta!
+                  <b>Alerta</b><br />a chave Pix para recebimento dos saques deve estar no mesmo {isPf ? "CPF" : "CNPJ"} cadastrado na conta!
                 </p>
               </div>
-              <Select label="Tipo de chave PIX" value={form.pixKeyType} onChange={(v) => set("pixKeyType", v)} options={PIX_TYPES} placeholder="Escolha uma opção" />
+              <Select label="Tipo de chave PIX" value={form.pixKeyType} onChange={(v) => set("pixKeyType", v)} options={pixTypes} placeholder="Escolha uma opção" />
               <Field label="Chave PIX"><Input value={form.pixKey} onChange={(v) => set("pixKey", v)} placeholder="Digite a chave PIX" /></Field>
-              <Field label="CPF ou CNPJ do destinatário">
+              <Field label={isPf ? "CPF do destinatário" : "CNPJ do destinatário"}>
                 <div className="flex h-11 w-full items-center rounded-lg px-3 text-[13.5px] text-slate-500" style={{ border: `1px solid ${BORDER}`, background: "#F8FAFC" }}>
-                  {form.destinatarioDoc || "—"}
+                  {ownerDoc ? (isPf ? maskCpf(ownerDoc) : maskCnpj(ownerDoc)) : "—"}
                 </div>
               </Field>
             </div>
           )}
 
-          {step === 7 && (
+          {section === "negocio" && (
             <div className="space-y-4">
               <Field label="Faturamento médio mensal"><Input value={form.monthlyRevenue} onChange={(v) => set("monthlyRevenue", maskMoney(v))} placeholder="R$ 0,00" inputMode="numeric" /></Field>
               <Field label="Ticket médio"><Input value={form.avgTicket} onChange={(v) => set("avgTicket", maskMoney(v))} placeholder="R$ 0,00" inputMode="numeric" /></Field>
@@ -381,7 +496,7 @@ export default function KycModal({ onApproved }: { onApproved?: () => void }) {
               Voltar
             </button>
           )}
-          {step < 7 ? (
+          {step < lastStep ? (
             <button onClick={next} disabled={saving}
               className="h-10 rounded-lg px-6 text-[13.5px] font-semibold text-white transition-opacity disabled:opacity-60" style={{ background: PRIMARY }}>
               {saving ? "Salvando…" : "Continuar"}
