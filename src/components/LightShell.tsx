@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificationsBell } from "@/components/NotificationsBell";
+import { InstallAppButton } from "@/components/InstallAppButton";
 import {
   LayoutDashboard,
   Package,
@@ -755,6 +756,8 @@ export function LightShell({
 
             {/* Direita: sino + foto */}
             <div className="ml-auto flex shrink-0 items-center gap-1.5">
+              {/* Baixar o app (PWA) — some quando já está aberto pelo app */}
+              <InstallAppButton variant="icon" />
               {/* Sino: abre o painel de notificações push deste aparelho */}
               <NotificationsBell borderColor={T.border} primary={T.primary} variant="plain" />
 
@@ -816,6 +819,7 @@ export function LightShell({
                         <UserCircle2 className="h-3.5 w-3.5" />
                         Perfil
                       </button>
+                      <InstallAppButton variant="menu" />
                       <button
                         onClick={() => {
                           setUserMenuOpen(false);

@@ -9,25 +9,75 @@
  *  - pushsubscriptionchange: o navegador renovou a inscrição — reinscreve e
  *    avisa o backend (sem login: o backend reconhece pelo endpoint antigo).
  *
- *  Não faz cache de páginas: o app sempre carrega a versão nova.
+ *  - fetch: só as NAVEGAÇÕES passam por aqui — vão sempre pra rede (o app
+ *    carrega a versão nova) e, sem internet, mostram /offline.html. É esse
+ *    handler que faz o Chrome do Android oferecer "Instalar app" (app de
+ *    verdade, não só atalho).
+ *
+ *  Não faz cache de páginas do painel: só a página offline fica guardada.
  */
-const SW_VERSION = "2026-10-11-push-v2";
+const SW_VERSION = "2026-10-17-install-v3";
 const API = "https://shadowpay-backend.onrender.com";
 const DEFAULT_URL = "/v1/dashboard";
 const ICON = "/pwa/icon-192.png";
 const BADGE = "/pwa/badge-96.png";
+const OFFLINE_CACHE = "sp-offline-v1";
+const OFFLINE_URL = "/offline.html";
 
-self.addEventListener("install", () => {
-  self.skipWaiting();
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    (async () => {
+      try {
+        const cache = await caches.open(OFFLINE_CACHE);
+        await cache.addAll([new Request(OFFLINE_URL, { cache: "reload" }), ICON]);
+      } catch (_) {
+        // sem a página offline o app continua funcionando normalmente
+      }
+      await self.skipWaiting();
+    })()
+  );
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
-      // Remove caches de versões antigas (este SW não usa cache).
+      // Remove caches de versões antigas (só a página offline fica).
       const keys = await caches.keys();
-      await Promise.all(keys.map((k) => caches.delete(k)));
+      await Promise.all(keys.filter((k) => k !== OFFLINE_CACHE).map((k) => caches.delete(k)));
+      if (self.registration.navigationPreload) {
+        try {
+          await self.registration.navigationPreload.enable();
+        } catch (_) {}
+      }
       await self.clients.claim();
+    })()
+  );
+});
+
+self.addEventListener("fetch", (event) => {
+  const req = event.request;
+  // ícone da página offline: rede, e o guardado se estiver sem internet
+  if (req.method === "GET" && new URL(req.url).pathname === ICON) {
+    event.respondWith(fetch(req).catch(() => caches.match(ICON).then((r) => r || Response.error())));
+    return;
+  }
+  if (req.mode !== "navigate" || req.method !== "GET") return; // resto: navegador normal
+  event.respondWith(
+    (async () => {
+      try {
+        const preload = await event.preloadResponse;
+        if (preload) return preload;
+        return await fetch(req);
+      } catch (_) {
+        const cache = await caches.open(OFFLINE_CACHE);
+        return (
+          (await cache.match(OFFLINE_URL)) ||
+          new Response("Sem conexão com a internet.", {
+            status: 503,
+            headers: { "Content-Type": "text/plain; charset=utf-8" },
+          })
+        );
+      }
     })()
   );
 });

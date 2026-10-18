@@ -1,4 +1,5 @@
 {
+  "id": "/v1/dashboard?source=pwa",
   "name": "ShadowPay — Financial OS",
   "short_name": "ShadowPay",
   "description": "Gateway de pagamentos PIX da ShadowPay — acompanhe vendas, saques e taxas direto do seu celular.",
