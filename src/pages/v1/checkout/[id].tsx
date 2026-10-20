@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import axios from "axios";
 import { Attribution, attributionPayload, captureAttribution } from "@/lib/attribution";
 import { OFFLINE_MSG } from "@/lib/axiosErrors";
+import StoreCheckout from "@/components/store-checkout/StoreCheckout";
+import { API_ORIGIN, readStoreConfig } from "@/components/store-checkout/lib";
 
 /** Só links http(s) saem do checkout (nada de "javascript:..."). */
 function safeLink(v: unknown): string | null {
@@ -261,7 +263,7 @@ export default function CheckoutPage() {
       }
     })();
 
-    fetch("https://shadowpay-backend.onrender.com/api/tracking/visit", {
+    fetch(`${API_ORIGIN}/api/tracking/visit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -287,7 +289,7 @@ export default function CheckoutPage() {
     intervalRef.current = setInterval(async () => {
       try {
         const txRes = await axios.get(
-          `https://shadowpay-backend.onrender.com/api/payments/public/transaction/${saleId}`
+          `${API_ORIGIN}/api/payments/public/transaction/${saleId}`
         );
         const tx = txRes.data?.data;
         if (tx?.status?.toLowerCase() !== "approved") return;
@@ -322,7 +324,7 @@ export default function CheckoutPage() {
     let response;
     try {
       response = await axios.post(
-        "https://shadowpay-backend.onrender.com/api/sales/public",
+        `${API_ORIGIN}/api/sales/public`,
         {
           productId: formData.id,
           bumpIds: selectedBumps,
@@ -428,7 +430,7 @@ export default function CheckoutPage() {
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     axios
-      .get(`https://shadowpay-backend.onrender.com/api/sales/public/${saleId}`)
+      .get(`${API_ORIGIN}/api/sales/public/${saleId}`)
       .then((saleRes) => {
         const link = safeLink(saleRes.data?.linkUpSell);
         if (cancelled || !link) return;
@@ -515,7 +517,7 @@ export default function CheckoutPage() {
           : "";
       if (!filename) return undefined;
       const sanitized = filename.replace(/^\/+/, "");
-      return `https://shadowpay-backend.onrender.com/${
+      return `${API_ORIGIN}/${
         sanitized.startsWith("uploads/")
           ? sanitized
           : `uploads/products/${sanitized}`
@@ -529,8 +531,8 @@ export default function CheckoutPage() {
 
         const token = localStorage.getItem("token");
         const url = token
-          ? `https://shadowpay-backend.onrender.com/api/products/${id}`
-          : `https://shadowpay-backend.onrender.com/api/products/${id}/checkout`;
+          ? `${API_ORIGIN}/api/products/${id}`
+          : `${API_ORIGIN}/api/products/${id}/checkout`;
 
         const headers: Record<string, string> = {};
         if (token) headers.Authorization = `Bearer ${token}`;
@@ -706,6 +708,8 @@ export default function CheckoutPage() {
       }
     };
 
+    // 1º render: router.query ainda vazio (buscava /products/undefined)
+    if (!id) return;
     fetchData();
   }, [id]);
   const [showExitModal, setShowExitModal] = useState(false);
@@ -753,11 +757,85 @@ export default function CheckoutPage() {
     history.pushState(null, "", window.location.href); // cancela voltar
   };
 
+  const exitModal = showExitModal ? (
+    <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm text-center">
+        <h2 className="text-lg font-bold mb-4">Deseja realmente sair?</h2>
+        <p className="mb-6 text-gray-600">
+          Você será redirecionado para a página de vendas.
+        </p>
+        <div className="flex justify-center gap-4">
+          <button
+            onClick={cancelExit}
+            className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={confirmExit}
+            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+          >
+            Sair
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   if (!product) {
     return (
       <div className="flex items-center justify-center h-screen">
         <p>Carregando aguarde...</p>
       </div>
+    );
+  }
+
+  // Modelo "Loja" (produto físico ou ligado no produto): layout de e-commerce
+  // com endereço, frete e cupom — ver src/components/store-checkout.
+  const storeCfg = readStoreConfig(product.checkoutConfig);
+  if (storeCfg.enabled) {
+    const canGoBack =
+      isClientSide && (window.history.length > 1 || !!formData.salesPageUrl);
+    return (
+      <>
+        <StoreCheckout
+          productId={product.id}
+          name={formData.name || product.name}
+          priceCents={Math.round(parseFloat(formData.price || "0") * 100)}
+          imageUrl={typeof formData.productImage === "string" ? formData.productImage : null}
+          logoUrl={appearanceSettings.logoUrl || null}
+          brandColor={storeCfg.headerColor || appearanceSettings.primaryColor || "#2968c8"}
+          tag={storeCfg.tag || null}
+          variant={storeCfg.variant || null}
+          paymentMethods={paymentMethods}
+          bumps={appearanceSettings.orderBumps
+            .filter((ob) => ob.active && ob.title && ob.description && ob.price)
+            .map((b) => ({
+              id: String(b.id),
+              title: b.title,
+              description: b.description,
+              priceCents: Math.round(parseFloat(b.price) * 100),
+            }))
+            .filter((b) => Number.isFinite(b.priceCents) && b.priceCents >= 0)}
+          fields={formFields}
+          store={storeCfg}
+          onBack={
+            canGoBack
+              ? () => {
+                  if (window.history.length > 1) window.history.back();
+                  else if (formData.salesPageUrl) window.location.assign(formData.salesPageUrl);
+                }
+              : null
+          }
+          attribution={() =>
+            attributionPayload(attributionRef.current ?? captureAttribution(product.sellerId))
+          }
+          onInitiateCheckout={(value) =>
+            trackFacebookPixelEvent("InitiateCheckout", { value, currency: "BRL" })
+          }
+        />
+        {exitModal}
+      </>
     );
   }
 
@@ -1608,7 +1686,7 @@ export default function CheckoutPage() {
                           ? formData.productImage
                           : formData.productImage.startsWith("http")
                           ? formData.productImage
-                          : `https://shadowpay-backend.onrender.com/uploads/products/${formData.productImage}`
+                          : `${API_ORIGIN}/uploads/products/${formData.productImage}`
                       }
                       alt="Produto"
                       className="object-cover w-full h-full"
@@ -1911,32 +1989,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
             )}
-            {showExitModal && (
-              <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-                <div className="bg-white p-6 rounded-lg shadow-lg w-96 text-center">
-                  <h2 className="text-lg font-bold mb-4">
-                    Deseja realmente sair?
-                  </h2>
-                  <p className="mb-6 text-gray-600">
-                    Você será redirecionado para a página de vendas.
-                  </p>
-                  <div className="flex justify-center gap-4">
-                    <button
-                      onClick={cancelExit}
-                      className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      onClick={confirmExit}
-                      className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                    >
-                      Sair
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+            {exitModal}
             {/* Texto e segurança */}
             <div className="flex flex-col gap-4 mt-6 text-gray-600 text-xs">
               <p className="leading-snug">

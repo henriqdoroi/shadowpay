@@ -1,5 +1,6 @@
 import Head from "next/head";
 import { LightShell } from "@/components/LightShell";
+import StoreCheckoutSettings from "@/components/store-checkout/StoreCheckoutSettings";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -1228,6 +1229,7 @@ export default function EditProduct() {
 
               {/* Aba Aparência */}
               <TabsContent value="aparencia" className="space-y-6">
+                {typeof id === "string" && <StoreCheckoutSettings productId={id} />}
                 <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
                   {/* Configurações de Aparência */}
                   <div className="space-y-6">
