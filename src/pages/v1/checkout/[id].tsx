@@ -143,6 +143,7 @@ export default function CheckoutPage() {
     });
 
   const [isPageLoading, setIsPageLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isClientSide, setIsClientSide] = useState(false);
 
   const { user, token } = useAuth();
@@ -529,16 +530,27 @@ export default function CheckoutPage() {
       try {
         if (typeof window === "undefined") return;
 
+        // Logado: tenta a versão do dono (prévia). Sessão vencida ou produto de
+        // outra conta: cai na versão pública — antes a página travava em
+        // "Carregando aguarde..." pra sempre.
         const token = localStorage.getItem("token");
-        const url = token
-          ? `${API_ORIGIN}/api/products/${id}`
-          : `${API_ORIGIN}/api/products/${id}/checkout`;
-
-        const headers: Record<string, string> = {};
-        if (token) headers.Authorization = `Bearer ${token}`;
-
-        const res = await fetch(url, { headers });
-        if (!res.ok) throw new Error("Erro ao buscar produto");
+        let res: Response | null = null;
+        if (token) {
+          res = await fetch(`${API_ORIGIN}/api/products/${id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }).catch(() => null);
+          if (res && !res.ok) res = null;
+        }
+        if (!res) res = await fetch(`${API_ORIGIN}/api/products/${id}/checkout`);
+        if (!res.ok) {
+          setLoadError(
+            res.status === 404
+              ? "Produto não encontrado ou desativado."
+              : "Não foi possível carregar o checkout. Tente de novo."
+          );
+          setProduct(null);
+          return;
+        }
 
         const data = await res.json();
         const p: Product = data.data?.product ?? data.data ?? null;
@@ -701,6 +713,7 @@ export default function CheckoutPage() {
         }));
       } catch (err) {
         console.error("Erro ao carregar dados do produto:", err);
+        setLoadError("Sem conexão com o servidor. Verifique sua internet e tente de novo.");
         setProduct(null);
       } finally {
         setLoading(false);
@@ -784,8 +797,16 @@ export default function CheckoutPage() {
 
   if (!product) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p>Carregando aguarde...</p>
+      <div className="flex flex-col items-center justify-center h-screen gap-3 px-6 text-center">
+        <p>{loadError || "Carregando aguarde..."}</p>
+        {loadError && (
+          <button
+            onClick={() => window.location.reload()}
+            className="text-sm font-medium text-blue-600 underline cursor-pointer"
+          >
+            Tentar de novo
+          </button>
+        )}
       </div>
     );
   }
