@@ -108,13 +108,16 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (
     email: string,
-    password: string
-  ) => Promise<{ success: boolean; error?: string }>;
+    password: string,
+    code?: string
+  ) => Promise<{ success: boolean; error?: string; twofaRequired?: boolean }>;
   register: (
     data: RegisterData
   ) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   updateUser: (userData: Seller) => void;
+  /** Troca o token desta sessão (ex.: depois de mudar a senha). */
+  updateToken: (token: string) => void;
   refreshUserData: () => Promise<void>;
 }
 
@@ -214,14 +217,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (
     email: string,
-    password: string
-  ): Promise<{ success: boolean; error?: string }> => {
+    password: string,
+    code?: string
+  ): Promise<{ success: boolean; error?: string; twofaRequired?: boolean }> => {
     setIsLoading(true);
 
     try {
       const response = await axios.post<LoginResponse>(
         "https://shadowpay-backend.onrender.com/api/auth/login",
-        { email, password },
+        { email, password, ...(code ? { code } : {}) },
         {
           headers: {
             "Content-Type": "application/json",
@@ -257,9 +261,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error("Erro no login:", err);
 
       let errorMessage = "Erro de conexão. Verifique sua internet.";
+      const errCode = err.response?.data?.error?.code;
+      const serverMsg = err.response?.data?.error?.message || err.response?.data?.message;
+
+      // Conta com 2FA: a senha está certa, falta o código do app.
+      if (errCode === "TWOFA_REQUIRED") {
+        return { success: false, twofaRequired: true, error: serverMsg };
+      }
+      if (errCode === "TWOFA_INVALID") {
+        return { success: false, twofaRequired: true, error: serverMsg || "Código 2FA inválido." };
+      }
 
       if (err.response?.status === 401) {
-        errorMessage = "E-mail ou senha incorretos.";
+        errorMessage = serverMsg && !/unauthorized/i.test(serverMsg) ? serverMsg : "E-mail ou senha incorretos.";
+      } else if (err.response?.status === 429) {
+        // muitas tentativas: o servidor diz quanto tempo esperar
+        errorMessage = serverMsg || "Muitas tentativas. Aguarde alguns minutos e tente de novo.";
       } else if (err.response?.status === 400) {
         errorMessage = "Dados inválidos. Verifique os campos.";
       } else if (err.response?.status >= 500) {
@@ -270,6 +287,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const updateToken = (next: string) => {
+    if (!next) return;
+    setToken(next);
+    localStorage.setItem("token", next);
   };
 
   const logout = () => {
@@ -346,6 +369,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     register,
     logout,
     updateUser,
+    updateToken,
     refreshUserData,
   };
 

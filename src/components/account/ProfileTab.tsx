@@ -469,7 +469,7 @@ function PasswordField({
 }
 
 function PasswordForm() {
-  const { token } = useAuth();
+  const { token, updateToken } = useAuth();
   const [pwd, setPwd] = useState({ current: "", next: "", confirm: "" });
   const [busy, setBusy] = useState(false);
   const submit = async () => {
@@ -484,6 +484,8 @@ function PasswordForm() {
         { currentPassword: pwd.current, newPassword: pwd.next },
         { headers: { Authorization: `Bearer ${token}` } },
       );
+      // Senha nova derruba as sessões antigas: este aparelho segue com o token novo.
+      if (r.data?.data?.token) updateToken(r.data.data.token);
       toast.success(r.data?.message || "Senha alterada.");
       setPwd({ current: "", next: "", confirm: "" });
     } catch (e) {

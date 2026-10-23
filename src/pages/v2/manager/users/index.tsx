@@ -80,6 +80,8 @@ interface Seller {
     balance: string;
     isBlocked: boolean;
   }[];
+  /** chave Pix da conta (pra onde vão os saques) */
+  kyc?: { pixKey?: string | null; pixKeyType?: string | null };
 }
 type UserFormData = {
   id: string;
@@ -89,6 +91,8 @@ type UserFormData = {
   cpf_cnpj: string;
   saldo: string;
   adquererId: string;
+  pixKey: string;
+  pixKeyType: string;
 };
 
 interface SellerDetails {
@@ -353,7 +357,11 @@ function UsersManagerContent() {
     cpf_cnpj: "",
     saldo: "",
     adquererId: "",
+    pixKey: "",
+    pixKeyType: "",
   });
+  // chave Pix quando o modal abriu (só manda se o admin trocou)
+  const [originalPixKey, setOriginalPixKey] = useState("");
   // saldo quando o modal abriu (pra só ajustar se o admin mudou)
   const [originalBalance, setOriginalBalance] = useState<number | null>(null);
   const [changePassword, setChangePassword] = useState(false);
@@ -440,6 +448,10 @@ function UsersManagerContent() {
         cpf_cnpj: userFormData.cpf_cnpj,
         adquererId: userFormData.adquererId || null,
         ...(changePassword ? { password } : {}),
+        // chave Pix de saque: só quando o admin trocou
+        ...(userFormData.pixKey.trim() !== originalPixKey
+          ? { pixKey: userFormData.pixKey.trim(), pixKeyType: userFormData.pixKeyType || null }
+          : {}),
       };
 
       const sellerResponse = await fetch(
@@ -1288,7 +1300,10 @@ function UsersManagerContent() {
                                           cpf_cnpj: seller.cpf_cnpj ?? "",
                                           adquererId: seller.adquererId || "",
                                           saldo: safeBal.toFixed(2).replace(".", ","),
+                                          pixKey: seller.kyc?.pixKey || "",
+                                          pixKeyType: String(seller.kyc?.pixKeyType || "").toLowerCase(),
                                         });
+                                        setOriginalPixKey(seller.kyc?.pixKey || "");
                                         setIsEditUserModalOpen(true);
                                       }}
                                       className="cursor-pointer h-8 w-8 p-0"
@@ -2036,6 +2051,31 @@ function UsersManagerContent() {
                   </option>
                 ))}
               </select>
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Chave Pix de saque</Label>
+              <div className="flex gap-2">
+                <select
+                  value={userFormData.pixKeyType}
+                  onChange={(e) => handleUserFormChange("pixKeyType", e.target.value)}
+                  className="cursor-pointer w-36 shrink-0 p-2 border border-input rounded-md bg-background text-foreground"
+                >
+                  <option value="">Tipo</option>
+                  <option value="cpf">CPF</option>
+                  <option value="cnpj">CNPJ</option>
+                  <option value="email">E-mail</option>
+                  <option value="phone">Telefone</option>
+                  <option value="random">Aleatória</option>
+                </select>
+                <Input
+                  value={userFormData.pixKey}
+                  onChange={(e) => handleUserFormChange("pixKey", e.target.value)}
+                  placeholder="Chave Pix do seller"
+                />
+              </div>
+              <p className="mt-1 text-xs text-slate-500">
+                Os saques do seller só vão para esta chave. Troque só a pedido dele e confira que é do mesmo CPF/CNPJ da conta.
+              </p>
             </div>
 
             {/* Checkbox para mostrar campos de senha */}

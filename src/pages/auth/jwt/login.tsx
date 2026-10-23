@@ -112,6 +112,9 @@ export default function Login() {
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // 2FA: aparece quando a conta tem o app autenticador ativo.
+  const [needCode, setNeedCode] = useState(false);
+  const [code, setCode] = useState("");
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [runId, setRunId] = useState(0);
   const [phase, setPhase] = useState<"intro" | "phone">("intro");
@@ -149,13 +152,23 @@ export default function Login() {
   const handleLogin = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
+      if (needCode && code.length !== 6) {
+        toast.error("Digite os 6 números do seu app autenticador.");
+        return;
+      }
       try {
-        const result = await login(email, password);
+        const result = await login(email, password, needCode ? code : undefined);
         if (result.success) {
           toast.success("Login realizado com sucesso!");
           // Push: se este aparelho já permitiu, o AuthContext o registra pra
           // esta conta; senão, o seller ativa pelo banner do dashboard.
           router.push("/v1/dashboard");
+        } else if (result.twofaRequired) {
+          // senha certa: falta o código do app (ou o código veio errado)
+          if (needCode) toast.error(result.error || "Código inválido. Confira no app.");
+          else toast.info("Digite o código do seu app autenticador.");
+          setNeedCode(true);
+          setCode("");
         } else {
           toast.error(result.error || "Erro no login. Verifique suas credenciais.");
         }
@@ -164,7 +177,7 @@ export default function Login() {
         console.error(err);
       }
     },
-    [email, password, login, router]
+    [email, password, code, needCode, login, router]
   );
 
   const inputCls = "h-11 w-full rounded-lg px-3.5 text-[14px] outline-none transition-colors placeholder:text-slate-400 focus:border-[#7C3AED] focus:ring-2 focus:ring-[rgba(124,58,237,0.12)]";
@@ -241,11 +254,30 @@ export default function Login() {
                   <label htmlFor="password" className="block text-[12px] font-medium" style={{ color: T.inkSecondary }}>Senha</label>
                   <button type="button" onClick={() => setIsForgotPasswordOpen(true)} className="text-[12px] transition-opacity hover:opacity-70 disabled:opacity-50" style={{ color: T.primary }} disabled={isLoading}>Esqueceu a senha?</button>
                 </div>
-                <input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={isLoading} className={inputCls} style={inputStyle} />
+                <input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => { setPassword(e.target.value); if (needCode) { setNeedCode(false); setCode(""); } }} required disabled={isLoading} className={inputCls} style={inputStyle} />
               </div>
+              {needCode && (
+                <div className="space-y-1.5">
+                  <label htmlFor="code" className="block text-[12px] font-medium" style={{ color: T.inkSecondary }}>Código do app autenticador (2FA)</label>
+                  <input
+                    id="code"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    autoFocus
+                    placeholder="000000"
+                    maxLength={6}
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    disabled={isLoading}
+                    className={inputCls + " tracking-[0.4em] text-center font-semibold"}
+                    style={inputStyle}
+                  />
+                  <p className="text-[11.5px]" style={{ color: T.inkMute }}>Abra o Google Authenticator (ou outro app) e digite o código da ShadowPay.</p>
+                </div>
+              )}
               <button
                 type="submit"
-                disabled={isLoading || !email || !password}
+                disabled={isLoading || !email || !password || (needCode && code.length !== 6)}
                 className="group inline-flex h-11 w-full items-center justify-center gap-2 rounded-full text-[14px] font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-45"
                 style={{ background: isLoading ? T.primaryPress : T.primary, boxShadow: "0 1px 2px rgba(13,37,61,0.10)" }}
                 onMouseEnter={(e) => { if (!isLoading) e.currentTarget.style.background = T.primaryPress; }}

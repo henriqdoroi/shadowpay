@@ -101,6 +101,8 @@ function FinanceContent() {
   // simulador
   const [amountInput, setAmountInput] = useState("");
   const [pixKey, setPixKey] = useState("");
+  // Chave Pix da conta (a da verificação). Travada: os saques só vão pra ela.
+  const [accountKey, setAccountKey] = useState<{ pixKey: string; pixKeyType: string } | null>(null);
   const [twoFAOpen, setTwoFAOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [twoFACode, setTwoFACode] = useState("");
@@ -205,6 +207,23 @@ function FinanceContent() {
     })();
   }, [user, token, refreshKey]);
 
+  // ---- chave Pix da conta (saque só vai pra ela)
+  useEffect(() => {
+    if (!user || !token) return;
+    axios
+      .get(`${API}/api/withdrawals/pix-key`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => {
+        const d = r.data?.data;
+        if (d?.locked && d.pixKey) {
+          setAccountKey({ pixKey: String(d.pixKey), pixKeyType: String(d.pixKeyType || "") });
+          setPixKey(String(d.pixKey));
+        } else {
+          setAccountKey(null);
+        }
+      })
+      .catch(() => setAccountKey(null));
+  }, [user, token, refreshKey]);
+
   // ---- fetch withdraws + summary
   const fetchWithdraws = async (p = 1) => {
     if (!token) return;
@@ -268,8 +287,15 @@ function FinanceContent() {
     return null;
   };
 
+  // Tipo da chave do saque: o da conta (quando travada) ou detectado do texto.
+  const withdrawKeyType = (): string | null =>
+    accountKey ? accountKey.pixKeyType || detectPixKeyType(accountKey.pixKey) : detectPixKeyType(pixKey.trim());
+
   // Abre a janela de saque (valor + chave PIX são preenchidos nela).
-  const openWithdraw = () => setWithdrawOpen(true);
+  const openWithdraw = () => {
+    if (accountKey) setPixKey(accountKey.pixKey);
+    setWithdrawOpen(true);
+  };
 
   const submitWithdraw = async () => {
     if (sacarValor <= 0) {
@@ -288,7 +314,7 @@ function FinanceContent() {
       toast.error("Informe a chave PIX.");
       return;
     }
-    const kind = detectPixKeyType(pixKey.trim());
+    const kind = withdrawKeyType();
     if (!kind) {
       toast.error("Chave PIX inválida.");
       return;
@@ -313,7 +339,7 @@ function FinanceContent() {
         toast.success("Saque solicitado!");
         setWithdrawOpen(false);
         setAmountInput("");
-        setPixKey("");
+        if (!accountKey) setPixKey("");
         setRefreshKey((k) => k + 1);
         return true;
       }
@@ -338,7 +364,7 @@ function FinanceContent() {
       toast.error("Informe o código de 6 dígitos do app.");
       return;
     }
-    const kind = detectPixKeyType(pixKey.trim());
+    const kind = withdrawKeyType();
     if (!kind) return;
     setTwoFALoading(true);
     const ok = await persistWithdraw(kind, twoFACode);
@@ -750,10 +776,20 @@ function FinanceContent() {
               <input
                 value={pixKey}
                 onChange={(e) => setPixKey(e.target.value)}
-                className="h-11 w-full rounded-xl border bg-white px-3 text-[14px] outline-none"
+                readOnly={!!accountKey}
+                className="h-11 w-full rounded-xl border bg-white px-3 text-[14px] outline-none read-only:bg-slate-50 read-only:text-slate-600"
                 style={{ borderColor: T.border }}
                 placeholder="CPF, CNPJ, e-mail ou telefone"
               />
+              {accountKey ? (
+                <p className="mt-1 text-[11px] text-slate-500">
+                  Por segurança, o saque vai sempre para a chave Pix da sua conta. Para trocar, fale com o suporte.
+                </p>
+              ) : (
+                <p className="mt-1 text-[11px] text-slate-500">
+                  Use uma chave no seu nome (mesmo CPF/CNPJ da conta). Depois do 1º saque ela fica fixa.
+                </p>
+              )}
               <p className="mt-1 text-[11px] text-slate-500">
                 Você receberá <b>{fmt(liquido)}</b> após a taxa de{" "}
                 {fmt(totalFee)}.

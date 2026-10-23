@@ -517,6 +517,10 @@ export default function CheckoutPage() {
           ? input.filename
           : "";
       if (!filename) return undefined;
+      // Link pronto (o backend manda as imagens como link) ou imagem embutida:
+      // usa como veio. Antes TUDO ganhava o prefixo /uploads/products/ e as
+      // imagens do checkout (banner, produto, depoimentos) apareciam quebradas.
+      if (/^(https?:|data:image\/|blob:)/i.test(filename)) return filename;
       const sanitized = filename.replace(/^\/+/, "");
       return `${API_ORIGIN}/${
         sanitized.startsWith("uploads/")
@@ -1703,9 +1707,7 @@ export default function CheckoutPage() {
                       src={
                         formData.productImage instanceof File
                           ? URL.createObjectURL(formData.productImage)
-                          : formData.productImage.startsWith("blob:")
-                          ? formData.productImage
-                          : formData.productImage.startsWith("http")
+                          : /^(blob:|https?:|data:image\/)/i.test(formData.productImage)
                           ? formData.productImage
                           : `${API_ORIGIN}/uploads/products/${formData.productImage}`
                       }
