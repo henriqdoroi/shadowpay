@@ -56,7 +56,6 @@ const T = {
 const cardStyle: React.CSSProperties = {
   background: "#FFFFFF",
   border: `1px solid ${T.borderSoft}`,
-  boxShadow: "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
 };
 
 type Status = {
@@ -332,7 +331,7 @@ function UtmifyContent() {
           type="submit"
           disabled={busy === "connect"}
           className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg px-4 text-[12.5px] font-semibold text-white disabled:opacity-60"
-          style={{ background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`, boxShadow: "0 6px 16px -8px rgba(124,58,237,0.45)" }}
+          style={{ background: T.primary }}
         >
           {busy === "connect" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
           {s?.connected ? "Testar e substituir" : "Conectar e testar"}
@@ -346,7 +345,7 @@ function UtmifyContent() {
   );
 
   return (
-    <div className="mx-auto w-full max-w-5xl">
+    <div className="w-full">
       <Link href="/v1/integrations" className="mb-4 inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-slate-500 hover:text-slate-800">
         <ArrowLeft className="h-4 w-4" />
         Integrações
@@ -354,12 +353,11 @@ function UtmifyContent() {
 
       <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-start gap-3">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl" style={{ background: T.amberBg, color: T.amber }}>
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl" style={{ background: T.amberBg, color: T.amber }}>
             <BarChart3 className="h-6 w-6" />
           </span>
           <div>
-            <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">INTEGRAÇÕES · RASTREIO</p>
-            <h1 className="text-[22px] font-bold tracking-tight text-slate-900 sm:text-[28px]" style={{ letterSpacing: "-0.005em" }}>
+            <h1 className="text-[22px] font-semibold text-slate-900 sm:text-[26px]" style={{ letterSpacing: "-0.005em" }}>
               UTMify
             </h1>
             <p className="mt-1 max-w-2xl text-[13px] text-slate-500">
@@ -377,12 +375,12 @@ function UtmifyContent() {
       </header>
 
       {loading ? (
-        <div className="rounded-2xl px-5 py-12 text-center text-[13px] text-slate-500" style={cardStyle}>
+        <div className="rounded-xl px-5 py-12 text-center text-[13px] text-slate-500" style={cardStyle}>
           <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin text-slate-400" />
           Carregando…
         </div>
       ) : loadError && !s ? (
-        <div className="rounded-2xl px-5 py-10 text-center" style={cardStyle}>
+        <div className="rounded-xl px-5 py-10 text-center" style={cardStyle}>
           <p className="text-[14px] font-semibold text-slate-700">{loadError}</p>
           <button onClick={loadStatus} className="mt-3 inline-flex items-center gap-1.5 text-[12.5px] font-semibold" style={{ color: T.primary }}>
             <RefreshCw className="h-4 w-4" /> Tentar de novo
@@ -392,7 +390,7 @@ function UtmifyContent() {
         <>
           {/* Avisos */}
           {s?.testMode && (
-            <div className="mb-4 flex items-start gap-3 rounded-2xl p-4" style={{ background: T.primaryBg, border: `1px solid ${T.borderSoft}` }}>
+            <div className="mb-4 flex items-start gap-3 rounded-xl p-4" style={{ background: T.primaryBg, border: `1px solid ${T.borderSoft}` }}>
               <FlaskConical className="mt-0.5 h-[18px] w-[18px] shrink-0" style={{ color: T.primary }} />
               <p className="text-[12.5px] leading-relaxed text-slate-600">
                 <b className="text-slate-900">Ambiente de teste.</b> Os pedidos vão com <b>isTest</b>: a UTMify valida, mas
@@ -401,7 +399,7 @@ function UtmifyContent() {
             </div>
           )}
           {s?.connected && (s.credentialInvalid || s.credentialUnreadable) && (
-            <div className="mb-4 flex items-start gap-3 rounded-2xl p-4" style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}>
+            <div className="mb-4 flex items-start gap-3 rounded-xl p-4" style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}>
               <AlertTriangle className="mt-0.5 h-[18px] w-[18px] shrink-0" style={{ color: T.red }} />
               <div className="text-[12.5px] leading-relaxed text-red-900">
                 <b>A UTMify recusou o token salvo — os envios estão pausados.</b> Gere uma nova credencial na UTMify e clique em{" "}
@@ -410,7 +408,7 @@ function UtmifyContent() {
             </div>
           )}
           {s?.connected && s.migratedFromProduct && (
-            <div className="mb-4 flex items-start gap-3 rounded-2xl p-4" style={{ background: T.amberBg, border: `1px solid ${T.borderSoft}` }}>
+            <div className="mb-4 flex items-start gap-3 rounded-xl p-4" style={{ background: T.amberBg, border: `1px solid ${T.borderSoft}` }}>
               <KeyRound className="mt-0.5 h-[18px] w-[18px] shrink-0" style={{ color: T.amber }} />
               <p className="text-[12.5px] leading-relaxed text-slate-600">
                 <b className="text-slate-900">Trouxemos o token que estava no seu produto.</b> O token da UTMify agora vale
@@ -423,7 +421,7 @@ function UtmifyContent() {
           )}
 
           {/* Conexão */}
-          <section className="mb-6 rounded-2xl p-5" style={cardStyle}>
+          <section className="mb-6 rounded-xl p-5" style={cardStyle}>
             {!s?.connected ? (
               <>
                 <h2 className="text-[15px] font-bold text-slate-900">Conectar sua conta UTMify</h2>
@@ -484,7 +482,7 @@ function UtmifyContent() {
 
           {/* Histórico */}
           {s?.connected && (
-            <section className="mb-6 overflow-hidden rounded-2xl" style={cardStyle}>
+            <section className="mb-6 overflow-hidden rounded-xl" style={cardStyle}>
               <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5">
                 <div>
                   <h2 className="text-[15px] font-bold text-slate-900">Envios pra UTMify</h2>
@@ -610,7 +608,7 @@ function UtmifyContent() {
 
           {/* Como funciona */}
           <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div className="rounded-2xl p-5" style={cardStyle}>
+            <div className="rounded-xl p-5" style={cardStyle}>
               <h2 className="text-[15px] font-bold text-slate-900">Onde pegar o token</h2>
               <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-[12.5px] leading-relaxed text-slate-600">
                 <li>Entre na sua conta da UTMify.</li>
@@ -633,7 +631,7 @@ function UtmifyContent() {
               </a>
             </div>
 
-            <div className="rounded-2xl p-5" style={cardStyle}>
+            <div className="rounded-xl p-5" style={cardStyle}>
               <h2 className="text-[15px] font-bold text-slate-900">Como funciona</h2>
               <ul className="mt-3 space-y-2 text-[12.5px] leading-relaxed text-slate-600">
                 <li>

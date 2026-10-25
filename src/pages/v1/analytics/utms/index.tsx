@@ -173,7 +173,7 @@ function UtmsContent() {
         {/* HEADER */}
         <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <h1
-            className="whitespace-nowrap text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
+            className="whitespace-nowrap text-[22px] font-semibold sm:text-[26px] text-slate-900"
             style={{ letterSpacing: "-0.005em" }}
           >
             Análise de UTMs
@@ -297,12 +297,10 @@ function UtmsContent() {
 
         {/* TABELA */}
         <section
-          className="overflow-hidden rounded-2xl"
+          className="overflow-hidden rounded-xl"
           style={{
             background: T.card,
             border: `1px solid ${T.borderSoft}`,
-            boxShadow:
-              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
           }}
         >
           <div className="-mx-3 overflow-x-auto sm:mx-0">

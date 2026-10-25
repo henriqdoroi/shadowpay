@@ -51,13 +51,13 @@ const STATUS_TABS: { key: string; label: string; filter: string; count: (s: Sale
 const API = "https://shadowpay-backend.onrender.com";
 
 const T = {
-  text: "#0F172A",
+  text: "#111827",
   text2: "#475569",
-  textMuted: "#94A3B8",
+  textMuted: "#9CA3AF",
   primary: "#7C3AED",
   primaryBg: "rgba(124,58,237,0.08)",
-  border: "rgba(15,23,42,0.08)",
-  borderSoft: "rgba(15,23,42,0.06)",
+  border: "#E5E7EB",
+  borderSoft: "#ECECF0",
   card: "#FFFFFF",
   green: "#10B981",
   amber: "#F59E0B",
@@ -236,10 +236,10 @@ function SalesContent() {
     };
     return (
       <span
-        className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider"
-        style={{ background: T.primaryBg, color: T.primary }}
+        className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[12px] font-medium"
+        style={{ background: "#F3F4F6", color: "#374151" }}
       >
-        {labels[k] || m}
+        {k === "PIX" ? "Pix" : labels[k] || m}
       </span>
     );
   };
@@ -254,26 +254,23 @@ function SalesContent() {
   return (
     <>
       <Head>
-        <title>ShadowPay — Vendas</title>
+        <title>ShadowPay — Transações</title>
       </Head>
 
       <LightShell>
         {/* HEADER */}
-        <header className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:gap-4 sm:items-end sm:justify-between">
+        <header className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:gap-4 sm:items-end sm:justify-between">
           <div>
-            <h1
-              className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
-              style={{ letterSpacing: "-0.005em" }}
-            >
-              Vendas
+            <h1 className="text-[22px] font-semibold text-slate-900 sm:text-[26px]">
+              Transações
             </h1>
-            <p className="mt-1 text-[13.5px] text-slate-500">
-              Todas as vendas — pagas, pendentes e reembolsadas — em tempo real.
+            <p className="mt-1 text-[14px] text-slate-500">
+              Vendas pagas, pendentes e reembolsadas.
             </p>
           </div>
           <button
             onClick={() => fetchSales(page)}
-            className="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-[13px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+            className="inline-flex h-9 items-center gap-2 rounded-lg border bg-white px-3.5 text-[13px] font-medium text-slate-700 transition-colors hover:bg-slate-50"
             style={{ borderColor: T.border }}
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
@@ -281,8 +278,11 @@ function SalesContent() {
           </button>
         </header>
 
-        {/* SUMMARY CARDS */}
-        <section className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
+        {/* RESUMO — uma faixa só (mesmo desenho do Dashboard) */}
+        <section
+          className="mb-6 grid grid-cols-2 gap-x-6 gap-y-5 rounded-xl border bg-white p-5 sm:p-6 lg:grid-cols-5"
+          style={{ borderColor: T.borderSoft }}
+        >
           {[
             {
               label: "Faturamento (pagas)",
@@ -315,46 +315,27 @@ function SalesContent() {
               color: T.primary,
             },
           ].map((c) => (
-            <div
-              key={c.label}
-              className="rounded-2xl p-4"
-              style={{
-                background: T.card,
-                border: `1px solid ${T.borderSoft}`,
-                boxShadow:
-                  "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
-                  {c.label}
-                </p>
-                <span
-                  className="flex h-7 w-7 items-center justify-center rounded-lg"
-                  style={{ background: `${c.color}14`, color: c.color }}
-                >
-                  {c.icon}
-                </span>
-              </div>
-              <p className="mt-2 text-[18px] font-bold text-slate-900">{c.value}</p>
+            <div key={c.label} className="min-w-0">
+              <p className="text-[13px] font-medium text-slate-500">{c.label}</p>
+              <p className="mt-1.5 text-[20px] font-semibold leading-tight text-slate-900 tabular-nums">
+                {c.value}
+              </p>
             </div>
           ))}
         </section>
 
         {/* FILTROS */}
         <section
-          className="mb-4 rounded-2xl p-4"
+          className="mb-4 rounded-xl p-4"
           style={{
             background: T.card,
             border: `1px solid ${T.borderSoft}`,
-            boxShadow:
-              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
           }}
         >
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-[2fr_1fr_1fr_auto] lg:items-end">
             {/* Busca — full em mobile */}
             <div className="col-span-1 sm:col-span-2 lg:col-span-1">
-              <label className="mb-1 block text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
+              <label className="mb-1.5 block text-[13px] font-medium text-slate-600">
                 Buscar
               </label>
               <div className="relative">
@@ -376,7 +357,7 @@ function SalesContent() {
             </div>
             {/* Método */}
             <div>
-              <label className="mb-1 block text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
+              <label className="mb-1.5 block text-[13px] font-medium text-slate-600">
                 Método
               </label>
               <select
@@ -394,7 +375,7 @@ function SalesContent() {
             </div>
             {/* Período rápido */}
             <div>
-              <label className="mb-1 block text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
+              <label className="mb-1.5 block text-[13px] font-medium text-slate-600">
                 Período
               </label>
               <select
@@ -411,11 +392,8 @@ function SalesContent() {
             </div>
             <button
               onClick={() => fetchSales(1)}
-              className="inline-flex h-10 items-center gap-2 rounded-xl px-5 text-[13px] font-bold text-white"
-              style={{
-                background: T.primary,
-                boxShadow: "0 8px 20px -8px rgba(124,58,237,0.55)",
-              }}
+              className="inline-flex h-10 items-center gap-2 rounded-lg px-5 text-[13px] font-semibold text-white transition-colors hover:bg-[#6D28D9]"
+              style={{ background: T.primary }}
             >
               <Filter className="h-4 w-4" />
               Aplicar
@@ -434,20 +412,16 @@ function SalesContent() {
                   role="tab"
                   aria-selected={active}
                   onClick={() => setStatusFilter(tab.filter)}
-                  className="inline-flex h-9 shrink-0 items-center gap-2 rounded-xl px-3.5 text-[13px] font-semibold transition-colors"
+                  className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg px-3 text-[13px] font-medium transition-colors hover:bg-[#F6F6F8]"
                   style={{
-                    background: active ? T.primary : T.card,
-                    color: active ? "#FFFFFF" : T.text2,
-                    border: `1px solid ${active ? T.primary : T.border}`,
+                    background: active ? "#F1F1F4" : "transparent",
+                    color: active ? T.text : "#6B7280",
                   }}
                 >
                   {tab.label}
                   <span
-                    className="rounded-md px-1.5 py-0.5 text-[11px] font-bold"
-                    style={{
-                      background: active ? "rgba(255,255,255,0.22)" : "#F1F5F9",
-                      color: active ? "#FFFFFF" : T.text2,
-                    }}
+                    className="text-[12px] font-medium tabular-nums"
+                    style={{ color: active ? T.primary : "#9CA3AF" }}
                   >
                     {tab.count(stats).toLocaleString("pt-BR")}
                   </span>
@@ -459,20 +433,18 @@ function SalesContent() {
 
         {/* TABELA */}
         <section
-          className="overflow-hidden rounded-2xl"
+          className="overflow-hidden rounded-xl"
           style={{
             background: T.card,
             border: `1px solid ${T.borderSoft}`,
-            boxShadow:
-              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
           }}
         >
           <div className="-mx-3 overflow-x-auto sm:mx-0">
-            <table className="w-full text-[13px]">
+            <table className="w-full text-[13.5px]">
               <thead>
                 <tr
-                  className="text-left text-[10.5px] font-bold uppercase tracking-wider"
-                  style={{ color: T.textMuted, background: "#F8FAFC" }}
+                  className="text-left text-[12.5px] font-medium"
+                  style={{ color: "#6B7280" }}
                 >
                   <th className="px-4 py-3">Produto</th>
                   <th className="px-4 py-3">Cliente</th>
@@ -530,7 +502,7 @@ function SalesContent() {
                         className="transition-colors hover:bg-slate-50"
                         style={{ borderTop: `1px solid ${T.borderSoft}` }}
                       >
-                        <td className="px-4 py-3.5 font-semibold text-slate-800">
+                        <td className="px-4 py-3.5 font-medium text-slate-900">
                           {productName}
                         </td>
                         <td className="px-4 py-3.5 text-slate-700">{name}</td>
@@ -546,7 +518,7 @@ function SalesContent() {
                         </td>
                         <td className="px-4 py-3.5">{methodPill(t.method)}</td>
                         <td className="px-4 py-3.5">{statusPill(t)}</td>
-                        <td className="px-4 py-3.5 text-slate-600">
+                        <td className="whitespace-nowrap px-4 py-3.5 text-slate-600">
                           {fmtDate(t.createdAt)}
                         </td>
                         <td className="px-4 py-3.5">
@@ -608,12 +580,12 @@ function SalesContent() {
           onClick={() => setSelected(null)}
         >
           <div
-            className="max-h-[85vh] w-full max-w-lg overflow-auto rounded-2xl bg-white p-6"
-            style={{ boxShadow: "0 24px 64px rgba(15,23,42,0.18)" }}
+            className="max-h-[85vh] w-full max-w-lg overflow-auto rounded-xl bg-white p-6"
+            style={{ boxShadow: "0 16px 48px rgba(17,24,39,0.16)" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
-              <p className="text-[15px] font-bold text-slate-900">
+              <p className="text-[16px] font-semibold text-slate-900">
                 Detalhe da venda
               </p>
               <button
@@ -712,9 +684,7 @@ function Row({
       className="flex items-center justify-between gap-3 border-b pb-2.5 last:border-none last:pb-0"
       style={{ borderColor: "rgba(15,23,42,0.06)" }}
     >
-      <span className="text-[11.5px] font-semibold uppercase tracking-wider text-slate-500">
-        {label}
-      </span>
+      <span className="text-[13px] text-slate-500">{label}</span>
       <span className="text-right text-[13px] text-slate-800">{value}</span>
     </div>
   );

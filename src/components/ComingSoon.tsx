@@ -28,9 +28,6 @@ export function ComingSoon({
     <div className="mx-auto max-w-4xl">
       {/* Header */}
       <header className="mb-7">
-        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
-          {subtitle}
-        </p>
         <h1
           className="text-[28px] font-bold tracking-tight text-slate-900"
           style={{
@@ -44,7 +41,7 @@ export function ComingSoon({
 
       {/* Coming soon card */}
       <div
-        className="relative overflow-hidden rounded-2xl p-10 text-center"
+        className="relative overflow-hidden rounded-xl p-10 text-center"
         style={{
           background: "#FFFFFF",
           border: "1px solid rgba(15, 23, 42, 0.08)",
@@ -61,7 +58,7 @@ export function ComingSoon({
 
         {/* Icon */}
         <div
-          className="relative mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl"
+          className="relative mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-xl"
           style={{
             background: `${accent}14`,
             border: `1px solid ${accent}33`,
@@ -87,7 +84,7 @@ export function ComingSoon({
         )}
 
         <h2
-          className="relative text-[22px] font-bold tracking-tight text-slate-900"
+          className="relative text-[22px] font-semibold text-slate-900"
           style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
         >
           Em breve
@@ -98,7 +95,7 @@ export function ComingSoon({
 
         <button
           onClick={() => router.push("/v1/dashboard")}
-          className="relative mt-6 inline-flex h-10 items-center justify-center rounded-xl px-5 text-[13px] font-semibold text-white transition-transform hover:-translate-y-0.5"
+          className="relative mt-6 inline-flex h-10 items-center justify-center rounded-xl px-5 text-[13px] font-semibold text-white transition-colors"
           style={{
             background: accent,
             boxShadow: `0 8px 20px -8px ${accent}99`,

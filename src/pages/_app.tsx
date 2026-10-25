@@ -1,6 +1,7 @@
 "use client";
 
 import "@/styles/globals.css";
+import "@/styles/panel.css";
 import "@/styles/dark.css";
 import type { AppProps } from "next/app";
 import { Inter, JetBrains_Mono } from "next/font/google";
@@ -117,7 +118,7 @@ export default function App(props: AppProps) {
   return (
     <>
       <Head>
-        <title>ShadowPay — Elite Financial Infrastructure</title>
+        <title>ShadowPay — Gateway de pagamentos</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta

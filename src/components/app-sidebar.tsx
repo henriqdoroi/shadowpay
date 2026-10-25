@@ -175,7 +175,7 @@ export function AppSidebar({
     >
       <SidebarHeader
         className="px-5 py-4"
-        style={{ borderBottom: "1px solid rgba(15, 23, 42, 0.06)" }}
+        style={{ borderBottom: "1px solid #ECECF0" }}
       >
         <Link href="/v1/dashboard" className="flex items-center gap-3">
           <ShadowMark size={26} />
@@ -280,20 +280,20 @@ export function AppSidebar({
 
       <SidebarFooter
         className="p-3"
-        style={{ borderTop: "1px solid rgba(15, 23, 42, 0.06)" }}
+        style={{ borderTop: "1px solid #ECECF0" }}
       >
         <div
           className="rounded-xl p-3"
           style={{
             background: "#F8FAFC",
-            border: "1px solid rgba(15, 23, 42, 0.06)",
+            border: "1px solid #ECECF0",
           }}
         >
           <div className="flex items-center gap-2.5">
             <div
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
               style={{
-                background: "linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)",
+                background: "#7C3AED",
               }}
             >
               {initial}
@@ -325,7 +325,7 @@ export function AppSidebar({
           className="mt-2 flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-medium transition-colors hover:opacity-80"
           style={{
             background: "#F8FAFC",
-            border: "1px solid rgba(15, 23, 42, 0.06)",
+            border: "1px solid #ECECF0",
             color: "#475569",
           }}
         >

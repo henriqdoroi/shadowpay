@@ -81,15 +81,16 @@ html.dark:has(.sp-shell) .sp-main[class][style] {
   color: var(--d-text) !important;
   box-shadow: none !important;
 }
+/* menu e topo no mesmo preto do conteúdo, sem linhas dividindo a tela */
 html.dark:has(.sp-shell) .sp-sidebar[class][style] {
   background: var(--d-sidebar) !important;
-  border-right: 1px solid var(--d-border) !important;
+  border-right: 0 !important;
   box-shadow: none !important;
 }
 html.dark:has(.sp-shell) .sp-topbar[class][style] {
-  background: rgba(0, 0, 0, 0.92) !important;
-  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 8px 24px -18px rgba(0, 0, 0, 0.9) !important;
+  background: var(--d-bg) !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
 }
 /* logo: versão de fundo preto; "screen" some com o preto no fundo escuro */
 html.dark:has(.sp-shell) .sp-logo[data-collapsed="false"] {
@@ -100,20 +101,27 @@ html.dark:has(.sp-shell) .sp-logo[data-collapsed="true"] {
   mix-blend-mode: normal !important;
 }
 html.dark:has(.sp-shell) .sp-balance[class][style] {
-  background: linear-gradient(160deg, rgba(139, 92, 246, 0.14), #050505 70%) !important;
-  border-color: rgba(167, 139, 250, 0.3) !important;
-  box-shadow: 0 10px 26px -14px rgba(124, 58, 237, 0.55) !important;
-  color: var(--d-violet-text) !important;
+  background: var(--d-card-2) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: var(--d-muted) !important;
+}
+html.dark:has(.sp-shell) .sp-balance:hover {
+  background: var(--d-hover) !important;
+}
+html.dark:has(.sp-shell) .sp-balance p {
+  color: var(--d-muted) !important;
 }
 html.dark:has(.sp-shell) .sp-balance .sp-balance-value[class][style] {
   color: var(--d-text) !important;
 }
+/* item ativo: fundo neutro + texto claro; o roxo fica só no ícone */
 html.dark:has(.sp-shell) .sp-nav-item[data-active="true"] {
-  background: var(--d-violet-soft) !important;
-  color: var(--d-violet-text) !important;
+  background: var(--d-active) !important;
+  color: var(--d-text) !important;
 }
 html.dark:has(.sp-shell) .sp-nav-item[data-active="true"] svg {
-  color: var(--d-violet-text) !important;
+  color: var(--d-violet) !important;
 }
 html.dark:has(.sp-shell) .sp-nav-item[data-active="false"] {
   color: var(--d-text-2) !important;
@@ -125,8 +133,8 @@ html.dark:has(.sp-shell) .sp-nav-item[data-active="false"] svg {
   color: var(--d-faint) !important;
 }
 html.dark:has(.sp-shell) .sp-goal[class][style] {
-  background: rgba(139, 92, 246, 0.12) !important;
-  border-color: rgba(167, 139, 250, 0.28) !important;
+  background: var(--d-card-2) !important;
+  border: 0 !important;
 }
 html.dark:has(.sp-shell) .sp-goal-track[class][style] {
   background: rgba(255, 255, 255, 0.09) !important;
@@ -135,10 +143,10 @@ html.dark:has(.sp-shell) .sp-goal-value[class][style] {
   color: var(--d-text) !important;
 }
 html.dark:has(.sp-shell) .sp-goal-label {
-  color: var(--d-violet) !important;
+  color: var(--d-muted) !important;
 }
 html.dark:has(.sp-shell) .sp-avatar-ring {
-  box-shadow: 0 0 0 2px var(--d-bg), 0 0 0 3.5px rgba(167, 139, 250, 0.55) !important;
+  box-shadow: none !important;
 }
 /* botão flutuante (Shadow AI) */
 html.dark:has(.sp-shell) .sp-fab {
@@ -406,8 +414,14 @@ html.dark:has(.sp-shell) [style*="background: rgb(246, 248, 251)"],
 html.dark:has(.sp-shell) [style*="background-color: rgb(246, 248, 251)"],
 html.dark:has(.sp-shell) [style*="background: rgb(249, 250, 251)"],
 html.dark:has(.sp-shell) [style*="background: rgb(241, 243, 248)"],
-html.dark:has(.sp-shell) [style*="background: rgb(250, 250, 250)"] {
+html.dark:has(.sp-shell) [style*="background: rgb(250, 250, 250)"],
+html.dark:has(.sp-shell) [style*="background: rgb(246, 246, 248)"],
+html.dark:has(.sp-shell) [style*="background: rgb(243, 244, 246)"] {
   background: var(--d-card-2) !important;
+}
+/* item selecionado (abas, filtros) no tom neutro do redesenho */
+html.dark:has(.sp-shell) [style*="background: rgb(241, 241, 244)"] {
+  background: var(--d-active) !important;
 }
 html.dark:has(.sp-shell) [style*="background: rgb(241, 245, 249)"],
 html.dark:has(.sp-shell) [style*="background-color: rgb(241, 245, 249)"],

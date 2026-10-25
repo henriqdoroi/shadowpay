@@ -247,7 +247,7 @@ function NewAutomationModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-white p-6"
+        className="w-full max-w-md rounded-xl bg-white p-6"
         onClick={(e) => e.stopPropagation()}
         style={{
           boxShadow: "0 24px 64px -20px rgba(15,23,42,0.30)",
@@ -378,8 +378,7 @@ function NewAutomationModal({
             }
             className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg text-[13px] font-semibold text-white disabled:opacity-50"
             style={{
-              background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
-              boxShadow: "0 8px 20px -8px rgba(124,58,237,0.45)",
+              background: T.primary,
             }}
           >
             {saving ? (
@@ -483,7 +482,7 @@ function ConnectWhatsAppModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-white p-6"
+        className="w-full max-w-md rounded-xl bg-white p-6"
         onClick={(e) => e.stopPropagation()}
         style={{ boxShadow: "0 24px 64px -20px rgba(15,23,42,0.30)" }}
       >
@@ -522,8 +521,7 @@ function ConnectWhatsAppModal({
               disabled={saving}
               className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg text-[13px] font-semibold text-white disabled:opacity-50"
               style={{
-                background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
-                boxShadow: "0 8px 20px -8px rgba(124,58,237,0.45)",
+                background: T.primary,
               }}
             >
               {saving ? (
@@ -622,21 +620,18 @@ function AutomationsTab({
       {/* Ideias de automação */}
       <section className="mb-6">
         <div className="mb-3 flex items-center gap-2">
-          <Lightbulb className="h-4 w-4 text-amber-500" />
-          <h2 className="text-[13px] font-semibold text-slate-700">
-            Ideias de automação
+          <h2 className="text-[15px] font-semibold text-slate-900">
+            Modelos prontos
           </h2>
         </div>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           {TEMPLATES.map((tpl) => (
             <div
               key={tpl.key}
-              className="rounded-2xl p-4"
+              className="rounded-xl p-4"
               style={{
                 background: "#FFFFFF",
                 border: `1px solid ${T.borderSoft}`,
-                boxShadow:
-                  "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
               }}
             >
               <div className="mb-3 flex items-center gap-2">
@@ -674,19 +669,19 @@ function AutomationsTab({
 
       {/* Minhas automações */}
       <section>
-        <h2 className="mb-3 text-[13px] font-semibold text-slate-700">
+        <h2 className="mb-3 text-[15px] font-semibold text-slate-900">
           Minhas automações
         </h2>
         {loading ? (
           <div
-            className="rounded-2xl bg-white px-5 py-12 text-center text-[13px] text-slate-500"
+            className="rounded-xl bg-white px-5 py-12 text-center text-[13px] text-slate-500"
             style={{ border: `1px solid ${T.borderSoft}` }}
           >
             Carregando…
           </div>
         ) : list.length === 0 ? (
           <div
-            className="rounded-2xl bg-white px-5 py-12 text-center"
+            className="rounded-xl bg-white px-5 py-12 text-center"
             style={{ border: `1px solid ${T.borderSoft}` }}
           >
             <p className="text-[13px] text-slate-500">
@@ -701,12 +696,10 @@ function AutomationsTab({
               return (
                 <div
                   key={a.id}
-                  className="flex items-center gap-3 rounded-2xl p-4"
+                  className="flex items-center gap-3 rounded-xl p-4"
                   style={{
                     background: "#FFFFFF",
                     border: `1px solid ${T.borderSoft}`,
-                    boxShadow:
-                      "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
                   }}
                 >
                   <div
@@ -789,14 +782,14 @@ function WhatsAppTab({
 
       {loading ? (
         <div
-          className="rounded-2xl bg-white px-5 py-12 text-center text-[13px] text-slate-500"
+          className="rounded-xl bg-white px-5 py-12 text-center text-[13px] text-slate-500"
           style={{ border: `1px solid ${T.borderSoft}` }}
         >
           Carregando…
         </div>
       ) : list.length === 0 ? (
         <div
-          className="rounded-2xl bg-white px-5 py-12 text-center"
+          className="rounded-xl bg-white px-5 py-12 text-center"
           style={{ border: `1px solid ${T.borderSoft}` }}
         >
           <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center">
@@ -814,12 +807,10 @@ function WhatsAppTab({
           {list.map((a) => (
             <div
               key={a.id}
-              className="flex items-center gap-3 rounded-2xl p-4"
+              className="flex items-center gap-3 rounded-xl p-4"
               style={{
                 background: "#FFFFFF",
                 border: `1px solid ${T.borderSoft}`,
-                boxShadow:
-                  "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
               }}
             >
               <div
@@ -981,14 +972,11 @@ function AutomationContent() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="w-full">
       <header className="mb-6 flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-start sm:gap-4">
         <div>
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
-            AVANÇADO
-          </p>
           <h1
-            className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
+            className="text-[22px] font-semibold sm:text-[26px] text-slate-900"
             style={{ letterSpacing: "-0.005em" }}
           >
             Automações
@@ -997,8 +985,8 @@ function AutomationContent() {
         <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 sm:overflow-visible">
           {/* Tabs */}
           <div
-            className="inline-flex shrink-0 rounded-xl p-1"
-            style={{ background: "#F1F5F9" }}
+            className="inline-flex shrink-0 rounded-lg p-1"
+            style={{ background: "#F1F1F4" }}
           >
             {(["automations", "whatsapp"] as const).map((t) => {
               const active = tab === t;
@@ -1006,10 +994,11 @@ function AutomationContent() {
                 <button
                   key={t}
                   onClick={() => setTab(t)}
-                  className="rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors"
+                  className="rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors"
                   style={{
-                    background: active ? T.primary : "transparent",
-                    color: active ? "#FFFFFF" : T.text2,
+                    background: active ? "#FFFFFF" : "transparent",
+                    color: active ? "#111827" : "#6B7280",
+                    boxShadow: active ? "0 1px 2px rgba(17,24,39,0.08)" : "none",
                   }}
                 >
                   {t === "automations" ? "Automações" : "Contas WhatsApp"}
@@ -1020,11 +1009,8 @@ function AutomationContent() {
           {tab === "automations" && (
             <button
               onClick={() => setShowNew(true)}
-              className="inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-4 text-[13px] font-semibold text-white"
-              style={{
-                background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
-                boxShadow: "0 8px 20px -8px rgba(124,58,237,0.45)",
-              }}
+              className="inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-4 text-[13.5px] font-medium text-white transition-colors hover:bg-[#6D28D9]"
+              style={{ background: T.primary }}
             >
               <Plus className="h-4 w-4" />
               Criar automação

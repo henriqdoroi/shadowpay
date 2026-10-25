@@ -209,11 +209,8 @@ function WebhookContent() {
       <LightShell>
         <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
-              Integrações
-            </p>
             <h1
-              className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
+              className="text-[22px] font-semibold sm:text-[26px] text-slate-900"
               style={{
                 fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                 letterSpacing: "-0.005em",
@@ -227,10 +224,9 @@ function WebhookContent() {
           </div>
           <button
             onClick={() => setShowAdd(true)}
-            className="inline-flex h-10 items-center gap-2 rounded-xl px-5 text-[13px] font-semibold text-white transition-transform hover:-translate-y-0.5"
+            className="inline-flex h-10 items-center gap-2 rounded-xl px-5 text-[13px] font-semibold text-white transition-colors"
             style={{
               background: "#7C3AED",
-              boxShadow: "0 8px 20px -8px rgba(124,58,237,0.55)",
             }}
           >
             <Plus className="h-4 w-4" /> Conectar webhook
@@ -241,12 +237,10 @@ function WebhookContent() {
           {kpis.map((k) => (
             <div
               key={k.label}
-              className="rounded-2xl p-4 sm:p-5"
+              className="rounded-xl p-4 sm:p-5"
               style={{
                 background: "#FFFFFF",
-                border: "1px solid rgba(15,23,42,0.06)",
-                boxShadow:
-                  "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+                border: "1px solid #ECECF0",
               }}
             >
               <div className="flex items-center justify-between">
@@ -255,7 +249,7 @@ function WebhookContent() {
                 </p>
                 <span
                   className="flex h-7 w-7 items-center justify-center rounded-lg"
-                  style={{ background: `${k.color}14`, color: k.color }}
+                  style={{ background: "#F6F6F8", color: "#4B5563" }}
                 >
                   {k.icon}
                 </span>
@@ -272,17 +266,15 @@ function WebhookContent() {
         </section>
 
         <div
-          className="overflow-hidden rounded-2xl"
+          className="overflow-hidden rounded-xl"
           style={{
             background: "#FFFFFF",
-            border: "1px solid rgba(15,23,42,0.06)",
-            boxShadow:
-              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+            border: "1px solid #ECECF0",
           }}
         >
           <div
             className="px-5 py-4"
-            style={{ borderBottom: "1px solid rgba(15,23,42,0.06)" }}
+            style={{ borderBottom: "1px solid #ECECF0" }}
           >
             <h2
               className="text-[14px] font-semibold text-slate-900"

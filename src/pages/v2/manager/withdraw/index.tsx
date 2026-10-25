@@ -14,14 +14,14 @@ import { createPortal } from "react-dom";
 import Head from "next/head";
 import axios from "axios";
 import { toast } from "sonner";
-import { Check, CheckCircle2, ChevronLeft, ChevronRight, Clock, Copy, RefreshCw, Wallet, X, XCircle } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Clock, Copy, RefreshCw, Wallet, X } from "lucide-react";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { LightShell } from "@/components/LightShell";
 import ShadowPanel from "@/components/ShadowPanel";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiErrorMessage } from "@/lib/axiosErrors";
-import { Button, C, Card, Pill } from "@/components/account/ui";
+import { Button, C, Card } from "@/components/account/ui";
 
 const API = "https://shadowpay-backend.onrender.com";
 const PAGE_SIZE = 20;
@@ -49,16 +49,21 @@ const when = (s?: string | null) =>
 const KEY_LABEL: Record<string, string> = { cpf: "CPF", cnpj: "CNPJ", email: "E-mail", phone: "Telefone", random: "Aleatória" };
 
 function StatusPill({ s }: { s: W["status"] }) {
-  if (s === "PAID") return <Pill tone="green" icon={<CheckCircle2 className="h-3.5 w-3.5" />}>Pago</Pill>;
-  if (s === "FAILED") return <Pill tone="rose" icon={<XCircle className="h-3.5 w-3.5" />}>Recusado</Pill>;
-  if (s === "PROCESSING") return <Pill tone="blue">Processando</Pill>;
-  return <Pill tone="amber" icon={<Clock className="h-3.5 w-3.5" />}>Pendente</Pill>;
+  // texto + ponto (sem pílula colorida)
+  const [label, dot] =
+    s === "PAID" ? ["Pago", "#16A34A"] : s === "FAILED" ? ["Recusado", "#DC2626"] : s === "PROCESSING" ? ["Processando", "#3B82F6"] : ["Pendente", "#F59E0B"];
+  return (
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] text-slate-700">
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: dot }} />
+      {label}
+    </span>
+  );
 }
 
 function copy(text: string) {
   navigator.clipboard
     ?.writeText(text)
-    .then(() => toast.success("Chave PIX copiada."))
+    .then(() => toast.success("Chave Pix copiada."))
     .catch(() => toast.error("Não consegui copiar."));
 }
 
@@ -133,9 +138,8 @@ function WithdrawAdminContent() {
       <LightShell>
         <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">Admin</p>
-            <h1 className="text-[22px] font-bold tracking-tight text-slate-900 sm:text-[28px]">Gerenciamento de Saques</h1>
-            <p className="mt-1 text-[14px] text-slate-500">Faça o PIX para a chave do seller e marque aqui como pago — ele é avisado na hora.</p>
+            <h1 className="text-[22px] font-semibold text-slate-900 sm:text-[26px]">Saques</h1>
+            <p className="mt-1 text-[14px] text-slate-500">Faça o Pix para a chave do seller e marque como pago aqui. Ele é avisado na hora.</p>
           </div>
           <Button variant="outline" className="h-10 px-4 text-[13px]" onClick={load} icon={<RefreshCw className="h-4 w-4" />}>
             Atualizar
@@ -147,15 +151,10 @@ function WithdrawAdminContent() {
         ) : (
           <>
             <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {kpis.map(({ label, value, sub, Icon, color }) => (
+              {kpis.map(({ label, value, sub }) => (
                 <Card key={label} className="p-4 sm:p-5">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[13px] font-medium text-slate-500">{label}</p>
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: `${color}14`, color }}>
-                      <Icon className="h-4 w-4" />
-                    </span>
-                  </div>
-                  <p className="mt-2 whitespace-nowrap text-[24px] font-semibold leading-none tabular-nums text-slate-900">{summary ? value : "—"}</p>
+                  <p className="text-[13px] font-medium text-slate-500">{label}</p>
+                  <p className="mt-2 whitespace-nowrap text-[22px] font-semibold leading-none tabular-nums text-slate-900">{summary ? value : "—"}</p>
                   <p className="mt-1.5 text-[12px] text-slate-400">{summary ? sub : " "}</p>
                 </Card>
               ))}
@@ -164,7 +163,7 @@ function WithdrawAdminContent() {
             <Card className="mb-10 overflow-hidden">
               <div className="flex flex-col gap-3 border-b border-[#E6E8EB] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                 <div>
-                  <h2 className="text-[15px] font-bold text-slate-900">Solicitações de saque</h2>
+                  <h2 className="text-[15px] font-semibold text-slate-900">Solicitações de saque</h2>
                   <p className="text-[12px] text-slate-500">O saldo fica reservado até você pagar ou recusar.</p>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -176,12 +175,12 @@ function WithdrawAdminContent() {
                         setPage(1);
                         setItems(null);
                       }}
-                      className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12.5px] font-semibold transition-colors"
-                      style={filter === f.id ? { background: C.primary, color: "#fff" } : { background: "#F1F5F9", color: "#475569" }}
+                      className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors"
+                      style={filter === f.id ? { background: "#F1F1F4", color: "#111827" } : { background: "transparent", color: "#6B7280" }}
                     >
                       {f.label}
                       {f.count != null && summary && (
-                        <span className="rounded-full px-1.5 text-[11px]" style={{ background: filter === f.id ? "rgba(255,255,255,0.22)" : "#E2E8F0" }}>
+                        <span className="tabular-nums text-[12px]" style={{ color: filter === f.id ? C.primary : "#9CA3AF" }}>
                           {f.count}
                         </span>
                       )}
@@ -212,12 +211,12 @@ function WithdrawAdminContent() {
                   <div className="hidden overflow-x-auto md:block">
                     <table className="w-full text-left text-[13px]">
                       <thead>
-                        <tr className="text-[10.5px] uppercase tracking-[0.12em] text-slate-400">
-                          <th className="px-5 py-3 font-semibold">Seller</th>
-                          <th className="px-3 py-3 font-semibold">A pagar</th>
-                          <th className="px-3 py-3 font-semibold">Chave PIX</th>
-                          <th className="px-3 py-3 font-semibold">Status</th>
-                          <th className="px-5 py-3 text-right font-semibold">Ações</th>
+                        <tr className="text-[12.5px] text-slate-500">
+                          <th className="px-5 py-3 font-medium">Seller</th>
+                          <th className="px-3 py-3 font-medium">A pagar</th>
+                          <th className="px-3 py-3 font-medium">Chave Pix</th>
+                          <th className="px-3 py-3 font-medium">Status</th>
+                          <th className="px-5 py-3 text-right font-medium">Ações</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -235,7 +234,7 @@ function WithdrawAdminContent() {
                             <td className="px-3 py-3.5">
                               {w.pixKey ? (
                                 <button onClick={() => copy(w.pixKey!)} className="group flex max-w-[220px] items-center gap-1.5 text-left" title="Copiar chave">
-                                  <span className="truncate font-mono text-[12.5px] text-slate-700">{w.pixKey}</span>
+                                  <span className="truncate text-[13px] text-slate-700">{w.pixKey}</span>
                                   <Copy className="h-3.5 w-3.5 shrink-0 text-slate-400 group-hover:text-violet-600" />
                                 </button>
                               ) : (
@@ -277,14 +276,14 @@ function WithdrawAdminContent() {
                             <p className="truncate text-[12px] text-slate-500">{w.seller?.email}</p>
                           </div>
                           <div className="text-right">
-                            <p className="whitespace-nowrap text-[15px] font-bold tabular-nums text-slate-900">{brl(netOf(w))}</p>
+                            <p className="whitespace-nowrap text-[15px] font-semibold tabular-nums text-slate-900">{brl(netOf(w))}</p>
                             {Number(w.feeAmount || 0) > 0 && (<p className="whitespace-nowrap text-[11px] tabular-nums text-slate-400">taxa {brl(w.feeAmount!)}</p>)}
                           </div>
                         </div>
                         {w.pixKey && (
                           <button onClick={() => copy(w.pixKey!)} className="mt-2 flex max-w-full items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 text-left">
-                            <span className="text-[11px] font-semibold text-slate-400">{KEY_LABEL[w.pixKeyType || ""] || "PIX"}</span>
-                            <span className="truncate font-mono text-[12px] text-slate-700">{w.pixKey}</span>
+                            <span className="text-[11px] font-semibold text-slate-400">{KEY_LABEL[w.pixKeyType || ""] || "Pix"}</span>
+                            <span className="truncate text-[13px] text-slate-700">{w.pixKey}</span>
                             <Copy className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                           </button>
                         )}
@@ -334,7 +333,7 @@ function WithdrawAdminContent() {
                 role="dialog"
                 aria-modal="true"
                 onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-md rounded-t-3xl bg-white p-6 pb-[max(24px,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-2xl"
+                className="w-full max-w-md rounded-t-3xl bg-white p-6 pb-[max(24px,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-xl"
               >
                 <p className="text-[17px] font-bold text-slate-900">
                   {acting.kind === "pay" ? `Confirmar pagamento de ${brl(netOf(acting.w))}?` : `Recusar saque de ${brl(acting.w.amount)}?`}
@@ -346,7 +345,7 @@ function WithdrawAdminContent() {
                 </p>
                 {acting.kind === "pay" && acting.w.pixKey && (
                   <button onClick={() => copy(acting.w.pixKey!)} className="mt-4 flex w-full items-center gap-2 rounded-xl border border-[#E6E8EB] bg-slate-50 px-3.5 py-3 text-left">
-                    <span className="text-[11.5px] font-semibold text-slate-400">{KEY_LABEL[acting.w.pixKeyType || ""] || "PIX"}</span>
+                    <span className="text-[11.5px] font-semibold text-slate-400">{KEY_LABEL[acting.w.pixKeyType || ""] || "Pix"}</span>
                     <span className="flex-1 truncate font-mono text-[13px] font-semibold text-slate-800">{acting.w.pixKey}</span>
                     <Copy className="h-4 w-4 shrink-0" style={{ color: C.primary }} />
                   </button>

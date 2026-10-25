@@ -231,7 +231,7 @@ function DashboardContent() {
   return (
     <>
       <Head>
-        <title>ShadowPay — Command Center</title>
+        <title>ShadowPay — Dashboard</title>
       </Head>
 
       <LightShell valuesVisible={valuesVisible} onToggleValues={toggleValues}>
@@ -268,10 +268,10 @@ function DashboardContent() {
               {/* Período — controla as métricas e o gráfico */}
               <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
                 <div className="min-w-0">
-                  <h2 className="text-[16px] font-bold tracking-tight text-slate-900">
+                  <h2 className="text-[16px] font-semibold text-slate-900">
                     Resumo de vendas
                   </h2>
-                  <p className="text-[12.5px] text-slate-500">{resolved.description}</p>
+                  <p className="text-[13px] text-slate-500">{resolved.description}</p>
                 </div>
                 <PeriodPicker value={period} onChange={changePeriod} />
               </div>
@@ -342,12 +342,12 @@ function DashboardContent() {
                 >
                   <div className="mb-5">
                     <h2
-                      className="text-[15px] font-bold tracking-tight text-slate-900"
+                      className="text-[15px] font-semibold text-slate-900"
                       style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
                     >
                       Desempenho
                     </h2>
-                    <p className="text-[12px] text-slate-500">
+                    <p className="text-[13px] text-slate-500">
                       Faturamento {BUCKET_TEXT[chartBucket]} · {resolved.description}
                     </p>
                   </div>
@@ -439,8 +439,8 @@ function DashboardContent() {
                   }}
                 >
                   <div className="mx-auto flex w-full max-w-[400px] flex-1 flex-col items-center">
-                    <p className="text-[15px] font-bold" style={{ color: "#D97706" }}>
-                      Sua próxima premiação, {prizeFirstName}! 🎉
+                    <p className="text-[15px] font-semibold text-slate-900">
+                      Sua próxima premiação, {prizeFirstName}
                     </p>
 
                     {/* Placa (poster emoldurado) — troféu + marco de faturamento */}
@@ -509,20 +509,20 @@ function DashboardContent() {
                     </p>
 
                     <div
-                      className="mt-4 h-2.5 w-full overflow-hidden rounded-full"
-                      style={{ background: "#E2E8F0" }}
+                      className="mt-4 h-2 w-full overflow-hidden rounded-full"
+                      style={{ background: "#E5E7EB" }}
                     >
                       <div
                         className="h-full rounded-full"
                         style={{
                           width: `${prizeProgress}%`,
-                          background: "linear-gradient(90deg,#06B6D4,#22D3EE)",
+                          background: T.primary,
                           transition: "width 0.6s cubic-bezier(0.22,1,0.36,1)",
                         }}
                       />
                     </div>
-                    <p className="mt-2.5 text-[12px] text-slate-500">
-                      {Math.floor(prizeProgress)}% da jornada foi atingido. Continue firme!
+                    <p className="mt-2.5 text-[13px] text-slate-500">
+                      {Math.floor(prizeProgress)}% do caminho até o próximo prêmio
                     </p>
                   </div>
                 </motion.div>

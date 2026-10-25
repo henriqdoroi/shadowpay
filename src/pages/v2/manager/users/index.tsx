@@ -250,7 +250,7 @@ function KycDocPreview({ url, label }: { url?: string | null; label: string }) {
 const getKycStatusBadge = (status: string) => {
   const statusConfig = {
     NOT_STARTED: {
-      label: "Não Iniciado",
+      label: "Não iniciado",
       variant: "outline" as const,
       icon: ShieldOff, // ou outro ícone que faça sentido
     },
@@ -274,30 +274,28 @@ const getKycStatusBadge = (status: string) => {
   const config = statusConfig[status as keyof typeof statusConfig];
   if (!config) return null;
 
-  const Icon = config.icon;
-
-  return (
-    <Badge variant={config.variant} className="flex items-center gap-1">
-      <Icon className="h-3 w-3" />
-      {config.label}
-    </Badge>
-  );
+  return <StatusText label={config.label} color={STATUS_DOT[status] ?? "#9CA3AF"} />;
 };
 
-const getWalletStatusBadge = (isBlocked: boolean) => {
+// status como texto + ponto (sem pílula colorida)
+const STATUS_DOT: Record<string, string> = {
+  NOT_STARTED: "#9CA3AF",
+  PENDING: "#F59E0B",
+  APPROVED: "#16A34A",
+  BANNED: "#DC2626",
+};
+
+function StatusText({ label, color }: { label: string; color: string }) {
   return (
-    <Badge
-      variant={isBlocked ? "destructive" : "default"}
-      className="flex items-center gap-1"
-    >
-      {isBlocked ? (
-        <UserX className="h-3 w-3" />
-      ) : (
-        <UserCheck className="h-3 w-3" />
-      )}
-      {isBlocked ? "Bloqueada" : "Ativa"}
-    </Badge>
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] text-slate-700">
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
+      {label}
+    </span>
   );
+}
+
+const getWalletStatusBadge = (isBlocked: boolean) => {
+  return <StatusText label={isBlocked ? "Bloqueada" : "Ativa"} color={isBlocked ? "#DC2626" : "#16A34A"} />;
 };
 
 // Dados mockados para estatísticas (serão substituídos por dados reais posteriormente)
@@ -999,36 +997,36 @@ function UsersManagerContent() {
     }
   };
 
-  // Se estiver carregando, mostrar loading
-  if (loading) {
+  // Carregando (só na primeira vez — ao atualizar, a lista fica na tela)
+  if (loading && sellers.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Carregando sellers...</p>
+      <LightShell>
+        <div className="flex min-h-[50vh] items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-[#7C3AED]"></div>
+            <p className="text-[14px] text-slate-500">Carregando sellers…</p>
+          </div>
         </div>
-      </div>
+      </LightShell>
     );
   }
 
   // Se houver erro, mostrar mensagem de erro
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle className="text-xl font-semibold text-red-600">
-              Erro ao Carregar Sellers
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="text-muted-foreground mb-4">{error}</p>
+      <LightShell>
+        <div className="flex min-h-[50vh] items-center justify-center">
+          <div className="w-full max-w-md rounded-xl border border-[#ECECF0] bg-white p-6 text-center">
+            <p className="text-[15px] font-semibold text-slate-900">
+              Não consegui carregar os sellers
+            </p>
+            <p className="mb-4 mt-1 text-[14px] text-slate-500">{error}</p>
             <Button className="cursor-pointer" onClick={() => fetchSellers()}>
-              Tentar Novamente
+              Tentar de novo
             </Button>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </div>
+      </LightShell>
     );
   }
 
@@ -1036,20 +1034,17 @@ function UsersManagerContent() {
     <>
     <LightShell>
       <header className="mb-6">
-        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
-          Admin
-        </p>
         <h1
-          className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
+          className="text-[22px] font-semibold sm:text-[26px] text-slate-900"
           style={{
             fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
             letterSpacing: "-0.005em",
           }}
         >
-          Gerenciamento de Sellers
+          Sellers
         </h1>
         <p className="mt-1 text-[14px] text-slate-500">
-          Visualize e gerencie todos os sellers cadastrados.
+          Contas cadastradas na plataforma.
         </p>
       </header>
 
@@ -1079,28 +1074,21 @@ function UsersManagerContent() {
         }}
       >
             {/* Filtros */}
-            <Card
-              className="
-      p-6
-      min-w-[280px] max-w-[360px] w-full
-      md:min-w-auto md:max-w-none md:p-6
-      flex flex-col justify-between
-    "
-            >
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between text-base sm:text-lg font-semibold truncate">
+            <Card className="w-full gap-0 rounded-xl border-[#ECECF0] p-5 shadow-none sm:p-6">
+              <CardHeader className="px-0">
+                <CardTitle className="text-[15px] font-semibold">
                   Filtros
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0 mt-2 flex flex-col gap-4">
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1.6fr)_1fr_1fr_1fr]">
                   <div className="space-y-2">
                     <Label htmlFor="search">Buscar</Label>
                     <div className="flex gap-2">
                       <Input
                         id="search"
                         type="text"
-                        placeholder="Nome, email ou cnpj"
+                        placeholder="Nome, e-mail ou CNPJ"
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
                         onKeyDown={(e) => {
@@ -1169,7 +1157,7 @@ function UsersManagerContent() {
                       <SelectContent>
                         <SelectItem value="all">Todos</SelectItem>
                         <SelectItem value="NOT_STARTED">
-                          Não Iniciado
+                          Não iniciado
                         </SelectItem>
                         <SelectItem value="PENDING">Pendente</SelectItem>
                         <SelectItem value="APPROVED">Aprovado</SelectItem>
@@ -1178,7 +1166,7 @@ function UsersManagerContent() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Status Ativo</Label>
+                    <Label>Situação</Label>
                     <Select
                       value={filters.isActive || "all"}
                       onValueChange={(value) =>
@@ -1203,18 +1191,12 @@ function UsersManagerContent() {
             </Card>
 
             {/* Tabela de Sellers */}
-            <Card
-              className="
-    w-full
-    p-6 flex flex-col justify-between
-    min-w-[280px] max-w-[360px]
-    md:min-w-auto md:max-w-none md:p-6
-  "
-            >
-              <CardHeader>
+            <Card className="w-full gap-0 rounded-xl border-[#ECECF0] p-5 shadow-none sm:p-6">
+              <CardHeader className="px-0">
                 <div className="flex justify-between items-center">
-                  <CardTitle>Lista de Sellers</CardTitle>
+                  <CardTitle className="text-[15px] font-semibold">Todos os sellers</CardTitle>
                   <Button
+                    variant="outline"
                     className="cursor-pointer"
                     onClick={() => fetchSellers(pagination.page)}
                     disabled={loading}
@@ -1224,38 +1206,38 @@ function UsersManagerContent() {
                 </div>
               </CardHeader>
               <CardContent className="p-0 mt-2 flex flex-col gap-4">
-                <div className="rounded-md border">
+                <div className="-mx-5 sm:-mx-6">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Empresa</TableHead>
+                        <TableHead className="pl-5 sm:pl-6">Empresa</TableHead>
                         <TableHead>E-mail</TableHead>
-                        <TableHead>cpf/cnpj</TableHead>
+                        <TableHead>CPF/CNPJ</TableHead>
                         <TableHead>Saldo</TableHead>
                         <TableHead>Transações</TableHead>
                         <TableHead>Produtos</TableHead>
-                        <TableHead>KYC Status</TableHead>
+                        <TableHead>KYC</TableHead>
                         <TableHead>Adquirente</TableHead>
                         <TableHead>Carteira</TableHead>
-                        <TableHead>Data de Cadastro</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
+                        <TableHead>Cadastro</TableHead>
+                        <TableHead className="pr-5 text-right sm:pr-6">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {sellers.map((seller) => (
                         <TableRow key={seller.id}>
                           <TableCell
-                            className="font-medium"
+                            className="pl-5 font-medium sm:pl-6"
                             title={seller.companyName}
                           >
                             {truncate(seller.companyName, 20)}
                           </TableCell>
 
                           <TableCell>{seller.email}</TableCell>
-                          <TableCell className="font-mono text-xs">
+                          <TableCell className="tabular-nums text-slate-600">
                             {seller.cpf_cnpj}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="tabular-nums">
                             {formatCurrency(
                               Number(seller.wallet[0]?.balance || 0)
                             )}
@@ -1274,8 +1256,8 @@ function UsersManagerContent() {
                               seller.wallet[0]?.isBlocked || false
                             )}
                           </TableCell>
-                          <TableCell>{formatDate(seller.createdAt)}</TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="whitespace-nowrap text-slate-600">{formatDate(seller.createdAt)}</TableCell>
+                          <TableCell className="pr-5 text-right sm:pr-6">
                             <TooltipProvider>
                               <div className="flex items-center justify-end gap-2">
                                 {/* Botão para editar o usuário */}
@@ -1342,7 +1324,7 @@ function UsersManagerContent() {
                                         onClick={() =>
                                           handleAction("kyc", seller.id)
                                         }
-                                        className="cursor-pointer h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                        className="cursor-pointer h-8 w-8 p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
                                         disabled={loadingKyc}
                                       >
                                         <Shield className="h-4 w-4" />
@@ -1363,7 +1345,7 @@ function UsersManagerContent() {
                                       }
                                       className="cursor-pointer h-8 w-8 p-0"
                                     >
-                                      <Wallet className="h-4 w-4 text-green-600" />
+                                      <Wallet className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>

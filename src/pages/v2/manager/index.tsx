@@ -23,7 +23,6 @@ import {
   Eye,
   EyeOff,
   RefreshCw,
-  Filter,
 } from "lucide-react";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -337,14 +336,14 @@ function ManagerDashboardContent() {
     ? [
         {
           id: "lucro",
-          title: "Lucro Líquido",
+          title: "Lucro líquido",
           value: fmtCurrency(calcProfit(txs, saldoData)),
           icon: <TrendingUp className="h-4 w-4" />,
           color: "#F59E0B",
         },
         {
           id: "saldoGw",
-          title: "Saldo Gateways",
+          title: "Saldo nas adquirentes",
           value: fmtCurrency(
             typeof data.saldoGateways === "number"
               ? data.saldoGateways
@@ -358,49 +357,49 @@ function ManagerDashboardContent() {
         },
         {
           id: "carteiras",
-          title: "Total em Carteiras",
+          title: "Total em carteiras",
           value: fmtCurrency(Number(data.totalEmCarteiras.valor)),
           icon: <Wallet className="h-4 w-4" />,
           color: "#7C3AED",
         },
         {
           id: "txAp",
-          title: "Transações Aprovadas",
+          title: "Transações aprovadas",
           value: fmtNum(data.transacoesAprovadas.valor),
           icon: <CheckCircle className="h-4 w-4" />,
           color: "#22C55E",
         },
         {
           id: "txPend",
-          title: "Transações Pendentes",
+          title: "Transações pendentes",
           value: fmtNum(data.transacoesPendentes.valor),
           icon: <Clock className="h-4 w-4" />,
           color: "#FBBF24",
         },
         {
           id: "usuarios",
-          title: "Usuários Cadastrados",
+          title: "Usuários cadastrados",
           value: fmtNum(data.usuariosCadastrados.valor),
           icon: <Users className="h-4 w-4" />,
           color: "#6366F1",
         },
         {
           id: "kycPend",
-          title: "KYC Pendentes",
+          title: "KYC pendentes",
           value: fmtNum(data.kycPendentes.valor),
           icon: <FileText className="h-4 w-4" />,
           color: "#A78BFA",
         },
         {
           id: "totalRet",
-          title: "Total em Retiradas",
+          title: "Total em retiradas",
           value: fmtNum(data.totalEmRetiradas.valor),
           icon: <ArrowDown className="h-4 w-4" />,
           color: "#818CF8",
         },
         {
           id: "retPend",
-          title: "Retiradas Pendentes",
+          title: "Retiradas pendentes",
           value: fmtCurrency(Number(data.retiradasPendentes.valor)),
           icon: <Hourglass className="h-4 w-4" />,
           color: "#F59E0B",
@@ -419,27 +418,23 @@ function ManagerDashboardContent() {
       >
         <header className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:gap-4 sm:items-end sm:justify-between">
           <div>
-            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
-              Admin
-            </p>
             <h1
-              className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
+              className="text-[22px] font-semibold sm:text-[26px] text-slate-900"
               style={{
                 fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                 letterSpacing: "-0.005em",
               }}
             >
-              Painel Administrativo
+              Painel administrativo
             </h1>
             <p className="mt-1 text-[14px] text-slate-500">
-              Bem-vindo, {user?.companyName || "Operador"} · métricas em tempo
-              real
+              Visão geral da plataforma.
             </p>
           </div>
           <button
             onClick={fetchData}
             disabled={loading}
-            className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-[13px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+            className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-[13px] font-medium text-slate-700 transition-colors hover:bg-slate-50"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             {loading ? "Atualizando…" : "Atualizar"}
@@ -455,20 +450,18 @@ function ManagerDashboardContent() {
             e.preventDefault();
             fetchData();
           }}
-          className="mb-6 rounded-2xl p-5"
+          className="mb-6 rounded-xl p-5"
           style={{
             background: "#FFFFFF",
-            border: "1px solid rgba(15,23,42,0.06)",
-            boxShadow:
-              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+            border: "1px solid #ECECF0",
           }}
         >
-          <div className="mb-4 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-            <Filter className="h-3.5 w-3.5" /> Filtrar dados
+          <div className="mb-4 text-[15px] font-semibold text-slate-900">
+            Filtrar dados
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <div>
-              <label className="mb-1.5 block text-xs text-slate-500">
+              <label className="mb-1.5 block text-[13px] font-medium text-slate-600">
                 Seller
               </label>
               <select
@@ -485,13 +478,13 @@ function ManagerDashboardContent() {
               </select>
             </div>
             <div className="sm:col-span-2 lg:col-span-2">
-              <label className="mb-1.5 block text-xs text-slate-500">
+              <label className="mb-1.5 block text-[13px] font-medium text-slate-600">
                 Período
               </label>
               <PeriodPicker value={period} onChange={setPeriod} block />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs text-slate-500">
+              <label className="mb-1.5 block text-[13px] font-medium text-slate-600">
                 Adquirente
               </label>
               <select
@@ -510,10 +503,9 @@ function ManagerDashboardContent() {
             <div className="flex items-end">
               <button
                 type="submit"
-                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-white"
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg px-5 text-sm font-medium text-white transition-colors hover:bg-[#6D28D9]"
                 style={{
                   background: "#7C3AED",
-                  boxShadow: "0 8px 20px -8px rgba(124,58,237,0.55)",
                 }}
               >
                 Buscar
@@ -524,10 +516,10 @@ function ManagerDashboardContent() {
 
         {loading && !data ? (
           <div
-            className="rounded-2xl p-10 text-center"
+            className="rounded-xl p-10 text-center"
             style={{
               background: "#FFFFFF",
-              border: "1px solid rgba(15,23,42,0.06)",
+              border: "1px solid #ECECF0",
               boxShadow: "0 1px 2px rgba(15,23,42,0.04)",
             }}
           >
@@ -535,7 +527,7 @@ function ManagerDashboardContent() {
             <p className="text-sm text-slate-500">Carregando…</p>
           </div>
         ) : error ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5">
+          <div className="rounded-xl border border-rose-200 bg-rose-50 p-5">
             <div className="mb-2 flex items-center gap-2 text-rose-700">
               <AlertCircle className="h-5 w-5" />
               <span className="font-semibold">Erro ao carregar</span>
@@ -549,7 +541,7 @@ function ManagerDashboardContent() {
             </button>
           </div>
         ) : !data ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">
+          <div className="rounded-xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">
             Nenhum dado disponível
           </div>
         ) : (
@@ -558,27 +550,17 @@ function ManagerDashboardContent() {
               {metrics.map((m) => (
                 <div
                   key={m.id}
-                  className="rounded-2xl p-3 sm:p-4 md:p-5"
+                  className="rounded-xl p-3 sm:p-4 md:p-5"
                   style={{
                     background: "#FFFFFF",
-                    border: "1px solid rgba(15,23,42,0.06)",
-                    boxShadow:
-                      "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+                    border: "1px solid #ECECF0",
                   }}
                 >
-                  <div className="flex items-center justify-between">
-                    <p className="text-[11px] font-semibold text-slate-500">
-                      {m.title}
-                    </p>
-                    <span
-                      className="flex h-7 w-7 items-center justify-center rounded-lg"
-                      style={{ background: `${m.color}14`, color: m.color }}
-                    >
-                      {m.icon}
-                    </span>
-                  </div>
+                  <p className="text-[13px] font-medium text-slate-500">
+                    {m.title}
+                  </p>
                   <div
-                    className="mt-2 text-[24px] font-bold tracking-tight text-slate-900"
+                    className="mt-1.5 text-[22px] font-semibold tabular-nums text-slate-900"
                     style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
                   >
                     {visible ? m.value : "••••••"}
@@ -588,29 +570,22 @@ function ManagerDashboardContent() {
 
               {/* Card saldo com filtro */}
               <div
-                className="rounded-2xl p-3 sm:p-4 md:p-5"
+                className="rounded-xl p-3 sm:p-4 md:p-5"
                 style={{
                   background: "#FFFFFF",
-                  border: "1px solid rgba(15,23,42,0.06)",
-                  boxShadow:
-                    "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+                  border: "1px solid #ECECF0",
                 }}
               >
-                <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-semibold text-slate-500">
-                    Saldo{" "}
-                    {saldoFilter === "all"
-                      ? "Total"
-                      : saldoFilter === "positivos"
-                      ? "Positivo"
-                      : "Negativo"}
-                  </p>
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
-                    <Wallet className="h-4 w-4" />
-                  </span>
-                </div>
+                <p className="text-[13px] font-medium text-slate-500">
+                  Saldo{" "}
+                  {saldoFilter === "all"
+                    ? "total"
+                    : saldoFilter === "positivos"
+                    ? "positivo"
+                    : "negativo"}
+                </p>
                 <div
-                  className={`mt-2 text-[24px] font-bold tracking-tight ${
+                  className={`mt-1.5 text-[22px] font-semibold tabular-nums ${
                     saldoExibido < 0 ? "text-rose-700" : "text-emerald-700"
                   }`}
                   style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
@@ -626,15 +601,10 @@ function ManagerDashboardContent() {
                     <button
                       key={f}
                       onClick={() => setSaldoFilter(f)}
-                      className="rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors"
+                      className="rounded-md px-2.5 py-1 text-[12.5px] font-medium transition-colors"
                       style={{
-                        background:
-                          saldoFilter === f ? "rgba(124,58,237,0.10)" : "white",
-                        border:
-                          saldoFilter === f
-                            ? "1px solid rgba(124,58,237,0.20)"
-                            : "1px solid #E2E8F0",
-                        color: saldoFilter === f ? "#7C3AED" : "#475569",
+                        background: saldoFilter === f ? "#F1F1F4" : "transparent",
+                        color: saldoFilter === f ? "#111827" : "#6B7280",
                       }}
                     >
                       {f === "all"
@@ -657,26 +627,26 @@ function ManagerDashboardContent() {
                   color: "#22C55E",
                   rows: [
                     {
-                      l: "Total em Carteiras",
+                      l: "Total em carteiras",
                       v: fmtCurrency(
                         Number(data.resumoFinanceiro.totalEmCarteiras)
                       ),
                       c: "text-slate-900",
                     },
                     {
-                      l: "Lucro Líquido",
+                      l: "Lucro líquido",
                       v: fmtCurrency(Number(data.resumoFinanceiro.lucroLiquido)),
-                      c: "text-emerald-600",
+                      c: "text-slate-900",
                     },
                     {
-                      l: "Total Retiradas",
+                      l: "Total de retiradas",
                       v: fmtNum(data.resumoFinanceiro.totalRetiradas),
                       c: "text-slate-900",
                     },
                     {
                       l: "Pendentes",
                       v: fmtCurrency(Number(data.resumoFinanceiro.pendentes)),
-                      c: "text-amber-600",
+                      c: "text-slate-900",
                     },
                   ],
                 },
@@ -688,17 +658,17 @@ function ManagerDashboardContent() {
                     {
                       l: "Aprovadas",
                       v: fmtNum(data.transacoes.aprovadas),
-                      c: "text-emerald-600",
+                      c: "text-slate-900",
                     },
                     {
                       l: "Pendentes",
                       v: fmtNum(data.transacoes.pendentes),
-                      c: "text-amber-600",
+                      c: "text-slate-900",
                     },
                     {
-                      l: "Em Análise",
+                      l: "Em análise",
                       v: fmtNum(data.transacoes.emAnalise),
-                      c: "text-orange-600",
+                      c: "text-slate-900",
                     },
                     {
                       l: "Total",
@@ -715,49 +685,36 @@ function ManagerDashboardContent() {
                     {
                       l: "Cadastrados",
                       v: fmtNum(data.usuarios.cadastrados),
-                      c: "text-sky-600",
+                      c: "text-slate-900",
                     },
                     {
                       l: "Bloqueados",
                       v: fmtNum(data.usuarios.bloqueados),
-                      c: "text-rose-600",
+                      c: "text-slate-900",
                     },
                     {
-                      l: "KYC Pendentes",
+                      l: "KYC pendentes",
                       v: fmtNum(data.usuarios.kycPendentes),
-                      c: "text-violet-600",
+                      c: "text-slate-900",
                     },
                     {
                       l: "Aprovação",
-                      v: `${data.usuarios.taxaAprovacao}%`,
-                      c: "text-emerald-600",
+                      v: `${Number(data.usuarios.taxaAprovacao || 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`,
+                      c: "text-slate-900",
                     },
                   ],
                 },
               ].map((sec) => (
                 <div
                   key={sec.title}
-                  className="rounded-2xl p-3 sm:p-4 md:p-5"
+                  className="rounded-xl p-3 sm:p-4 md:p-5"
                   style={{
                     background: "#FFFFFF",
-                    border: "1px solid rgba(15,23,42,0.06)",
-                    boxShadow:
-                      "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+                    border: "1px solid #ECECF0",
                   }}
                 >
-                  <div className="mb-4 flex items-center gap-2.5">
-                    <span
-                      className="flex h-8 w-8 items-center justify-center rounded-lg"
-                      style={{
-                        background: `${sec.color}14`,
-                        color: sec.color,
-                      }}
-                    >
-                      {sec.icon}
-                    </span>
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                      {sec.title}
-                    </span>
+                  <div className="mb-4 text-[15px] font-semibold text-slate-900">
+                    {sec.title}
                   </div>
                   <div className="space-y-2.5">
                     {sec.rows.map((row) => (
@@ -765,8 +722,8 @@ function ManagerDashboardContent() {
                         key={row.l}
                         className="flex items-center justify-between border-b border-slate-100 pb-2 last:border-none last:pb-0"
                       >
-                        <span className="text-xs text-slate-500">{row.l}</span>
-                        <span className={`text-sm font-semibold ${row.c}`}>
+                        <span className="text-[13px] text-slate-500">{row.l}</span>
+                        <span className={`text-[14px] font-semibold tabular-nums ${row.c}`}>
                           {visible ? row.v : "••••"}
                         </span>
                       </div>

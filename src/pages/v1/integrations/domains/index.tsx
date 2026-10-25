@@ -135,14 +135,11 @@ function DomainsContent() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="w-full">
       <header className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
-            NEGÓCIOS · PRODUTOS
-          </p>
           <h1
-            className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
+            className="text-[22px] font-semibold sm:text-[26px] text-slate-900"
             style={{ letterSpacing: "-0.005em" }}
           >
             Domínios
@@ -156,8 +153,7 @@ function DomainsContent() {
           onClick={() => setShowForm((s) => !s)}
           className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
           style={{
-            background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
-            boxShadow: "0 8px 20px -8px rgba(124,58,237,0.45)",
+            background: T.primary,
           }}
         >
           <Plus className="h-4 w-4" />
@@ -168,12 +164,10 @@ function DomainsContent() {
       {showForm && (
         <form
           onSubmit={handleCreate}
-          className="mb-6 rounded-2xl p-5"
+          className="mb-6 rounded-xl p-5"
           style={{
             background: "#FFFFFF",
             border: `1px solid ${T.border}`,
-            boxShadow:
-              "0 1px 2px rgba(15,23,42,0.04), 0 8px 24px -12px rgba(124,58,237,0.20)",
           }}
         >
           <h3 className="mb-3 text-[14px] font-bold text-slate-900">
@@ -193,8 +187,7 @@ function DomainsContent() {
               disabled={saving}
               className="inline-flex h-10 items-center gap-1.5 rounded-lg px-5 text-[13px] font-semibold text-white disabled:opacity-50"
               style={{
-                background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
-                boxShadow: "0 6px 16px -8px rgba(124,58,237,0.45)",
+                background: T.primary,
               }}
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Adicionar"}
@@ -208,14 +201,14 @@ function DomainsContent() {
 
       {loading ? (
         <div
-          className="rounded-2xl bg-white px-5 py-12 text-center text-[13px] text-slate-500"
+          className="rounded-xl bg-white px-5 py-12 text-center text-[13px] text-slate-500"
           style={{ border: `1px solid ${T.borderSoft}` }}
         >
           Carregando…
         </div>
       ) : list.length === 0 ? (
         <div
-          className="rounded-2xl bg-white px-5 py-12 text-center"
+          className="rounded-xl bg-white px-5 py-12 text-center"
           style={{ border: `1px solid ${T.borderSoft}` }}
         >
           <Globe
@@ -234,12 +227,10 @@ function DomainsContent() {
           {list.map((d) => (
             <div
               key={d.id}
-              className="rounded-2xl p-4 sm:p-5"
+              className="rounded-xl p-4 sm:p-5"
               style={{
                 background: "#FFFFFF",
                 border: `1px solid ${T.borderSoft}`,
-                boxShadow:
-                  "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
               }}
             >
               <div className="flex items-start justify-between gap-4">
@@ -275,7 +266,7 @@ function DomainsContent() {
                       disabled={verifyingId === d.id}
                       className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-[12px] font-semibold text-white disabled:opacity-50"
                       style={{
-                        background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
+                        background: T.primary,
                       }}
                     >
                       {verifyingId === d.id ? (

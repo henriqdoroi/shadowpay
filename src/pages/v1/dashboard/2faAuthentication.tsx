@@ -89,7 +89,7 @@ export default function TwoFAModal({
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Overlay className="fixed inset-0 bg-black/30 z-40" />
-      <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-card p-6 rounded-2xl shadow-xl w-[90%] max-w-lg z-50 flex flex-col gap-6">
+      <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-card p-6 rounded-xl shadow-xl w-[90%] max-w-lg z-50 flex flex-col gap-6">
         <Dialog.Title className="text-xl font-bold text-foreground">
           Ativar 2FA
         </Dialog.Title>
@@ -100,8 +100,7 @@ export default function TwoFAModal({
             disabled={loading}
             className="cursor-pointer w-full text-white transition-colors"
             style={{
-              background: "linear-gradient(120deg, #7C3AED, #6D28D9)",
-              boxShadow: "0 12px 28px -12px rgba(124,58,237,0.5)",
+              background: "#7C3AED",
             }}
           >
             {loading ? "Gerando QR Code..." : "Gerar QR Code / Secret"}
@@ -138,8 +137,7 @@ export default function TwoFAModal({
               disabled={loading || !userToken}
               className="w-full text-white transition-colors"
               style={{
-                background: "linear-gradient(120deg, #7C3AED, #6D28D9)",
-                boxShadow: "0 12px 28px -12px rgba(124,58,237,0.5)",
+                background: "#7C3AED",
               }}
             >
               {loading ? "Verificando..." : "Ativar 2FA"}

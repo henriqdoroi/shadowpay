@@ -58,11 +58,10 @@ function UploadSlot({
 }: UploadSlotProps) {
   return (
     <div
-      className="relative overflow-hidden rounded-2xl p-5"
+      className="relative overflow-hidden rounded-xl p-5"
       style={{
         background: T.surface,
         border: `1px solid ${T.border}`,
-        boxShadow: "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
       }}
     >
       <div className="mb-4 flex items-center gap-2.5">
@@ -368,8 +367,7 @@ function DocumentUploadContent() {
             <div
               className="flex h-8 w-8 items-center justify-center rounded-xl text-white"
               style={{
-                background: `linear-gradient(135deg, ${T.primary}, ${T.primaryStrong})`,
-                boxShadow: "0 8px 24px -12px rgba(124,58,237,0.4)",
+                background: T.primary,
               }}
             >
               <ShieldCheck className="h-4 w-4" />
@@ -408,7 +406,7 @@ function DocumentUploadContent() {
                 <div
                   className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-white"
                   style={{
-                    background: `linear-gradient(135deg, ${T.primary}, ${T.primaryStrong})`,
+                    background: T.primary,
                   }}
                 >
                   ✓
@@ -422,7 +420,7 @@ function DocumentUploadContent() {
                 <div
                   className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-white"
                   style={{
-                    background: `linear-gradient(135deg, ${T.primary}, ${T.primaryStrong})`,
+                    background: T.primary,
                   }}
                 >
                   2
@@ -497,11 +495,10 @@ function DocumentUploadContent() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.08 }}
-            className="rounded-2xl p-4 sm:p-5"
+            className="rounded-xl p-4 sm:p-5"
             style={{
               background: T.surface,
               border: `1px solid ${T.border}`,
-              boxShadow: "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
             }}
           >
             <h3
@@ -611,10 +608,10 @@ function DocumentUploadContent() {
             <button
               onClick={handleNext}
               disabled={!allReady || isLoading || isStartingKyc}
-              className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl text-base font-semibold transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+              className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl text-base font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
               style={{
                 background: allReady
-                  ? `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`
+                  ? T.primary
                   : "#E2E8F0",
                 color: allReady ? "#FFFFFF" : T.text3,
                 boxShadow: allReady

@@ -92,23 +92,12 @@ export default function ShadowPanel() {
         className="sp-fab fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full"
         style={{
           background: "#FFFFFF",
-          border: "1px solid rgba(15, 23, 42, 0.08)",
-          boxShadow:
-            "0 1px 2px rgba(15,23,42,0.04), 0 12px 32px -12px rgba(124,58,237,0.40)",
+          border: "1px solid #E5E7EB",
+          // sombra neutra (sem halo roxo pulsando — chamava atenção à toa)
+          boxShadow: "0 4px 14px rgba(17,24,39,0.10)",
         }}
         aria-label="Abrir Shadow AI"
       >
-        <motion.span
-          className="absolute inset-0 rounded-full"
-          style={{ boxShadow: `0 0 0 0 ${VIOLET}` }}
-          animate={{
-            boxShadow: [
-              `0 0 0 0 rgba(124,58,237,0.35)`,
-              `0 0 0 12px rgba(124,58,237,0)`,
-            ],
-          }}
-          transition={{ duration: 2.2, repeat: Infinity, ease: "easeOut" }}
-        />
         <ShadowMark size={26} />
       </motion.button>
 
@@ -119,7 +108,7 @@ export default function ShadowPanel() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.96 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed bottom-24 right-6 z-50 flex h-[30rem] w-[22rem] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl"
+            className="fixed bottom-24 right-6 z-50 flex h-[30rem] w-[22rem] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-xl"
             style={{
               background: "#FFFFFF",
               border: "1px solid rgba(15, 23, 42, 0.08)",
@@ -131,7 +120,7 @@ export default function ShadowPanel() {
             {/* Header */}
             <div
               className="flex items-center justify-between px-4 py-3"
-              style={{ borderBottom: "1px solid rgba(15, 23, 42, 0.06)" }}
+              style={{ borderBottom: "1px solid #ECECF0" }}
             >
               <div className="flex items-center gap-2.5">
                 <ShadowMark size={22} />
@@ -146,8 +135,8 @@ export default function ShadowPanel() {
                     Shadow
                   </div>
                   <div
-                    className="mt-1 flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.18em]"
-                    style={{ color: "#94A3B8" }}
+                    className="mt-1 flex items-center gap-1.5 text-[12px]"
+                    style={{ color: "#6B7280" }}
                   >
                     <span
                       className="h-1.5 w-1.5 rounded-full"
@@ -181,11 +170,11 @@ export default function ShadowPanel() {
                   }
                 >
                   <div
-                    className="max-w-[85%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed"
+                    className="max-w-[85%] rounded-xl px-3.5 py-2 text-sm leading-relaxed"
                     style={
                       m.role === "user"
                         ? {
-                            background: "linear-gradient(120deg, #7C3AED, #6D28D9)",
+                            background: VIOLET,
                             color: "#FFFFFF",
                           }
                         : {
@@ -202,7 +191,7 @@ export default function ShadowPanel() {
               {loading && (
                 <div className="flex justify-start">
                   <div
-                    className="flex items-center gap-2 rounded-2xl px-3.5 py-2 text-sm"
+                    className="flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm"
                     style={{
                       background: "#FFFFFF",
                       border: "1px solid rgba(15, 23, 42, 0.08)",
@@ -218,7 +207,7 @@ export default function ShadowPanel() {
             {/* Input */}
             <div
               className="p-3"
-              style={{ borderTop: "1px solid rgba(15, 23, 42, 0.06)" }}
+              style={{ borderTop: "1px solid #ECECF0" }}
             >
               <div
                 className="flex items-center gap-2 rounded-xl px-3 py-1.5"
@@ -244,7 +233,7 @@ export default function ShadowPanel() {
                   onClick={send}
                   disabled={loading || !input.trim()}
                   className="flex h-8 w-8 items-center justify-center rounded-lg text-white transition-opacity disabled:opacity-40"
-                  style={{ background: "linear-gradient(120deg, #7C3AED, #6D28D9)" }}
+                  style={{ background: VIOLET }}
                   aria-label="Enviar"
                 >
                   <Send className="h-4 w-4" />

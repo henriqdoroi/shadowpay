@@ -175,14 +175,14 @@ function ConnectModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-white p-6"
+        className="w-full max-w-md rounded-xl bg-white p-6"
         onClick={(e) => e.stopPropagation()}
         style={{ boxShadow: "0 24px 64px -20px rgba(15,23,42,0.30)" }}
       >
         <div className="mb-4 flex items-start gap-3">
           <span
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-            style={{ background: `${card.color}14`, color: card.color }}
+            style={{ background: "#F6F6F8", color: "#4B5563" }}
           >
             <Icon className="h-5 w-5" />
           </span>
@@ -332,10 +332,10 @@ function IntegrationsContent() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1100px]">
+    <div className="w-full">
       <header className="mb-6">
         <h1
-          className="text-[22px] font-bold tracking-tight text-slate-900 sm:text-[26px]"
+          className="text-[22px] font-semibold text-slate-900 sm:text-[26px]"
           style={{ letterSpacing: "-0.01em" }}
         >
           Integrações
@@ -352,33 +352,27 @@ function IntegrationsContent() {
           return (
             <div
               key={c.id}
-              className="flex flex-col rounded-2xl p-5"
+              className="flex flex-col rounded-xl p-5"
               style={{
                 background: T.card,
                 border: `1px solid ${T.borderSoft}`,
-                boxShadow:
-                  "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
               }}
             >
               {/* topo: ícone + título + ABRIR */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-start gap-3">
                   <span
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-                    style={{ background: `${c.color}14`, color: c.color }}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                    style={{ background: "#F6F6F8", color: "#4B5563" }}
                   >
                     <Icon className="h-5 w-5" />
                   </span>
                   <div className="min-w-0">
-                    <h3 className="truncate text-[15px] font-bold text-slate-900">
+                    <h3 className="truncate text-[15px] font-semibold text-slate-900">
                       {c.title}
                     </h3>
-                    <p className="mt-0.5 flex items-center gap-1.5 text-[12px] text-slate-500">
-                      <span
-                        className="inline-block h-1.5 w-1.5 rounded-full"
-                        style={{ background: T.green }}
-                      />
-                      {c.provider} · Grátis pra usar
+                    <p className="mt-0.5 text-[12.5px] text-slate-500">
+                      {c.provider} · Grátis
                     </p>
                   </div>
                 </div>
@@ -386,46 +380,28 @@ function IntegrationsContent() {
                   onClick={() =>
                     c.providerCode ? setModalFor(c) : router.push(c.href)
                   }
-                  className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg px-3 text-[11px] font-bold uppercase tracking-wide text-white transition-colors"
-                  style={{
-                    background: T.primary,
-                    boxShadow: "0 6px 16px -8px rgba(124,58,237,0.45)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = T.primaryStrong;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = T.primary;
-                  }}
+                  className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border border-[#E5E7EB] bg-white px-3 text-[13px] font-medium text-slate-800 transition-colors hover:bg-[#F6F6F8]"
                 >
                   Abrir
-                  <ArrowRight className="h-3.5 w-3.5" />
+                  <ArrowRight className="h-3.5 w-3.5 text-slate-500" />
                 </button>
               </div>
 
-              <div
-                className="my-4 h-px w-full"
-                style={{ background: T.borderSoft }}
-              />
-
-              <p className="text-[13px] leading-relaxed text-slate-600">
+              <p className="mt-4 text-[14px] leading-relaxed text-slate-600">
                 {c.description}
               </p>
 
-              <div
-                className="my-4 h-px w-full"
-                style={{ background: T.borderSoft }}
-              />
+              <div className="mt-4" />
 
               {/* status */}
-              <div className="flex items-center gap-1.5">
-                <Activity
-                  className="h-3.5 w-3.5"
-                  style={{ color: st.active ? T.green : st.warn ? "#D97706" : T.textMuted }}
+              <div className="mt-auto flex items-center gap-1.5">
+                <span
+                  className="h-1.5 w-1.5 rounded-full"
+                  style={{ background: st.active ? T.green : st.warn ? "#D97706" : "#D1D5DB" }}
                 />
                 <span
-                  className="text-[12px] font-semibold"
-                  style={{ color: st.active ? T.green : st.warn ? "#D97706" : T.textMuted }}
+                  className="text-[13px] font-medium"
+                  style={{ color: st.active ? "#047857" : st.warn ? "#B45309" : "#6B7280" }}
                 >
                   {st.text}
                 </span>

@@ -117,7 +117,7 @@ export function Button({
     "inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-5 text-[13.5px] font-semibold transition-[background,box-shadow,transform,color] disabled:cursor-not-allowed disabled:opacity-50";
   const v =
     variant === "primary"
-      ? "bg-[#7C3AED] text-white shadow-[0_8px_20px_-10px_rgba(124,58,237,0.7)] hover:bg-[#6D28D9]"
+      ? "bg-[#7C3AED] text-white hover:bg-[#6D28D9]"
       : variant === "outline"
         ? "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
         : variant === "danger"

@@ -91,7 +91,7 @@ export function AvatarCircle({ url, name, size = 112 }: { url: string | null; na
         width: size,
         height: size,
         fontSize: size * 0.38,
-        background: "linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)",
+        background: "#7C3AED",
       }}
     >
       {initial}
@@ -159,12 +159,8 @@ function PhotoColumn({ account, onChange }: { account: AccountData; onChange: (p
         className="group relative rounded-full outline-none ring-violet-200 focus-visible:ring-4"
         aria-label="Trocar foto de perfil"
       >
-        <span className="block rounded-full p-1" style={{ background: "linear-gradient(135deg, rgba(124,58,237,0.35), rgba(168,85,247,0.15))" }}>
-          <span className="block rounded-full bg-white p-1">
-            <AvatarCircle url={account.avatarUrl} name={account.companyName} size={112} />
-          </span>
-        </span>
-        <span className="absolute bottom-1.5 right-1.5 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white text-white shadow-md transition-transform group-hover:scale-105" style={{ background: C.primary }}>
+        <AvatarCircle url={account.avatarUrl} name={account.companyName} size={104} />
+        <span className="absolute bottom-0.5 right-0.5 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-white text-slate-700" style={{ boxShadow: "0 1px 3px rgba(17,24,39,0.18)" }}>
           {busy === "upload" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
         </span>
       </button>
@@ -204,8 +200,7 @@ function PhotoColumn({ account, onChange }: { account: AccountData; onChange: (p
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={!!busy}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-violet-300 bg-violet-50/40 px-3 py-3 text-[13px] font-semibold transition-colors hover:bg-violet-50 disabled:opacity-60"
-          style={{ color: C.primary }}
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg border border-[#E5E7EB] bg-white px-3 py-2.5 text-[13.5px] font-medium text-slate-700 transition-colors hover:bg-[#F6F6F8] disabled:opacity-60"
         >
           <ImagePlus className="h-4 w-4" />
           Adicionar foto
@@ -226,7 +221,7 @@ function PhotoColumn({ account, onChange }: { account: AccountData; onChange: (p
         createPortal(
           <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/70 p-6" onClick={() => setViewing(false)}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={account.avatarUrl} alt="Foto de perfil" className="max-h-[80vh] max-w-full rounded-2xl shadow-2xl" />
+            <img src={account.avatarUrl} alt="Foto de perfil" className="max-h-[80vh] max-w-full rounded-xl shadow-2xl" />
             <button
               onClick={() => setViewing(false)}
               aria-label="Fechar"
@@ -632,7 +627,7 @@ function TwoFactor({ enabled, onChange }: { enabled: boolean; onChange: (v: bool
               aria-modal="true"
               aria-label="Ativar 2FA"
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md rounded-t-3xl bg-white p-6 pb-[max(24px,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-2xl"
+              className="w-full max-w-md rounded-t-3xl bg-white p-6 pb-[max(24px,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-xl"
             >
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
@@ -649,7 +644,7 @@ function TwoFactor({ enabled, onChange }: { enabled: boolean; onChange: (v: bool
                 </div>
               ) : (
                 <>
-                  <div className="mx-auto flex h-52 w-52 items-center justify-center rounded-2xl border border-[#E6E8EB] bg-white p-2">
+                  <div className="mx-auto flex h-52 w-52 items-center justify-center rounded-xl border border-[#E6E8EB] bg-white p-2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={setup.qr} alt="QR Code do 2FA" className="h-full w-full object-contain" />
                   </div>

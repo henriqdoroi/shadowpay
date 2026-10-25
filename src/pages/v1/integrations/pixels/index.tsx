@@ -128,14 +128,11 @@ function PixelsContent() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="w-full">
       <header className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
-            NEGÓCIOS · PRODUTOS
-          </p>
           <h1
-            className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
+            className="text-[22px] font-semibold sm:text-[26px] text-slate-900"
             style={{ letterSpacing: "-0.005em" }}
           >
             Pixels
@@ -150,8 +147,7 @@ function PixelsContent() {
           onClick={() => setShowForm((s) => !s)}
           className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
           style={{
-            background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
-            boxShadow: "0 8px 20px -8px rgba(124,58,237,0.45)",
+            background: T.primary,
           }}
         >
           <Plus className="h-4 w-4" />
@@ -161,7 +157,7 @@ function PixelsContent() {
 
       {/* Info — envio server-side (CAPI) */}
       <div
-        className="mb-6 flex items-start gap-3 rounded-2xl p-4"
+        className="mb-6 flex items-start gap-3 rounded-xl p-4"
         style={{
           background: "rgba(124,58,237,0.05)",
           border: `1px solid ${T.borderSoft}`,
@@ -188,12 +184,10 @@ function PixelsContent() {
       {showForm && (
         <form
           onSubmit={handleCreate}
-          className="mb-6 rounded-2xl p-5"
+          className="mb-6 rounded-xl p-5"
           style={{
             background: "#FFFFFF",
             border: `1px solid ${T.border}`,
-            boxShadow:
-              "0 1px 2px rgba(15,23,42,0.04), 0 8px 24px -12px rgba(124,58,237,0.20)",
           }}
         >
           <h3 className="mb-4 text-[14px] font-bold text-slate-900">
@@ -312,8 +306,7 @@ function PixelsContent() {
               disabled={saving}
               className="inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-[12px] font-semibold text-white disabled:opacity-50"
               style={{
-                background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
-                boxShadow: "0 6px 16px -8px rgba(124,58,237,0.45)",
+                background: T.primary,
               }}
             >
               {saving ? (
@@ -329,12 +322,10 @@ function PixelsContent() {
       )}
 
       <div
-        className="overflow-hidden rounded-2xl"
+        className="overflow-hidden rounded-xl"
         style={{
           background: "#FFFFFF",
           border: `1px solid ${T.borderSoft}`,
-          boxShadow:
-            "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
         }}
       >
         {loading ? (

@@ -1,0 +1,75 @@
+/* ==========================================================================
+ * ACABAMENTO DO PAINEL (todas as telas com o LightShell → .sp-shell)
+ *
+ * Direção visual tirada de painéis de banco/fintech de verdade (Mercury,
+ * Stripe): uma superfície só, tipografia limpa, roxo só no que é ação ou
+ * destaque, separação por espaço e por bordas finas — sem brilho, sem sombra
+ * colorida, sem coisa "pulando" no hover e sem rótulo em MAIÚSCULAS
+ * espaçadas (são os sinais que deixam um painel com cara de gerado por IA).
+ *
+ * Aqui ficam só ajustes GERAIS que valem pra muitas telas de uma vez; o
+ * resto é feito em cada página. Estilos inline só cedem com !important, e o
+ * navegador grava as cores inline como "rgba(124, 58, 237, ...)" (com
+ * espaços), por isso os seletores [style*=...] usam esse formato.
+ * ========================================================================== */
+
+/* ---------- 1. Rótulos: caixa normal ----------
+   O texto já está escrito normal no código ("Saldo disponível"); só a classe
+   `uppercase tracking-...` deixava "SALDO DISPONÍVEL" espaçado. */
+.sp-shell .uppercase[class*="tracking-"] {
+  text-transform: none;
+  letter-spacing: 0 !important;
+}
+/* e os rótulos minúsculos (10–11px) ficam legíveis em caixa normal */
+.sp-shell .uppercase[class*="tracking-"][class*="text-[10"],
+.sp-shell .uppercase[class*="tracking-"][class*="text-[11px]"],
+.sp-shell .uppercase[class*="tracking-"][class*="text-[11.5px]"] {
+  font-size: 12px !important;
+}
+/* cabeçalho de tabela: cinza, normal, sem negrito pesado */
+.sp-shell thead th,
+.sp-shell thead tr.uppercase,
+.sp-shell tr[class*="uppercase"] th {
+  font-weight: 500 !important;
+}
+
+/* ---------- 2. Nada "pula" no hover ---------- */
+.sp-shell [class*="hover:-translate-y"]:hover,
+.sp-shell [class*="hover:translate-y"]:hover,
+.sp-shell [class*="hover:-translate-x"]:hover {
+  translate: none !important;
+}
+
+/* ---------- 3. Sem sombra/brilho roxo ----------
+   (sombra neutra de verdade — dropdown, modal — continua) */
+.sp-shell [style*="box-shadow"][style*="124, 58, 237"],
+.sp-shell [style*="box-shadow"][style*="139, 92, 246"],
+.sp-shell [style*="box-shadow"][style*="168, 85, 247"],
+.sp-shell [style*="box-shadow"][style*="109, 40, 217"],
+.sp-shell [class*="shadow-violet"],
+.sp-shell [class*="shadow-purple"],
+.sp-shell [class*="shadow-indigo"] {
+  box-shadow: none !important;
+}
+.sp-shell [style*="text-shadow"] {
+  text-shadow: none !important;
+}
+
+/* ---------- 4. Menu ---------- */
+html:not(.dark) .sp-shell .sp-nav-item[data-active="false"]:hover {
+  background: #f6f6f8 !important;
+  color: #111827 !important;
+}
+html:not(.dark) .sp-shell .sp-nav-item[data-active="false"]:hover svg {
+  color: #6b7280 !important;
+}
+html:not(.dark) .sp-shell .sp-balance:hover {
+  background: #f1f1f4 !important;
+}
+
+/* ---------- 5. Números ----------
+   Algarismos de mesma largura em valores (colunas e cards não "dançam"). */
+.sp-shell .tabular-nums,
+.sp-shell td {
+  font-variant-numeric: tabular-nums;
+}

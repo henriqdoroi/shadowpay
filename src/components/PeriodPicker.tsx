@@ -287,7 +287,7 @@ export function PeriodPicker({
           onClick={apply}
           disabled={!from}
           className="h-10 rounded-xl px-5 text-[13px] font-bold text-white transition-opacity disabled:opacity-40"
-          style={{ background: VIOLET, boxShadow: "0 8px 20px -10px rgba(124,58,237,0.7)" }}
+          style={{ background: VIOLET }}
         >
           Aplicar
         </button>
@@ -303,7 +303,7 @@ export function PeriodPicker({
         aria-label="Escolher período"
         onMouseDown={(e) => e.stopPropagation()}
         onMouseLeave={() => setHover(null)}
-        className="absolute flex max-h-[calc(100vh-16px)] max-w-[calc(100vw-16px)] overflow-y-auto rounded-2xl bg-white"
+        className="absolute flex max-h-[calc(100vh-16px)] max-w-[calc(100vw-16px)] overflow-y-auto rounded-xl bg-white"
         style={{ top: pos.top, right: pos.right, border: `1px solid ${BORDER}`, boxShadow: "0 24px 60px -20px rgba(15,23,42,0.35)" }}
       >
         {presets}

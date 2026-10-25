@@ -83,10 +83,7 @@ function AccountContent() {
       </Head>
       <LightShell>
         <header className="mb-6">
-          <p className="text-[12px] font-bold uppercase tracking-[0.18em]" style={{ color: C.primary }}>
-            Conta
-          </p>
-          <h1 className="mt-1 truncate text-[26px] font-bold tracking-[-0.01em] text-slate-900 sm:text-[30px]">{name}</h1>
+          <h1 className="truncate text-[22px] font-semibold text-slate-900 sm:text-[26px]">{name}</h1>
           <p className="mt-1 text-[14px] text-slate-500">Seus dados, segurança e notificações.</p>
         </header>
 

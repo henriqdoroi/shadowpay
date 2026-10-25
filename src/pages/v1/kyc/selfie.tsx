@@ -87,8 +87,7 @@ export default function Selfie() {
             <div
               className="flex h-8 w-8 items-center justify-center rounded-xl text-white"
               style={{
-                background: `linear-gradient(135deg, ${T.primary}, ${T.primaryStrong})`,
-                boxShadow: "0 8px 24px -12px rgba(124,58,237,0.4)",
+                background: T.primary,
               }}
             >
               <ShieldCheck className="h-4 w-4" />
@@ -133,7 +132,7 @@ export default function Selfie() {
                     style={{
                       background:
                         step.current || step.done
-                          ? `linear-gradient(135deg, ${T.primary}, ${T.primaryStrong})`
+                          ? T.primary
                           : "#E2E8F0",
                       color: step.current || step.done ? "#FFFFFF" : T.text3,
                     }}
@@ -165,11 +164,10 @@ export default function Selfie() {
           <div className="grid gap-4 md:grid-cols-2">
             {/* Selfie */}
             <div
-              className="relative overflow-hidden rounded-2xl p-5"
+              className="relative overflow-hidden rounded-xl p-5"
               style={{
                 background: T.surface,
                 border: `1px solid ${T.border}`,
-                boxShadow: "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
               }}
             >
               <div className="mb-4 flex items-center gap-2.5">
@@ -252,11 +250,10 @@ export default function Selfie() {
 
             {/* CNPJ */}
             <div
-              className="relative overflow-hidden rounded-2xl p-5"
+              className="relative overflow-hidden rounded-xl p-5"
               style={{
                 background: T.surface,
                 border: `1px solid ${T.border}`,
-                boxShadow: "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
               }}
             >
               <div className="mb-4 flex items-center gap-2.5">
@@ -348,11 +345,10 @@ export default function Selfie() {
 
           {/* Dicas */}
           <div
-            className="rounded-2xl p-4 sm:p-5"
+            className="rounded-xl p-4 sm:p-5"
             style={{
               background: T.surface,
               border: `1px solid ${T.border}`,
-              boxShadow: "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
             }}
           >
             <h3
@@ -404,10 +400,10 @@ export default function Selfie() {
             <button
               onClick={handleNext}
               disabled={!ready}
-              className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl text-base font-semibold transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+              className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl text-base font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
               style={{
                 background: ready
-                  ? `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`
+                  ? T.primary
                   : "#E2E8F0",
                 color: ready ? "#FFFFFF" : T.text3,
                 boxShadow: ready

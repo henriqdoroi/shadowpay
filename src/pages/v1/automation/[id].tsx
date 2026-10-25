@@ -190,7 +190,7 @@ function ConfirmDialog({
       onClick={onCancel}
     >
       <div
-        className="w-full max-w-sm rounded-2xl p-5"
+        className="w-full max-w-sm rounded-xl p-5"
         style={{
           background: T.surface,
           border: `1px solid ${T.border}`,
@@ -231,7 +231,7 @@ function ConfirmDialog({
             style={{
               background: destructive
                 ? "linear-gradient(120deg, #EF4444, #DC2626)"
-                : `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
+                : T.primary,
               boxShadow: destructive
                 ? "0 6px 16px -8px rgba(239,68,68,0.40)"
                 : "0 6px 16px -8px rgba(124,58,237,0.45)",
@@ -351,7 +351,7 @@ function TriggerNode({ data }: any) {
 
   return (
     <div
-      className="w-[300px] rounded-2xl p-4"
+      className="w-[300px] rounded-xl p-4"
       style={{
         background: T.surface,
         border: `1px solid ${T.border}`,
@@ -445,7 +445,7 @@ function StepCardNode({ data }: any) {
         <HandleDot type="target" position={Position.Left} />
         <button
           onClick={data.onClick}
-          className="flex w-[240px] items-center gap-2.5 rounded-2xl p-3.5 text-left transition-all hover:-translate-y-0.5"
+          className="flex w-[240px] items-center gap-2.5 rounded-xl p-3.5 text-left transition-all"
           style={{
             background: T.surface,
             border: `1px solid ${T.border}`,
@@ -471,7 +471,7 @@ function StepCardNode({ data }: any) {
     <>
       <HandleDot type="target" position={Position.Left} />
       <div
-        className="w-[340px] rounded-2xl p-4"
+        className="w-[340px] rounded-xl p-4"
         style={{
           background: T.surface,
           border: `1px solid ${T.border}`,
@@ -954,8 +954,7 @@ function ConfigPanel({
           disabled={saving}
           className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md text-[13px] font-semibold text-white disabled:opacity-50"
           style={{
-            background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
-            boxShadow: "0 8px 20px -8px rgba(124,58,237,0.45)",
+            background: T.primary,
           }}
         >
           {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
@@ -1181,7 +1180,7 @@ function AddStepModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-sm rounded-2xl p-5"
+        className="w-full max-w-sm rounded-xl p-5"
         style={{
           background: T.surface,
           border: `1px solid ${T.border}`,
@@ -1271,8 +1270,7 @@ function AddStepModal({
           onClick={() => onAdd(type)}
           className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md text-[13px] font-semibold text-white"
           style={{
-            background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
-            boxShadow: "0 8px 20px -8px rgba(124,58,237,0.45)",
+            background: T.primary,
           }}
         >
           <Plus className="h-3.5 w-3.5" />
@@ -1695,8 +1693,7 @@ function FlowEditor({ id }: { id: string }) {
           disabled={saving}
           className="inline-flex h-9 items-center gap-2 rounded-lg px-4 text-[12px] font-semibold text-white disabled:opacity-50"
           style={{
-            background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
-            boxShadow: "0 8px 20px -8px rgba(124,58,237,0.45)",
+            background: T.primary,
           }}
         >
           {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
@@ -1744,8 +1741,7 @@ function FlowEditor({ id }: { id: string }) {
             onClick={() => setShowAddStep(true)}
             className="absolute right-6 top-6 z-10 inline-flex h-10 items-center gap-2 rounded-xl px-4 text-[12px] font-semibold text-white"
             style={{
-              background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
-              boxShadow: "0 8px 20px -8px rgba(124,58,237,0.45)",
+              background: T.primary,
             }}
           >
             <Plus className="h-3.5 w-3.5" />

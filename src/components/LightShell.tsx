@@ -45,13 +45,18 @@ import {
 import { useTheme } from "next-themes";
 import { useValuesVisible } from "@/lib/useValuesVisible";
 
+/* Painel em UMA superfície só (menu, topo e conteúdo no mesmo branco, sem
+   linhas dividindo) — como os painéis de banco/fintech (Mercury, Stripe). O
+   roxo aparece só no que é ação/destaque; o resto é neutro. */
 const T = {
-  text: "#0F172A",
-  text2: "#475569",
-  textMuted: "#94A3B8",
+  surface: "#FFFFFF",
+  text: "#111827",
+  text2: "#4B5563",
+  textMuted: "#9CA3AF",
   primary: "#7C3AED",
-  primaryBg: "rgba(124, 58, 237, 0.08)",
-  border: "rgba(15, 23, 42, 0.06)",
+  activeBg: "#F1F1F4",
+  quietBg: "#F6F6F8",
+  border: "#ECECF0",
 };
 
 interface LightShellProps {
@@ -220,21 +225,15 @@ function RevenueGoal({ value, hidden }: { value: number | null; hidden: boolean 
     <Link
       href="/v1/dashboard"
       title={`Faturamento (vendas pagas). Próxima meta: ${fmtGoal(goal)}`}
-      className="sp-goal flex h-9 min-w-0 max-w-full items-center gap-3 rounded-full px-4 transition-colors hover:bg-violet-100/60"
-      style={{
-        background: "#F5F3FF",
-        border: "1px solid rgba(124, 58, 237, 0.18)",
-      }}
+      className="sp-goal flex h-9 min-w-0 max-w-full items-center gap-3 rounded-lg px-3.5 transition-colors"
+      style={{ background: T.quietBg }}
     >
-      <span
-        className="sp-goal-label hidden text-[10px] font-bold uppercase tracking-[0.2em] lg:inline"
-        style={{ color: "#7C3AED" }}
-      >
+      <span className="sp-goal-label hidden text-[12.5px] font-medium lg:inline" style={{ color: "#6B7280" }}>
         Faturamento
       </span>
       <span
-        className="sp-goal-track relative h-[7px] w-28 shrink-0 overflow-hidden rounded-full lg:w-48 xl:w-56"
-        style={{ background: "#E4DCFB" }}
+        className="sp-goal-track relative h-1.5 w-28 shrink-0 overflow-hidden rounded-full lg:w-44 xl:w-52"
+        style={{ background: "#E4E4E9" }}
         role="progressbar"
         aria-valuemin={0}
         aria-valuemax={100}
@@ -245,15 +244,14 @@ function RevenueGoal({ value, hidden }: { value: number | null; hidden: boolean 
           className="absolute inset-y-0 left-0 rounded-full"
           style={{
             width: `${width}%`,
-            background: "linear-gradient(90deg, #6D28D9 0%, #8B5CF6 60%, #A78BFA 100%)",
-            boxShadow: "0 0 8px rgba(124, 58, 237, 0.35)",
+            background: T.primary,
             transition: "width 0.8s cubic-bezier(0.22, 1, 0.36, 1)",
           }}
         />
       </span>
-      <span className="sp-goal-value whitespace-nowrap text-[12.5px] font-bold tabular-nums" style={{ color: "#2E1065" }}>
+      <span className="sp-goal-value whitespace-nowrap text-[13px] font-semibold tabular-nums" style={{ color: T.text }}>
         {value == null ? "—" : hidden ? "R$ ••••" : brl(v)}
-        <span className="font-medium" style={{ color: "#8B7FC0" }}>
+        <span className="font-normal" style={{ color: T.textMuted }}>
           {" / "}
           {fmtGoal(goal)}
         </span>
@@ -361,20 +359,20 @@ export function LightShell({
     <div
       className="sp-shell relative min-h-screen w-full"
       style={{
-        background: "#F1F3F8",
+        background: T.surface,
         color: T.text,
         fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
       }}
     >
       {/* ============================================================
-          SIDEBAR (FIXED — never scrolls com o conteúdo)
+          SIDEBAR (FIXED — never scrolls com o conteúdo). Mesma cor do
+          conteúdo e sem borda: a tela é uma peça só.
           ============================================================ */}
       <aside
         className="sp-sidebar fixed inset-y-0 left-0 z-30 hidden flex-col md:flex"
         style={{
           width: sidebarWidth,
-          background: "#FFFFFF",
-          borderRight: "1px solid #E6E8EB",
+          background: T.surface,
           transition: "width 0.22s cubic-bezier(0.22, 1, 0.36, 1)",
         }}
       >
@@ -387,31 +385,20 @@ export function LightShell({
           <BrandLogo collapsed={sidebarCollapsed} />
         </Link>
 
-        {/* Saldo disponível (estilo BravoPay — branco com roxo ShadowPay) */}
+        {/* Saldo disponível — bloco discreto (fundo neutro, sem borda/brilho) */}
         {!sidebarCollapsed ? (
           <Link
             href="/v1/finance"
-            className="sp-balance mx-3 mb-3 block overflow-hidden rounded-2xl px-4 py-4 transition-transform hover:-translate-y-0.5"
-            style={{
-              background: "#FFFFFF",
-              border: "1px solid rgba(124,58,237,0.22)",
-              boxShadow: "0 6px 18px -8px rgba(124,58,237,0.28)",
-            }}
+            className="sp-balance mx-3 mb-4 block rounded-xl px-4 py-3.5 transition-colors"
+            style={{ background: T.quietBg }}
           >
-            <p
-              className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em]"
-              style={{ color: "#7C3AED" }}
-            >
-              <span
-                className="inline-block h-1.5 w-1.5 rounded-full"
-                style={{ background: "#7C3AED" }}
-              />
+            <p className="text-[12.5px] font-medium" style={{ color: "#6B7280" }}>
               Saldo disponível
             </p>
             <p
-              className="sp-balance-value mt-2 text-[22px] font-bold leading-none tracking-tight"
+              className="sp-balance-value mt-1 text-[20px] font-semibold leading-tight tabular-nums"
               style={{
-                color: "#0F172A",
+                color: T.text,
                 fontFamily:
                   "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
               }}
@@ -427,21 +414,16 @@ export function LightShell({
           <Link
             href="/v1/finance"
             title="Saldo disponível"
-            className="sp-balance mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl"
-            style={{
-              background: "#FFFFFF",
-              border: "1px solid rgba(124,58,237,0.22)",
-              color: "#7C3AED",
-              boxShadow: "0 6px 18px -8px rgba(124,58,237,0.28)",
-            }}
+            className="sp-balance mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-xl"
+            style={{ background: T.quietBg, color: T.text2 }}
           >
             <Wallet className="h-4 w-4" />
           </Link>
         )}
 
         {/* Nav — lista única (flat), sem seções */}
-        <nav className="flex-1 overflow-y-auto px-3 py-2">
-          <ul className="space-y-0.5">
+        <nav className="flex-1 overflow-y-auto px-3 py-1">
+          <ul className="space-y-px">
             {nav.map((item) => {
               const Icon = item.icon;
               const active = item.href === activeHref;
@@ -451,16 +433,16 @@ export function LightShell({
                     href={item.href}
                     title={sidebarCollapsed ? item.label : undefined}
                     data-active={active ? "true" : "false"}
-                    className="sp-nav-item group flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-colors"
+                    className="sp-nav-item group flex items-center gap-3 rounded-lg text-[14px] font-medium transition-colors"
                     style={{
-                      padding: sidebarCollapsed ? "10px" : "8px 12px",
+                      padding: sidebarCollapsed ? "10px" : "8px 10px",
                       justifyContent: sidebarCollapsed ? "center" : "flex-start",
-                      background: active ? T.primaryBg : "transparent",
-                      color: active ? T.primary : T.text2,
+                      background: active ? T.activeBg : "transparent",
+                      color: active ? T.text : T.text2,
                     }}
                   >
                     <Icon
-                      className="h-4 w-4 shrink-0"
+                      className="h-[17px] w-[17px] shrink-0"
                       style={{ color: active ? T.primary : T.textMuted }}
                     />
                     {!sidebarCollapsed && (
@@ -486,8 +468,8 @@ export function LightShell({
                 <div
                   className="absolute bottom-full left-0 z-50 mb-2 w-[212px] overflow-hidden rounded-xl bg-white py-1"
                   style={{
-                    border: "1px solid rgba(15,23,42,0.08)",
-                    boxShadow: "0 16px 40px rgba(15,23,42,0.18)",
+                    border: `1px solid ${T.border}`,
+                    boxShadow: "0 8px 24px rgba(17,24,39,0.08)",
                   }}
                 >
                   <a
@@ -546,8 +528,8 @@ export function LightShell({
             {/* Linha do perfil */}
             {!sidebarCollapsed ? (
               <div
-                className={`flex items-center gap-2 rounded-lg px-1 py-1 transition-colors ${
-                  footerMenuOpen ? "bg-slate-50" : ""
+                className={`flex items-center gap-2.5 rounded-lg px-1.5 py-1.5 transition-colors ${
+                  footerMenuOpen ? "bg-[#F6F6F8]" : ""
                 }`}
               >
                 {avatarUrl ? (
@@ -555,13 +537,13 @@ export function LightShell({
                   <img src={avatarUrl} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" draggable={false} />
                 ) : (
                   <span
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-semibold text-white"
-                    style={{ background: "#7C3AED" }}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[13px] font-semibold text-white"
+                    style={{ background: T.primary }}
                   >
                     {initial}
                   </span>
                 )}
-                <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold text-slate-800">
+                <span className="min-w-0 flex-1 truncate text-[14px] font-medium" style={{ color: T.text }}>
                   {user?.companyName || "Operador"}
                 </span>
                 <button
@@ -590,11 +572,10 @@ export function LightShell({
             )}
           </div>
 
-          {/* Divisor + Compactar (recolher menu) */}
-          <div className="my-2 h-px" style={{ background: "rgba(15,23,42,0.06)" }} />
+          {/* Compactar (recolher menu) — sem linha divisória */}
           <button
             onClick={() => setSidebarCollapsed((v) => !v)}
-            className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-[13px] font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 ${
+            className={`mt-1 flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-[13px] font-medium text-[#6B7280] transition-colors hover:bg-[#F6F6F8] hover:text-[#111827] ${
               sidebarCollapsed ? "justify-center" : ""
             }`}
             title={sidebarCollapsed ? "Expandir menu" : "Compactar menu"}
@@ -618,8 +599,8 @@ export function LightShell({
             onClick={(e) => e.stopPropagation()}
             className="sp-sidebar flex h-full w-72 flex-col"
             style={{
-              background: "#FFFFFF",
-              boxShadow: "12px 0 32px rgba(15,23,42,0.15)",
+              background: T.surface,
+              boxShadow: "8px 0 24px rgba(17,24,39,0.10)",
             }}
           >
             {/* Header drawer */}
@@ -651,14 +632,14 @@ export function LightShell({
                         href={item.href}
                         onClick={() => setMobileMenuOpen(false)}
                         data-active={active ? "true" : "false"}
-                        className="sp-nav-item flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13.5px] font-medium"
+                        className="sp-nav-item flex items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] font-medium"
                         style={{
-                          background: active ? T.primaryBg : "transparent",
-                          color: active ? T.primary : T.text2,
+                          background: active ? T.activeBg : "transparent",
+                          color: active ? T.text : T.text2,
                         }}
                       >
                         <Icon
-                          className="h-4 w-4 shrink-0"
+                          className="h-[18px] w-[18px] shrink-0"
                           style={{ color: active ? T.primary : T.textMuted }}
                         />
                         <span className="flex-1 truncate">{item.label}</span>
@@ -670,13 +651,13 @@ export function LightShell({
             </nav>
 
             {/* footer logout */}
-            <div className="border-t px-3 py-3" style={{ borderColor: T.border }}>
+            <div className="px-3 py-3">
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
                   logout();
                 }}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-semibold text-rose-500 hover:bg-rose-50"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-[14px] font-medium text-[#B42318] hover:bg-[#FEF3F2]"
               >
                 <LogOut className="h-4 w-4" />
                 Sair
@@ -695,9 +676,7 @@ export function LightShell({
           {
             ["--sidebar-w" as any]: `${sidebarWidth}px`,
             transition: "margin-left 0.22s cubic-bezier(0.22, 1, 0.36, 1)",
-            background: "#FFFFFF",
-            boxShadow:
-              "-12px 0 28px -16px rgba(15, 23, 42, 0.10), -2px 0 8px rgba(15, 23, 42, 0.05)",
+            background: T.surface,
           } as React.CSSProperties
         }
       >
@@ -714,18 +693,15 @@ export function LightShell({
             style={{
               height: "calc(3.5rem + env(safe-area-inset-top, 0px))",
               paddingTop: "env(safe-area-inset-top, 0px)",
-              background: "rgba(255, 255, 255, 0.94)",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-              borderBottom: "1px solid rgba(124, 58, 237, 0.10)",
-              boxShadow: "0 6px 20px -16px rgba(124, 58, 237, 0.35)",
+              // mesmo branco do conteúdo, sem linha nem sombra embaixo
+              background: T.surface,
               transition: "left 0.22s cubic-bezier(0.22, 1, 0.36, 1)",
             }}
           >
             {/* Hamburger mobile */}
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-600 transition-colors hover:bg-violet-50 hover:text-violet-700 md:hidden"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[#4B5563] transition-colors hover:bg-[#F1F1F4] hover:text-[#111827] md:hidden"
               aria-label="Abrir menu"
             >
               <Menu className="h-5 w-5" />
@@ -734,7 +710,7 @@ export function LightShell({
             {/* Esquerda: olho (esconde valores) + tema */}
             <button
               onClick={toggleValues}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-violet-50 hover:text-violet-700"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[#6B7280] transition-colors hover:bg-[#F1F1F4] hover:text-[#111827]"
               aria-label={visible ? "Esconder valores" : "Mostrar valores"}
               title={visible ? "Esconder valores" : "Mostrar valores"}
             >
@@ -742,7 +718,7 @@ export function LightShell({
             </button>
             <button
               onClick={() => setTheme(isDark ? "light" : "dark")}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-violet-50 hover:text-violet-700"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[#6B7280] transition-colors hover:bg-[#F1F1F4] hover:text-[#111827]"
               aria-label={isDark ? "Mudar para o tema claro" : "Mudar para o tema escuro"}
               title={isDark ? "Mudar para claro" : "Mudar para escuro"}
             >
@@ -764,8 +740,7 @@ export function LightShell({
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen((v) => !v)}
-                  className="sp-avatar-ring flex h-9 w-9 items-center justify-center overflow-hidden rounded-full transition-opacity hover:opacity-85"
-                  style={{ boxShadow: "0 0 0 2px #FFFFFF, 0 0 0 3.5px rgba(124,58,237,0.35)" }}
+                  className="sp-avatar-ring flex h-8 w-8 items-center justify-center overflow-hidden rounded-full transition-opacity hover:opacity-85"
                   aria-label="Conta"
                   title={user?.companyName || "Conta"}
                 >
@@ -774,8 +749,8 @@ export function LightShell({
                     <img src={avatarUrl} alt="" className="h-full w-full object-cover" draggable={false} />
                   ) : (
                     <span
-                      className="flex h-full w-full items-center justify-center text-[13px] font-bold text-white"
-                      style={{ background: "linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)" }}
+                      className="flex h-full w-full items-center justify-center text-[13px] font-semibold text-white"
+                      style={{ background: T.primary }}
                     >
                       {initial}
                     </span>
@@ -788,8 +763,8 @@ export function LightShell({
                       onClick={() => setUserMenuOpen(false)}
                     />
                     <div
-                      className="absolute right-0 top-11 z-40 w-56 overflow-hidden rounded-xl bg-white p-1.5 shadow-xl"
-                      style={{ border: `1px solid ${T.border}` }}
+                      className="absolute right-0 top-11 z-40 w-56 overflow-hidden rounded-xl bg-white p-1.5"
+                      style={{ border: `1px solid ${T.border}`, boxShadow: "0 8px 24px rgba(17,24,39,0.08)" }}
                     >
                       <div className="px-3 pb-2 pt-1.5">
                         <p className="truncate text-[13px] font-semibold text-slate-800">
@@ -801,7 +776,7 @@ export function LightShell({
                       </div>
                       <div className="mx-2 mb-1 h-px bg-slate-100" />
                       {now && (
-                        <p className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-slate-400">
+                        <p className="px-3 py-1.5 text-[12px] text-slate-400 first-letter:uppercase">
                           {new Intl.DateTimeFormat("pt-BR", {
                             weekday: "long",
                             day: "2-digit",

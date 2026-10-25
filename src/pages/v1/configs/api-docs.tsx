@@ -62,7 +62,7 @@ function CodeBlock({
   };
   return (
     <div
-      className="relative overflow-hidden rounded-2xl"
+      className="relative overflow-hidden rounded-xl"
       style={{ background: T.codeBg, border: `1px solid ${T.border}` }}
     >
       {label && (
@@ -151,12 +151,10 @@ function Endpoint({
 }) {
   return (
     <section
-      className="scroll-mt-24 rounded-2xl p-5 sm:p-6"
+      className="scroll-mt-24 rounded-xl p-5 sm:p-6"
       style={{
         background: "#FFFFFF",
         border: `1px solid ${T.borderSoft}`,
-        boxShadow:
-          "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
       }}
     >
       <div className="mb-1.5 flex flex-wrap items-center gap-2">
@@ -315,7 +313,7 @@ echo $response["data"]["pix"]["copyPaste"];`;
         <title>ShadowPay — Documentação da API PIX</title>
       </Head>
 
-      <div className="mx-auto max-w-4xl">
+      <div className="max-w-4xl">
         {/* Voltar */}
         <Link
           href="/v1/configs/apikey"
@@ -327,9 +325,6 @@ echo $response["data"]["pix"]["copyPaste"];`;
 
         {/* Hero */}
         <header className="mb-8">
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
-            Desenvolvedores
-          </p>
           <h1
             className="text-[26px] font-bold tracking-tight text-slate-900 sm:text-[34px]"
             style={{ letterSpacing: "-0.01em" }}
@@ -369,7 +364,7 @@ echo $response["data"]["pix"]["copyPaste"];`;
             return (
               <div
                 key={f.label}
-                className="rounded-2xl p-4"
+                className="rounded-xl p-4"
                 style={{
                   background: "#FFFFFF",
                   border: `1px solid ${T.borderSoft}`,
@@ -394,12 +389,10 @@ echo $response["data"]["pix"]["copyPaste"];`;
 
         {/* Autenticação */}
         <section
-          className="mb-6 rounded-2xl p-5 sm:p-6"
+          className="mb-6 rounded-xl p-5 sm:p-6"
           style={{
             background: "#FFFFFF",
             border: `1px solid ${T.borderSoft}`,
-            boxShadow:
-              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
           }}
         >
           <div className="mb-3 flex items-center gap-2.5">
@@ -515,12 +508,10 @@ echo $response["data"]["pix"]["copyPaste"];`;
 
         {/* Status reference */}
         <section
-          className="mt-6 rounded-2xl p-5 sm:p-6"
+          className="mt-6 rounded-xl p-5 sm:p-6"
           style={{
             background: "#FFFFFF",
             border: `1px solid ${T.borderSoft}`,
-            boxShadow:
-              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
           }}
         >
           <h2 className="mb-3 text-[17px] font-bold text-slate-900">
@@ -557,12 +548,10 @@ echo $response["data"]["pix"]["copyPaste"];`;
 
         {/* Webhook note */}
         <section
-          className="mt-6 flex flex-col items-start gap-3 rounded-2xl p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"
+          className="mt-6 flex flex-col items-start gap-3 rounded-xl p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"
           style={{
             background: "#FFFFFF",
             border: `1px solid ${T.borderSoft}`,
-            boxShadow:
-              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
           }}
         >
           <div className="flex items-start gap-3">
@@ -584,10 +573,9 @@ echo $response["data"]["pix"]["copyPaste"];`;
           </div>
           <Link
             href="/v1/configs/webhook"
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold text-white transition-transform hover:-translate-y-0.5"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold text-white transition-colors"
             style={{
-              background: "linear-gradient(120deg, #7C3AED, #6D28D9)",
-              boxShadow: "0 8px 20px -8px rgba(124,58,237,0.55)",
+              background: "#7C3AED",
             }}
           >
             Configurar webhook

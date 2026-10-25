@@ -177,11 +177,8 @@ function ReportsContent() {
       <LightShell>
         <header className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:gap-4 sm:items-end sm:justify-between">
           <div>
-            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
-              Inteligência
-            </p>
             <h1
-              className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
+              className="text-[22px] font-semibold sm:text-[26px] text-slate-900"
               style={{
                 fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                 letterSpacing: "-0.005em",
@@ -205,12 +202,10 @@ function ReportsContent() {
 
         {/* Filtro de período */}
         <div
-          className="mb-6 rounded-2xl p-5"
+          className="mb-6 rounded-xl p-5"
           style={{
             background: "#FFFFFF",
-            border: "1px solid rgba(15,23,42,0.06)",
-            boxShadow:
-              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+            border: "1px solid #ECECF0",
           }}
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -229,12 +224,10 @@ function ReportsContent() {
           {cards.map((c) => (
             <div
               key={c.title}
-              className="rounded-2xl p-3 sm:p-4 md:p-5"
+              className="rounded-xl p-3 sm:p-4 md:p-5"
               style={{
                 background: "#FFFFFF",
-                border: "1px solid rgba(15,23,42,0.06)",
-                boxShadow:
-                  "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+                border: "1px solid #ECECF0",
               }}
             >
               <div className="flex items-center justify-between">
@@ -243,7 +236,7 @@ function ReportsContent() {
                 </p>
                 <span
                   className="flex h-7 w-7 items-center justify-center rounded-lg"
-                  style={{ background: `${c.color}14`, color: c.color }}
+                  style={{ background: "#F6F6F8", color: "#4B5563" }}
                 >
                   {c.icon}
                 </span>

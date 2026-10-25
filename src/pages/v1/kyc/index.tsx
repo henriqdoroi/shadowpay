@@ -137,7 +137,7 @@ function KycContent() {
     if (loading) {
       return (
         <div
-          className="rounded-2xl p-10 text-center text-sm text-slate-500"
+          className="rounded-xl p-10 text-center text-sm text-slate-500"
           style={{
             background: T.card,
             border: `1px solid ${T.borderSoft}`,
@@ -471,10 +471,9 @@ function AddressIncompleteView({
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl px-6 text-[13px] font-bold text-white transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl px-6 text-[13px] font-bold text-white transition-colors disabled:opacity-50"
               style={{
                 background: T.primary,
-                boxShadow: "0 10px 24px -10px rgba(124,58,237,0.6)",
               }}
             >
               {saving ? (
@@ -725,10 +724,9 @@ function UploadView({
         <button
           onClick={submit}
           disabled={saving || !ready}
-          className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-[12px] font-bold uppercase tracking-wider text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+          className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-[12px] font-bold uppercase tracking-wider text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
           style={{
             background: T.primary,
-            boxShadow: "0 8px 20px -8px rgba(124,58,237,0.55)",
           }}
         >
           <Upload className="h-4 w-4" />
@@ -803,12 +801,10 @@ function Dropzone({
 function Card({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="rounded-2xl p-4 sm:p-6"
+      className="rounded-xl p-4 sm:p-6"
       style={{
         background: T.card,
         border: `1px solid ${T.borderSoft}`,
-        boxShadow:
-          "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
       }}
     >
       {children}

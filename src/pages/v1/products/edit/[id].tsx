@@ -780,7 +780,7 @@ export default function EditProduct() {
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <div>
-                  <h1 className="text-[22px] font-bold tracking-tight text-slate-900 sm:text-[28px]">Editar produto</h1>
+                  <h1 className="text-[22px] font-semibold text-slate-900 sm:text-[26px]">Editar produto</h1>
                   <p className="mt-0.5 text-[14px] text-slate-500">Ajuste o produto, o checkout e as formas de pagamento.</p>
                 </div>
               </div>
@@ -3318,7 +3318,7 @@ export default function EditProduct() {
                       className="flex items-start gap-3 rounded-xl p-3.5"
                       style={{
                         background: "rgba(245,158,11,0.06)",
-                        border: "1px solid rgba(15,23,42,0.06)",
+                        border: "1px solid #ECECF0",
                       }}
                     >
                       <Zap

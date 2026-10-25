@@ -29,12 +29,10 @@ export function ProfileTabs() {
   return (
     <div className="mb-6 w-full sm:flex sm:justify-center">
       <div
-        className="grid w-full grid-cols-3 gap-0.5 rounded-2xl p-1 sm:inline-flex sm:w-auto sm:items-center sm:gap-1 sm:p-1.5"
+        className="grid w-full grid-cols-3 gap-0.5 rounded-xl p-1 sm:inline-flex sm:w-auto sm:items-center sm:gap-1 sm:p-1.5"
         style={{
           background: "#FFFFFF",
-          border: "1px solid rgba(15,23,42,0.06)",
-          boxShadow:
-            "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+          border: "1px solid #ECECF0",
         }}
       >
         {TABS.map((t) => {

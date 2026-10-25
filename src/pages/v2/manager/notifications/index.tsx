@@ -263,7 +263,7 @@ function BroadcastPanel({ token, onSent }: { token: string; onSent: () => void }
               ref={titleRef}
               value={title}
               maxLength={TITLE_MAX}
-              placeholder="Ex.: 🚀 Novidade na ShadowPay"
+              placeholder="Ex.: Novidade na ShadowPay"
               onFocus={() => (lastField.current = "title")}
               onChange={(e) => setTitle(e.target.value)}
               className={inputCls}
@@ -394,7 +394,7 @@ function BroadcastPanel({ token, onSent }: { token: string; onSent: () => void }
               aria-modal="true"
               aria-label="Confirmar disparo"
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md rounded-t-3xl bg-white p-6 pb-[max(24px,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-2xl"
+              className="w-full max-w-md rounded-t-3xl bg-white p-6 pb-[max(24px,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-xl"
             >
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
@@ -566,10 +566,7 @@ function NotificationsAdmin() {
       </Head>
       <LightShell>
         <header className="mb-6">
-          <p className="text-[12px] font-bold uppercase tracking-[0.18em]" style={{ color: C.primary }}>
-            Admin
-          </p>
-          <h1 className="mt-1 text-[26px] font-bold tracking-[-0.01em] text-slate-900 sm:text-[30px]">Notificações</h1>
+          <h1 className="text-[22px] font-semibold text-slate-900 sm:text-[26px]">Notificações</h1>
           <p className="mt-1 text-[14px] text-slate-500">Dispare avisos para os sellers e edite os textos automáticos de venda e saque.</p>
         </header>
 

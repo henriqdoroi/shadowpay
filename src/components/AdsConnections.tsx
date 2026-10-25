@@ -171,8 +171,7 @@ type Connection = {
 const AMBER = { bg: "rgba(245,158,11,0.10)", border: "rgba(245,158,11,0.30)" };
 const CARD: React.CSSProperties = {
   background: "#FFFFFF",
-  border: "1px solid rgba(15,23,42,0.06)",
-  boxShadow: "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+  border: "1px solid #ECECF0",
 };
 
 export default function AdsConnections() {
@@ -379,7 +378,7 @@ export default function AdsConnections() {
         const open = expanded === p.code;
         const conns = connectionsFor(p.code);
         return (
-          <div key={p.code} className="overflow-hidden rounded-2xl" style={CARD}>
+          <div key={p.code} className="overflow-hidden rounded-xl" style={CARD}>
             {/* Linha (header acordeão) */}
             <button
               onClick={() => setExpanded(open ? null : p.code)}
@@ -412,7 +411,7 @@ export default function AdsConnections() {
             {open && (
               <div
                 className="px-4 pb-4 pt-3"
-                style={{ borderTop: "1px solid rgba(15,23,42,0.06)" }}
+                style={{ borderTop: "1px solid #ECECF0" }}
               >
                 {/* Conecte seus perfis */}
                 <p className="mb-2 text-[13px] text-slate-500">
@@ -483,7 +482,7 @@ export default function AdsConnections() {
           onClick={closeOauth}
         >
           <div
-            className="w-full max-w-md rounded-2xl bg-white p-6"
+            className="w-full max-w-md rounded-xl bg-white p-6"
             onClick={(e) => e.stopPropagation()}
             style={{ boxShadow: "0 24px 64px -20px rgba(15,23,42,0.30)" }}
           >
@@ -653,7 +652,7 @@ function KwaiModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md overflow-hidden rounded-2xl bg-white"
+        className="w-full max-w-md overflow-hidden rounded-xl bg-white"
         onClick={(e) => e.stopPropagation()}
         style={{ boxShadow: "0 24px 64px -20px rgba(15,23,42,0.30)" }}
       >
@@ -742,7 +741,7 @@ function KwaiModal({
                     <div
                       key={acc}
                       className="flex items-center justify-between rounded-xl px-3 py-2"
-                      style={{ background: "#F8FAFC", border: "1px solid rgba(15,23,42,0.06)" }}
+                      style={{ background: "#F8FAFC", border: "1px solid #ECECF0" }}
                     >
                       <span className="font-mono text-[13px] text-slate-700">{acc}</span>
                       <button
@@ -833,7 +832,7 @@ function ProfileRow({
   return (
     <div
       className="relative flex items-center justify-between gap-3 rounded-xl px-3 py-2.5"
-      style={{ background: "#F8FAFC", border: "1px solid rgba(15,23,42,0.06)" }}
+      style={{ background: "#F8FAFC", border: "1px solid #ECECF0" }}
     >
       <div className="flex min-w-0 items-center gap-2.5">
         <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
@@ -890,11 +889,11 @@ function AdAccountsSection({
   return (
     <div
       className="mt-4 overflow-hidden rounded-xl"
-      style={{ background: "#F8FAFC", border: "1px solid rgba(15,23,42,0.06)" }}
+      style={{ background: "#F8FAFC", border: "1px solid #ECECF0" }}
     >
       <div
         className="flex items-center justify-between gap-2 px-3 py-2.5"
-        style={{ borderBottom: "1px solid rgba(15,23,42,0.06)" }}
+        style={{ borderBottom: "1px solid #ECECF0" }}
       >
         <h4 className="text-[14px] font-bold text-slate-900">
           Contas de Anúncio ({providerName.replace(" Ads", "")})
@@ -1019,7 +1018,7 @@ function ProfileAccounts({
       {open && (
         <div
           className="px-3 py-2"
-          style={{ borderTop: "1px solid rgba(15,23,42,0.06)" }}
+          style={{ borderTop: "1px solid #ECECF0" }}
         >
           {loading ? (
             <div className="flex justify-center py-3 text-slate-400">
@@ -1038,7 +1037,7 @@ function ProfileAccounts({
               {/* Ativar todas */}
               <div
                 className="mb-1 flex items-center justify-between gap-2 px-2 py-1.5"
-                style={{ borderBottom: "1px solid rgba(15,23,42,0.06)" }}
+                style={{ borderBottom: "1px solid #ECECF0" }}
               >
                 <span className="text-[12px] font-semibold text-slate-500">
                   Ativar todas:

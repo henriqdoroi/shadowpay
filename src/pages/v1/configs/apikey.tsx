@@ -261,11 +261,8 @@ function ApiKeyContent() {
       </Head>
       <LightShell>
         <header className="mb-6">
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
-            Integrações
-          </p>
           <h1
-            className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
+            className="text-[22px] font-semibold sm:text-[26px] text-slate-900"
             style={{
               fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
               letterSpacing: "-0.005em",
@@ -288,21 +285,14 @@ function ApiKeyContent() {
 
         {/* Card credenciais */}
         <div
-          className="mb-6 rounded-2xl p-6"
+          className="mb-6 rounded-xl p-6"
           style={{
             background: "#FFFFFF",
-            border: "1px solid rgba(15,23,42,0.06)",
-            boxShadow:
-              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+            border: "1px solid #ECECF0",
           }}
         >
-          <div className="mb-4 flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
-              <Key className="h-4 w-4" />
-            </span>
-            <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-              Suas credenciais
-            </span>
+          <div className="mb-4">
+            <h2 className="text-[15px] font-semibold text-slate-900">Suas credenciais</h2>
           </div>
 
           {has && current ? (
@@ -357,10 +347,9 @@ function ApiKeyContent() {
                   <button
                     onClick={updateSellerIp}
                     disabled={savingIp}
-                    className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white disabled:opacity-60"
+                    className="inline-flex h-11 shrink-0 items-center gap-2 rounded-lg px-4 text-sm font-medium text-white transition-colors hover:bg-[#6D28D9] disabled:opacity-60"
                     style={{
                       background: "#7C3AED",
-                      boxShadow: "0 8px 20px -8px rgba(124,58,237,0.55)",
                     }}
                   >
                     {savingIp ? "Salvando…" : "Salvar IP"}
@@ -390,17 +379,16 @@ function ApiKeyContent() {
             </div>
           ) : (
             <div className="flex flex-col items-center gap-3 py-6 text-center">
-              <Key className="h-7 w-7 text-violet-400" />
+              <Key className="h-7 w-7 text-slate-300" />
               <p className="text-sm text-slate-600">
                 Você ainda não tem credenciais. Gere agora para integrar com a API.
               </p>
               <button
                 onClick={generateCredentials}
                 disabled={isGenerating}
-                className="inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold text-white disabled:opacity-60"
+                className="inline-flex h-10 items-center gap-2 rounded-lg px-5 text-sm font-medium text-white transition-colors hover:bg-[#6D28D9] disabled:opacity-60"
                 style={{
                   background: "#7C3AED",
-                  boxShadow: "0 8px 20px -8px rgba(124,58,237,0.55)",
                 }}
               >
                 {isGenerating ? "Gerando…" : "Gerar credenciais"}
@@ -411,40 +399,31 @@ function ApiKeyContent() {
 
         {/* Integração via IA */}
         <div
-          className="mb-6 overflow-hidden rounded-2xl"
+          className="mb-6 overflow-hidden rounded-xl"
           style={{
             background: "#FFFFFF",
-            border: "1px solid rgba(124,58,237,0.20)",
-            boxShadow:
-              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+            border: "1px solid #ECECF0",
           }}
         >
           <div className="p-5 sm:p-6">
             <div className="flex items-start gap-3">
               <span
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                style={{
-                  background: "rgba(124,58,237,0.08)",
-                  border: "1px solid rgba(124,58,237,0.18)",
-                  color: "#7C3AED",
-                }}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                style={{ background: "#F6F6F8", color: "#4B5563" }}
               >
-                <Sparkles className="h-5 w-5" />
+                <FileText className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <h2 className="text-[16px] font-bold text-slate-900">
-                  Integração via IA{" "}
-                  <span className="font-semibold text-violet-600">
-                    (ChatGPT, Claude, Gemini)
-                  </span>
+                <h2 className="text-[15px] font-semibold text-slate-900">
+                  Integração com ajuda de IA
                 </h2>
-                <p className="mt-1 text-[13px] leading-relaxed text-slate-500">
-                  Copie o prompt abaixo e cole numa IA. Substitua{" "}
-                  <code className="rounded bg-violet-50 px-1.5 py-0.5 font-mono text-[11.5px] text-violet-700">
+                <p className="mt-1 text-[13.5px] leading-relaxed text-slate-500">
+                  Copie o roteiro abaixo e cole no ChatGPT, Claude ou Gemini. Troque{" "}
+                  <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[12px] text-slate-700">
                     [COLE SUA CHAVE SECRETA AQUI]
                   </code>{" "}
                   e{" "}
-                  <code className="rounded bg-violet-50 px-1.5 py-0.5 font-mono text-[11.5px] text-violet-700">
+                  <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[12px] text-slate-700">
                     [COLE O ID DO PEDIDO]
                   </code>{" "}
                   com seus dados reais. A IA gera o código completo pra integrar
@@ -463,11 +442,8 @@ function ApiKeyContent() {
             >
               <button
                 onClick={copyPrompt}
-                className="absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11.5px] font-semibold text-white transition-colors"
-                style={{
-                  background: promptCopied ? "#16A34A" : "#7C3AED",
-                  boxShadow: "0 6px 16px -8px rgba(124,58,237,0.45)",
-                }}
+                className="absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-md border border-[#E5E7EB] bg-white px-2.5 py-1.5 text-[12.5px] font-medium transition-colors hover:bg-[#F6F6F8]"
+                style={{ color: promptCopied ? "#047857" : "#111827" }}
               >
                 {promptCopied ? (
                   <>
@@ -495,14 +471,14 @@ function ApiKeyContent() {
                 <button
                   key={tool.id}
                   onClick={() => openAiTool(tool.url)}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl text-[13px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-lg text-[13.5px] font-medium text-slate-700 transition-colors hover:bg-slate-50"
                   style={{
                     background: "#FFFFFF",
-                    border: "1px solid rgba(15,23,42,0.10)",
+                    border: "1px solid #E5E7EB",
                   }}
                 >
-                  <Sparkles className="h-4 w-4 text-violet-500" />
                   {tool.label}
+                  <ArrowUpRight className="h-4 w-4 text-slate-400" />
                 </button>
               ))}
             </div>
@@ -511,17 +487,15 @@ function ApiKeyContent() {
 
         {/* Histórico */}
         <div
-          className="overflow-hidden rounded-2xl"
+          className="overflow-hidden rounded-xl"
           style={{
             background: "#FFFFFF",
-            border: "1px solid rgba(15,23,42,0.06)",
-            boxShadow:
-              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+            border: "1px solid #ECECF0",
           }}
         >
           <div
             className="px-5 py-4"
-            style={{ borderBottom: "1px solid rgba(15,23,42,0.06)" }}
+            style={{ borderBottom: "1px solid #ECECF0" }}
           >
             <h2
               className="text-[14px] font-semibold text-slate-900"

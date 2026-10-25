@@ -50,7 +50,7 @@ function timeAgo(iso: string | null): string {
 function NotificationPreview() {
   return (
     <div
-      className="flex items-start gap-3 rounded-2xl p-3"
+      className="flex items-start gap-3 rounded-xl p-3"
       style={{
         background: "rgba(255,255,255,0.85)",
         border: `1px solid ${T.border}`,
@@ -149,7 +149,7 @@ export type PushSetupViewProps = {
 };
 
 export function PushSetupView(p: PushSetupViewProps) {
-  const card = p.bare ? "" : p.compact ? "rounded-2xl bg-white p-4" : "rounded-2xl bg-white p-5";
+  const card = p.bare ? "" : p.compact ? "rounded-xl bg-white p-4" : "rounded-xl bg-white p-5";
   const cardStyle = p.bare ? {} : { border: `1px solid ${T.border}` };
 
   if (p.state === "checking") {
@@ -170,7 +170,7 @@ export function PushSetupView(p: PushSetupViewProps) {
     return (
       <div className={card} style={cardStyle}>
         <div className="mb-4 flex items-start gap-3">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white" style={{ background: `linear-gradient(135deg, ${T.primary}, ${T.primaryDark})` }}>
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white" style={{ background: T.primary }}>
             <Smartphone className="h-5 w-5" />
           </span>
           <div>
@@ -251,12 +251,12 @@ export function PushSetupView(p: PushSetupViewProps) {
   if (p.state === "prompt") {
     return (
       <div
-        className={p.bare ? "" : `overflow-hidden rounded-2xl ${p.compact ? "p-4" : "p-5"}`}
+        className={p.bare ? "" : `overflow-hidden rounded-xl ${p.compact ? "p-4" : "p-5"}`}
         style={p.bare ? undefined : { ...cardStyle, background: "radial-gradient(120% 140% at 100% 0%, rgba(124,58,237,0.10) 0%, #FFFFFF 55%)" }}
       >
         <div className={p.compact ? "grid gap-4" : "grid items-center gap-5 sm:grid-cols-[1fr_280px]"}>
           <div>
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl text-white" style={{ background: `linear-gradient(135deg, ${T.primary}, ${T.primaryDark})`, boxShadow: "0 10px 24px -10px rgba(124,58,237,0.7)" }}>
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl text-white" style={{ background: T.primary }}>
               <BellRing className="h-5 w-5" />
             </span>
             <p className="mt-3 text-[17px] font-bold tracking-[-0.01em] text-slate-900">Receba suas vendas no celular</p>
@@ -266,8 +266,8 @@ export function PushSetupView(p: PushSetupViewProps) {
             <button
               onClick={p.onEnable}
               disabled={p.busy === "enable"}
-              className="mt-4 inline-flex h-11 items-center gap-2 rounded-xl px-5 text-[13.5px] font-bold text-white transition-transform hover:-translate-y-0.5 disabled:opacity-60"
-              style={{ background: T.primary, boxShadow: "0 10px 24px -10px rgba(124,58,237,0.65)" }}
+              className="mt-4 inline-flex h-11 items-center gap-2 rounded-xl px-5 text-[13.5px] font-bold text-white transition-colors disabled:opacity-60"
+              style={{ background: T.primary }}
             >
               {p.busy === "enable" ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellRing className="h-4 w-4" />}
               {p.busy === "enable" ? "Ativando…" : "Ativar notificações"}

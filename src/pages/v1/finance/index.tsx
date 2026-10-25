@@ -46,14 +46,14 @@ import ShadowPanel from "@/components/ShadowPanel";
 const API = "https://shadowpay-backend.onrender.com";
 
 const T = {
-  text: "#0F172A",
+  text: "#111827",
   text2: "#475569",
   textMuted: "#94A3B8",
   primary: "#7C3AED",
   primaryStrong: "#6D28D9",
   primaryBg: "rgba(124, 58, 237, 0.08)",
-  border: "rgba(15, 23, 42, 0.08)",
-  borderSoft: "rgba(15, 23, 42, 0.06)",
+  border: "#E5E7EB",
+  borderSoft: "#ECECF0",
   green: "#10B981",
   red: "#EF4444",
   amber: "#F59E0B",
@@ -418,13 +418,10 @@ function FinanceContent() {
       >
         {/* HEADER */}
         <header className="mb-6">
-          <h1
-            className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
-            style={{ letterSpacing: "-0.005em" }}
-          >
+          <h1 className="text-[22px] font-semibold text-slate-900 sm:text-[26px]">
             Financeiro
           </h1>
-          <p className="mt-1 text-[13.5px] text-slate-500">
+          <p className="mt-1 text-[14px] text-slate-500">
             Acompanhe seu saldo e seus saques.
           </p>
         </header>
@@ -432,52 +429,30 @@ function FinanceContent() {
         {/* SALDO — largura total (igual ao Histórico), com os botões dentro */}
         <section className="mb-6">
           <div
-            className="relative overflow-hidden rounded-[22px] p-5 sm:p-7"
-            style={{
-              background:
-                "linear-gradient(135deg, #FBFAFF 0%, #F4F1FE 58%, #EEF1FF 100%)",
-              border: "1px solid rgba(124,58,237,0.10)",
-              boxShadow:
-                "0 1px 3px rgba(15,23,42,0.04), 0 22px 46px -30px rgba(124,58,237,0.35)",
-            }}
+            className="rounded-xl p-5 sm:p-7"
+            style={{ background: T.card, border: `1px solid ${T.borderSoft}` }}
           >
-            {/* Glow suave */}
-            <div
-              className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full"
-              style={{
-                background:
-                  "radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 62%)",
-              }}
-            />
-
-            <div className="relative">
+            <div>
               <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                  <p
-                    className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em]"
-                    style={{ color: "#8B5CF6" }}
-                  >
-                    <span
-                      className="h-1.5 w-1.5 rounded-full"
-                      style={{ background: "#22C55E" }}
-                    />
+                  <p className="text-[14px] font-medium text-slate-500">
                     Saldo disponível
                   </p>
                   <p
-                    className="mt-3 text-[38px] font-semibold leading-none sm:text-[46px]"
+                    className="mt-2 text-[34px] font-semibold leading-none tabular-nums sm:text-[40px]"
                     style={{
-                      color: "#2E1065",
-                      letterSpacing: "-0.02em",
+                      color: T.text,
+                      letterSpacing: "-0.015em",
                       fontFamily:
                         "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                     }}
                   >
                     {hideable(fmt(balance.current))}
                   </p>
-                  <p className="mt-3 text-[12.5px]" style={{ color: "#7C6AAE" }}>
-                    Pronto pra saque · taxa{" "}
-                    <b style={{ color: "#2E1065" }}>{fmt(fees.withdrawFixed)}</b> por
-                    PIX
+                  <p className="mt-3 text-[13px] text-slate-500">
+                    Disponível para saque · taxa de{" "}
+                    <span className="font-medium text-slate-700">{fmt(fees.withdrawFixed)}</span> por
+                    saque
                   </p>
                 </div>
 
@@ -485,19 +460,16 @@ function FinanceContent() {
                 <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
                   <Link
                     href="/v1/products/sales"
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white/80 px-4 text-[13px] font-semibold text-slate-700 transition-colors hover:bg-white"
-                    style={{ border: "1px solid rgba(124,58,237,0.16)" }}
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-white px-4 text-[13.5px] font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                    style={{ border: `1px solid ${T.border}` }}
                   >
-                    <FileText className="h-4 w-4" style={{ color: "#8B5CF6" }} />
+                    <FileText className="h-4 w-4 text-slate-500" />
                     Extrato
                   </Link>
                   <button
                     onClick={openWithdraw}
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold text-white transition-transform hover:-translate-y-0.5"
-                    style={{
-                      background: T.primary,
-                      boxShadow: "0 8px 20px -8px rgba(124, 58, 237, 0.55)",
-                    }}
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-[13.5px] font-medium text-white transition-colors hover:bg-[#6D28D9]"
+                    style={{ background: T.primary }}
                   >
                     <ArrowUpFromLine className="h-4 w-4" />
                     Solicitar saque
@@ -508,19 +480,14 @@ function FinanceContent() {
               {/* sub-stats com divisórias finas (arejado) */}
               <div
                 className="mt-6 flex flex-col gap-4 border-t pt-5 sm:flex-row sm:gap-0"
-                style={{ borderColor: "rgba(124,58,237,0.12)" }}
+                style={{ borderColor: T.borderSoft }}
               >
                 <div className="flex-1 sm:pr-5">
+                  <p className="text-[13px] text-slate-500">Saldo bloqueado</p>
                   <p
-                    className="text-[10.5px] font-medium uppercase tracking-wider"
-                    style={{ color: "#9B8BC9" }}
-                  >
-                    Saldo bloqueado
-                  </p>
-                  <p
-                    className="mt-1.5 text-[18px] font-semibold"
+                    className="mt-1 text-[18px] font-semibold tabular-nums"
                     style={{
-                      color: "#2E1065",
+                      color: T.text,
                       fontFamily:
                         "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                     }}
@@ -530,35 +497,25 @@ function FinanceContent() {
                 </div>
                 <div
                   className="flex-1 sm:border-l sm:pl-5"
-                  style={{ borderColor: "rgba(124,58,237,0.12)" }}
+                  style={{ borderColor: T.borderSoft }}
                 >
+                  <p className="text-[13px] text-slate-500">Próximo repasse</p>
                   <p
-                    className="text-[10.5px] font-medium uppercase tracking-wider"
-                    style={{ color: "#9B8BC9" }}
-                  >
-                    Próximo repasse
-                  </p>
-                  <p
-                    className="mt-1.5 text-[15px] font-semibold"
-                    style={{ color: "#2E1065" }}
+                    className="mt-1 text-[16px] font-semibold"
+                    style={{ color: T.text }}
                   >
                     {nextPayout}
                   </p>
                 </div>
                 <div
                   className="flex-1 sm:border-l sm:pl-5"
-                  style={{ borderColor: "rgba(124,58,237,0.12)" }}
+                  style={{ borderColor: T.borderSoft }}
                 >
+                  <p className="text-[13px] text-slate-500">Total já recebido</p>
                   <p
-                    className="text-[10.5px] font-medium uppercase tracking-wider"
-                    style={{ color: "#9B8BC9" }}
-                  >
-                    Total já recebido
-                  </p>
-                  <p
-                    className="mt-1.5 text-[18px] font-semibold"
+                    className="mt-1 text-[18px] font-semibold tabular-nums"
                     style={{
-                      color: "#2E1065",
+                      color: T.text,
                       fontFamily:
                         "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
                     }}
@@ -574,12 +531,10 @@ function FinanceContent() {
 
         {/* HISTÓRICO DE SAQUES */}
         <section
-          className="rounded-2xl"
+          className="rounded-xl"
           style={{
             background: T.card,
             border: `1px solid ${T.borderSoft}`,
-            boxShadow:
-              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
           }}
         >
           <div
@@ -587,10 +542,10 @@ function FinanceContent() {
             style={{ borderBottom: `1px solid ${T.borderSoft}` }}
           >
             <div>
-              <p className="text-[14px] font-bold text-slate-900">
+              <p className="text-[15px] font-semibold text-slate-900">
                 Histórico de saques
               </p>
-              <p className="mt-0.5 text-[12px] text-slate-500">
+              <p className="mt-0.5 text-[13px] text-slate-500">
                 Acompanhe todos os saques que você já solicitou.
               </p>
             </div>
@@ -642,10 +597,7 @@ function FinanceContent() {
             <div className="overflow-x-auto">
               <table className="w-full text-[13px]">
                 <thead>
-                  <tr
-                    className="text-left text-[10.5px] font-bold uppercase tracking-wider"
-                    style={{ color: T.textMuted, background: "#F8FAFC" }}
-                  >
+                  <tr className="text-left text-[12.5px] font-medium" style={{ color: "#6B7280" }}>
                     <th className="px-5 py-3">Data e hora</th>
                     <th className="px-5 py-3">Valor solicitado</th>
                     <th className="px-5 py-3">Valor recebido</th>
@@ -757,7 +709,7 @@ function FinanceContent() {
                 <button
                   type="button"
                   onClick={() => setAmountInput(balance.current.toFixed(2).replace(".", ","))}
-                  className="rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                  className="rounded-md px-2 py-0.5 text-[12px] font-medium"
                   style={{ color: T.primary, background: T.primaryBg }}
                 >
                   Máx
@@ -771,7 +723,7 @@ function FinanceContent() {
             </div>
             <div>
               <label className="mb-1 block text-[12px] font-semibold text-slate-600">
-                Chave PIX
+                Chave Pix
               </label>
               <input
                 value={pixKey}
@@ -798,11 +750,8 @@ function FinanceContent() {
             <button
               onClick={submitWithdraw}
               disabled={processing || !pixKey.trim() || sacarValor <= 0 || sacarValor > balance.current}
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-[13.5px] font-bold text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
-              style={{
-                background: T.primary,
-                boxShadow: "0 8px 20px -8px rgba(124, 58, 237, 0.55)",
-              }}
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg text-[14px] font-medium text-white transition-colors hover:bg-[#6D28D9] disabled:cursor-not-allowed disabled:opacity-50"
+              style={{ background: T.primary }}
             >
               {processing ? "Processando…" : "Confirmar saque"}
             </button>

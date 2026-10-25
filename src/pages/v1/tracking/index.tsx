@@ -61,14 +61,11 @@ function TrackingContent() {
   const totalRev = channels.reduce((s, c) => s + c.revenue, 0);
 
   return (
-    <div className="mx-auto w-full max-w-7xl">
+    <div className="w-full">
       {/* Header */}
       <header className="mb-6">
-        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
-          AVANÇADO
-        </p>
         <h1
-          className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
+          className="text-[22px] font-semibold sm:text-[26px] text-slate-900"
           style={{ letterSpacing: "-0.005em" }}
         >
           Tracking
@@ -140,18 +137,16 @@ function TrackingContent() {
           return (
             <div
               key={m.label}
-              className="rounded-2xl p-3 sm:p-4 md:p-5"
+              className="rounded-xl p-3 sm:p-4 md:p-5"
               style={{
                 background: "#FFFFFF",
                 border: `1px solid ${T.borderSoft}`,
-                boxShadow:
-                  "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
               }}
             >
               <div className="flex items-center gap-2">
                 <div
                   className="flex h-9 w-9 items-center justify-center rounded-lg"
-                  style={{ background: `${m.color}14`, color: m.color }}
+                  style={{ background: "#F6F6F8", color: "#4B5563" }}
                 >
                   <Icon className="h-4 w-4" />
                 </div>
@@ -172,11 +167,10 @@ function TrackingContent() {
 
       {/* Channels table */}
       <div
-        className="overflow-hidden rounded-2xl"
+        className="overflow-hidden rounded-xl"
         style={{
           background: "#FFFFFF",
           border: `1px solid ${T.borderSoft}`,
-          boxShadow: "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
         }}
       >
         <div

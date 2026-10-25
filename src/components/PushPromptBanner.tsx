@@ -74,27 +74,24 @@ export function PushPromptBanner({ token }: { token: string | null }) {
   const Icon = state === "ios-install" ? Smartphone : state === "denied" ? BellOff : BellRing;
   return (
     <div
-      className="mb-6 flex items-center gap-3 rounded-2xl p-3.5 sm:p-4"
-      style={{
-        border: "1px solid rgba(124,58,237,0.18)",
-        background: "linear-gradient(90deg, rgba(124,58,237,0.08) 0%, #FFFFFF 65%)",
-      }}
+      className="mb-6 flex items-center gap-3 rounded-xl p-3.5 sm:p-4"
+      style={{ background: "#F6F6F8" }}
     >
       <span
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white"
-        style={{ background: "linear-gradient(135deg, #7C3AED, #5B21B6)", boxShadow: "0 8px 20px -10px rgba(124,58,237,0.7)" }}
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-slate-700"
+        style={{ border: "1px solid #E5E7EB" }}
       >
-        <Icon className="h-5 w-5" />
+        <Icon className="h-[18px] w-[18px]" />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[13.5px] font-bold text-slate-900">{copy.title}</p>
-        <p className="text-[12px] leading-snug text-slate-500">{copy.text}</p>
+        <p className="text-[14px] font-medium text-slate-900">{copy.title}</p>
+        <p className="text-[13px] leading-snug text-slate-500">{copy.text}</p>
       </div>
       {state === "prompt" ? (
         <button
           onClick={activate}
           disabled={busy}
-          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-4 text-[12.5px] font-bold text-white disabled:opacity-60"
+          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-4 text-[13px] font-medium text-white transition-colors hover:bg-[#6D28D9] disabled:opacity-60"
           style={{ background: "#7C3AED" }}
         >
           {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
@@ -103,8 +100,7 @@ export function PushPromptBanner({ token }: { token: string | null }) {
       ) : (
         <button
           onClick={openNotificationsPanel}
-          className="inline-flex h-9 shrink-0 items-center rounded-xl px-4 text-[12.5px] font-bold text-white"
-          style={{ background: "#7C3AED" }}
+          className="inline-flex h-9 shrink-0 items-center rounded-lg border border-[#E5E7EB] bg-white px-4 text-[13px] font-medium text-slate-800 transition-colors hover:bg-slate-50"
         >
           Ver como
         </button>

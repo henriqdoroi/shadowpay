@@ -10,7 +10,6 @@ import {
   XCircle,
   ChevronLeft,
   ChevronRight,
-  Filter,
   Activity,
 } from "lucide-react";
 
@@ -97,12 +96,11 @@ function TransactionsContent() {
       EXPIRED: { color: "bg-slate-50 text-slate-500 border-slate-200", label: "Expirada", Icon: AlertCircle },
     };
     const cfg = map[txStatus(t)];
-    const Icon = cfg.Icon;
+    // texto + ponto, sem pílula
+    const dot = cfg.color.includes("emerald") ? "#16A34A" : cfg.color.includes("amber") ? "#F59E0B" : cfg.color.includes("blue") ? "#3B82F6" : cfg.color.includes("rose") ? "#DC2626" : "#9CA3AF";
     return (
-      <span
-        className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${cfg.color}`}
-      >
-        <Icon className="h-3 w-3" />
+      <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] text-slate-700">
+        <span className="h-1.5 w-1.5 rounded-full" style={{ background: dot }} />
         {cfg.label}
       </span>
     );
@@ -111,7 +109,7 @@ function TransactionsContent() {
   const typeText = (t: string) =>
     ({ DEPOSIT: "Depósito", WITHDRAW: "Saque" }[t?.toUpperCase()] || t || "—");
   const methodText = (m: string) =>
-    ({ PIX: "PIX", CARD: "Cartão", BOLETO: "Boleto", CRYPTO: "Cripto" }[m] ||
+    ({ PIX: "Pix", CARD: "Cartão", BOLETO: "Boleto", CRYPTO: "Cripto" }[m] ||
       m);
 
   const fetchTx = async () => {
@@ -170,7 +168,7 @@ function TransactionsContent() {
   };
 
   const inputCls =
-    "h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition-colors focus:border-violet-300 focus:ring-2 focus:ring-violet-100";
+    "h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition-colors focus:border-violet-300 focus:ring-2 focus:ring-violet-100";
 
   return (
     <>
@@ -179,39 +177,34 @@ function TransactionsContent() {
       </Head>
       <LightShell>
         <header className="mb-6">
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
-            Admin
-          </p>
           <h1
-            className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
+            className="text-[22px] font-semibold sm:text-[26px] text-slate-900"
             style={{
               fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
               letterSpacing: "-0.005em",
             }}
           >
-            Gerenciamento de Transações
+            Todas as transações
           </h1>
           <p className="mt-1 text-[14px] text-slate-500">
-            Monitore todas as transações da plataforma em tempo real.
+            Vendas e saques de todos os sellers.
           </p>
         </header>
 
         {/* Filtros */}
         <div
-          className="mb-6 rounded-2xl p-5"
+          className="mb-6 rounded-xl p-5"
           style={{
             background: "#FFFFFF",
-            border: "1px solid rgba(15,23,42,0.06)",
-            boxShadow:
-              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+            border: "1px solid #ECECF0",
           }}
         >
-          <div className="mb-4 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-            <Filter className="h-3.5 w-3.5" /> Filtros
+          <div className="mb-4 text-[15px] font-semibold text-slate-900">
+            Filtros
           </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-5">
             <div>
-              <label className="mb-1.5 block text-xs text-slate-500">
+              <label className="mb-1.5 block text-[13px] font-medium text-slate-600">
                 Status
               </label>
               <select
@@ -227,7 +220,7 @@ function TransactionsContent() {
               </select>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs text-slate-500">
+              <label className="mb-1.5 block text-[13px] font-medium text-slate-600">
                 Método
               </label>
               <select
@@ -236,14 +229,14 @@ function TransactionsContent() {
                 onChange={(e) => filterChange("paymentMethod", e.target.value)}
               >
                 <option value="all">Todos</option>
-                <option value="PIX">PIX</option>
+                <option value="PIX">Pix</option>
                 <option value="CARD">Cartão</option>
                 <option value="BOLETO">Boleto</option>
                 <option value="CRYPTO">Cripto</option>
               </select>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs text-slate-500">
+              <label className="mb-1.5 block text-[13px] font-medium text-slate-600">
                 Tipo
               </label>
               <select
@@ -259,7 +252,7 @@ function TransactionsContent() {
               </select>
             </div>
             <div className="md:col-span-2 lg:col-span-2">
-              <label className="mb-1.5 block text-xs text-slate-500">
+              <label className="mb-1.5 block text-[13px] font-medium text-slate-600">
                 Período
               </label>
               <PeriodPicker value={period} onChange={changePeriod} block />
@@ -268,25 +261,23 @@ function TransactionsContent() {
         </div>
 
         <div
-          className="overflow-hidden rounded-2xl"
+          className="overflow-hidden rounded-xl"
           style={{
             background: "#FFFFFF",
-            border: "1px solid rgba(15,23,42,0.06)",
-            boxShadow:
-              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+            border: "1px solid #ECECF0",
           }}
         >
           <div
             className="flex items-center justify-between px-5 py-4"
-            style={{ borderBottom: "1px solid rgba(15,23,42,0.06)" }}
+            style={{ borderBottom: "1px solid #ECECF0" }}
           >
             <h2
-              className="text-[14px] font-semibold text-slate-900"
+              className="text-[15px] font-semibold text-slate-900"
               style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
             >
-              Lista de transações
+              Transações
             </h2>
-            <span className="text-xs text-slate-400">
+            <span className="text-[13px] text-slate-500">
               {pagination.total} {pagination.total === 1 ? "transação" : "transações"}
             </span>
           </div>
@@ -297,19 +288,19 @@ function TransactionsContent() {
             </div>
           )}
 
-          <div className="overflow-x-auto p-2 sm:p-4">
+          <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="text-[10px] uppercase tracking-[0.16em] text-slate-400">
-                  <th className="px-3 py-2.5 font-semibold">ID</th>
-                  <th className="px-3 py-2.5 font-semibold">Vendedor</th>
-                  <th className="px-3 py-2.5 font-semibold">Cliente</th>
-                  <th className="px-3 py-2.5 font-semibold">Produto</th>
-                  <th className="px-3 py-2.5 font-semibold">Tipo</th>
-                  <th className="px-3 py-2.5 font-semibold">Valor</th>
-                  <th className="px-3 py-2.5 font-semibold">Método</th>
-                  <th className="px-3 py-2.5 font-semibold">Status</th>
-                  <th className="px-3 py-2.5 font-semibold">Data</th>
+                <tr className="text-[12.5px] text-slate-500">
+                  <th className="px-3 py-2.5 pl-5 font-medium">ID</th>
+                  <th className="px-3 py-2.5 font-medium">Vendedor</th>
+                  <th className="px-3 py-2.5 font-medium">Cliente</th>
+                  <th className="px-3 py-2.5 font-medium">Produto</th>
+                  <th className="px-3 py-2.5 font-medium">Tipo</th>
+                  <th className="px-3 py-2.5 font-medium">Valor</th>
+                  <th className="px-3 py-2.5 font-medium">Método</th>
+                  <th className="px-3 py-2.5 font-medium">Status</th>
+                  <th className="px-3 py-2.5 pr-5 font-medium">Data</th>
                 </tr>
               </thead>
               <tbody>
@@ -332,7 +323,7 @@ function TransactionsContent() {
                 ) : transactions.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="py-14 text-center">
-                      <Activity className="mx-auto mb-3 h-7 w-7 text-violet-300" />
+                      <Activity className="mx-auto mb-3 h-6 w-6 text-slate-300" />
                       <p className="text-sm font-medium text-slate-600">
                         Nenhuma transação encontrada
                       </p>
@@ -345,8 +336,8 @@ function TransactionsContent() {
                       className="hover:bg-slate-50/50"
                       style={{ borderTop: "1px solid rgba(15,23,42,0.04)" }}
                     >
-                      <td className="px-3 py-3 font-mono text-xs text-slate-600">
-                        {t.transactionId}
+                      <td className="px-3 py-3 pl-5 text-[13px] tabular-nums text-slate-500" title={t.transactionId}>
+                        {String(t.transactionId || "").slice(0, 8)}
                       </td>
                       <td className="px-3 py-3">
                         <p className="font-medium text-slate-900">
@@ -365,7 +356,7 @@ function TransactionsContent() {
                             </p>
                           </>
                         ) : (
-                          <span className="text-slate-400">N/A</span>
+                          <span className="text-slate-400">—</span>
                         )}
                       </td>
                       <td className="px-3 py-3">
@@ -377,20 +368,20 @@ function TransactionsContent() {
                             </p>
                           </>
                         ) : (
-                          <span className="text-slate-400">N/A</span>
+                          <span className="text-slate-400">—</span>
                         )}
                       </td>
-                      <td className="px-3 py-3 text-xs text-slate-600">
+                      <td className="px-3 py-3 text-[13px] text-slate-600">
                         {typeText(t.transactionType)}
                       </td>
-                      <td className="px-3 py-3 font-medium text-slate-900">
+                      <td className="whitespace-nowrap px-3 py-3 font-medium tabular-nums text-slate-900">
                         {fmt(t.amount)}
                       </td>
-                      <td className="px-3 py-3 text-xs text-slate-600">
+                      <td className="px-3 py-3 text-[13px] text-slate-600">
                         {methodText(t.paymentMethod)}
                       </td>
                       <td className="px-3 py-3">{statusBadge(t)}</td>
-                      <td className="px-3 py-3 text-xs text-slate-500">
+                      <td className="whitespace-nowrap px-3 py-3 pr-5 text-[13px] text-slate-500">
                         {fmtDate(t.createdAt)}
                       </td>
                     </tr>

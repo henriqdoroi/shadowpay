@@ -537,7 +537,7 @@ export default function CreateProduct() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-[22px] font-bold tracking-tight text-slate-900 sm:text-[26px]">
+              <h1 className="text-[22px] font-semibold text-slate-900 sm:text-[26px]">
                 Criar Produto
               </h1>
               <p className="mt-1 text-[13px] text-slate-500">
@@ -2974,7 +2974,7 @@ export default function CreateProduct() {
                       className="flex items-start gap-3 rounded-xl p-3.5"
                       style={{
                         background: "rgba(124,58,237,0.05)",
-                        border: "1px solid rgba(15,23,42,0.06)",
+                        border: "1px solid #ECECF0",
                       }}
                     >
                       <Zap
@@ -2994,7 +2994,7 @@ export default function CreateProduct() {
                       className="flex items-start gap-3 rounded-xl p-3.5"
                       style={{
                         background: "rgba(245,158,11,0.06)",
-                        border: "1px solid rgba(15,23,42,0.06)",
+                        border: "1px solid #ECECF0",
                       }}
                     >
                       <Zap

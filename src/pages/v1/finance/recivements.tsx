@@ -325,11 +325,8 @@ function RecivementsContent() {
       </Head>
       <LightShell>
         <header className="mb-6">
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
-            Vendas
-          </p>
           <h1
-            className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
+            className="text-[22px] font-semibold sm:text-[26px] text-slate-900"
             style={{
               fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
               letterSpacing: "-0.005em",
@@ -345,12 +342,10 @@ function RecivementsContent() {
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
           {/* Total transacionado */}
           <div
-            className="rounded-2xl p-4 sm:p-5"
+            className="rounded-xl p-4 sm:p-5"
             style={{
               background: "#FFFFFF",
-              border: "1px solid rgba(15,23,42,0.06)",
-              boxShadow:
-                "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+              border: "1px solid #ECECF0",
             }}
           >
             <div className="mb-4 flex items-center justify-between">
@@ -380,7 +375,7 @@ function RecivementsContent() {
               </select>
             </div>
             <div
-              className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
+              className="text-[22px] font-semibold sm:text-[26px] text-slate-900"
               style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
             >
               {fmt(totalDepositos)}
@@ -396,12 +391,10 @@ function RecivementsContent() {
 
           {/* Depositar */}
           <div
-            className="rounded-2xl p-4 sm:p-5"
+            className="rounded-xl p-4 sm:p-5"
             style={{
               background: "#FFFFFF",
-              border: "1px solid rgba(15,23,42,0.06)",
-              boxShadow:
-                "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+              border: "1px solid #ECECF0",
             }}
           >
             <div className="mb-4 flex items-center gap-2.5">
@@ -452,7 +445,6 @@ function RecivementsContent() {
               className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
               style={{
                 background: "#7C3AED",
-                boxShadow: "0 8px 20px -8px rgba(124,58,237,0.55)",
               }}
             >
               {processing ? "Processando…" : "Confirmar depósito"}
@@ -462,17 +454,15 @@ function RecivementsContent() {
 
         {/* Histórico */}
         <div
-          className="overflow-hidden rounded-2xl"
+          className="overflow-hidden rounded-xl"
           style={{
             background: "#FFFFFF",
-            border: "1px solid rgba(15,23,42,0.06)",
-            boxShadow:
-              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+            border: "1px solid #ECECF0",
           }}
         >
           <div
             className="px-5 py-4"
-            style={{ borderBottom: "1px solid rgba(15,23,42,0.06)" }}
+            style={{ borderBottom: "1px solid #ECECF0" }}
           >
             <h2
               className="text-[14px] font-semibold text-slate-900"
@@ -599,7 +589,7 @@ function RecivementsContent() {
             </p>
             {pixCode && (
               <div className="my-4 flex justify-center">
-                <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                <div className="rounded-xl border border-slate-200 bg-white p-3">
                   <QRCodeSVG
                     value={pixCode}
                     size={200}

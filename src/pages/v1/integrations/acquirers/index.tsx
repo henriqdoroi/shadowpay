@@ -232,44 +232,32 @@ function AcquirersContent() {
   );
 
   return (
-    <div className="mx-auto max-w-7xl">
+    <div className="w-full">
       {/* Header */}
       <header className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.20em] text-slate-400">
-            AVANÇADO
-          </p>
-          <h1
-            className="text-[22px] font-bold tracking-tight sm:text-[28px] text-slate-900"
-            style={{ letterSpacing: "-0.005em" }}
-          >
-            Performance das Adquirentes
+          <h1 className="text-[22px] font-semibold text-slate-900 sm:text-[26px]">
+            Performance das adquirentes
           </h1>
-          <p className="mt-1 text-[13px] text-slate-500">
+          <p className="mt-1 text-[14px] text-slate-500">
             Arraste para priorizar. A ordem é salva automaticamente.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setShowABModal(true)}
-            className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-[13px] font-semibold text-white"
-            style={{
-              background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
-              boxShadow: "0 8px 20px -8px rgba(124,58,237,0.45)",
-            }}
+            className="inline-flex h-10 items-center gap-2 rounded-lg px-4 text-[13.5px] font-medium text-white transition-colors hover:bg-[#6D28D9]"
+            style={{ background: T.primary }}
           >
-            <Beaker className="h-3.5 w-3.5" />
-            Iniciar Teste A/B
+            <Beaker className="h-4 w-4" />
+            Iniciar teste A/B
           </button>
         </div>
       </header>
 
       <div
-        className="mb-6 rounded-2xl p-4 text-[12.5px] text-slate-600"
-        style={{
-          background: T.primaryBg,
-          border: `1px solid ${T.border}`,
-        }}
+        className="mb-6 rounded-xl p-4 text-[13.5px] leading-relaxed text-slate-600"
+        style={{ background: "#F6F6F8" }}
       >
         <b style={{ color: T.text }}>Como funciona?</b> O sistema tentará
         processar suas vendas usando as adquirentes na ordem que você definir.
@@ -279,16 +267,14 @@ function AcquirersContent() {
 
       {/* Último Teste A/B */}
       <section
-        className="mb-6 rounded-2xl p-5"
+        className="mb-6 rounded-xl p-5"
         style={{
           background: "#FFFFFF",
           border: `1px solid ${T.borderSoft}`,
-          boxShadow:
-            "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
         }}
       >
         <h2 className="mb-3 text-[14px] font-bold text-slate-900">
-          Resultados do Último Teste A/B
+          Resultado do último teste A/B
         </h2>
         {lastTest ? (
           <div>
@@ -377,7 +363,7 @@ function AcquirersContent() {
                         <p className="text-[10px] uppercase text-slate-400">
                           Tentativas
                         </p>
-                        <p className="font-mono font-bold text-slate-700">
+                        <p className="font-semibold tabular-nums text-slate-800">
                           {p.attempts}
                         </p>
                       </div>
@@ -385,7 +371,7 @@ function AcquirersContent() {
                         <p className="text-[10px] uppercase text-slate-400">
                           Aprovadas
                         </p>
-                        <p className="font-mono font-bold text-slate-700">
+                        <p className="font-semibold tabular-nums text-slate-800">
                           {p.approved}
                         </p>
                       </div>
@@ -393,8 +379,8 @@ function AcquirersContent() {
                         <p className="text-[10px] uppercase text-slate-400">
                           Conv.
                         </p>
-                        <p className="font-mono font-bold text-emerald-700">
-                          {conv.toFixed(2)}%
+                        <p className="font-semibold tabular-nums text-emerald-700">
+                          {conv.toFixed(2).replace(".", ",")}%
                         </p>
                       </div>
                     </div>
@@ -413,12 +399,10 @@ function AcquirersContent() {
 
       {/* Auto Optimize */}
       <section
-        className="mb-6 flex items-center justify-between gap-4 rounded-2xl p-5"
+        className="mb-6 flex items-center justify-between gap-4 rounded-xl p-5"
         style={{
           background: "#FFFFFF",
           border: `1px solid ${T.borderSoft}`,
-          boxShadow:
-            "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
         }}
       >
         <div className="flex items-center gap-3">
@@ -430,7 +414,7 @@ function AcquirersContent() {
           </div>
           <div>
             <h2 className="text-[14px] font-bold text-slate-900">
-              Otimização Automática de Adquirentes
+              Otimização automática
             </h2>
             <p className="mt-0.5 text-[12px] text-slate-500">
               Quando ativado, nosso sistema reordenará automaticamente suas
@@ -459,10 +443,10 @@ function AcquirersContent() {
         </button>
       </section>
 
-      {/* Classificação de Performance — top 5 */}
+      {/* Classificação por conversão — top 5 */}
       <section className="mb-3 flex items-center justify-between gap-2">
         <h2 className="text-[13px] font-bold uppercase tracking-wider text-slate-600">
-          Classificação de Performance
+          Classificação por conversão
         </h2>
         <div
           className="inline-flex items-center gap-1 rounded-lg p-1 text-[11px] font-semibold"
@@ -545,8 +529,8 @@ function AcquirersContent() {
                     </span>
                   )}
                 </div>
-                <p className="mt-2 font-mono text-[15px] font-bold text-emerald-700">
-                  {(r.globalConversionRate ?? 0).toFixed(2)}%
+                <p className="mt-2 text-[16px] font-semibold tabular-nums text-emerald-700">
+                  {(r.globalConversionRate ?? 0).toFixed(2).replace(".", ",")}%
                 </p>
                 <p className="text-[10.5px] text-slate-400">
                   {r.globalApproved ?? 0} pagas de {r.globalAttempts ?? 0} PIX
@@ -557,12 +541,10 @@ function AcquirersContent() {
 
       {/* Tabela principal */}
       <div
-        className="overflow-hidden rounded-2xl"
+        className="overflow-hidden rounded-xl"
         style={{
           background: "#FFFFFF",
           border: `1px solid ${T.borderSoft}`,
-          boxShadow:
-            "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
         }}
       >
         {loading ? (
@@ -636,10 +618,10 @@ function AcquirersContent() {
                       )}
                     </div>
                   </td>
-                  <td className="px-5 py-3 text-right font-mono text-slate-700">
+                  <td className="px-5 py-3 text-right tabular-nums text-slate-700">
                     {r.attempts}
                   </td>
-                  <td className="px-5 py-3 text-right font-mono text-slate-700">
+                  <td className="px-5 py-3 text-right tabular-nums text-slate-700">
                     {r.approved}
                   </td>
                   <td className="px-5 py-3">
@@ -656,18 +638,18 @@ function AcquirersContent() {
                           className="h-full rounded-full transition-all"
                           style={{
                             width: `${Math.min(100, r.globalConversionRate ?? 0)}%`,
-                            background: `linear-gradient(90deg, ${T.primary}, #06B6D4)`,
+                            background: T.primary,
                           }}
                         />
                       </div>
-                      <span className="w-16 text-right font-mono font-semibold text-slate-700">
-                        {(r.globalConversionRate ?? 0).toFixed(2)}%
+                      <span className="w-16 text-right font-medium tabular-nums text-slate-700">
+                        {(r.globalConversionRate ?? 0).toFixed(2).replace(".", ",")}%
                       </span>
                     </div>
                     <p className="mt-1 whitespace-nowrap text-[10.5px] text-slate-400">
                       Geral · suas vendas:{" "}
                       <b className="font-semibold text-slate-600">
-                        {r.conversionRate.toFixed(2)}%
+                        {r.conversionRate.toFixed(2).replace(".", ",")}%
                       </b>
                     </p>
                   </td>
@@ -769,7 +751,7 @@ function ABTestModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-white p-6"
+        className="w-full max-w-md rounded-xl bg-white p-6"
         onClick={(e) => e.stopPropagation()}
         style={{
           boxShadow: "0 24px 64px -20px rgba(15,23,42,0.30)",
@@ -780,7 +762,7 @@ function ABTestModal({
           <div
             className="flex h-10 w-10 items-center justify-center rounded-xl text-white"
             style={{
-              background: `linear-gradient(135deg, ${T.primary}, ${T.primaryStrong})`,
+              background: T.primary,
             }}
           >
             <Beaker className="h-5 w-5" />
@@ -878,8 +860,7 @@ function ABTestModal({
               disabled={saving || selected.size < 2}
               className="inline-flex h-10 items-center gap-2 rounded-lg px-5 text-[13px] font-bold uppercase tracking-wider text-white disabled:opacity-50"
               style={{
-                background: `linear-gradient(120deg, ${T.primary}, ${T.primaryStrong})`,
-                boxShadow: "0 8px 20px -8px rgba(124,58,237,0.45)",
+                background: T.primary,
               }}
             >
               {saving ? (

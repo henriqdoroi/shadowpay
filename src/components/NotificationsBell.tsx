@@ -181,7 +181,7 @@ export function NotificationsBell({
     <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label="Notificações">
       <div className="absolute inset-0 bg-slate-900/40 md:bg-slate-900/10" onClick={() => setOpen(false)} />
       <div
-        className="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-3xl bg-[#F8FAFC] p-4 pb-[max(20px,env(safe-area-inset-bottom))] md:inset-x-auto md:bottom-auto md:right-6 md:top-[72px] md:max-h-[calc(100vh-96px)] md:w-[420px] md:rounded-2xl md:p-3"
+        className="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-3xl bg-[#F8FAFC] p-4 pb-[max(20px,env(safe-area-inset-bottom))] md:inset-x-auto md:bottom-auto md:right-6 md:top-[72px] md:max-h-[calc(100vh-96px)] md:w-[420px] md:rounded-xl md:p-3"
         style={{ border: `1px solid ${borderColor}`, boxShadow: "0 24px 60px -20px rgba(15,23,42,0.45)" }}
       >
         <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-slate-300 md:hidden" aria-hidden="true" />
@@ -200,7 +200,7 @@ export function NotificationsBell({
         </div>
 
         {items.length > 0 && (
-          <div className="mb-3 overflow-hidden rounded-2xl bg-white" style={{ border: `1px solid ${borderColor}` }}>
+          <div className="mb-3 overflow-hidden rounded-xl bg-white" style={{ border: `1px solid ${borderColor}` }}>
             <p className="flex items-center gap-1.5 px-4 pb-1 pt-3 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
               <Megaphone className="h-3.5 w-3.5" /> Avisos da ShadowPay
             </p>

@@ -26,8 +26,8 @@ export function LegalPage({
       </Head>
       <div className="min-h-screen w-full bg-[#F6F8FB] px-4 py-10 sm:py-14">
         <article
-          className="mx-auto w-full max-w-3xl rounded-2xl bg-white px-5 py-8 sm:px-10 sm:py-10"
-          style={{ border: "1px solid rgba(15,23,42,0.06)", boxShadow: "0 1px 3px rgba(15,23,42,0.06)" }}
+          className="mx-auto w-full max-w-3xl rounded-xl bg-white px-5 py-8 sm:px-10 sm:py-10"
+          style={{ border: "1px solid #ECECF0", boxShadow: "0 1px 3px rgba(15,23,42,0.06)" }}
         >
           <div
             role="img"
@@ -40,7 +40,7 @@ export function LegalPage({
               backgroundPosition: "left center",
             }}
           />
-          <h1 className="text-[24px] font-bold tracking-tight text-slate-900 sm:text-[28px]">{title}</h1>
+          <h1 className="text-[24px] font-bold tracking-tight text-slate-900 sm:text-[26px]">{title}</h1>
           <p className="mt-1 text-[12.5px] text-slate-400">Atualizado em {updatedAt}</p>
           <div className="mt-6 text-[14.5px] leading-relaxed text-slate-600">{intro}</div>
           {sections.map((s, i) => (

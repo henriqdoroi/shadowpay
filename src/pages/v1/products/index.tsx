@@ -282,18 +282,20 @@ function ProductsContent() {
         <img
           src={p.imageUrl}
           alt={p.name}
-          className="h-14 w-14 rounded-2xl object-cover"
+          className="h-12 w-12 rounded-lg object-cover"
         />
       );
     }
-    const c = palette[idx % palette.length]!;
+    // sem foto: inicial em cinza neutro (antes cada produto ganhava uma cor
+    // aleatória — parecia painel de template)
+    void palette[idx % palette.length];
     const initial = (p.name?.[0] || "P").toUpperCase();
     return (
       <div
-        className="flex h-14 w-14 items-center justify-center rounded-2xl text-xl font-bold"
+        className="flex h-12 w-12 items-center justify-center rounded-lg text-[18px] font-semibold"
         style={{
-          background: c.bg,
-          color: c.text,
+          background: "#F3F4F6",
+          color: "#6B7280",
           fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
         }}
       >
@@ -305,24 +307,24 @@ function ProductsContent() {
   const statusPill = (status: string) => {
     if (status === "ativo") {
       return (
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-600">
+        <span className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-emerald-700">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          APROVADO
+          Aprovado
         </span>
       );
     }
     if (status === "rascunho") {
       return (
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-amber-600">
+        <span className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-amber-700">
           <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-          RASCUNHO
+          Rascunho
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+      <span className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-slate-500">
         <span className="h-1.5 w-1.5 rounded-full bg-slate-300" />
-        INATIVO
+        Inativo
       </span>
     );
   };
@@ -341,10 +343,7 @@ function ProductsContent() {
         <header className="mb-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1
-                className="text-[22px] font-bold tracking-tight text-slate-900 sm:text-[28px]"
-                style={{ letterSpacing: "-0.005em" }}
-              >
+              <h1 className="text-[22px] font-semibold text-slate-900 sm:text-[26px]">
                 Produtos
               </h1>
               <p className="mt-1 text-[14px] text-slate-500">
@@ -355,18 +354,15 @@ function ProductsContent() {
               <button
                 onClick={exportCsv}
                 disabled={!products.length}
-                className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-[13px] font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
+                className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-[13.5px] font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
               >
                 <Download className="h-4 w-4 text-slate-500" />
                 Exportar
               </button>
               <button
                 onClick={handleNew}
-                className="inline-flex h-10 items-center gap-2 rounded-xl px-5 text-[13px] font-semibold text-white transition-transform hover:-translate-y-0.5"
-                style={{
-                  background: "#7C3AED",
-                  boxShadow: "0 8px 20px -8px rgba(124,58,237,0.55)",
-                }}
+                className="inline-flex h-10 items-center gap-2 rounded-lg px-4 text-[13.5px] font-medium text-white transition-colors hover:bg-[#6D28D9]"
+                style={{ background: "#7C3AED" }}
               >
                 <Plus className="h-4 w-4" />
                 Novo produto
@@ -377,12 +373,10 @@ function ProductsContent() {
 
         {/* FILTROS */}
         <section
-          className="mb-5 rounded-2xl p-4"
+          className="mb-5 rounded-xl p-4"
           style={{
             background: "#FFFFFF",
-            border: "1px solid rgba(15,23,42,0.06)",
-            boxShadow:
-              "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+            border: "1px solid #ECECF0",
           }}
         >
           <div className="flex flex-col gap-2 sm:gap-3 md:flex-row md:items-end">
@@ -486,10 +480,10 @@ function ProductsContent() {
             {Array.from({ length: 8 }).map((_, i) => (
               <div
                 key={i}
-                className="animate-pulse rounded-2xl p-5"
+                className="animate-pulse rounded-xl p-5"
                 style={{
                   background: "#FFFFFF",
-                  border: "1px solid rgba(15,23,42,0.06)",
+                  border: "1px solid #ECECF0",
                   minHeight: 140,
                 }}
               />
@@ -497,15 +491,13 @@ function ProductsContent() {
           </div>
         ) : paged.length === 0 ? (
           <div
-            className="rounded-2xl p-12 text-center"
+            className="rounded-xl p-12 text-center"
             style={{
               background: "#FFFFFF",
-              border: "1px solid rgba(15,23,42,0.06)",
-              boxShadow:
-                "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+              border: "1px solid #ECECF0",
             }}
           >
-            <Package className="mx-auto mb-3 h-8 w-8 text-violet-300" />
+            <Package className="mx-auto mb-3 h-8 w-8 text-slate-300" />
             <p className="text-sm font-medium text-slate-600">
               {products.length === 0
                 ? "Nenhum produto cadastrado"
@@ -529,22 +521,23 @@ function ProductsContent() {
             {paged.map((p, i) => (
               <div
                 key={p.id}
-                className="group relative rounded-2xl p-4 transition-all hover:-translate-y-0.5 hover:shadow-md"
+                className="group relative rounded-xl p-4 transition-colors hover:border-[#D1D5DB]"
                 style={{
                   background: "#FFFFFF",
-                  border: "1px solid rgba(15,23,42,0.06)",
-                  boxShadow:
-                    "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+                  border: "1px solid #ECECF0",
                 }}
               >
                 <div className="flex items-start gap-3">
                   {thumbFor(p, i)}
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                      {(p.type || "Curso").toUpperCase()}
+                    <p className="text-[12.5px] text-slate-500">
+                      {(() => {
+                        const t = String(p.type || "Curso");
+                        return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+                      })()}
                     </p>
                     <h3
-                      className="mt-0.5 line-clamp-2 text-[14px] font-bold leading-snug text-slate-900"
+                      className="mt-0.5 line-clamp-2 text-[15px] font-semibold leading-snug text-slate-900"
                       style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
                       title={p.name}
                     >
@@ -552,8 +545,8 @@ function ProductsContent() {
                     </h3>
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       {statusPill(p.status)}
-                      <span className="inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                        {(p.category || "Finanças e Com").toUpperCase()}
+                      <span className="inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-[12px] font-medium text-slate-600">
+                        {p.category || "Finanças e Com"}
                       </span>
                     </div>
                   </div>
@@ -619,12 +612,10 @@ function ProductsContent() {
         {/* PAGINATION */}
         {!loading && filtered.length > 0 && (
           <div
-            className="mt-5 flex flex-col items-center justify-between gap-3 rounded-2xl p-3.5 sm:flex-row"
+            className="mt-5 flex flex-col items-center justify-between gap-3 rounded-xl p-3.5 sm:flex-row"
             style={{
               background: "#FFFFFF",
-              border: "1px solid rgba(15,23,42,0.06)",
-              boxShadow:
-                "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+              border: "1px solid #ECECF0",
             }}
           >
             <p className="text-xs text-slate-500">

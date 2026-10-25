@@ -308,7 +308,7 @@ export default function KycModal({ onApproved }: { onApproved?: () => void }) {
   if (status === "PENDING") {
     return (
       <Backdrop>
-        <div className="w-full max-w-[440px] rounded-2xl bg-white px-8 py-12 text-center" style={cardShadow}>
+        <div className="w-full max-w-[440px] rounded-xl bg-white px-8 py-12 text-center" style={cardShadow}>
           <ShadowLoader size={92} />
           <p className="mt-6 text-[18px] font-bold tracking-[-0.01em] text-slate-900">Verificação em análise</p>
           <p className="mx-auto mt-2 max-w-[320px] text-[13.5px] leading-relaxed text-slate-500">
@@ -345,7 +345,7 @@ export default function KycModal({ onApproved }: { onApproved?: () => void }) {
     );
     return (
       <Backdrop>
-        <div className="w-full max-w-[520px] rounded-2xl bg-white px-6 py-7 sm:px-7" style={cardShadow}>
+        <div className="w-full max-w-[520px] rounded-xl bg-white px-6 py-7 sm:px-7" style={cardShadow}>
           <p className="text-[20px] font-bold tracking-[-0.01em] text-slate-900">Verificação</p>
           <p className="mt-1 text-[13.5px] leading-relaxed text-slate-500">
             Como você vai vender na ShadowPay? Escolha o tipo de conta pra liberarmos seus recebimentos.
@@ -367,7 +367,7 @@ export default function KycModal({ onApproved }: { onApproved?: () => void }) {
   const ownerDoc = isPf ? form.repCpf : form.cnpj;
   return (
     <Backdrop>
-      <div className="flex max-h-[92vh] w-full max-w-[640px] flex-col overflow-hidden rounded-2xl bg-white" style={cardShadow}>
+      <div className="flex max-h-[92vh] w-full max-w-[640px] flex-col overflow-hidden rounded-xl bg-white" style={cardShadow}>
         {/* Header */}
         <div className="shrink-0 px-7 pt-6">
           <div className="flex items-center justify-between gap-3">

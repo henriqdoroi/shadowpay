@@ -137,13 +137,13 @@ export function InstallAppButton({ variant = "icon" }: { variant?: "icon" | "men
     <div className="fixed inset-0 z-[70]" role="dialog" aria-modal="true" aria-label="Baixar o app da ShadowPay">
       <div className="absolute inset-0 bg-slate-900/50" onClick={() => setOpen(false)} />
       <div
-        className="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-3xl bg-white p-5 pb-[max(22px,env(safe-area-inset-bottom))] sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:w-[420px] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl"
+        className="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-3xl bg-white p-5 pb-[max(22px,env(safe-area-inset-bottom))] sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:w-[420px] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl"
         style={{ boxShadow: "0 24px 60px -20px rgba(15,23,42,0.45)" }}
       >
         <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-slate-300 sm:hidden" aria-hidden="true" />
         <div className="flex items-start gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/pwa/icon-192.png" alt="" className="h-12 w-12 shrink-0 rounded-2xl shadow-sm" />
+          <img src="/pwa/icon-192.png" alt="" className="h-12 w-12 shrink-0 rounded-xl shadow-sm" />
           <div className="min-w-0 flex-1">
             <p className="text-[16px] font-bold text-slate-900">{guide.title}</p>
             <p className="mt-0.5 text-[12.5px] leading-snug text-slate-500">
@@ -187,7 +187,7 @@ export function InstallAppButton({ variant = "icon" }: { variant?: "icon" | "men
           type="button"
           onClick={() => setOpen(false)}
           className="mt-3 h-11 w-full rounded-xl text-[14px] font-semibold text-white"
-          style={{ background: VIOLET, boxShadow: "0 10px 24px -12px rgba(124,58,237,0.8)" }}
+          style={{ background: VIOLET }}
         >
           Entendi
         </button>

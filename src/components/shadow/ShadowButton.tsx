@@ -54,7 +54,7 @@ export const ShadowButton = forwardRef<HTMLButtonElement, ShadowButtonProps>(
       <button
         ref={ref}
         disabled={disabled || loading}
-        className={`group relative inline-flex items-center justify-center gap-2 rounded-xl font-semibold tracking-tight transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 ${sizeMap[size]} ${variantMap[variant]} ${className}`}
+        className={`group relative inline-flex items-center justify-center gap-2 rounded-xl font-semibold tracking-tight transition-all duration-200 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 ${sizeMap[size]} ${variantMap[variant]} ${className}`}
         style={primaryStyle}
         {...rest}
       >
