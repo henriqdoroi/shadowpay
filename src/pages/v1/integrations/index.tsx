@@ -22,6 +22,7 @@ import {
 import { useRouter } from "next/router";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { StatusBadge, type Tone } from "@/components/PanelBits";
 
 const API = "https://shadowpay-backend.onrender.com";
 
@@ -48,6 +49,8 @@ type Card = {
   description: string;
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   color: string;
+  /** tom do ícone (cor de cada integração) */
+  tone: Tone;
   href: string;
   /** chave p/ computar a linha de status */
   status: StatusKind | "provider";
@@ -70,6 +73,7 @@ const CARDS: Card[] = [
     description: "Chaves de integração pra usar a API v1 no seu backend.",
     icon: Key,
     color: "#7C3AED",
+    tone: "violet",
     href: "/v1/configs/apikey",
     status: "apikeys",
   },
@@ -80,6 +84,7 @@ const CARDS: Card[] = [
     description: "Receba eventos de transações no seu servidor em tempo real.",
     icon: Webhook,
     color: "#0EA5E9",
+    tone: "teal",
     href: "/v1/configs/webhook",
     status: "webhooks",
   },
@@ -91,6 +96,7 @@ const CARDS: Card[] = [
       "Envia o evento de compra de todas as vendas pro seu Pixel (CAPI).",
     icon: Target,
     color: "#7C3AED",
+    tone: "blue",
     href: "/v1/integrations/pixels",
     status: "pixel",
   },
@@ -102,6 +108,7 @@ const CARDS: Card[] = [
       "Envia todas as suas vendas, com as UTMs, pra sua conta UTMify — direto do servidor, com reenvio automático.",
     icon: BarChart3,
     color: "#F59E0B",
+    tone: "amber",
     href: "/v1/integrations/utmify",
     status: "utmify",
   },
@@ -113,6 +120,7 @@ const CARDS: Card[] = [
       "Envia vendas geradas e pagas pro seu rastreio Xtracky, por produto.",
     icon: Crosshair,
     color: "#D97706",
+    tone: "red",
     href: "#",
     status: "provider",
     providerCode: "XTRACKY",
@@ -127,6 +135,7 @@ const CARDS: Card[] = [
     description: "Recuperação de carrinho abandonado via Meta Cloud API.",
     icon: MessageCircle,
     color: "#16A34A",
+    tone: "green",
     href: "/v1/automation",
     status: "whatsapp",
   },
@@ -180,10 +189,7 @@ function ConnectModal({
         style={{ boxShadow: "0 24px 64px -20px rgba(15,23,42,0.30)" }}
       >
         <div className="mb-4 flex items-start gap-3">
-          <span
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-            style={{ background: "#F6F6F8", color: "#4B5563" }}
-          >
+          <span className="sp-chip" data-tone={card.tone} style={{ width: 44, height: 44, borderRadius: 12 }}>
             <Icon className="h-5 w-5" />
           </span>
           <div className="flex-1">
@@ -361,10 +367,7 @@ function IntegrationsContent() {
               {/* topo: ícone + título + ABRIR */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-start gap-3">
-                  <span
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-                    style={{ background: "#F6F6F8", color: "#4B5563" }}
-                  >
+                  <span className="sp-chip" data-tone={c.tone} style={{ width: 40, height: 40 }}>
                     <Icon className="h-5 w-5" />
                   </span>
                   <div className="min-w-0">
@@ -394,17 +397,8 @@ function IntegrationsContent() {
               <div className="mt-4" />
 
               {/* status */}
-              <div className="mt-auto flex items-center gap-1.5">
-                <span
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{ background: st.active ? T.green : st.warn ? "#D97706" : "#D1D5DB" }}
-                />
-                <span
-                  className="text-[13px] font-medium"
-                  style={{ color: st.active ? "#047857" : st.warn ? "#B45309" : "#6B7280" }}
-                >
-                  {st.text}
-                </span>
+              <div className="mt-auto">
+                <StatusBadge tone={st.active ? "green" : st.warn ? "amber" : "gray"}>{st.text}</StatusBadge>
               </div>
             </div>
           );

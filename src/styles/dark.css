@@ -100,24 +100,25 @@ html.dark:has(.sp-shell) .sp-logo[data-collapsed="false"] {
 html.dark:has(.sp-shell) .sp-logo[data-collapsed="true"] {
   mix-blend-mode: normal !important;
 }
+/* saldo: o bloco roxo da marca continua roxo no escuro */
 html.dark:has(.sp-shell) .sp-balance[class][style] {
-  background: var(--d-card-2) !important;
+  background: #6d28d9 !important;
   border: 0 !important;
   box-shadow: none !important;
-  color: var(--d-muted) !important;
+  color: #ffffff !important;
 }
 html.dark:has(.sp-shell) .sp-balance:hover {
-  background: var(--d-hover) !important;
+  background: #7c3aed !important;
 }
 html.dark:has(.sp-shell) .sp-balance p {
-  color: var(--d-muted) !important;
+  color: rgba(255, 255, 255, 0.78) !important;
 }
 html.dark:has(.sp-shell) .sp-balance .sp-balance-value[class][style] {
-  color: var(--d-text) !important;
+  color: #ffffff !important;
 }
-/* item ativo: fundo neutro + texto claro; o roxo fica só no ícone */
+/* item ativo: roxo suave + texto claro */
 html.dark:has(.sp-shell) .sp-nav-item[data-active="true"] {
-  background: var(--d-active) !important;
+  background: var(--d-violet-soft) !important;
   color: var(--d-text) !important;
 }
 html.dark:has(.sp-shell) .sp-nav-item[data-active="true"] svg {
@@ -423,6 +424,31 @@ html.dark:has(.sp-shell) [style*="background: rgb(243, 244, 246)"] {
 html.dark:has(.sp-shell) [style*="background: rgb(241, 241, 244)"] {
   background: var(--d-active) !important;
 }
+
+/* card de destaque (saldo do Financeiro) */
+html.dark:has(.sp-shell) .sp-hero {
+  background: var(--d-violet-soft) !important;
+}
+html.dark:has(.sp-shell) .sp-hero .sp-hero-stats,
+html.dark:has(.sp-shell) .sp-hero .sp-hero-stats > div {
+  border-color: rgba(167, 139, 250, 0.22) !important;
+}
+
+/* selos de status e ícones de métrica (components/PanelBits.tsx) */
+html.dark:has(.sp-shell) .sp-badge[data-tone="green"]  { background: rgba(23, 178, 106, 0.14); color: #75e0a7; --sp-dot: #47cd89; }
+html.dark:has(.sp-shell) .sp-badge[data-tone="amber"]  { background: rgba(247, 144, 9, 0.14); color: #fec84b; --sp-dot: #fdb022; }
+html.dark:has(.sp-shell) .sp-badge[data-tone="red"]    { background: rgba(240, 68, 56, 0.14); color: #fda29b; --sp-dot: #f97066; }
+html.dark:has(.sp-shell) .sp-badge[data-tone="blue"]   { background: rgba(46, 144, 250, 0.14); color: #84caff; --sp-dot: #53b1fd; }
+html.dark:has(.sp-shell) .sp-badge[data-tone="gray"]   { background: rgba(255, 255, 255, 0.08); color: #d4d4d4; --sp-dot: #a3a3a3; }
+html.dark:has(.sp-shell) .sp-badge[data-tone="violet"] { background: var(--d-violet-soft); color: var(--d-violet-text); --sp-dot: var(--d-violet); }
+html.dark:has(.sp-shell) .sp-badge[data-tone="teal"]   { background: rgba(21, 183, 158, 0.14); color: #5fe9d0; --sp-dot: #2ed3b7; }
+html.dark:has(.sp-shell) .sp-chip[data-tone="violet"] { background: var(--d-violet-soft); color: var(--d-violet-text); }
+html.dark:has(.sp-shell) .sp-chip[data-tone="green"]  { background: rgba(23, 178, 106, 0.14); color: #75e0a7; }
+html.dark:has(.sp-shell) .sp-chip[data-tone="amber"]  { background: rgba(247, 144, 9, 0.14); color: #fec84b; }
+html.dark:has(.sp-shell) .sp-chip[data-tone="red"]    { background: rgba(240, 68, 56, 0.14); color: #fda29b; }
+html.dark:has(.sp-shell) .sp-chip[data-tone="blue"]   { background: rgba(46, 144, 250, 0.14); color: #84caff; }
+html.dark:has(.sp-shell) .sp-chip[data-tone="gray"]   { background: rgba(255, 255, 255, 0.08); color: #d4d4d4; }
+html.dark:has(.sp-shell) .sp-chip[data-tone="teal"]   { background: rgba(21, 183, 158, 0.14); color: #5fe9d0; }
 html.dark:has(.sp-shell) [style*="background: rgb(241, 245, 249)"],
 html.dark:has(.sp-shell) [style*="background-color: rgb(241, 245, 249)"],
 html.dark:has(.sp-shell) [style*="background: rgb(226, 232, 240)"],

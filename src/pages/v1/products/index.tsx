@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { StatusBadge, type Tone } from "@/components/PanelBits";
 import { LightShell } from "@/components/LightShell";
 import ShadowPanel from "@/components/ShadowPanel";
 
@@ -260,21 +261,15 @@ function ProductsContent() {
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
 
   /* ---------- thumb gen ---------- */
-  const palette = [
-    { bg: "#1ED760", text: "#FFFFFF" }, // spotify green
-    { bg: "#E14B5A", text: "#FFFFFF" }, // pmd red
-    { bg: "#7C3AED", text: "#FFFFFF" }, // violet
-    { bg: "#F87171", text: "#FFFFFF" }, // verifica red
-    { bg: "#FF8FAB", text: "#FFFFFF" }, // pink
-    { bg: "#2D7CF6", text: "#FFFFFF" }, // blue
-    { bg: "#FFB627", text: "#000000" }, // orange
-    { bg: "#000000", text: "#FFFFFF" }, // tiktok black
-    { bg: "#0F1116", text: "#7C3AED" }, // acesso vit black
-    { bg: "#FF6B00", text: "#FFFFFF" }, // bank orange
-    { bg: "#8B1813", text: "#FFFFFF" }, // inter dark red
-  ];
+  // sem foto: inicial num tom suave, sempre o mesmo pro mesmo produto
+  const THUMB_TONES: Tone[] = ["violet", "blue", "teal", "green", "amber", "red"];
+  const toneFor = (name: string) => {
+    let h = 0;
+    for (const ch of name || "") h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return THUMB_TONES[h % THUMB_TONES.length]!;
+  };
 
-  const thumbFor = (p: Product, idx: number) => {
+  const thumbFor = (p: Product, _idx: number) => {
     if (p.imageUrl) {
       // eslint-disable-next-line @next/next/no-img-element
       return (
@@ -286,47 +281,22 @@ function ProductsContent() {
         />
       );
     }
-    // sem foto: inicial em cinza neutro (antes cada produto ganhava uma cor
-    // aleatória — parecia painel de template)
-    void palette[idx % palette.length];
     const initial = (p.name?.[0] || "P").toUpperCase();
     return (
-      <div
-        className="flex h-12 w-12 items-center justify-center rounded-lg text-[18px] font-semibold"
-        style={{
-          background: "#F3F4F6",
-          color: "#6B7280",
-          fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
-        }}
+      <span
+        className="sp-chip text-[18px] font-semibold"
+        data-tone={toneFor(p.name)}
+        style={{ width: 48, height: 48, borderRadius: 10 }}
       >
         {initial}
-      </div>
+      </span>
     );
   };
 
   const statusPill = (status: string) => {
-    if (status === "ativo") {
-      return (
-        <span className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-emerald-700">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          Aprovado
-        </span>
-      );
-    }
-    if (status === "rascunho") {
-      return (
-        <span className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-amber-700">
-          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-          Rascunho
-        </span>
-      );
-    }
-    return (
-      <span className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-slate-500">
-        <span className="h-1.5 w-1.5 rounded-full bg-slate-300" />
-        Inativo
-      </span>
-    );
+    if (status === "ativo") return <StatusBadge tone="green">Aprovado</StatusBadge>;
+    if (status === "rascunho") return <StatusBadge tone="amber">Rascunho</StatusBadge>;
+    return <StatusBadge tone="gray">Inativo</StatusBadge>;
   };
 
   const inputCls =

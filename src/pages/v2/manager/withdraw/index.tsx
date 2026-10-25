@@ -22,6 +22,7 @@ import ShadowPanel from "@/components/ShadowPanel";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiErrorMessage } from "@/lib/axiosErrors";
 import { Button, C, Card } from "@/components/account/ui";
+import { IconChip, StatusBadge, type Tone } from "@/components/PanelBits";
 
 const API = "https://shadowpay-backend.onrender.com";
 const PAGE_SIZE = 20;
@@ -49,15 +50,9 @@ const when = (s?: string | null) =>
 const KEY_LABEL: Record<string, string> = { cpf: "CPF", cnpj: "CNPJ", email: "E-mail", phone: "Telefone", random: "Aleatória" };
 
 function StatusPill({ s }: { s: W["status"] }) {
-  // texto + ponto (sem pílula colorida)
-  const [label, dot] =
-    s === "PAID" ? ["Pago", "#16A34A"] : s === "FAILED" ? ["Recusado", "#DC2626"] : s === "PROCESSING" ? ["Processando", "#3B82F6"] : ["Pendente", "#F59E0B"];
-  return (
-    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] text-slate-700">
-      <span className="h-1.5 w-1.5 rounded-full" style={{ background: dot }} />
-      {label}
-    </span>
-  );
+  const [label, tone]: [string, Tone] =
+    s === "PAID" ? ["Pago", "green"] : s === "FAILED" ? ["Recusado", "red"] : s === "PROCESSING" ? ["Processando", "blue"] : ["Pendente", "amber"];
+  return <StatusBadge tone={tone}>{label}</StatusBadge>;
 }
 
 function copy(text: string) {
@@ -117,10 +112,10 @@ function WithdrawAdminContent() {
   const s = summary?.byStatus || {};
   const pending = { count: (s.PENDING?.count || 0) + (s.PROCESSING?.count || 0), amount: (s.PENDING?.amount || 0) + (s.PROCESSING?.amount || 0) };
   const kpis = [
-    { label: "Aguardando pagamento", value: String(pending.count), sub: `${brl(pending.amount)} reservados`, Icon: Clock, color: "#F59E0B" },
-    { label: "Pagos hoje", value: String(summary?.paidToday.count ?? 0), sub: brl(summary?.paidToday.amount ?? 0), Icon: Check, color: "#10B981" },
-    { label: "Total pago", value: brl(s.PAID?.amount || 0), sub: `${s.PAID?.count || 0} saques`, Icon: Wallet, color: "#7C3AED" },
-    { label: "Recusados", value: String(s.FAILED?.count || 0), sub: `${brl(s.FAILED?.amount || 0)} devolvidos`, Icon: X, color: "#F43F5E" },
+    { label: "Aguardando pagamento", value: String(pending.count), sub: `${brl(pending.amount)} reservados`, Icon: Clock, tone: "amber" as Tone },
+    { label: "Pagos hoje", value: String(summary?.paidToday.count ?? 0), sub: brl(summary?.paidToday.amount ?? 0), Icon: Check, tone: "green" as Tone },
+    { label: "Total pago", value: brl(s.PAID?.amount || 0), sub: `${s.PAID?.count || 0} saques`, Icon: Wallet, tone: "violet" as Tone },
+    { label: "Recusados", value: String(s.FAILED?.count || 0), sub: `${brl(s.FAILED?.amount || 0)} devolvidos`, Icon: X, tone: "red" as Tone },
   ];
   const FILTERS: { id: Filter; label: string; count?: number }[] = [
     { id: "PENDING", label: "Pendentes", count: pending.count },
@@ -151,10 +146,13 @@ function WithdrawAdminContent() {
         ) : (
           <>
             <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {kpis.map(({ label, value, sub }) => (
+              {kpis.map(({ label, value, sub, Icon, tone }) => (
                 <Card key={label} className="p-4 sm:p-5">
-                  <p className="text-[13px] font-medium text-slate-500">{label}</p>
-                  <p className="mt-2 whitespace-nowrap text-[22px] font-semibold leading-none tabular-nums text-slate-900">{summary ? value : "—"}</p>
+                  <div className="flex items-center gap-2.5">
+                    <IconChip tone={tone}><Icon /></IconChip>
+                    <p className="text-[13px] font-medium text-slate-500">{label}</p>
+                  </div>
+                  <p className="mt-3 whitespace-nowrap text-[22px] font-semibold leading-none tabular-nums text-slate-900">{summary ? value : "—"}</p>
                   <p className="mt-1.5 text-[12px] text-slate-400">{summary ? sub : " "}</p>
                 </Card>
               ))}
@@ -176,7 +174,7 @@ function WithdrawAdminContent() {
                         setItems(null);
                       }}
                       className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors"
-                      style={filter === f.id ? { background: "#F1F1F4", color: "#111827" } : { background: "transparent", color: "#6B7280" }}
+                      style={filter === f.id ? { background: "#F5F3FF", color: "#5B21B6" } : { background: "transparent", color: "#6B7280" }}
                     >
                       {f.label}
                       {f.count != null && summary && (

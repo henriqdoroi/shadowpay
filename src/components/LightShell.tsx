@@ -47,14 +47,15 @@ import { useValuesVisible } from "@/lib/useValuesVisible";
 
 /* Painel em UMA superfície só (menu, topo e conteúdo no mesmo branco, sem
    linhas dividindo) — como os painéis de banco/fintech (Mercury, Stripe). O
-   roxo aparece só no que é ação/destaque; o resto é neutro. */
+   roxo da marca dá vida em poucos pontos fortes: saldo, item ativo, ações. */
 const T = {
   surface: "#FFFFFF",
   text: "#111827",
   text2: "#4B5563",
   textMuted: "#9CA3AF",
   primary: "#7C3AED",
-  activeBg: "#F1F1F4",
+  activeBg: "#F5F3FF",
+  activeText: "#5B21B6",
   quietBg: "#F6F6F8",
   border: "#ECECF0",
 };
@@ -233,7 +234,7 @@ function RevenueGoal({ value, hidden }: { value: number | null; hidden: boolean 
       </span>
       <span
         className="sp-goal-track relative h-1.5 w-28 shrink-0 overflow-hidden rounded-full lg:w-44 xl:w-52"
-        style={{ background: "#E4E4E9" }}
+        style={{ background: "#E7E0FA" }}
         role="progressbar"
         aria-valuemin={0}
         aria-valuemax={100}
@@ -385,20 +386,20 @@ export function LightShell({
           <BrandLogo collapsed={sidebarCollapsed} />
         </Link>
 
-        {/* Saldo disponível — bloco discreto (fundo neutro, sem borda/brilho) */}
+        {/* Saldo disponível — o bloco roxo da marca (sem brilho/degradê) */}
         {!sidebarCollapsed ? (
           <Link
             href="/v1/finance"
             className="sp-balance mx-3 mb-4 block rounded-xl px-4 py-3.5 transition-colors"
-            style={{ background: T.quietBg }}
+            style={{ background: T.primary }}
           >
-            <p className="text-[12.5px] font-medium" style={{ color: "#6B7280" }}>
+            <p className="text-[12.5px] font-medium" style={{ color: "rgba(255,255,255,0.78)" }}>
               Saldo disponível
             </p>
             <p
               className="sp-balance-value mt-1 text-[20px] font-semibold leading-tight tabular-nums"
               style={{
-                color: T.text,
+                color: "#FFFFFF",
                 fontFamily:
                   "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
               }}
@@ -415,7 +416,7 @@ export function LightShell({
             href="/v1/finance"
             title="Saldo disponível"
             className="sp-balance mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-xl"
-            style={{ background: T.quietBg, color: T.text2 }}
+            style={{ background: T.primary, color: "#FFFFFF" }}
           >
             <Wallet className="h-4 w-4" />
           </Link>
@@ -438,7 +439,8 @@ export function LightShell({
                       padding: sidebarCollapsed ? "10px" : "8px 10px",
                       justifyContent: sidebarCollapsed ? "center" : "flex-start",
                       background: active ? T.activeBg : "transparent",
-                      color: active ? T.text : T.text2,
+                      color: active ? T.activeText : T.text2,
+                      fontWeight: active ? 600 : 500,
                     }}
                   >
                     <Icon
@@ -635,7 +637,8 @@ export function LightShell({
                         className="sp-nav-item flex items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] font-medium"
                         style={{
                           background: active ? T.activeBg : "transparent",
-                          color: active ? T.text : T.text2,
+                          color: active ? T.activeText : T.text2,
+                          fontWeight: active ? 600 : 500,
                         }}
                       >
                         <Icon

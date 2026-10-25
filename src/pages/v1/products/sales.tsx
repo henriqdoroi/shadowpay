@@ -38,6 +38,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { LightShell } from "@/components/LightShell";
 import ShadowPanel from "@/components/ShadowPanel";
 import { EMPTY_STATS, TX_STATUS_STYLE, txStatus, type SalesStats } from "@/lib/txStatus";
+import { IconChip, StatusBadge, TX_TONE, type Tone } from "@/components/PanelBits";
 
 /** Abas de status -> valor enviado pro backend (aceita grupos com vírgula). */
 const STATUS_TABS: { key: string; label: string; filter: string; count: (s: SalesStats) => number }[] = [
@@ -213,16 +214,8 @@ function SalesContent() {
 
   // status pill (status vem como apelido; o tradutor usa statusRaw)
   const statusPill = (t: Pick<Tx, "status" | "statusRaw">) => {
-    const cfg = TX_STATUS_STYLE[txStatus(t)];
-    return (
-      <span
-        className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap"
-        style={{ background: cfg.bg, color: cfg.color }}
-      >
-        <span className="h-1.5 w-1.5 rounded-full" style={{ background: cfg.dot }} />
-        {cfg.label}
-      </span>
-    );
+    const s = txStatus(t);
+    return <StatusBadge tone={TX_TONE[s]}>{TX_STATUS_STYLE[s].label}</StatusBadge>;
   };
 
   // method pill
@@ -235,12 +228,9 @@ function SalesContent() {
       CRYPTO: "Cripto",
     };
     return (
-      <span
-        className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[12px] font-medium"
-        style={{ background: "#F3F4F6", color: "#374151" }}
-      >
+      <StatusBadge tone={k === "PIX" ? "teal" : "gray"} plain>
         {k === "PIX" ? "Pix" : labels[k] || m}
-      </span>
+      </StatusBadge>
     );
   };
 
@@ -287,37 +277,40 @@ function SalesContent() {
             {
               label: "Faturamento (pagas)",
               value: fmt(stats.paid.gross),
-              icon: <Wallet className="h-4 w-4" />,
-              color: T.green,
+              icon: <Wallet />,
+              tone: "green" as Tone,
             },
             {
               label: "Vendas pagas",
               value: stats.paid.count.toLocaleString("pt-BR"),
-              icon: <CheckCircle2 className="h-4 w-4" />,
-              color: T.green,
+              icon: <CheckCircle2 />,
+              tone: "green" as Tone,
             },
             {
               label: "Pendentes",
               value: stats.pending.count.toLocaleString("pt-BR"),
-              icon: <Clock className="h-4 w-4" />,
-              color: T.amber,
+              icon: <Clock />,
+              tone: "amber" as Tone,
             },
             {
               label: "Reembolsadas",
               value: stats.refunded.count.toLocaleString("pt-BR"),
-              icon: <RotateCcw className="h-4 w-4" />,
-              color: T.red,
+              icon: <RotateCcw />,
+              tone: "red" as Tone,
             },
             {
               label: "Conversão",
               value: `${stats.conversion.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`,
-              icon: <TrendingUp className="h-4 w-4" />,
-              color: T.primary,
+              icon: <TrendingUp />,
+              tone: "violet" as Tone,
             },
           ].map((c) => (
             <div key={c.label} className="min-w-0">
-              <p className="text-[13px] font-medium text-slate-500">{c.label}</p>
-              <p className="mt-1.5 text-[20px] font-semibold leading-tight text-slate-900 tabular-nums">
+              <div className="flex items-center gap-2.5">
+                <IconChip tone={c.tone}>{c.icon}</IconChip>
+                <p className="min-w-0 text-[13px] font-medium leading-tight text-slate-500">{c.label}</p>
+              </div>
+              <p className="mt-2.5 text-[20px] font-semibold leading-tight text-slate-900 tabular-nums">
                 {c.value}
               </p>
             </div>
@@ -367,7 +360,7 @@ function SalesContent() {
                 style={{ borderColor: T.border, color: T.text }}
               >
                 <option value="">Todos</option>
-                <option value="PIX">PIX</option>
+                <option value="PIX">Pix</option>
                 <option value="CARD">Cartão</option>
                 <option value="BOLETO">Boleto</option>
                 <option value="CRYPTO">Cripto</option>
@@ -414,8 +407,8 @@ function SalesContent() {
                   onClick={() => setStatusFilter(tab.filter)}
                   className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg px-3 text-[13px] font-medium transition-colors hover:bg-[#F6F6F8]"
                   style={{
-                    background: active ? "#F1F1F4" : "transparent",
-                    color: active ? T.text : "#6B7280",
+                    background: active ? "#F5F3FF" : "transparent",
+                    color: active ? "#5B21B6" : "#6B7280",
                   }}
                 >
                   {tab.label}

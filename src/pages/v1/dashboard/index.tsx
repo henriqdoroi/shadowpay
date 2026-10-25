@@ -7,15 +7,16 @@ import axios from "axios";
 import Head from "next/head";
 import { motion } from "framer-motion";
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Trophy } from "lucide-react";
+import { CheckCircle2, Percent, Receipt, TrendingUp, Trophy, Wallet } from "lucide-react";
+import { IconChip, type Tone } from "@/components/PanelBits";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ShadowPanel from "@/components/ShadowPanel";
@@ -193,18 +194,20 @@ function DashboardContent() {
   if (!user) return null;
 
   /* Faixa de métricas — valores exatos do período selecionado. */
-  const statStrip = [
-    { label: "Faturamento Bruto", value: hideable(fmt(stats.paid.gross)) },
-    { label: "Faturamento Líquido", value: hideable(fmt(stats.paid.net)) },
+  const statStrip: { label: string; value: string; icon: JSX.Element; tone: Tone }[] = [
+    { label: "Faturamento bruto", value: hideable(fmt(stats.paid.gross)), icon: <TrendingUp />, tone: "violet" },
+    { label: "Faturamento líquido", value: hideable(fmt(stats.paid.net)), icon: <Wallet />, tone: "green" },
     {
       label: "Taxa de conversão",
       value: `${stats.conversion.toLocaleString("pt-BR", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       })}%`,
+      icon: <Percent />,
+      tone: "blue",
     },
-    { label: "Ticket médio", value: hideable(fmt(stats.avgTicket)) },
-    { label: "Vendas pagas", value: num(stats.paid.count) },
+    { label: "Ticket médio", value: hideable(fmt(stats.avgTicket)), icon: <Receipt />, tone: "amber" },
+    { label: "Vendas pagas", value: num(stats.paid.count), icon: <CheckCircle2 />, tone: "green" },
   ];
 
   /* Próxima premiação — progresso do faturamento rumo aos prêmios da campanha
@@ -292,10 +295,13 @@ function DashboardContent() {
                       key={s.label}
                       className="flex min-w-0 flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-[0_1px_1px_rgba(15,23,42,0.04)] sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none"
                     >
-                      <p className="text-[14px] font-medium leading-tight text-slate-500">
-                        {s.label}
-                      </p>
-                      <div className="mt-2 flex items-baseline gap-1.5">
+                      <div className="flex items-center gap-2.5">
+                        <IconChip tone={s.tone}>{s.icon}</IconChip>
+                        <p className="text-[14px] font-medium leading-tight text-slate-500">
+                          {s.label}
+                        </p>
+                      </div>
+                      <div className="mt-3 flex items-baseline gap-1.5">
                         <span
                           className={`whitespace-nowrap font-semibold leading-none text-slate-900 tabular-nums ${
                             s.value.length > 12 ? "text-[20px] 2xl:text-[24px]" : "text-[24px] 2xl:text-[28px]"
@@ -307,19 +313,6 @@ function DashboardContent() {
                         >
                           {s.value}
                         </span>
-                        <svg
-                          width="13"
-                          height="13"
-                          viewBox="0 0 12 12"
-                          fill="none"
-                          className="shrink-0"
-                          aria-hidden="true"
-                        >
-                          <path
-                            d="M6 1.8 L10.8 10.2 L1.2 10.2 Z"
-                            fill="#7C3AED"
-                          />
-                        </svg>
                       </div>
                     </div>
                   ))}
@@ -360,10 +353,16 @@ function DashboardContent() {
                       </p>
                     )}
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart
+                      <AreaChart
                         data={chartData}
                         margin={{ top: 8, right: 16, left: 0, bottom: 0 }}
                       >
+                        <defs>
+                          <linearGradient id="spRevenueFill" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={T.primary} stopOpacity={0.22} />
+                            <stop offset="100%" stopColor={T.primary} stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
                         <CartesianGrid
                           strokeDasharray="3 3"
                           stroke="rgba(15, 23, 42, 0.05)"
@@ -411,15 +410,16 @@ function DashboardContent() {
                             );
                           }}
                         />
-                        <Line
+                        <Area
                           type="monotone"
                           dataKey="gross"
                           stroke={T.primary}
                           strokeWidth={2.4}
+                          fill="url(#spRevenueFill)"
                           dot={chartData.length <= 3 ? { r: 3 } : false}
                           activeDot={{ r: 4 }}
                         />
-                      </LineChart>
+                      </AreaChart>
                     </ResponsiveContainer>
                   </div>
                 </motion.div>

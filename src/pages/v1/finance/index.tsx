@@ -31,7 +31,11 @@ import {
   Receipt,
   Filter,
   RefreshCw,
+  Lock,
+  CalendarClock,
+  ArrowDownToLine,
 } from "lucide-react";
+import { IconChip, StatusBadge, type Tone } from "@/components/PanelBits";
 import {
   Dialog,
   DialogContent,
@@ -378,32 +382,16 @@ function FinanceContent() {
   // ---- status pill (light)
   const statusPill = (s: string) => {
     const k = (s || "").toLowerCase();
-    const map: Record<string, { color: string; bg: string; dot: string; label: string }> = {
-      approved: { color: "#047857", bg: "#ECFDF5", dot: "#10B981", label: "Aprovado" },
-      paid: { color: "#047857", bg: "#ECFDF5", dot: "#10B981", label: "Aprovado" },
-      pending: { color: "#B45309", bg: "#FFFBEB", dot: "#F59E0B", label: "Pendente" },
-      rejected: { color: "#B91C1C", bg: "#FEF2F2", dot: "#EF4444", label: "Rejeitado" },
-      failed: { color: "#B91C1C", bg: "#FEF2F2", dot: "#EF4444", label: "Falhou" },
-      cancelled: { color: "#475569", bg: "#F8FAFC", dot: "#94A3B8", label: "Cancelado" },
+    const map: Record<string, { tone: Tone; label: string }> = {
+      approved: { tone: "green", label: "Aprovado" },
+      paid: { tone: "green", label: "Aprovado" },
+      pending: { tone: "amber", label: "Pendente" },
+      rejected: { tone: "red", label: "Rejeitado" },
+      failed: { tone: "red", label: "Falhou" },
+      cancelled: { tone: "gray", label: "Cancelado" },
     };
-    const cfg = map[k] || {
-      color: "#475569",
-      bg: "#F8FAFC",
-      dot: "#94A3B8",
-      label: s,
-    };
-    return (
-      <span
-        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
-        style={{ background: cfg.bg, color: cfg.color }}
-      >
-        <span
-          className="h-1.5 w-1.5 rounded-full"
-          style={{ background: cfg.dot }}
-        />
-        {cfg.label}
-      </span>
-    );
+    const cfg = map[k] || { tone: "gray" as Tone, label: s };
+    return <StatusBadge tone={cfg.tone}>{cfg.label}</StatusBadge>;
   };
 
   return (
@@ -428,10 +416,7 @@ function FinanceContent() {
 
         {/* SALDO — largura total (igual ao Histórico), com os botões dentro */}
         <section className="mb-6">
-          <div
-            className="rounded-xl p-5 sm:p-7"
-            style={{ background: T.card, border: `1px solid ${T.borderSoft}` }}
-          >
+          <div className="sp-hero rounded-xl p-5 sm:p-7">
             <div>
               <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
@@ -478,11 +463,10 @@ function FinanceContent() {
               </div>
 
               {/* sub-stats com divisórias finas (arejado) */}
-              <div
-                className="mt-6 flex flex-col gap-4 border-t pt-5 sm:flex-row sm:gap-0"
-                style={{ borderColor: T.borderSoft }}
-              >
-                <div className="flex-1 sm:pr-5">
+              <div className="sp-hero-stats mt-6 flex flex-col gap-4 border-t pt-5 sm:flex-row sm:gap-0">
+                <div className="flex flex-1 items-start gap-3 sm:pr-5">
+                  <IconChip tone="amber"><Lock /></IconChip>
+                  <div>
                   <p className="text-[13px] text-slate-500">Saldo bloqueado</p>
                   <p
                     className="mt-1 text-[18px] font-semibold tabular-nums"
@@ -494,11 +478,11 @@ function FinanceContent() {
                   >
                     {hideable(fmt(balance.blocked))}
                   </p>
+                  </div>
                 </div>
-                <div
-                  className="flex-1 sm:border-l sm:pl-5"
-                  style={{ borderColor: T.borderSoft }}
-                >
+                <div className="flex flex-1 items-start gap-3 sm:border-l sm:pl-5">
+                  <IconChip tone="blue"><CalendarClock /></IconChip>
+                  <div>
                   <p className="text-[13px] text-slate-500">Próximo repasse</p>
                   <p
                     className="mt-1 text-[16px] font-semibold"
@@ -506,11 +490,11 @@ function FinanceContent() {
                   >
                     {nextPayout}
                   </p>
+                  </div>
                 </div>
-                <div
-                  className="flex-1 sm:border-l sm:pl-5"
-                  style={{ borderColor: T.borderSoft }}
-                >
+                <div className="flex flex-1 items-start gap-3 sm:border-l sm:pl-5">
+                  <IconChip tone="green"><ArrowDownToLine /></IconChip>
+                  <div>
                   <p className="text-[13px] text-slate-500">Total já recebido</p>
                   <p
                     className="mt-1 text-[18px] font-semibold tabular-nums"
@@ -522,6 +506,7 @@ function FinanceContent() {
                   >
                     {hideable(fmt(totalReceived))}
                   </p>
+                  </div>
                 </div>
               </div>
             </div>

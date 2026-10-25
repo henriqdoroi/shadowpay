@@ -64,7 +64,7 @@ html:not(.dark) .sp-shell .sp-nav-item[data-active="false"]:hover svg {
   color: #6b7280 !important;
 }
 html:not(.dark) .sp-shell .sp-balance:hover {
-  background: #f1f1f4 !important;
+  background: #6d28d9 !important;
 }
 
 /* ---------- 5. Números ----------
@@ -72,4 +72,70 @@ html:not(.dark) .sp-shell .sp-balance:hover {
 .sp-shell .tabular-nums,
 .sp-shell td {
   font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 6. Cor com significado (components/PanelBits.tsx) ----------
+   Clean, mas vivo: a cor entra onde ela informa algo — status, tipo de
+   métrica, Pix — sempre em tom suave de fundo + texto forte. */
+.sp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 9999px;
+  padding: 2px 9px 2px 8px;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 18px;
+  white-space: nowrap;
+}
+.sp-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  background: var(--sp-dot, currentColor);
+}
+.sp-badge[data-plain="true"] {
+  padding: 2px 8px;
+}
+.sp-badge[data-plain="true"]::before {
+  display: none;
+}
+.sp-badge[data-tone="green"] { background: #ecfdf3; color: #067647; --sp-dot: #17b26a; }
+.sp-badge[data-tone="amber"] { background: #fffaeb; color: #b54708; --sp-dot: #f79009; }
+.sp-badge[data-tone="red"]   { background: #fef3f2; color: #b42318; --sp-dot: #f04438; }
+.sp-badge[data-tone="blue"]  { background: #eff8ff; color: #175cd3; --sp-dot: #2e90fa; }
+.sp-badge[data-tone="gray"]  { background: #f2f4f7; color: #344054; --sp-dot: #98a2b3; }
+.sp-badge[data-tone="violet"]{ background: #f4f3ff; color: #5925dc; --sp-dot: #7a5af8; }
+.sp-badge[data-tone="teal"]  { background: #e6f8f5; color: #0b7a6c; --sp-dot: #15b79e; }
+
+.sp-chip {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+.sp-chip svg {
+  width: 17px;
+  height: 17px;
+}
+.sp-chip[data-tone="violet"] { background: #f4f0ff; color: #7c3aed; }
+.sp-chip[data-tone="green"]  { background: #e9faf1; color: #079455; }
+.sp-chip[data-tone="amber"]  { background: #fff6e5; color: #dc6803; }
+.sp-chip[data-tone="red"]    { background: #feefee; color: #d92d20; }
+.sp-chip[data-tone="blue"]   { background: #ebf4ff; color: #1570ef; }
+.sp-chip[data-tone="gray"]   { background: #f2f4f7; color: #475467; }
+.sp-chip[data-tone="teal"]   { background: #e6f8f5; color: #0e9384; }
+
+/* card de destaque (saldo do Financeiro): roxo bem suave, sem borda */
+.sp-hero {
+  background: #f6f3ff;
+}
+.sp-hero .sp-hero-stats,
+.sp-hero .sp-hero-stats > div {
+  border-color: rgba(124, 58, 237, 0.14) !important;
 }

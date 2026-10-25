@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { StatusBadge, TX_TONE } from "@/components/PanelBits";
 import { useAuth } from "@/contexts/AuthContext";
 import Head from "next/head";
 import {
@@ -95,15 +96,8 @@ function TransactionsContent() {
       FAILED: { color: "bg-slate-50 text-slate-500 border-slate-200", label: "Falhou", Icon: AlertCircle },
       EXPIRED: { color: "bg-slate-50 text-slate-500 border-slate-200", label: "Expirada", Icon: AlertCircle },
     };
-    const cfg = map[txStatus(t)];
-    // texto + ponto, sem pílula
-    const dot = cfg.color.includes("emerald") ? "#16A34A" : cfg.color.includes("amber") ? "#F59E0B" : cfg.color.includes("blue") ? "#3B82F6" : cfg.color.includes("rose") ? "#DC2626" : "#9CA3AF";
-    return (
-      <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] text-slate-700">
-        <span className="h-1.5 w-1.5 rounded-full" style={{ background: dot }} />
-        {cfg.label}
-      </span>
-    );
+    const s = txStatus(t);
+    return <StatusBadge tone={TX_TONE[s]}>{map[s].label}</StatusBadge>;
   };
 
   const typeText = (t: string) =>

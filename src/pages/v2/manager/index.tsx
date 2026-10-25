@@ -30,6 +30,20 @@ import { LightShell } from "@/components/LightShell";
 import ShadowPanel from "@/components/ShadowPanel";
 import { PeriodPicker } from "@/components/PeriodPicker";
 import { resolvePeriod, type Period } from "@/lib/period";
+import { IconChip, type Tone } from "@/components/PanelBits";
+
+/* cor de cada métrica pelo que ela significa (dinheiro, pendência, gente...) */
+const METRIC_TONE: Record<string, Tone> = {
+  lucro: "violet",
+  saldoGw: "blue",
+  carteiras: "violet",
+  txAp: "green",
+  txPend: "amber",
+  usuarios: "blue",
+  kycPend: "amber",
+  totalRet: "teal",
+  retPend: "amber",
+};
 
 const API = "https://shadowpay-backend.onrender.com";
 
@@ -556,11 +570,14 @@ function ManagerDashboardContent() {
                     border: "1px solid #ECECF0",
                   }}
                 >
-                  <p className="text-[13px] font-medium text-slate-500">
-                    {m.title}
-                  </p>
+                  <div className="flex items-center gap-2.5">
+                    <IconChip tone={METRIC_TONE[m.id] ?? "violet"}>{m.icon}</IconChip>
+                    <p className="text-[13px] font-medium text-slate-500">
+                      {m.title}
+                    </p>
+                  </div>
                   <div
-                    className="mt-1.5 text-[22px] font-semibold tabular-nums text-slate-900"
+                    className="mt-3 text-[22px] font-semibold tabular-nums text-slate-900"
                     style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
                   >
                     {visible ? m.value : "••••••"}
@@ -603,8 +620,8 @@ function ManagerDashboardContent() {
                       onClick={() => setSaldoFilter(f)}
                       className="rounded-md px-2.5 py-1 text-[12.5px] font-medium transition-colors"
                       style={{
-                        background: saldoFilter === f ? "#F1F1F4" : "transparent",
-                        color: saldoFilter === f ? "#111827" : "#6B7280",
+                        background: saldoFilter === f ? "#F5F3FF" : "transparent",
+                        color: saldoFilter === f ? "#5B21B6" : "#6B7280",
                       }}
                     >
                       {f === "all"

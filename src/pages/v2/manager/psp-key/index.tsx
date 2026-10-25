@@ -29,6 +29,7 @@ import {
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { LightShell } from "@/components/LightShell";
 import ShadowPanel from "@/components/ShadowPanel";
+import { StatusBadge } from "@/components/PanelBits";
 
 const API = "https://shadowpay-backend.onrender.com";
 
@@ -1636,17 +1637,11 @@ function AcquirerCard({
           <h3 className="truncate text-[15px] font-semibold text-slate-900">
             {a.name}
           </h3>
-          <span className="inline-flex items-center gap-1.5 text-[12.5px] text-slate-600">
-            <span
-              className="h-1.5 w-1.5 rounded-full"
-              style={{ background: a.enabled ? "#16A34A" : "#9CA3AF" }}
-            />
-            {a.enabled ? "Ativa" : "Inativa"}
-          </span>
+          <StatusBadge tone={a.enabled ? "green" : "gray"}>{a.enabled ? "Ativa" : "Inativa"}</StatusBadge>
           {a.globalPool && (
-            <span className="inline-flex items-center gap-1 text-[12.5px] text-slate-600">
-              <Globe className="h-3.5 w-3.5 text-slate-400" /> Global
-            </span>
+            <StatusBadge tone="violet" plain>
+              Global
+            </StatusBadge>
           )}
         </div>
         {a.description && (

@@ -60,6 +60,7 @@ import {
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { StatusBadge, type Tone } from "@/components/PanelBits";
 
 interface Seller {
   id: string;
@@ -274,28 +275,18 @@ const getKycStatusBadge = (status: string) => {
   const config = statusConfig[status as keyof typeof statusConfig];
   if (!config) return null;
 
-  return <StatusText label={config.label} color={STATUS_DOT[status] ?? "#9CA3AF"} />;
+  return <StatusBadge tone={STATUS_TONE[status] ?? "gray"}>{config.label}</StatusBadge>;
 };
 
-// status como texto + ponto (sem pílula colorida)
-const STATUS_DOT: Record<string, string> = {
-  NOT_STARTED: "#9CA3AF",
-  PENDING: "#F59E0B",
-  APPROVED: "#16A34A",
-  BANNED: "#DC2626",
+const STATUS_TONE: Record<string, Tone> = {
+  NOT_STARTED: "gray",
+  PENDING: "amber",
+  APPROVED: "green",
+  BANNED: "red",
 };
-
-function StatusText({ label, color }: { label: string; color: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] text-slate-700">
-      <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
-      {label}
-    </span>
-  );
-}
 
 const getWalletStatusBadge = (isBlocked: boolean) => {
-  return <StatusText label={isBlocked ? "Bloqueada" : "Ativa"} color={isBlocked ? "#DC2626" : "#16A34A"} />;
+  return <StatusBadge tone={isBlocked ? "red" : "green"}>{isBlocked ? "Bloqueada" : "Ativa"}</StatusBadge>;
 };
 
 // Dados mockados para estatísticas (serão substituídos por dados reais posteriormente)
