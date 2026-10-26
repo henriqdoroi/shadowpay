@@ -16,7 +16,31 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { CheckCircle2, Percent, Receipt, TrendingUp, Trophy, Wallet } from "lucide-react";
-import { IconChip, type Tone } from "@/components/PanelBits";
+import { IconChip } from "@/components/PanelBits";
+
+/** Meia-lua de 0–100% (taxa de conversão). */
+function ConversionGauge({ pct }: { pct: number }) {
+  return (
+    <svg width="64" height="36" viewBox="0 0 64 36" aria-hidden="true" className="shrink-0">
+      <defs>
+        <linearGradient id="spGaugeFill" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#A78BFA" />
+          <stop offset="100%" stopColor="#7C3AED" />
+        </linearGradient>
+      </defs>
+      <path className="sp-gauge-track" d="M6 32 A26 26 0 0 1 58 32" fill="none" strokeWidth="6" strokeLinecap="round" />
+      <path
+        d="M6 32 A26 26 0 0 1 58 32"
+        fill="none"
+        stroke="url(#spGaugeFill)"
+        strokeWidth="6"
+        strokeLinecap="round"
+        pathLength={100}
+        strokeDasharray={`${pct} 100`}
+      />
+    </svg>
+  );
+}
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ShadowPanel from "@/components/ShadowPanel";
@@ -194,9 +218,11 @@ function DashboardContent() {
   if (!user) return null;
 
   /* Faixa de métricas — valores exatos do período selecionado. */
-  const statStrip: { label: string; value: string; icon: JSX.Element; tone: Tone }[] = [
-    { label: "Faturamento bruto", value: hideable(fmt(stats.paid.gross)), icon: <TrendingUp />, tone: "violet" },
-    { label: "Faturamento líquido", value: hideable(fmt(stats.paid.net)), icon: <Wallet />, tone: "green" },
+  /* O 1º card (faturamento) é o destaque pintado de roxo; a conversão ganha
+     um medidor (como os gateways de referência). */
+  const statStrip: { label: string; value: string; icon: JSX.Element; gauge?: number }[] = [
+    { label: "Faturamento bruto", value: hideable(fmt(stats.paid.gross)), icon: <TrendingUp /> },
+    { label: "Faturamento líquido", value: hideable(fmt(stats.paid.net)), icon: <Wallet /> },
     {
       label: "Taxa de conversão",
       value: `${stats.conversion.toLocaleString("pt-BR", {
@@ -204,11 +230,15 @@ function DashboardContent() {
         maximumFractionDigits: 2,
       })}%`,
       icon: <Percent />,
-      tone: "blue",
+      gauge: Math.max(0, Math.min(100, stats.conversion)),
     },
-    { label: "Ticket médio", value: hideable(fmt(stats.avgTicket)), icon: <Receipt />, tone: "amber" },
-    { label: "Vendas pagas", value: num(stats.paid.count), icon: <CheckCircle2 />, tone: "green" },
+    { label: "Ticket médio", value: hideable(fmt(stats.avgTicket)), icon: <Receipt /> },
+    { label: "Vendas pagas", value: num(stats.paid.count), icon: <CheckCircle2 /> },
   ];
+
+  const hour = new Date().getHours();
+  const greeting = hour < 5 ? "Boa madrugada" : hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+  const todayLabel = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
 
   /* Próxima premiação — progresso do faturamento rumo aos prêmios da campanha
      (os mesmos do banner). Usa o faturamento TOTAL (agregado do backend). */
@@ -239,6 +269,14 @@ function DashboardContent() {
 
       <LightShell valuesVisible={valuesVisible} onToggleValues={toggleValues}>
             <div style={{ fontFeatureSettings: '"tnum" 1' }}>
+              {/* Saudação com o nome em roxo */}
+              <header className="mb-5">
+                <h1 className="text-[22px] font-semibold text-slate-900 sm:text-[26px]">
+                  {greeting}, <span className="sp-brand-text">{prizeFirstName}</span>
+                </h1>
+                <p className="mt-1 text-[14px] text-slate-500 first-letter:uppercase">{todayLabel}</p>
+              </header>
+
               {/* BANNER promocional — largura total do conteúdo (igual à faixa
                   de métricas). Arquivo em public/dashboard-banner.webp. */}
               <motion.section
@@ -279,44 +317,40 @@ function DashboardContent() {
                 <PeriodPicker value={period} onChange={changePeriod} />
               </div>
 
-              {/* KPIs — faixa única. Espaçamentos iguais aos da FlevoPay:
-                  padding 32px (p-8), gap 24px entre colunas (gap-6), radius
-                  12px; rótulo 14px/500, valor 28px/800, gap rótulo→valor 8px. */}
+              {/* KPIs — cards separados; o 1º é o destaque roxo com brilho */}
               <motion.section
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                className="mb-6 p-0 sm:rounded-[12px] sm:border sm:border-[#E2E8F0] sm:bg-white sm:p-8 sm:shadow-[0_1px_1px_rgba(15,23,42,0.04)]"
+                className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-5"
                 style={{ opacity: loading ? 0.55 : 1, transition: "opacity 0.2s" }}
               >
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-6 md:grid-cols-3 xl:grid-cols-5">
-                  {statStrip.map((s) => (
-                    <div
-                      key={s.label}
-                      className="flex min-w-0 flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-[0_1px_1px_rgba(15,23,42,0.04)] sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <IconChip tone={s.tone}>{s.icon}</IconChip>
-                        <p className="text-[14px] font-medium leading-tight text-slate-500">
-                          {s.label}
-                        </p>
-                      </div>
-                      <div className="mt-3 flex items-baseline gap-1.5">
-                        <span
-                          className={`whitespace-nowrap font-semibold leading-none text-slate-900 tabular-nums ${
-                            s.value.length > 12 ? "text-[20px] 2xl:text-[24px]" : "text-[24px] 2xl:text-[28px]"
-                          }`}
-                          style={{
-                            fontFamily:
-                              "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
-                          }}
-                        >
-                          {s.value}
-                        </span>
-                      </div>
+                {statStrip.map((s, i) => (
+                  <div
+                    key={s.label}
+                    className={`sp-kpi relative flex min-w-0 flex-col overflow-hidden rounded-2xl p-4 sm:p-5 ${
+                      i === 0 ? "sp-kpi-hero sp-glow col-span-2 md:col-span-1" : ""
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <IconChip>{s.icon}</IconChip>
+                      {s.gauge != null && <ConversionGauge pct={s.gauge} />}
                     </div>
-                  ))}
-                </div>
+                    <p className="sp-kpi-label mt-4 text-[13.5px] font-medium leading-tight">{s.label}</p>
+                    <span
+                      className={`sp-kpi-value mt-1.5 whitespace-nowrap font-semibold leading-none tabular-nums ${
+                        s.value.length > 12
+                          ? "text-[17px] sm:text-[20px] 2xl:text-[24px]"
+                          : "text-[20px] sm:text-[24px] 2xl:text-[28px]"
+                      }`}
+                      style={{
+                        fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif",
+                      }}
+                    >
+                      {s.value}
+                    </span>
+                  </div>
+                ))}
               </motion.section>
 
               {/* GRÁFICO + PRÓXIMA PREMIAÇÃO (premiação ocupa a coluna direita) */}
@@ -346,7 +380,7 @@ function DashboardContent() {
                   </div>
 
                   {/* Chart */}
-                  <div className="relative min-h-[280px] w-full flex-1">
+                  <div className="sp-chart relative min-h-[280px] w-full flex-1">
                     {!loading && stats.total === 0 && (
                       <p className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-[13px] font-medium text-slate-400">
                         Nenhuma venda neste período
@@ -516,7 +550,7 @@ function DashboardContent() {
                         className="h-full rounded-full"
                         style={{
                           width: `${prizeProgress}%`,
-                          background: T.primary,
+                          background: "linear-gradient(90deg, #A78BFA 0%, #7C3AED 100%)",
                           transition: "width 0.6s cubic-bezier(0.22,1,0.36,1)",
                         }}
                       />

@@ -63,9 +63,6 @@ html:not(.dark) .sp-shell .sp-nav-item[data-active="false"]:hover {
 html:not(.dark) .sp-shell .sp-nav-item[data-active="false"]:hover svg {
   color: #6b7280 !important;
 }
-html:not(.dark) .sp-shell .sp-balance:hover {
-  background: #6d28d9 !important;
-}
 
 /* ---------- 5. Números ----------
    Algarismos de mesma largura em valores (colunas e cards não "dançam"). */
@@ -123,19 +120,63 @@ html:not(.dark) .sp-shell .sp-balance:hover {
   width: 17px;
   height: 17px;
 }
-.sp-chip[data-tone="violet"] { background: #f4f0ff; color: #7c3aed; }
-.sp-chip[data-tone="green"]  { background: #e9faf1; color: #079455; }
-.sp-chip[data-tone="amber"]  { background: #fff6e5; color: #dc6803; }
-.sp-chip[data-tone="red"]    { background: #feefee; color: #d92d20; }
-.sp-chip[data-tone="blue"]   { background: #ebf4ff; color: #1570ef; }
-.sp-chip[data-tone="gray"]   { background: #f2f4f7; color: #475467; }
-.sp-chip[data-tone="teal"]   { background: #e6f8f5; color: #0e9384; }
+/* ícones de métrica: SEMPRE no roxo da marca (uma cor só, como nos
+   gateways de referência). O data-tone fica só pros selos de status. */
+.sp-chip {
+  background: #f3eeff;
+  color: #7c3aed;
+}
 
-/* card de destaque (saldo do Financeiro): roxo bem suave, sem borda */
+/* card de destaque (saldo do Financeiro) */
 .sp-hero {
-  background: #f6f3ff;
+  background: radial-gradient(600px 220px at 100% 0%, rgba(124, 58, 237, 0.14), transparent 70%), #f6f3ff;
 }
 .sp-hero .sp-hero-stats,
 .sp-hero .sp-hero-stats > div {
   border-color: rgba(124, 58, 237, 0.14) !important;
+}
+
+/* ---------- 7. Impacto ----------
+   Referências: BravoPay, Lovy Bot, InvictusPay — uma cor de marca forte,
+   brilho nela e o resto calmo. Aqui a cor é o roxo da ShadowPay. */
+.sp-glow {
+  box-shadow: 0 14px 34px -14px rgba(124, 58, 237, 0.7) !important;
+}
+.sp-glow-sm {
+  box-shadow: 0 8px 20px -10px rgba(124, 58, 237, 0.75) !important;
+}
+html:not(.dark) .sp-shell .sp-balance:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%) !important;
+}
+/* luz roxa bem leve no canto do conteúdo */
+html:not(.dark) .sp-shell .sp-main[class][style] {
+  background: radial-gradient(1100px 520px at 100% -10%, rgba(124, 58, 237, 0.07), transparent 62%), #ffffff !important;
+}
+.sp-brand-text {
+  color: #7c3aed;
+}
+
+/* cards de métrica do Dashboard (o 1º é o destaque, pintado de roxo) */
+.sp-kpi {
+  background: #ffffff;
+  border: 1px solid #ececf0;
+}
+.sp-kpi .sp-kpi-label { color: #6b7280; }
+.sp-kpi .sp-kpi-value { color: #111827; }
+.sp-kpi-hero {
+  background: radial-gradient(260px 160px at 100% 0%, rgba(255, 255, 255, 0.22), transparent 70%),
+    linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  border-color: transparent;
+}
+.sp-kpi-hero .sp-kpi-label { color: rgba(255, 255, 255, 0.82); }
+.sp-kpi-hero .sp-kpi-value { color: #ffffff; }
+.sp-kpi-hero .sp-chip {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+.sp-gauge-track { stroke: #ede9fe; }
+
+/* linha do gráfico com brilho */
+.sp-chart .recharts-area-curve {
+  filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.55));
 }

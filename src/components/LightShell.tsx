@@ -45,17 +45,17 @@ import {
 import { useTheme } from "next-themes";
 import { useValuesVisible } from "@/lib/useValuesVisible";
 
-/* Painel em UMA superfície só (menu, topo e conteúdo no mesmo branco, sem
-   linhas dividindo) — como os painéis de banco/fintech (Mercury, Stripe). O
-   roxo da marca dá vida em poucos pontos fortes: saldo, item ativo, ações. */
+/* Painel em UMA superfície só (menu, topo e conteúdo sem linhas dividindo).
+   Impacto no estilo dos gateways de referência (BravoPay, Lovy Bot,
+   InvictusPay): uma cor só — o roxo da marca — com brilho no saldo e no item
+   ativo. O brilho fica em classes (panel.css), não em estilo inline. */
 const T = {
   surface: "#FFFFFF",
   text: "#111827",
   text2: "#4B5563",
   textMuted: "#9CA3AF",
   primary: "#7C3AED",
-  activeBg: "#F5F3FF",
-  activeText: "#5B21B6",
+  brandGradient: "linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)",
   quietBg: "#F6F6F8",
   border: "#ECECF0",
 };
@@ -245,7 +245,7 @@ function RevenueGoal({ value, hidden }: { value: number | null; hidden: boolean 
           className="absolute inset-y-0 left-0 rounded-full"
           style={{
             width: `${width}%`,
-            background: T.primary,
+            background: T.brandGradient,
             transition: "width 0.8s cubic-bezier(0.22, 1, 0.36, 1)",
           }}
         />
@@ -390,8 +390,8 @@ export function LightShell({
         {!sidebarCollapsed ? (
           <Link
             href="/v1/finance"
-            className="sp-balance mx-3 mb-4 block rounded-xl px-4 py-3.5 transition-colors"
-            style={{ background: T.primary }}
+            className="sp-balance sp-glow mx-3 mb-4 block rounded-2xl px-4 py-3.5 transition-colors"
+            style={{ background: T.brandGradient }}
           >
             <p className="text-[12.5px] font-medium" style={{ color: "rgba(255,255,255,0.78)" }}>
               Saldo disponível
@@ -415,8 +415,8 @@ export function LightShell({
           <Link
             href="/v1/finance"
             title="Saldo disponível"
-            className="sp-balance mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-xl"
-            style={{ background: T.primary, color: "#FFFFFF" }}
+            className="sp-balance sp-glow mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-xl"
+            style={{ background: T.brandGradient, color: "#FFFFFF" }}
           >
             <Wallet className="h-4 w-4" />
           </Link>
@@ -434,18 +434,18 @@ export function LightShell({
                     href={item.href}
                     title={sidebarCollapsed ? item.label : undefined}
                     data-active={active ? "true" : "false"}
-                    className="sp-nav-item group flex items-center gap-3 rounded-lg text-[14px] font-medium transition-colors"
+                    className={`sp-nav-item group flex items-center gap-3 rounded-xl text-[14px] font-medium transition-colors ${active ? "sp-glow-sm" : ""}`}
                     style={{
-                      padding: sidebarCollapsed ? "10px" : "8px 10px",
+                      padding: sidebarCollapsed ? "10px" : "9px 12px",
                       justifyContent: sidebarCollapsed ? "center" : "flex-start",
-                      background: active ? T.activeBg : "transparent",
-                      color: active ? T.activeText : T.text2,
+                      background: active ? T.brandGradient : "transparent",
+                      color: active ? "#FFFFFF" : T.text2,
                       fontWeight: active ? 600 : 500,
                     }}
                   >
                     <Icon
                       className="h-[17px] w-[17px] shrink-0"
-                      style={{ color: active ? T.primary : T.textMuted }}
+                      style={{ color: active ? "#FFFFFF" : T.textMuted }}
                     />
                     {!sidebarCollapsed && (
                       <span className="flex-1 truncate">{item.label}</span>
@@ -634,16 +634,16 @@ export function LightShell({
                         href={item.href}
                         onClick={() => setMobileMenuOpen(false)}
                         data-active={active ? "true" : "false"}
-                        className="sp-nav-item flex items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] font-medium"
+                        className={`sp-nav-item flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium ${active ? "sp-glow-sm" : ""}`}
                         style={{
-                          background: active ? T.activeBg : "transparent",
-                          color: active ? T.activeText : T.text2,
+                          background: active ? T.brandGradient : "transparent",
+                          color: active ? "#FFFFFF" : T.text2,
                           fontWeight: active ? 600 : 500,
                         }}
                       >
                         <Icon
                           className="h-[18px] w-[18px] shrink-0"
-                          style={{ color: active ? T.primary : T.textMuted }}
+                          style={{ color: active ? "#FFFFFF" : T.textMuted }}
                         />
                         <span className="flex-1 truncate">{item.label}</span>
                       </Link>

@@ -149,7 +149,9 @@ export default function App(props: AppProps) {
       </Head>
       <ThemeProvider
         attribute="class"
-        defaultTheme="light"
+        // painel abre no escuro (estilo dos gateways de referência); o botão
+        // da lua/sol troca e a escolha fica salva no aparelho
+        defaultTheme="dark"
         enableSystem={false}
         // color-scheme fica por conta do dark.css (só no painel): o checkout
         // do comprador continua claro com o tema escuro ligado
