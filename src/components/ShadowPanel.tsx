@@ -4,7 +4,7 @@ import { Send, X, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const API = "https://shadowpay-backend.onrender.com/api";
-const VIOLET = "#7C3AED";
+const VIOLET = "#8A1EF7";
 
 type Msg = { role: "user" | "shadow"; text: string };
 
@@ -13,7 +13,7 @@ function ShadowMark({ size = 22 }: { size?: number }) {
     <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
       <defs>
         <linearGradient id="sg-panel" x1="0" y1="0" x2="48" y2="48">
-          <stop offset="0" stopColor="#7C3AED" />
+          <stop offset="0" stopColor="#8A1EF7" />
           <stop offset="1" stopColor="#A855F7" />
         </linearGradient>
       </defs>

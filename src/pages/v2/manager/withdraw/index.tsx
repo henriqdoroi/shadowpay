@@ -174,7 +174,7 @@ function WithdrawAdminContent() {
                         setItems(null);
                       }}
                       className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors"
-                      style={filter === f.id ? { background: "#F5F3FF", color: "#5B21B6" } : { background: "transparent", color: "#6B7280" }}
+                      style={filter === f.id ? { background: "#F6E9FE", color: "#5105B9" } : { background: "transparent", color: "#6B7280" }}
                     >
                       {f.label}
                       {f.count != null && summary && (

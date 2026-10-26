@@ -2,15 +2,15 @@
 
 /**
  * Peças visuais da área "Minha conta" — mesmo visual do dashboard: cartões
- * brancos com borda #E6E8EB e sombra leve, roxo #7C3AED, fonte Inter.
+ * brancos com borda #E6E8EB e sombra leve, roxo #8A1EF7, fonte Inter.
  */
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from "react";
 import { Loader2 } from "lucide-react";
 
 export const C = {
-  primary: "#7C3AED",
-  primaryDark: "#6D28D9",
-  primarySoft: "rgba(124,58,237,0.08)",
+  primary: "#8A1EF7",
+  primaryDark: "#6C0DE0",
+  primarySoft: "rgba(138,30,247,0.08)",
   border: "#E6E8EB",
   green: "#059669",
   greenSoft: "rgba(16,185,129,0.12)",
@@ -117,7 +117,7 @@ export function Button({
     "inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-5 text-[13.5px] font-semibold transition-[background,box-shadow,transform,color] disabled:cursor-not-allowed disabled:opacity-50";
   const v =
     variant === "primary"
-      ? "bg-[#7C3AED] text-white hover:bg-[#6D28D9]"
+      ? "bg-[#8A1EF7] text-white hover:bg-[#6C0DE0]"
       : variant === "outline"
         ? "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
         : variant === "danger"

@@ -54,8 +54,8 @@ const T = {
   text: "#111827",
   text2: "#4B5563",
   textMuted: "#9CA3AF",
-  primary: "#7C3AED",
-  brandGradient: "linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)",
+  primary: "#8A1EF7",
+  brandGradient: "linear-gradient(225deg, #A040FA 0%, #8A1EF7 50%, #6C0DE0 100%)",
   quietBg: "#F6F6F8",
   border: "#ECECF0",
 };
@@ -234,7 +234,7 @@ function RevenueGoal({ value, hidden }: { value: number | null; hidden: boolean 
       </span>
       <span
         className="sp-goal-track relative h-1.5 w-28 shrink-0 overflow-hidden rounded-full lg:w-44 xl:w-52"
-        style={{ background: "#E7E0FA" }}
+        style={{ background: "#EBD9FC" }}
         role="progressbar"
         aria-valuemin={0}
         aria-valuemax={100}
@@ -500,7 +500,7 @@ export function LightShell({
                     <span className="flex-1 text-left">Modo escuro</span>
                     <span
                       className="relative inline-flex h-[18px] w-8 shrink-0 items-center rounded-full transition-colors"
-                      style={{ background: isDark ? "#7C3AED" : "#CBD5E1" }}
+                      style={{ background: isDark ? "#8A1EF7" : "#CBD5E1" }}
                     >
                       <span
                         className="absolute h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform"
@@ -560,7 +560,7 @@ export function LightShell({
               <button
                 onClick={() => setFooterMenuOpen((v) => !v)}
                 className="mx-auto flex h-9 w-9 items-center justify-center overflow-hidden rounded-full text-[13px] font-semibold text-white"
-                style={{ background: "#7C3AED" }}
+                style={{ background: "#8A1EF7" }}
                 title={user?.companyName || "Operador"}
                 aria-label="Conta"
               >

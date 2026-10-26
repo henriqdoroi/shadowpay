@@ -23,9 +23,9 @@ const T = {
   text: "#0F172A",
   text2: "#475569",
   text3: "#94A3B8",
-  primary: "#7C3AED",
-  primaryStrong: "#6D28D9",
-  primaryBg: "rgba(124, 58, 237, 0.08)",
+  primary: "#8A1EF7",
+  primaryStrong: "#6C0DE0",
+  primaryBg: "rgba(138, 30, 247, 0.08)",
   border: "rgba(15, 23, 42, 0.08)",
   success: "#16A34A",
   successBg: "rgba(22, 163, 74, 0.10)",
@@ -615,7 +615,7 @@ function DocumentUploadContent() {
                   : "#E2E8F0",
                 color: allReady ? "#FFFFFF" : T.text3,
                 boxShadow: allReady
-                  ? "0 16px 36px -16px rgba(124,58,237,0.5)"
+                  ? "0 16px 36px -16px rgba(138,30,247,0.5)"
                   : "none",
               }}
             >

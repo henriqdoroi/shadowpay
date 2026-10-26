@@ -481,8 +481,8 @@ export default function CreateProduct() {
               height: 34px;
               padding: 7px;
               border-radius: 10px;
-              color: #7c3aed;
-              background: rgba(124, 58, 237, 0.1);
+              color: #8a1ef7;
+              background: rgba(138, 30, 247, 0.1);
               flex-shrink: 0;
             }
             .wiz-premium [data-slot="label"] {
@@ -521,8 +521,8 @@ export default function CreateProduct() {
               [data-slot="input"]:not([type="color"]):not([type="file"]):focus-visible,
             .wiz-premium [data-slot="textarea"]:focus-visible,
             .wiz-premium [data-slot="select-trigger"]:focus-visible {
-              border-color: #7c3aed;
-              box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.14);
+              border-color: #8a1ef7;
+              box-shadow: 0 0 0 3px rgba(138, 30, 247, 0.14);
               outline: none;
             }
           ` }} />
@@ -564,7 +564,7 @@ export default function CreateProduct() {
                           className="flex h-7 w-7 items-center justify-center rounded-full text-[12px] font-bold transition-colors"
                           style={{
                             background:
-                              current || done ? "#7C3AED" : "#E2E8F0",
+                              current || done ? "#8A1EF7" : "#E2E8F0",
                             color: current || done ? "#FFFFFF" : "#64748B",
                           }}
                         >
@@ -581,7 +581,7 @@ export default function CreateProduct() {
                         <span
                           className="h-0.5 flex-1 rounded"
                           style={{
-                            background: i < stepIdx ? "#7C3AED" : "#E2E8F0",
+                            background: i < stepIdx ? "#8A1EF7" : "#E2E8F0",
                           }}
                         />
                       )}
@@ -2973,13 +2973,13 @@ export default function CreateProduct() {
                     <div
                       className="flex items-start gap-3 rounded-xl p-3.5"
                       style={{
-                        background: "rgba(124,58,237,0.05)",
+                        background: "rgba(138,30,247,0.05)",
                         border: "1px solid #ECECF0",
                       }}
                     >
                       <Zap
                         className="mt-0.5 h-[18px] w-[18px] shrink-0"
-                        style={{ color: "#7C3AED" }}
+                        style={{ color: "#8A1EF7" }}
                       />
                       <div className="text-[12.5px] leading-relaxed text-slate-600">
                         <b className="text-slate-900">O Pixel agora é global.</b>{" "}
@@ -3007,7 +3007,7 @@ export default function CreateProduct() {
                         <a
                           href="/v1/integrations/utmify"
                           className="font-semibold underline"
-                          style={{ color: "#7C3AED" }}
+                          style={{ color: "#8A1EF7" }}
                         >
                           Integrações → UTMify
                         </a>{" "}

@@ -141,7 +141,7 @@ function ReportsContent() {
     {
       title: "Qtd. de vendas",
       icon: <ShoppingBag className="h-4 w-4" />,
-      color: "#7C3AED",
+      color: "#8A1EF7",
       value: String(stats.totalSales),
       sub: "vendas aprovadas",
     },

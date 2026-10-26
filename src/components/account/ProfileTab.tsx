@@ -91,7 +91,7 @@ export function AvatarCircle({ url, name, size = 112 }: { url: string | null; na
         width: size,
         height: size,
         fontSize: size * 0.38,
-        background: "#7C3AED",
+        background: "#8A1EF7",
       }}
     >
       {initial}

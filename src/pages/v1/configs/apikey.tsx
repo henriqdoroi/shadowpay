@@ -347,9 +347,9 @@ function ApiKeyContent() {
                   <button
                     onClick={updateSellerIp}
                     disabled={savingIp}
-                    className="inline-flex h-11 shrink-0 items-center gap-2 rounded-lg px-4 text-sm font-medium text-white transition-colors hover:bg-[#6D28D9] disabled:opacity-60"
+                    className="inline-flex h-11 shrink-0 items-center gap-2 rounded-lg px-4 text-sm font-medium text-white transition-colors hover:bg-[#6C0DE0] disabled:opacity-60"
                     style={{
-                      background: "#7C3AED",
+                      background: "#8A1EF7",
                     }}
                   >
                     {savingIp ? "Salvando…" : "Salvar IP"}
@@ -386,9 +386,9 @@ function ApiKeyContent() {
               <button
                 onClick={generateCredentials}
                 disabled={isGenerating}
-                className="inline-flex h-10 items-center gap-2 rounded-lg px-5 text-sm font-medium text-white transition-colors hover:bg-[#6D28D9] disabled:opacity-60"
+                className="inline-flex h-10 items-center gap-2 rounded-lg px-5 text-sm font-medium text-white transition-colors hover:bg-[#6C0DE0] disabled:opacity-60"
                 style={{
-                  background: "#7C3AED",
+                  background: "#8A1EF7",
                 }}
               >
                 {isGenerating ? "Gerando…" : "Gerar credenciais"}
@@ -638,7 +638,7 @@ function ApiKeyContent() {
             <button
               onClick={handleConfirmNewKeys}
               className="w-full rounded-xl py-2.5 text-sm font-semibold text-white"
-              style={{ background: "#7C3AED" }}
+              style={{ background: "#8A1EF7" }}
             >
               Confirmar e fechar
             </button>

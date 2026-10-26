@@ -42,7 +42,7 @@ import { ageFrom, isValidCnpj, isValidCpf } from "@/lib/brDocs";
 
 const API = "https://shadowpay-backend.onrender.com";
 
-const PRIMARY = "#7C3AED";
+const PRIMARY = "#8A1EF7";
 const BORDER = "rgba(15,23,42,0.12)";
 
 /**
@@ -333,7 +333,7 @@ export default function KycModal({ onApproved }: { onApproved?: () => void }) {
         className="group flex w-full items-center gap-4 rounded-xl px-4 py-4 text-left transition-colors hover:bg-violet-50 disabled:opacity-60"
         style={{ border: `1px solid ${BORDER}` }}
       >
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(124,58,237,0.10)", color: PRIMARY }}>
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(138,30,247,0.10)", color: PRIMARY }}>
           <Icon className="h-5 w-5" />
         </span>
         <span className="min-w-0 flex-1">
@@ -373,7 +373,7 @@ export default function KycModal({ onApproved }: { onApproved?: () => void }) {
           <div className="flex items-center justify-between gap-3">
             <p className="text-[20px] font-bold tracking-[-0.01em] text-slate-900">Verificação</p>
             <span className="flex items-center gap-2 text-[12px] font-semibold text-slate-500">
-              <span className="rounded-full px-2.5 py-1" style={{ background: "rgba(124,58,237,0.08)", color: PRIMARY }}>
+              <span className="rounded-full px-2.5 py-1" style={{ background: "rgba(138,30,247,0.08)", color: PRIMARY }}>
                 {isPf ? "Pessoa Física" : "Pessoa Jurídica"}
               </span>
               {step === 1 && (
@@ -396,7 +396,7 @@ export default function KycModal({ onApproved }: { onApproved?: () => void }) {
                     style={{
                       background: done ? PRIMARY : active ? PRIMARY : "#EEF1F6",
                       color: done || active ? "#fff" : "#94A3B8",
-                      boxShadow: active ? "0 0 0 4px rgba(124,58,237,0.14)" : "none",
+                      boxShadow: active ? "0 0 0 4px rgba(138,30,247,0.14)" : "none",
                     }}
                   >
                     {done ? <Check className="h-4 w-4" /> : n}
@@ -647,7 +647,7 @@ function Upload({ label, value, onChange, accept }: { label: string; value: stri
             // eslint-disable-next-line @next/next/no-img-element
             <img src={value} alt="" className="h-10 w-10 rounded-lg object-cover" />
           ) : (
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ background: "rgba(124,58,237,0.10)", color: PRIMARY }}><FileText className="h-5 w-5" /></span>
+            <span className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ background: "rgba(138,30,247,0.10)", color: PRIMARY }}><FileText className="h-5 w-5" /></span>
           )}
           <span className="flex-1 truncate text-[13px] font-medium text-slate-700">Arquivo enviado</span>
           <button onClick={() => onChange("")} className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-rose-500" aria-label="Remover"><X className="h-4 w-4" /></button>
@@ -661,7 +661,7 @@ function Upload({ label, value, onChange, accept }: { label: string; value: stri
           onDragLeave={() => setOver(false)}
           onDrop={(e) => { e.preventDefault(); setOver(false); read(e.dataTransfer.files?.[0]); }}
           className="flex w-full flex-col items-center justify-center gap-1.5 rounded-xl py-6 text-[13px] font-medium transition-colors disabled:opacity-60"
-          style={{ border: `1.5px dashed ${over ? PRIMARY : "rgba(124,58,237,0.35)"}`, background: over ? "rgba(124,58,237,0.04)" : "rgba(124,58,237,0.02)", color: PRIMARY }}
+          style={{ border: `1.5px dashed ${over ? PRIMARY : "rgba(138,30,247,0.35)"}`, background: over ? "rgba(138,30,247,0.04)" : "rgba(138,30,247,0.02)", color: PRIMARY }}
         >
           <UploadCloud className={`h-5 w-5 ${reading ? "animate-pulse" : ""}`} />
           {reading ? "Processando arquivo…" : "Clique ou arraste seu arquivo aqui!"}

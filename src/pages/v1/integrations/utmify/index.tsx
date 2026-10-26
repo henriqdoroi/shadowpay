@@ -41,9 +41,9 @@ import { apiErrorMessage, withRetry } from "@/lib/axiosErrors";
 const API = "https://shadowpay-backend.onrender.com";
 
 const T = {
-  primary: "#7C3AED",
-  primaryStrong: "#6D28D9",
-  primaryBg: "rgba(124, 58, 237, 0.08)",
+  primary: "#8A1EF7",
+  primaryStrong: "#6C0DE0",
+  primaryBg: "rgba(138, 30, 247, 0.08)",
   amber: "#D97706",
   amberBg: "rgba(245, 158, 11, 0.08)",
   green: "#16A34A",

@@ -24,9 +24,9 @@ import { usePush } from "@/hooks/usePush";
 import type { PushDeviceInfo, PushPlatform, PushState } from "@/lib/push";
 
 const T = {
-  primary: "#7C3AED",
-  primaryDark: "#5B21B6",
-  primarySoft: "rgba(124,58,237,0.08)",
+  primary: "#8A1EF7",
+  primaryDark: "#5105B9",
+  primarySoft: "rgba(138,30,247,0.08)",
   green: "#10B981",
   greenSoft: "rgba(16,185,129,0.10)",
   amber: "#F59E0B",
@@ -252,7 +252,7 @@ export function PushSetupView(p: PushSetupViewProps) {
     return (
       <div
         className={p.bare ? "" : `overflow-hidden rounded-xl ${p.compact ? "p-4" : "p-5"}`}
-        style={p.bare ? undefined : { ...cardStyle, background: "radial-gradient(120% 140% at 100% 0%, rgba(124,58,237,0.10) 0%, #FFFFFF 55%)" }}
+        style={p.bare ? undefined : { ...cardStyle, background: "radial-gradient(120% 140% at 100% 0%, rgba(138,30,247,0.10) 0%, #FFFFFF 55%)" }}
       >
         <div className={p.compact ? "grid gap-4" : "grid items-center gap-5 sm:grid-cols-[1fr_280px]"}>
           <div>

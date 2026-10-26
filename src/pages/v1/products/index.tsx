@@ -331,8 +331,8 @@ function ProductsContent() {
               </button>
               <button
                 onClick={handleNew}
-                className="inline-flex h-10 items-center gap-2 rounded-lg px-4 text-[13.5px] font-medium text-white transition-colors hover:bg-[#6D28D9]"
-                style={{ background: "#7C3AED" }}
+                className="inline-flex h-10 items-center gap-2 rounded-lg px-4 text-[13.5px] font-medium text-white transition-colors hover:bg-[#6C0DE0]"
+                style={{ background: "#8A1EF7" }}
               >
                 <Plus className="h-4 w-4" />
                 Novo produto
@@ -609,10 +609,10 @@ function ProductsContent() {
                   className="flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-sm font-semibold transition-colors"
                   style={{
                     background:
-                      page === n ? "rgba(124,58,237,0.10)" : "transparent",
+                      page === n ? "rgba(138,30,247,0.10)" : "transparent",
                     border:
                       page === n ? "none" : "1px solid #E2E8F0",
-                    color: page === n ? "#7C3AED" : "#475569",
+                    color: page === n ? "#8A1EF7" : "#475569",
                   }}
                 >
                   {n}

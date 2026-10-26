@@ -100,7 +100,7 @@ export default function TwoFAModal({
             disabled={loading}
             className="cursor-pointer w-full text-white transition-colors"
             style={{
-              background: "#7C3AED",
+              background: "#8A1EF7",
             }}
           >
             {loading ? "Gerando QR Code..." : "Gerar QR Code / Secret"}
@@ -137,7 +137,7 @@ export default function TwoFAModal({
               disabled={loading || !userToken}
               className="w-full text-white transition-colors"
               style={{
-                background: "#7C3AED",
+                background: "#8A1EF7",
               }}
             >
               {loading ? "Verificando..." : "Ativar 2FA"}

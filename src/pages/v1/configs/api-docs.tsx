@@ -36,8 +36,8 @@ const T = {
   ink2: "#334155",
   muted: "#64748B",
   faint: "#94A3B8",
-  violet: "#7C3AED",
-  violetSoft: "rgba(124,58,237,0.08)",
+  violet: "#8A1EF7",
+  violetSoft: "rgba(138,30,247,0.08)",
   border: "rgba(15,23,42,0.08)",
   borderSoft: "rgba(15,23,42,0.06)",
   codeBg: "#F8FAFC",
@@ -575,7 +575,7 @@ echo $response["data"]["pix"]["copyPaste"];`;
             href="/v1/configs/webhook"
             className="inline-flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold text-white transition-colors"
             style={{
-              background: "#7C3AED",
+              background: "#8A1EF7",
             }}
           >
             Configurar webhook

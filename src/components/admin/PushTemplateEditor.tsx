@@ -42,8 +42,8 @@ export function renderSample(text: string): string {
 }
 
 const T = {
-  primary: "#7C3AED",
-  primarySoft: "rgba(124,58,237,0.08)",
+  primary: "#8A1EF7",
+  primarySoft: "rgba(138,30,247,0.08)",
   border: "rgba(15,23,42,0.08)",
 };
 
@@ -51,7 +51,7 @@ export function PhonePreview({ title, body, enabled }: { title: string; body: st
   return (
     <div
       className="relative rounded-[22px] p-3"
-      style={{ background: "linear-gradient(160deg, #1E1B4B 0%, #312E81 45%, #6D28D9 100%)", opacity: enabled ? 1 : 0.45 }}
+      style={{ background: "linear-gradient(160deg, #1E1B4B 0%, #312E81 45%, #6C0DE0 100%)", opacity: enabled ? 1 : 0.45 }}
     >
       <p className="mb-2 text-center text-[11px] font-medium text-white/70">agora</p>
       <div className="sp-keep-light flex items-start gap-2.5 rounded-xl p-3" style={{ background: "rgba(255,255,255,0.88)", backdropFilter: "blur(10px)" }}>

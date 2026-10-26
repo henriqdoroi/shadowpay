@@ -24,7 +24,7 @@ import {
   type Period,
 } from "@/lib/period";
 
-const VIOLET = "#7C3AED";
+const VIOLET = "#8A1EF7";
 const BORDER = "rgba(15,23,42,0.08)";
 const WEEK = ["D", "S", "T", "Q", "Q", "S", "S"];
 
@@ -193,7 +193,7 @@ export function PeriodPicker({
             }
             style={
               isDesktop
-                ? { background: active ? "rgba(124,58,237,0.08)" : undefined, color: active ? VIOLET : "#334155" }
+                ? { background: active ? "rgba(138,30,247,0.08)" : undefined, color: active ? VIOLET : "#334155" }
                 : { background: active ? VIOLET : "#FFFFFF", color: active ? "#FFFFFF" : "#334155", borderColor: active ? VIOLET : BORDER }
             }
           >
@@ -245,11 +245,11 @@ export function PeriodPicker({
           const band =
             lo && hi && lo !== hi
               ? isStart
-                ? "linear-gradient(90deg, transparent 50%, rgba(124,58,237,0.10) 50%)"
+                ? "linear-gradient(90deg, transparent 50%, rgba(138,30,247,0.10) 50%)"
                 : isEnd
-                  ? "linear-gradient(90deg, rgba(124,58,237,0.10) 50%, transparent 50%)"
+                  ? "linear-gradient(90deg, rgba(138,30,247,0.10) 50%, transparent 50%)"
                   : between
-                    ? "rgba(124,58,237,0.10)"
+                    ? "rgba(138,30,247,0.10)"
                     : undefined
               : undefined;
           return (

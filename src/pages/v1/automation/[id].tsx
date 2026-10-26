@@ -72,13 +72,13 @@ const T = {
   text: "#0F172A",
   text2: "#475569",
   textMuted: "#94A3B8",
-  primary: "#7C3AED",
-  primaryStrong: "#6D28D9",
-  primarySoft: "rgba(124, 58, 237, 0.10)",
+  primary: "#8A1EF7",
+  primaryStrong: "#6C0DE0",
+  primarySoft: "rgba(138, 30, 247, 0.10)",
   whatsapp: "#25D366",
   whatsappSoft: "rgba(37, 211, 102, 0.12)",
-  email: "#7C3AED",
-  emailSoft: "rgba(124, 58, 237, 0.12)",
+  email: "#8A1EF7",
+  emailSoft: "rgba(138, 30, 247, 0.12)",
   timer: "#F59E0B",
   timerSoft: "rgba(245, 158, 11, 0.12)",
   pix: "#32BCAD",
@@ -234,7 +234,7 @@ function ConfirmDialog({
                 : T.primary,
               boxShadow: destructive
                 ? "0 6px 16px -8px rgba(239,68,68,0.40)"
-                : "0 6px 16px -8px rgba(124,58,237,0.45)",
+                : "0 6px 16px -8px rgba(138,30,247,0.45)",
             }}
           >
             {confirmLabel}
@@ -1594,7 +1594,7 @@ function FlowEditor({ id }: { id: string }) {
       <div className="flex h-[60vh] flex-col items-center justify-center gap-3 text-center" style={{ color: T.text2 }}>
         <p className="text-[15px] font-semibold text-slate-800">Automação não encontrada</p>
         <p className="text-[13px] text-slate-500">Ela pode ter sido apagada. Volte e escolha outra na lista.</p>
-        <a href="/v1/automation" className="mt-1 inline-flex h-10 items-center rounded-xl bg-[#7C3AED] px-4 text-[13px] font-semibold text-white">
+        <a href="/v1/automation" className="mt-1 inline-flex h-10 items-center rounded-xl bg-[#8A1EF7] px-4 text-[13px] font-semibold text-white">
           Ver automações
         </a>
       </div>

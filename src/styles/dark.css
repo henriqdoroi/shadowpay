@@ -16,22 +16,22 @@ html.dark:has(.sp-shell) {
 
   /* quase preto puxado pro roxo (como os gateways de referência fazem com a
      cor deles); cards um tom acima, com borda de leve tom roxo. */
-  --d-bg: #07060c;
-  --d-sidebar: #07060c;
-  --d-card: #0f0c17;
-  --d-card-2: #151121;
-  --d-hover: #1b1629;
-  --d-active: #231d34;
-  --d-border: rgba(167, 139, 250, 0.12);
-  --d-border-strong: rgba(167, 139, 250, 0.22);
+  --d-bg: #07050d;
+  --d-sidebar: #07050d;
+  --d-card: #0f0a19;
+  --d-card-2: #150e23;
+  --d-hover: #1c132e;
+  --d-active: #251939;
+  --d-border: rgba(181, 82, 249, 0.12);
+  --d-border-strong: rgba(181, 82, 249, 0.22);
   --d-text: #f5f5f5;
   --d-text-2: #d4d4d4;
   --d-muted: #a3a3a3;
   --d-faint: #737373;
-  --d-violet: #a78bfa;
-  --d-violet-text: #c4b5fd;
-  --d-violet-soft: rgba(139, 92, 246, 0.16);
-  --d-violet-soft-2: rgba(139, 92, 246, 0.24);
+  --d-violet: #b552f9;
+  --d-violet-text: #d890fa;
+  --d-violet-soft: rgba(160, 64, 250, 0.16);
+  --d-violet-soft-2: rgba(160, 64, 250, 0.24);
 
   /* tokens do shadcn (Card, Dialog, Select, Input...) */
   --background: var(--d-bg);
@@ -40,7 +40,7 @@ html.dark:has(.sp-shell) {
   --card-foreground: var(--d-text);
   --popover: var(--d-card);
   --popover-foreground: var(--d-text);
-  --primary: #7c3aed;
+  --primary: #8a1ef7;
   --primary-foreground: #ffffff;
   --secondary: var(--d-card-2);
   --secondary-foreground: var(--d-text);
@@ -50,7 +50,7 @@ html.dark:has(.sp-shell) {
   --accent-foreground: var(--d-text);
   --border: var(--d-border);
   --input: rgba(255, 255, 255, 0.12);
-  --ring: rgba(167, 139, 250, 0.45);
+  --ring: rgba(181, 82, 249, 0.45);
   --sidebar: var(--d-sidebar);
   --sidebar-foreground: var(--d-text-2);
   --sidebar-accent: var(--d-hover);
@@ -74,7 +74,7 @@ html.dark:has(.sp-shell) body {
 /* "Carregando..." antes do painel aparecer: já no escuro (sem piscar branco) */
 html.dark:has(.sp-auth-loader) body,
 html.dark .sp-auth-loader {
-  background: #07060c;
+  background: #07050d;
 }
 html.dark .sp-auth-loader p {
   color: #a3a3a3;
@@ -91,8 +91,8 @@ html.dark:has(.sp-shell) .sp-shell[class][style] {
 /* conteúdo: luz roxa no canto de cima e um resto dela embaixo */
 html.dark:has(.sp-shell) .sp-main[class][style] {
   background:
-    radial-gradient(1000px 560px at 100% -12%, rgba(124, 58, 237, 0.22), transparent 62%),
-    radial-gradient(800px 520px at 0% 110%, rgba(124, 58, 237, 0.1), transparent 60%),
+    radial-gradient(1000px 560px at 100% -12%, rgba(138, 30, 247, 0.22), transparent 62%),
+    radial-gradient(800px 520px at 0% 110%, rgba(138, 30, 247, 0.1), transparent 60%),
     var(--d-bg) !important;
   background-attachment: fixed !important;
   color: var(--d-text) !important;
@@ -101,14 +101,14 @@ html.dark:has(.sp-shell) .sp-main[class][style] {
 /* menu sem linha; brilho roxo baixinho no rodapé dele */
 html.dark:has(.sp-shell) .sp-sidebar[class][style] {
   background:
-    radial-gradient(420px 320px at 0% 100%, rgba(124, 58, 237, 0.16), transparent 70%),
+    radial-gradient(420px 320px at 0% 100%, rgba(138, 30, 247, 0.16), transparent 70%),
     var(--d-sidebar) !important;
   border-right: 0 !important;
   box-shadow: none !important;
 }
 /* topo translúcido: a luz do conteúdo passa por trás */
 html.dark:has(.sp-shell) .sp-topbar[class][style] {
-  background: rgba(7, 6, 12, 0.9) !important;
+  background: rgba(7, 5, 13, 0.9) !important;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 0 !important;
@@ -124,13 +124,13 @@ html.dark:has(.sp-shell) .sp-logo[data-collapsed="true"] {
 }
 /* saldo: o bloco roxo da marca, com brilho */
 html.dark:has(.sp-shell) .sp-balance[class][style] {
-  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%) !important;
+  background: linear-gradient(225deg, #A040FA 0%, #8A1EF7 50%, #6C0DE0 100%) !important;
   border: 0 !important;
-  box-shadow: 0 14px 36px -12px rgba(124, 58, 237, 0.8) !important;
+  box-shadow: 0 14px 36px -12px rgba(138, 30, 247, 0.8) !important;
   color: #ffffff !important;
 }
 html.dark:has(.sp-shell) .sp-balance:hover {
-  background: linear-gradient(135deg, #9b72ff 0%, #7c3aed 100%) !important;
+  background: linear-gradient(225deg, #B552F9 0%, #8A1EF7 55%, #6C0DE0 100%) !important;
 }
 html.dark:has(.sp-shell) .sp-balance p {
   color: rgba(255, 255, 255, 0.78) !important;
@@ -140,9 +140,9 @@ html.dark:has(.sp-shell) .sp-balance .sp-balance-value[class][style] {
 }
 /* item ativo: pílula roxa com brilho */
 html.dark:has(.sp-shell) .sp-nav-item[data-active="true"] {
-  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%) !important;
+  background: linear-gradient(225deg, #A040FA 0%, #8A1EF7 50%, #6C0DE0 100%) !important;
   color: #ffffff !important;
-  box-shadow: 0 8px 24px -8px rgba(124, 58, 237, 0.85) !important;
+  box-shadow: 0 8px 24px -8px rgba(138, 30, 247, 0.85) !important;
 }
 html.dark:has(.sp-shell) .sp-nav-item[data-active="true"] svg {
   color: #ffffff !important;
@@ -161,7 +161,7 @@ html.dark:has(.sp-shell) .sp-goal[class][style] {
   border: 1px solid var(--d-border) !important;
 }
 html.dark:has(.sp-shell) .sp-goal-track[class][style] {
-  background: rgba(167, 139, 250, 0.14) !important;
+  background: rgba(181, 82, 249, 0.14) !important;
 }
 html.dark:has(.sp-shell) .sp-goal-value[class][style] {
   color: var(--d-text) !important;
@@ -175,7 +175,7 @@ html.dark:has(.sp-shell) .sp-avatar-ring {
 /* botão flutuante (Shadow AI) */
 html.dark:has(.sp-shell) .sp-fab {
   background: var(--d-card-2) !important;
-  border-color: rgba(167, 139, 250, 0.3) !important;
+  border-color: rgba(181, 82, 249, 0.3) !important;
 }
 html.dark:has(.sp-shell) .sp-loader-overlay {
   background: var(--d-bg);
@@ -236,7 +236,7 @@ html.dark:has(.sp-shell) .bg-violet-50\/50,
 html.dark:has(.sp-shell) .bg-violet-50\/60,
 html.dark:has(.sp-shell) .bg-violet-50\/70,
 html.dark:has(.sp-shell) .bg-violet-50\/80 {
-  background-color: rgba(139, 92, 246, 0.1) !important;
+  background-color: rgba(160, 64, 250, 0.1) !important;
 }
 html.dark:has(.sp-shell) .bg-violet-100 {
   background-color: var(--d-violet-soft-2) !important;
@@ -402,7 +402,7 @@ html.dark:has(.sp-shell) .border-amber-200 {
 }
 html.dark:has(.sp-shell) .border-violet-200,
 html.dark:has(.sp-shell) .border-violet-100 {
-  border-color: rgba(167, 139, 250, 0.35) !important;
+  border-color: rgba(181, 82, 249, 0.35) !important;
 }
 
 /* ---------- Estilos inline (style={{...}}) ---------- */
@@ -451,14 +451,14 @@ html.dark:has(.sp-shell) [style*="background: rgb(241, 241, 244)"] {
 /* card de destaque (saldo do Financeiro) */
 html.dark:has(.sp-shell) .sp-hero {
   background:
-    radial-gradient(640px 260px at 100% 0%, rgba(139, 92, 246, 0.38), transparent 70%),
-    linear-gradient(135deg, rgba(124, 58, 237, 0.24) 0%, rgba(76, 29, 149, 0.16) 100%),
+    radial-gradient(640px 260px at 100% 0%, rgba(160, 64, 250, 0.38), transparent 70%),
+    linear-gradient(135deg, rgba(138, 30, 247, 0.24) 0%, rgba(60, 3, 147, 0.16) 100%),
     var(--d-card) !important;
-  box-shadow: inset 0 0 0 1px rgba(167, 139, 250, 0.22), 0 20px 50px -24px rgba(124, 58, 237, 0.6) !important;
+  box-shadow: inset 0 0 0 1px rgba(181, 82, 249, 0.22), 0 20px 50px -24px rgba(138, 30, 247, 0.6) !important;
 }
 html.dark:has(.sp-shell) .sp-hero .sp-hero-stats,
 html.dark:has(.sp-shell) .sp-hero .sp-hero-stats > div {
-  border-color: rgba(167, 139, 250, 0.22) !important;
+  border-color: rgba(181, 82, 249, 0.22) !important;
 }
 
 /* selos de status e ícones de métrica (components/PanelBits.tsx) */
@@ -470,22 +470,22 @@ html.dark:has(.sp-shell) .sp-badge[data-tone="gray"]   { background: rgba(255, 2
 html.dark:has(.sp-shell) .sp-badge[data-tone="violet"] { background: var(--d-violet-soft); color: var(--d-violet-text); --sp-dot: var(--d-violet); }
 html.dark:has(.sp-shell) .sp-badge[data-tone="teal"]   { background: rgba(21, 183, 158, 0.14); color: #5fe9d0; --sp-dot: #2ed3b7; }
 html.dark:has(.sp-shell) .sp-chip {
-  background: rgba(139, 92, 246, 0.18);
-  color: #c4b5fd;
-  box-shadow: inset 0 0 0 1px rgba(167, 139, 250, 0.18);
+  background: rgba(160, 64, 250, 0.18);
+  color: #d890fa;
+  box-shadow: inset 0 0 0 1px rgba(181, 82, 249, 0.18);
 }
 
 /* Dashboard: cards de métrica, medidor e gráfico */
 html.dark:has(.sp-shell) .sp-kpi {
-  background: linear-gradient(180deg, rgba(167, 139, 250, 0.06) 0%, rgba(167, 139, 250, 0.015) 100%), var(--d-card);
+  background: linear-gradient(180deg, rgba(181, 82, 249, 0.06) 0%, rgba(181, 82, 249, 0.015) 100%), var(--d-card);
   border-color: var(--d-border);
 }
 html.dark:has(.sp-shell) .sp-kpi .sp-kpi-label { color: var(--d-muted); }
 html.dark:has(.sp-shell) .sp-kpi .sp-kpi-value { color: var(--d-text); }
 html.dark:has(.sp-shell) .sp-kpi-hero {
-  background: radial-gradient(260px 160px at 100% 0%, rgba(255, 255, 255, 0.2), transparent 70%),
-    linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
-  border-color: rgba(196, 181, 253, 0.35);
+  background: radial-gradient(280px 190px at 100% 0%, rgba(216, 144, 250, 0.5), transparent 70%),
+    linear-gradient(225deg, #A040FA 0%, #8A1EF7 50%, #6C0DE0 100%);
+  border-color: rgba(216, 144, 250, 0.35);
 }
 html.dark:has(.sp-shell) .sp-kpi-hero .sp-kpi-label { color: rgba(255, 255, 255, 0.82); }
 html.dark:has(.sp-shell) .sp-kpi-hero .sp-kpi-value { color: #ffffff; }
@@ -494,13 +494,13 @@ html.dark:has(.sp-shell) .sp-kpi-hero .sp-chip {
   color: #ffffff;
   box-shadow: none;
 }
-html.dark:has(.sp-shell) .sp-gauge-track { stroke: rgba(167, 139, 250, 0.16); }
-html.dark:has(.sp-shell) .sp-brand-text { color: #a78bfa; }
+html.dark:has(.sp-shell) .sp-gauge-track { stroke: rgba(181, 82, 249, 0.16); }
+html.dark:has(.sp-shell) .sp-brand-text { color: #b552f9; }
 html.dark:has(.sp-shell) .sp-chart .recharts-area-curve {
-  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.85));
+  filter: drop-shadow(0 0 8px rgba(160, 64, 250, 0.85));
 }
 /* brilho um pouco mais forte no escuro */
-html.dark:has(.sp-shell) .sp-glow { box-shadow: 0 16px 40px -12px rgba(124, 58, 237, 0.85) !important; }
+html.dark:has(.sp-shell) .sp-glow { box-shadow: 0 16px 40px -12px rgba(138, 30, 247, 0.85) !important; }
 html.dark:has(.sp-shell) [style*="background: rgb(241, 245, 249)"],
 html.dark:has(.sp-shell) [style*="background-color: rgb(241, 245, 249)"],
 html.dark:has(.sp-shell) [style*="background: rgb(226, 232, 240)"],
@@ -510,25 +510,35 @@ html.dark:has(.sp-shell) [style*="background: rgb(229, 231, 235)"] {
 /* tons claros de roxo usados em fundos (chips, cards) */
 html.dark:has(.sp-shell) [style*="background: rgb(245, 243, 255)"],
 html.dark:has(.sp-shell) [style*="background: rgb(237, 233, 254)"],
-html.dark:has(.sp-shell) [style*="background: rgb(250, 245, 255)"] {
+html.dark:has(.sp-shell) [style*="background: rgb(250, 245, 255)"],
+html.dark:has(.sp-shell) [style*="background: rgb(246, 233, 254)"],
+html.dark:has(.sp-shell) [style*="background: rgb(239, 214, 253)"],
+html.dark:has(.sp-shell) [style*="background: rgb(230, 192, 252)"],
+html.dark:has(.sp-shell) [style*="background: rgb(244, 232, 254)"],
+html.dark:has(.sp-shell) [style*="background: rgb(247, 238, 254)"],
+html.dark:has(.sp-shell) [style*="background-color: rgb(246, 233, 254)"],
+html.dark:has(.sp-shell) [style*="background-color: rgb(239, 214, 253)"] {
   background: var(--d-violet-soft) !important;
 }
 /* gradientes lilás bem claros (cartão de saldo do Financeiro, destaques) */
 html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(251, 250, 255)"],
 html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(244, 241, 254)"],
 html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(245, 243, 255)"],
+html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(246, 233, 254)"],
+html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(239, 214, 253)"],
+html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(247, 238, 254)"],
 html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(250, 245, 255)"],
 html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(238, 241, 255)"],
 html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(237, 233, 254)"],
 html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(243, 240, 255)"],
 html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(248, 247, 255)"] {
-  background: radial-gradient(120% 140% at 0% 0%, rgba(124, 58, 237, 0.2) 0%, #070707 55%, #030303 100%) !important;
-  border-color: rgba(167, 139, 250, 0.22) !important;
+  background: radial-gradient(120% 140% at 0% 0%, rgba(138, 30, 247, 0.2) 0%, #070707 55%, #030303 100%) !important;
+  border-color: rgba(181, 82, 249, 0.22) !important;
 }
 /* gradientes claros de card (inclusive os que vão de um roxinho até branco) */
 html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(255, 255, 255)"]:not([style*="background-clip"]):not(.rounded-full),
 html.dark:has(.sp-shell) [style*="gradient("][style*="rgb(248, 250, 252)"]:not([style*="background-clip"]) {
-  background: linear-gradient(100deg, rgba(139, 92, 246, 0.14) 0%, var(--d-card) 70%) !important;
+  background: linear-gradient(100deg, rgba(160, 64, 250, 0.14) 0%, var(--d-card) 70%) !important;
 }
 
 /* textos escuros → claros (o " " antes evita pegar background-color) */
@@ -565,15 +575,19 @@ html.dark:has(.sp-shell) [style*=" color: rgb(138, 148, 166)"] {
   color: var(--d-muted) !important;
 }
 /* roxo da marca em TEXTO fica um tom mais claro no fundo escuro */
-html.dark:has(.sp-shell) [style^="color: rgb(124, 58, 237)"],
-html.dark:has(.sp-shell) [style*=" color: rgb(124, 58, 237)"] {
+html.dark:has(.sp-shell) [style^="color: rgb(138, 30, 247)"],
+html.dark:has(.sp-shell) [style*=" color: rgb(138, 30, 247)"] {
   color: var(--d-violet) !important;
 }
-/* roxo escuro de texto (#6D28D9/#5B21B6) fica mais claro pra ler */
-html.dark:has(.sp-shell) [style^="color: rgb(109, 40, 217)"],
-html.dark:has(.sp-shell) [style*=" color: rgb(109, 40, 217)"],
+/* roxo escuro de texto (#6C0DE0/#5105B9) fica mais claro pra ler */
+html.dark:has(.sp-shell) [style^="color: rgb(108, 13, 224)"],
+html.dark:has(.sp-shell) [style*=" color: rgb(108, 13, 224)"],
 html.dark:has(.sp-shell) [style^="color: rgb(91, 33, 182)"],
-html.dark:has(.sp-shell) [style*=" color: rgb(91, 33, 182)"] {
+html.dark:has(.sp-shell) [style*=" color: rgb(91, 33, 182)"],
+html.dark:has(.sp-shell) [style^="color: rgb(81, 5, 185)"],
+html.dark:has(.sp-shell) [style*=" color: rgb(81, 5, 185)"],
+html.dark:has(.sp-shell) [style^="color: rgb(60, 3, 147)"],
+html.dark:has(.sp-shell) [style*=" color: rgb(60, 3, 147)"] {
   color: var(--d-violet-text) !important;
 }
 
@@ -705,5 +719,5 @@ html.dark:has(.sp-shell) .sp-keep-light .text-slate-400 {
 
 /* barras de rolagem */
 html.dark:has(.sp-shell) * {
-  scrollbar-color: rgba(167, 139, 250, 0.3) transparent;
+  scrollbar-color: rgba(181, 82, 249, 0.3) transparent;
 }

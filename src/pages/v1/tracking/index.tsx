@@ -17,9 +17,9 @@ const T = {
   text: "#0F172A",
   text2: "#475569",
   textMuted: "#94A3B8",
-  primary: "#7C3AED",
-  primaryStrong: "#6D28D9",
-  primaryBg: "rgba(124, 58, 237, 0.08)",
+  primary: "#8A1EF7",
+  primaryStrong: "#6C0DE0",
+  primaryBg: "rgba(138, 30, 247, 0.08)",
   border: "rgba(15, 23, 42, 0.08)",
   borderSoft: "rgba(15, 23, 42, 0.06)",
 };
@@ -90,9 +90,9 @@ function TrackingContent() {
               onClick={() => setTab(t.id)}
               className="inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-semibold transition-colors"
               style={{
-                background: active ? "rgba(124,58,237,0.08)" : "#FFFFFF",
-                color: active ? "#7C3AED" : "#475569",
-                border: `1px solid ${active ? "rgba(124,58,237,0.20)" : "rgba(15,23,42,0.08)"}`,
+                background: active ? "rgba(138,30,247,0.08)" : "#FFFFFF",
+                color: active ? "#8A1EF7" : "#475569",
+                border: `1px solid ${active ? "rgba(138,30,247,0.20)" : "rgba(15,23,42,0.08)"}`,
               }}
             >
               <Icon className="h-4 w-4" />
@@ -115,7 +115,7 @@ function TrackingContent() {
             label: "Cliques totais",
             value: totalClicks.toLocaleString("pt-BR"),
             icon: MousePointerClick,
-            color: "#7C3AED",
+            color: "#8A1EF7",
           },
           {
             label: "Conversões",

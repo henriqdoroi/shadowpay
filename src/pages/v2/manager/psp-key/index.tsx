@@ -37,9 +37,9 @@ const T = {
   text: "#0F172A",
   text2: "#475569",
   textMuted: "#94A3B8",
-  primary: "#7C3AED",
-  primaryStrong: "#6D28D9",
-  primarySoft: "rgba(124, 58, 237, 0.10)",
+  primary: "#8A1EF7",
+  primaryStrong: "#6C0DE0",
+  primarySoft: "rgba(138, 30, 247, 0.10)",
   border: "rgba(15, 23, 42, 0.08)",
   borderSoft: "rgba(15, 23, 42, 0.06)",
   success: "#16A34A",
@@ -1531,7 +1531,7 @@ function AcquirersContent() {
           </button>
           <button
             onClick={() => setShowCreate(true)}
-            className="inline-flex h-10 items-center gap-2 rounded-lg px-4 text-[13px] font-medium text-white transition-colors hover:bg-[#6D28D9]"
+            className="inline-flex h-10 items-center gap-2 rounded-lg px-4 text-[13px] font-medium text-white transition-colors hover:bg-[#6C0DE0]"
             style={{ background: T.primary }}
           >
             <Plus className="h-4 w-4" />

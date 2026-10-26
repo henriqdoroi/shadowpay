@@ -44,8 +44,8 @@ export function ProfileTabs() {
               href={t.href}
               className="flex min-w-0 items-center justify-center gap-1 overflow-hidden rounded-xl px-1.5 py-2 text-[11px] font-semibold transition-colors sm:gap-2 sm:px-5 sm:text-[13px]"
               style={{
-                background: active ? "rgba(124,58,237,0.08)" : "transparent",
-                color: active ? "#7C3AED" : "#475569",
+                background: active ? "rgba(138,30,247,0.08)" : "transparent",
+                color: active ? "#8A1EF7" : "#475569",
               }}
             >
               <Icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />

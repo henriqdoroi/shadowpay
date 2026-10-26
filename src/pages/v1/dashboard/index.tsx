@@ -24,8 +24,8 @@ function ConversionGauge({ pct }: { pct: number }) {
     <svg width="64" height="36" viewBox="0 0 64 36" aria-hidden="true" className="shrink-0">
       <defs>
         <linearGradient id="spGaugeFill" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#A78BFA" />
-          <stop offset="100%" stopColor="#7C3AED" />
+          <stop offset="0%" stopColor="#B552F9" />
+          <stop offset="100%" stopColor="#8A1EF7" />
         </linearGradient>
       </defs>
       <path className="sp-gauge-track" d="M6 32 A26 26 0 0 1 58 32" fill="none" strokeWidth="6" strokeLinecap="round" />
@@ -76,8 +76,8 @@ const T = {
   text: "#1A1F36",
   text2: "#475569",
   textMuted: "#8A94A6",
-  primary: "#7C3AED",
-  primaryBg: "rgba(124, 58, 237, 0.08)",
+  primary: "#8A1EF7",
+  primaryBg: "rgba(138, 30, 247, 0.08)",
   cardShadow: "0 1px 1px rgba(15, 23, 42, 0.04)",
 };
 
@@ -421,7 +421,7 @@ function DashboardContent() {
                           tickFormatter={axisMoney}
                         />
                         <Tooltip
-                          cursor={{ stroke: "rgba(124,58,237,0.25)", strokeWidth: 1 }}
+                          cursor={{ stroke: "rgba(138,30,247,0.25)", strokeWidth: 1 }}
                           content={({ active, payload }: any) => {
                             const b: ChartBucket | undefined = active ? payload?.[0]?.payload : undefined;
                             if (!b) return null;
@@ -550,7 +550,7 @@ function DashboardContent() {
                         className="h-full rounded-full"
                         style={{
                           width: `${prizeProgress}%`,
-                          background: "linear-gradient(90deg, #A78BFA 0%, #7C3AED 100%)",
+                          background: "linear-gradient(90deg, #B552F9 0%, #8A1EF7 100%)",
                           transition: "width 0.6s cubic-bezier(0.22,1,0.36,1)",
                         }}
                       />

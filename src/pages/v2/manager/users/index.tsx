@@ -994,7 +994,7 @@ function UsersManagerContent() {
       <LightShell>
         <div className="flex min-h-[50vh] items-center justify-center">
           <div className="text-center">
-            <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-[#7C3AED]"></div>
+            <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-[#8A1EF7]"></div>
             <p className="text-[14px] text-slate-500">Carregando sellers…</p>
           </div>
         </div>
@@ -1049,7 +1049,7 @@ function UsersManagerContent() {
           ["--card-foreground" as any]: "#0F172A",
           ["--popover" as any]: "#FFFFFF",
           ["--popover-foreground" as any]: "#0F172A",
-          ["--primary" as any]: "#7C3AED",
+          ["--primary" as any]: "#8A1EF7",
           ["--primary-foreground" as any]: "#FFFFFF",
           ["--secondary" as any]: "#F1F5F9",
           ["--secondary-foreground" as any]: "#0F172A",
@@ -1060,7 +1060,7 @@ function UsersManagerContent() {
           ["--destructive" as any]: "#EF4444",
           ["--border" as any]: "rgba(15, 23, 42, 0.08)",
           ["--input" as any]: "rgba(15, 23, 42, 0.10)",
-          ["--ring" as any]: "rgba(124, 58, 237, 0.30)",
+          ["--ring" as any]: "rgba(138, 30, 247, 0.30)",
           color: "#0F172A",
         }}
       >

@@ -50,9 +50,9 @@ const T = {
   text: "#0F172A",
   text2: "#475569",
   textMuted: "#94A3B8",
-  primary: "#7C3AED",
-  primaryStrong: "#6D28D9",
-  primaryBg: "rgba(124, 58, 237, 0.08)",
+  primary: "#8A1EF7",
+  primaryStrong: "#6C0DE0",
+  primaryBg: "rgba(138, 30, 247, 0.08)",
   border: "rgba(15, 23, 42, 0.08)",
   borderSoft: "rgba(15, 23, 42, 0.06)",
 };
@@ -121,8 +121,8 @@ const TEMPLATES = [
       "Lembre clientes que geraram um PIX e não finalizaram o pagamento via Email",
     triggerIcon: <PixIcon size={16} color="#32BCAD" />,
     triggerBg: "rgba(50, 188, 173, 0.12)",
-    channelIcon: <Mail className="h-4 w-4" style={{ color: "#7C3AED" }} />,
-    channelBg: "rgba(124, 58, 237, 0.12)",
+    channelIcon: <Mail className="h-4 w-4" style={{ color: "#8A1EF7" }} />,
+    channelBg: "rgba(138, 30, 247, 0.12)",
     triggerType: "SALE_PENDING",
     channel: "EMAIL" as const,
     defaultSteps: [
@@ -145,8 +145,8 @@ const TEMPLATES = [
       "Envie automaticamente os arquivos ou links de acesso após a confirmação do pagamento",
     triggerIcon: <ShoppingBag className="h-4 w-4" style={{ color: "#16A34A" }} />,
     triggerBg: "rgba(22, 163, 74, 0.12)",
-    channelIcon: <Mail className="h-4 w-4" style={{ color: "#7C3AED" }} />,
-    channelBg: "rgba(124, 58, 237, 0.12)",
+    channelIcon: <Mail className="h-4 w-4" style={{ color: "#8A1EF7" }} />,
+    channelBg: "rgba(138, 30, 247, 0.12)",
     triggerType: "SALE_APPROVED",
     channel: "EMAIL" as const,
     defaultSteps: [
@@ -1009,7 +1009,7 @@ function AutomationContent() {
           {tab === "automations" && (
             <button
               onClick={() => setShowNew(true)}
-              className="inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-4 text-[13.5px] font-medium text-white transition-colors hover:bg-[#6D28D9]"
+              className="inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-4 text-[13.5px] font-medium text-white transition-colors hover:bg-[#6C0DE0]"
               style={{ background: T.primary }}
             >
               <Plus className="h-4 w-4" />

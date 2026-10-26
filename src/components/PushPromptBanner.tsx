@@ -91,8 +91,8 @@ export function PushPromptBanner({ token }: { token: string | null }) {
         <button
           onClick={activate}
           disabled={busy}
-          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-4 text-[13px] font-medium text-white transition-colors hover:bg-[#6D28D9] disabled:opacity-60"
-          style={{ background: "#7C3AED" }}
+          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-4 text-[13px] font-medium text-white transition-colors hover:bg-[#6C0DE0] disabled:opacity-60"
+          style={{ background: "#8A1EF7" }}
         >
           {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
           {busy ? "Ativando…" : "Ativar"}

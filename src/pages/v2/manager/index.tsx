@@ -374,7 +374,7 @@ function ManagerDashboardContent() {
           title: "Total em carteiras",
           value: fmtCurrency(Number(data.totalEmCarteiras.valor)),
           icon: <Wallet className="h-4 w-4" />,
-          color: "#7C3AED",
+          color: "#8A1EF7",
         },
         {
           id: "txAp",
@@ -402,7 +402,7 @@ function ManagerDashboardContent() {
           title: "KYC pendentes",
           value: fmtNum(data.kycPendentes.valor),
           icon: <FileText className="h-4 w-4" />,
-          color: "#A78BFA",
+          color: "#B552F9",
         },
         {
           id: "totalRet",
@@ -517,9 +517,9 @@ function ManagerDashboardContent() {
             <div className="flex items-end">
               <button
                 type="submit"
-                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg px-5 text-sm font-medium text-white transition-colors hover:bg-[#6D28D9]"
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg px-5 text-sm font-medium text-white transition-colors hover:bg-[#6C0DE0]"
                 style={{
-                  background: "#7C3AED",
+                  background: "#8A1EF7",
                 }}
               >
                 Buscar
@@ -620,8 +620,8 @@ function ManagerDashboardContent() {
                       onClick={() => setSaldoFilter(f)}
                       className="rounded-md px-2.5 py-1 text-[12.5px] font-medium transition-colors"
                       style={{
-                        background: saldoFilter === f ? "#F5F3FF" : "transparent",
-                        color: saldoFilter === f ? "#5B21B6" : "#6B7280",
+                        background: saldoFilter === f ? "#F6E9FE" : "transparent",
+                        color: saldoFilter === f ? "#5105B9" : "#6B7280",
                       }}
                     >
                       {f === "all"
@@ -697,7 +697,7 @@ function ManagerDashboardContent() {
                 {
                   title: "Usuários",
                   icon: <Users className="h-4 w-4" />,
-                  color: "#7C3AED",
+                  color: "#8A1EF7",
                   rows: [
                     {
                       l: "Cadastrados",

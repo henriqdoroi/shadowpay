@@ -444,7 +444,7 @@ function RecivementsContent() {
               disabled={valor <= 0 || processing || loadingFees}
               className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
               style={{
-                background: "#7C3AED",
+                background: "#8A1EF7",
               }}
             >
               {processing ? "Processando…" : "Confirmar depósito"}
@@ -650,7 +650,7 @@ function RecivementsContent() {
               <button
                 onClick={closePixModal}
                 className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white"
-                style={{ background: "#7C3AED" }}
+                style={{ background: "#8A1EF7" }}
               >
                 Já paguei
               </button>

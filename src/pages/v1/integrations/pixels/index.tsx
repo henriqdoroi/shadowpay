@@ -24,9 +24,9 @@ const T = {
   text: "#0F172A",
   text2: "#475569",
   textMuted: "#94A3B8",
-  primary: "#7C3AED",
-  primaryStrong: "#6D28D9",
-  primaryBg: "rgba(124, 58, 237, 0.08)",
+  primary: "#8A1EF7",
+  primaryStrong: "#6C0DE0",
+  primaryBg: "rgba(138, 30, 247, 0.08)",
   border: "rgba(15, 23, 42, 0.08)",
   borderSoft: "rgba(15, 23, 42, 0.06)",
 };
@@ -159,7 +159,7 @@ function PixelsContent() {
       <div
         className="mb-6 flex items-start gap-3 rounded-xl p-4"
         style={{
-          background: "rgba(124,58,237,0.05)",
+          background: "rgba(138,30,247,0.05)",
           border: `1px solid ${T.borderSoft}`,
         }}
       >
@@ -372,7 +372,7 @@ function PixelsContent() {
                         <div className="flex items-center gap-2.5">
                           <div
                             className="flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-bold text-white"
-                            style={{ background: platform?.color || "#7C3AED" }}
+                            style={{ background: platform?.color || "#8A1EF7" }}
                           >
                             {p.platform[0]}
                           </div>

@@ -187,7 +187,7 @@ function WebhookContent() {
       value: String(total),
       sub: "Configurados",
       icon: <Plug className="h-4 w-4" />,
-      color: "#7C3AED",
+      color: "#8A1EF7",
     },
     {
       label: "Webhooks ativos",
@@ -226,7 +226,7 @@ function WebhookContent() {
             onClick={() => setShowAdd(true)}
             className="inline-flex h-10 items-center gap-2 rounded-xl px-5 text-[13px] font-semibold text-white transition-colors"
             style={{
-              background: "#7C3AED",
+              background: "#8A1EF7",
             }}
           >
             <Plus className="h-4 w-4" /> Conectar webhook
@@ -445,7 +445,7 @@ function WebhookContent() {
                 onClick={createWebhook}
                 disabled={!url.trim() || !type || creating}
                 className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-                style={{ background: "#7C3AED" }}
+                style={{ background: "#8A1EF7" }}
               >
                 {creating ? "Conectando…" : "Conectar webhook"}
               </button>

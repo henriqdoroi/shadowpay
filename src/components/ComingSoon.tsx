@@ -19,7 +19,7 @@ export function ComingSoon({
   subtitle,
   description,
   icon,
-  accent = "#7C3AED",
+  accent = "#8A1EF7",
   eta,
 }: ComingSoonProps) {
   const router = useRouter();

@@ -9,9 +9,38 @@
  *
  * Aqui ficam só ajustes GERAIS que valem pra muitas telas de uma vez; o
  * resto é feito em cada página. Estilos inline só cedem com !important, e o
- * navegador grava as cores inline como "rgba(124, 58, 237, ...)" (com
+ * navegador grava as cores inline como "rgba(138, 30, 247, ...)" (com
  * espaços), por isso os seletores [style*=...] usam esse formato.
  * ========================================================================== */
+
+/* ---------- 0. Roxo da LOGO ----------
+   Medido pixel a pixel da logo da Shadow: #8A1EF7 (roxo vivo), #B552F9 e
+   #D890FA (brilhos claros), #6C0DE0 (meio), #5105B9/#3C0393 (sombras),
+   #E6C0FC..#F6E6FD (halo). As classes violet-/purple- do Tailwind passam a
+   usar essa paleta no painel (inclusive em modais, por isso no html). */
+html:has(.sp-shell) {
+  --color-violet-50: #f6e9fe;
+  --color-violet-100: #efd6fd;
+  --color-violet-200: #e6c0fc;
+  --color-violet-300: #d890fa;
+  --color-violet-400: #b552f9;
+  --color-violet-500: #a040fa;
+  --color-violet-600: #8a1ef7;
+  --color-violet-700: #6c0de0;
+  --color-violet-800: #5105b9;
+  --color-violet-900: #3c0393;
+  --color-violet-950: #29026e;
+  --color-purple-50: #f6e9fe;
+  --color-purple-100: #efd6fd;
+  --color-purple-200: #e6c0fc;
+  --color-purple-300: #d890fa;
+  --color-purple-400: #b552f9;
+  --color-purple-500: #a040fa;
+  --color-purple-600: #8a1ef7;
+  --color-purple-700: #6c0de0;
+  --color-purple-800: #5105b9;
+  --color-purple-900: #3c0393;
+}
 
 /* ---------- 1. Rótulos: caixa normal ----------
    O texto já está escrito normal no código ("Saldo disponível"); só a classe
@@ -104,7 +133,7 @@ html:not(.dark) .sp-shell .sp-nav-item[data-active="false"]:hover svg {
 .sp-badge[data-tone="red"]   { background: #fef3f2; color: #b42318; --sp-dot: #f04438; }
 .sp-badge[data-tone="blue"]  { background: #eff8ff; color: #175cd3; --sp-dot: #2e90fa; }
 .sp-badge[data-tone="gray"]  { background: #f2f4f7; color: #344054; --sp-dot: #98a2b3; }
-.sp-badge[data-tone="violet"]{ background: #f4f3ff; color: #5925dc; --sp-dot: #7a5af8; }
+.sp-badge[data-tone="violet"]{ background: #f6e9fe; color: #5925dc; --sp-dot: #7a5af8; }
 .sp-badge[data-tone="teal"]  { background: #e6f8f5; color: #0b7a6c; --sp-dot: #15b79e; }
 
 .sp-chip {
@@ -123,37 +152,37 @@ html:not(.dark) .sp-shell .sp-nav-item[data-active="false"]:hover svg {
 /* ícones de métrica: SEMPRE no roxo da marca (uma cor só, como nos
    gateways de referência). O data-tone fica só pros selos de status. */
 .sp-chip {
-  background: #f3eeff;
-  color: #7c3aed;
+  background: #f4e8fe;
+  color: #8a1ef7;
 }
 
 /* card de destaque (saldo do Financeiro) */
 .sp-hero {
-  background: radial-gradient(600px 220px at 100% 0%, rgba(124, 58, 237, 0.14), transparent 70%), #f6f3ff;
+  background: radial-gradient(600px 220px at 100% 0%, rgba(138, 30, 247, 0.14), transparent 70%), #f7eefe;
 }
 .sp-hero .sp-hero-stats,
 .sp-hero .sp-hero-stats > div {
-  border-color: rgba(124, 58, 237, 0.14) !important;
+  border-color: rgba(138, 30, 247, 0.14) !important;
 }
 
 /* ---------- 7. Impacto ----------
    Referências: BravoPay, Lovy Bot, InvictusPay — uma cor de marca forte,
    brilho nela e o resto calmo. Aqui a cor é o roxo da ShadowPay. */
 .sp-glow {
-  box-shadow: 0 14px 34px -14px rgba(124, 58, 237, 0.7) !important;
+  box-shadow: 0 14px 34px -14px rgba(138, 30, 247, 0.7) !important;
 }
 .sp-glow-sm {
-  box-shadow: 0 8px 20px -10px rgba(124, 58, 237, 0.75) !important;
+  box-shadow: 0 8px 20px -10px rgba(138, 30, 247, 0.75) !important;
 }
 html:not(.dark) .sp-shell .sp-balance:hover {
-  background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%) !important;
+  background: linear-gradient(225deg, #8A1EF7 0%, #6C0DE0 60%, #5105B9 100%) !important;
 }
 /* luz roxa bem leve no canto do conteúdo */
 html:not(.dark) .sp-shell .sp-main[class][style] {
-  background: radial-gradient(1100px 520px at 100% -10%, rgba(124, 58, 237, 0.07), transparent 62%), #ffffff !important;
+  background: radial-gradient(1100px 520px at 100% -10%, rgba(138, 30, 247, 0.07), transparent 62%), #ffffff !important;
 }
 .sp-brand-text {
-  color: #7c3aed;
+  color: #8a1ef7;
 }
 
 /* cards de métrica do Dashboard (o 1º é o destaque, pintado de roxo) */
@@ -164,8 +193,8 @@ html:not(.dark) .sp-shell .sp-main[class][style] {
 .sp-kpi .sp-kpi-label { color: #6b7280; }
 .sp-kpi .sp-kpi-value { color: #111827; }
 .sp-kpi-hero {
-  background: radial-gradient(260px 160px at 100% 0%, rgba(255, 255, 255, 0.22), transparent 70%),
-    linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  background: radial-gradient(280px 190px at 100% 0%, rgba(216, 144, 250, 0.55), transparent 70%),
+    linear-gradient(225deg, #A040FA 0%, #8A1EF7 50%, #6C0DE0 100%);
   border-color: transparent;
 }
 .sp-kpi-hero .sp-kpi-label { color: rgba(255, 255, 255, 0.82); }
@@ -174,9 +203,9 @@ html:not(.dark) .sp-shell .sp-main[class][style] {
   background: rgba(255, 255, 255, 0.18);
   color: #ffffff;
 }
-.sp-gauge-track { stroke: #ede9fe; }
+.sp-gauge-track { stroke: #efd6fd; }
 
 /* linha do gráfico com brilho */
 .sp-chart .recharts-area-curve {
-  filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.55));
+  filter: drop-shadow(0 0 6px rgba(160, 64, 250, 0.55));
 }

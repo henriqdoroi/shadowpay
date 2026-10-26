@@ -53,9 +53,9 @@ const T = {
   text: "#111827",
   text2: "#475569",
   textMuted: "#94A3B8",
-  primary: "#7C3AED",
-  primaryStrong: "#6D28D9",
-  primaryBg: "rgba(124, 58, 237, 0.08)",
+  primary: "#8A1EF7",
+  primaryStrong: "#6C0DE0",
+  primaryBg: "rgba(138, 30, 247, 0.08)",
   border: "#E5E7EB",
   borderSoft: "#ECECF0",
   green: "#10B981",
@@ -453,7 +453,7 @@ function FinanceContent() {
                   </Link>
                   <button
                     onClick={openWithdraw}
-                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-[13.5px] font-medium text-white transition-colors hover:bg-[#6D28D9]"
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-[13.5px] font-medium text-white transition-colors hover:bg-[#6C0DE0]"
                     style={{ background: T.primary }}
                   >
                     <ArrowUpFromLine className="h-4 w-4" />
@@ -735,7 +735,7 @@ function FinanceContent() {
             <button
               onClick={submitWithdraw}
               disabled={processing || !pixKey.trim() || sacarValor <= 0 || sacarValor > balance.current}
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg text-[14px] font-medium text-white transition-colors hover:bg-[#6D28D9] disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg text-[14px] font-medium text-white transition-colors hover:bg-[#6C0DE0] disabled:cursor-not-allowed disabled:opacity-50"
               style={{ background: T.primary }}
             >
               {processing ? "Processando…" : "Confirmar saque"}

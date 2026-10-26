@@ -787,7 +787,7 @@ export default function EditProduct() {
               <Button
                 onClick={handleSave}
                 disabled={isLoading}
-                className="flex h-11 items-center gap-2 rounded-xl bg-[#7C3AED] px-5 font-semibold text-white hover:bg-[#6D28D9] cursor-pointer"
+                className="flex h-11 items-center gap-2 rounded-xl bg-[#8A1EF7] px-5 font-semibold text-white hover:bg-[#6C0DE0] cursor-pointer"
               >
                 <Save className="h-4 w-4" />
                 {isLoading ? "Salvando..." : "Salvar alterações"}
@@ -3331,7 +3331,7 @@ export default function EditProduct() {
                         <a
                           href="/v1/integrations/utmify"
                           className="font-semibold underline"
-                          style={{ color: "#7C3AED" }}
+                          style={{ color: "#8A1EF7" }}
                         >
                           Integrações → UTMify
                         </a>{" "}

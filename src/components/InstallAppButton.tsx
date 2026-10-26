@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { canPromptInstall, onInstallChange, promptInstall } from "@/lib/install";
 import { detectPlatform, isStandalone, type PushPlatform } from "@/lib/push";
 
-const VIOLET = "#7C3AED";
+const VIOLET = "#8A1EF7";
 
 /** Navegador embutido de app (Instagram, Facebook, TikTok...): não instala PWA. */
 function isInAppBrowser(): boolean {
@@ -202,7 +202,7 @@ export function InstallAppButton({ variant = "icon" }: { variant?: "icon" | "men
           type="button"
           onClick={onClick}
           className="flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-2.5 text-[12.5px] font-semibold text-violet-700 transition-colors hover:bg-violet-50"
-          style={{ background: "rgba(124, 58, 237, 0.08)" }}
+          style={{ background: "rgba(138, 30, 247, 0.08)" }}
           aria-label="Baixar o app da ShadowPay"
           title="Baixar o app"
         >

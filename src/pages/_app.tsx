@@ -138,8 +138,8 @@ export default function App(props: AppProps) {
         {/* Tela de abertura do app no iPhone: fundo da marca (theme-color);
             as imagens antigas eram de outra marca. */}
 
-        {/* Cor da barra de status no Android e iOS — usa violeta da marca */}
-        <meta name="theme-color" content="#7C3AED" />
+        {/* Cor da barra de status no Android e iOS — o roxo da logo */}
+        <meta name="theme-color" content="#8A1EF7" />
 
         {/* PWA install — força nome curto e cor no iOS */}
         <meta name="apple-mobile-web-app-title" content="ShadowPay" />

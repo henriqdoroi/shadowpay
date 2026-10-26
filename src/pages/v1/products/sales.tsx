@@ -55,8 +55,8 @@ const T = {
   text: "#111827",
   text2: "#475569",
   textMuted: "#9CA3AF",
-  primary: "#7C3AED",
-  primaryBg: "rgba(124,58,237,0.08)",
+  primary: "#8A1EF7",
+  primaryBg: "rgba(138,30,247,0.08)",
   border: "#E5E7EB",
   borderSoft: "#ECECF0",
   card: "#FFFFFF",
@@ -385,7 +385,7 @@ function SalesContent() {
             </div>
             <button
               onClick={() => fetchSales(1)}
-              className="inline-flex h-10 items-center gap-2 rounded-lg px-5 text-[13px] font-semibold text-white transition-colors hover:bg-[#6D28D9]"
+              className="inline-flex h-10 items-center gap-2 rounded-lg px-5 text-[13px] font-semibold text-white transition-colors hover:bg-[#6C0DE0]"
               style={{ background: T.primary }}
             >
               <Filter className="h-4 w-4" />
@@ -407,8 +407,8 @@ function SalesContent() {
                   onClick={() => setStatusFilter(tab.filter)}
                   className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg px-3 text-[13px] font-medium transition-colors hover:bg-[#F6F6F8]"
                   style={{
-                    background: active ? "#F5F3FF" : "transparent",
-                    color: active ? "#5B21B6" : "#6B7280",
+                    background: active ? "#F6E9FE" : "transparent",
+                    color: active ? "#5105B9" : "#6B7280",
                   }}
                 >
                   {tab.label}
