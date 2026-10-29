@@ -88,11 +88,14 @@ html.dark:has(.sp-shell) .sp-shell[class][style] {
   color: var(--d-text) !important;
   box-shadow: none !important;
 }
-/* conteúdo: luz roxa no canto de cima e um resto dela embaixo */
+/* conteúdo: luz roxa no canto de cima, um resto dela embaixo e uma grade
+   bem sutil por baixo (textura de "painel de operação") */
 html.dark:has(.sp-shell) .sp-main[class][style] {
   background:
     radial-gradient(1000px 560px at 100% -12%, rgba(138, 30, 247, 0.22), transparent 62%),
     radial-gradient(800px 520px at 0% 110%, rgba(138, 30, 247, 0.1), transparent 60%),
+    linear-gradient(rgba(181, 82, 249, 0.035) 1px, transparent 1px) 0 0 / 44px 44px,
+    linear-gradient(90deg, rgba(181, 82, 249, 0.035) 1px, transparent 1px) 0 0 / 44px 44px,
     var(--d-bg) !important;
   background-attachment: fixed !important;
   color: var(--d-text) !important;
@@ -447,6 +450,30 @@ html.dark:has(.sp-shell) [style*="background: rgb(243, 244, 246)"] {
 html.dark:has(.sp-shell) [style*="background: rgb(241, 241, 244)"] {
   background: var(--d-active) !important;
 }
+
+/* Conquistas */
+html.dark:has(.sp-shell) .sp-trophy-pill { background: rgba(138, 30, 247, 0.2); color: var(--d-violet-text); }
+html.dark:has(.sp-shell) .sp-trophy-hero .sp-trophy-pill,
+html.dark:has(.sp-shell) .sp-kpi-hero .sp-trophy-pill { background: rgba(255, 255, 255, 0.18); color: #ffffff; }
+html.dark:has(.sp-shell) .sp-trophy-track { background: rgba(181, 82, 249, 0.16); }
+html.dark:has(.sp-shell) .sp-trophy-hero .sp-trophy-track { background: rgba(255, 255, 255, 0.22); }
+html.dark:has(.sp-shell) .sp-plaque {
+  background: linear-gradient(145deg, #1d1729, #0b0812);
+  box-shadow: inset 0 0 0 1px rgba(181, 82, 249, 0.16), 0 14px 30px -14px rgba(0, 0, 0, 0.6);
+}
+
+/* card de patente no menu */
+html.dark:has(.sp-shell) .sp-rank {
+  background: radial-gradient(220px 120px at 100% 0%, rgba(138, 30, 247, 0.28), transparent 70%), var(--d-card);
+  border-color: rgba(181, 82, 249, 0.22);
+}
+html.dark:has(.sp-shell) .sp-rank:hover { border-color: rgba(181, 82, 249, 0.42); }
+html.dark:has(.sp-shell) .sp-rank-emblem { background-color: rgba(138, 30, 247, 0.16); box-shadow: inset 0 0 0 1px rgba(181, 82, 249, 0.3); }
+html.dark:has(.sp-shell) .sp-rank-label,
+html.dark:has(.sp-shell) .sp-rank-next { color: var(--d-muted); }
+html.dark:has(.sp-shell) .sp-rank-name { color: var(--d-text); }
+html.dark:has(.sp-shell) .sp-rank-pct { color: var(--d-violet-text); }
+html.dark:has(.sp-shell) .sp-rank-track { background: rgba(181, 82, 249, 0.16); }
 
 /* card de destaque (saldo do Financeiro) */
 html.dark:has(.sp-shell) .sp-hero {

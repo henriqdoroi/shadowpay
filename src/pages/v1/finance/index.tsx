@@ -34,6 +34,7 @@ import {
   Lock,
   CalendarClock,
   ArrowDownToLine,
+  Percent,
 } from "lucide-react";
 import { IconChip, StatusBadge, type Tone } from "@/components/PanelBits";
 import {
@@ -414,9 +415,9 @@ function FinanceContent() {
           </p>
         </header>
 
-        {/* SALDO — largura total (igual ao Histórico), com os botões dentro */}
-        <section className="mb-6">
-          <div className="sp-hero rounded-xl p-5 sm:p-7">
+        {/* SALDO (com os botões dentro) + SUAS TAXAS ao lado */}
+        <section className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="sp-hero rounded-2xl p-5 sm:p-7">
             <div>
               <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
@@ -512,6 +513,40 @@ function FinanceContent() {
             </div>
           </div>
 
+          {/* Suas taxas — o que é cobrado em cada venda e em cada saque */}
+          <div className="sp-kpi flex flex-col rounded-2xl p-5">
+            <div className="flex items-center gap-2.5">
+              <IconChip>
+                <Percent />
+              </IconChip>
+              <div>
+                <p className="sp-kpi-value text-[15px] font-semibold">Suas taxas</p>
+                <p className="sp-kpi-label text-[12.5px]">Valem para todas as vendas Pix</p>
+              </div>
+            </div>
+            <dl className="mt-4 divide-y divide-slate-100 text-[13.5px]">
+              {[
+                {
+                  k: "Por venda (Pix)",
+                  v: `${fees.salePercent.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}% + ${fmt(fees.saleFixed)}`,
+                },
+                { k: "Por saque", v: fmt(fees.withdrawFixed) },
+                { k: "Liberação", v: "D+1 útil" },
+                { k: "Próximo repasse", v: nextPayout },
+              ].map((row) => (
+                <div key={row.k} className="flex items-center justify-between gap-3 py-2.5">
+                  <dt className="sp-kpi-label">{row.k}</dt>
+                  <dd className="sp-kpi-value text-right font-semibold tabular-nums">{row.v}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className="sp-kpi-label mt-auto pt-3 text-[12px]">
+              Venda de R$ 100,00 → você recebe{" "}
+              <span className="sp-kpi-value font-semibold">
+                {fmt(Math.max(0, 100 - (100 * fees.salePercent) / 100 - fees.saleFixed))}
+              </span>
+            </p>
+          </div>
         </section>
 
         {/* HISTÓRICO DE SAQUES */}

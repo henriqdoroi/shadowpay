@@ -205,6 +205,49 @@ html:not(.dark) .sp-shell .sp-main[class][style] {
 }
 .sp-gauge-track { stroke: #efd6fd; }
 
+/* card de patente no menu (Nível nas Sombras) */
+.sp-rank {
+  background: radial-gradient(220px 120px at 100% 0%, rgba(138, 30, 247, 0.12), transparent 70%), #f7f2fe;
+  border: 1px solid rgba(138, 30, 247, 0.14);
+}
+.sp-rank:hover { border-color: rgba(138, 30, 247, 0.3); }
+.sp-rank-emblem { background-color: #ffffff; box-shadow: inset 0 0 0 1px rgba(138, 30, 247, 0.18); }
+.sp-rank-label { color: #6b7280; }
+.sp-rank-name { color: #111827; }
+.sp-rank-pct { color: #8a1ef7; }
+.sp-rank-track { background: rgba(138, 30, 247, 0.12); }
+.sp-rank-next { color: #6b7280; }
+/* tela baixa: o menu precisa do espaço (a patente segue em Conquistas) */
+@media (max-height: 760px) {
+  .sp-sidebar .sp-rank { display: none; }
+}
+
+/* Conquistas: card "próxima patente", trilha e placas */
+.sp-trophy-hero {
+  background:
+    radial-gradient(520px 260px at 100% 0%, rgba(216, 144, 250, 0.45), transparent 70%),
+    linear-gradient(225deg, #a040fa 0%, #8a1ef7 45%, #5105b9 100%);
+  color: #ffffff;
+}
+.sp-trophy-hero .sp-trophy-title,
+.sp-trophy-hero .sp-trophy-pct { color: #ffffff; }
+.sp-trophy-hero .sp-trophy-sub { color: rgba(255, 255, 255, 0.78); }
+.sp-trophy-hero .sp-trophy-quote { color: rgba(255, 255, 255, 0.85); border-color: rgba(255, 255, 255, 0.5); }
+.sp-trophy-hero .sp-trophy-pill { background: rgba(255, 255, 255, 0.18); color: #ffffff; }
+.sp-trophy-hero .sp-trophy-track { background: rgba(255, 255, 255, 0.22); }
+.sp-trophy-hero .sp-trophy-fill { background: #ffffff; box-shadow: 0 0 14px rgba(255, 255, 255, 0.7); }
+.sp-trophy-pill { background: #f3eeff; color: #6c0de0; }
+.sp-trophy-track { background: rgba(138, 30, 247, 0.12); }
+.sp-trophy-fill { background: linear-gradient(90deg, #b552f9 0%, #8a1ef7 100%); }
+.sp-kpi-hero .sp-trophy-pill { background: rgba(255, 255, 255, 0.2); color: #ffffff; }
+.sp-kpi-hero .sp-rank-emblem { background-color: rgba(255, 255, 255, 0.95); }
+.sp-rank-locked { opacity: 0.55; }
+.sp-rank-locked .sp-rank-emblem { filter: grayscale(1); }
+.sp-plaque {
+  background: linear-gradient(145deg, #2a2733, #141218);
+  box-shadow: 0 14px 30px -14px rgba(15, 23, 42, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
 /* linha do gráfico com brilho */
 .sp-chart .recharts-area-curve {
   filter: drop-shadow(0 0 6px rgba(160, 64, 250, 0.55));

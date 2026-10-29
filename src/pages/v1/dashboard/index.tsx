@@ -15,8 +15,9 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { CheckCircle2, Percent, Receipt, TrendingUp, Trophy, Wallet } from "lucide-react";
-import { IconChip } from "@/components/PanelBits";
+import Link from "next/link";
+import { CheckCircle2, CircleDollarSign, Percent, Receipt, TrendingUp, Trophy, Wallet } from "lucide-react";
+import { IconChip, StatusBadge, TX_TONE } from "@/components/PanelBits";
 
 /** Meia-lua de 0–100% (taxa de conversão). */
 function ConversionGauge({ pct }: { pct: number }) {
@@ -48,7 +49,31 @@ import TwoFAModal from "./2faAuthentication";
 import { LightShell } from "@/components/LightShell";
 import { PushPromptBanner } from "@/components/PushPromptBanner";
 import { PeriodPicker } from "@/components/PeriodPicker";
-import { EMPTY_STATS, type SalesStats } from "@/lib/txStatus";
+import { EMPTY_STATS, TX_STATUS_STYLE, txStatus, type SalesStats } from "@/lib/txStatus";
+
+/** Venda da lista "Últimas vendas" (mesmo formato do /transactions-report). */
+type RecentTx = {
+  id: string;
+  status: string;
+  statusRaw?: string | null;
+  grossAmount: number | string;
+  createdAt: string;
+  customer?: { name?: string } | null;
+  customerName?: string | null;
+  product?: { name?: string } | null;
+  productName?: string;
+};
+
+/** "agora", "há 5 min", "há 3 h", "ontem", "12/10". */
+function timeAgo(iso: string) {
+  const d = new Date(iso);
+  const diff = (Date.now() - d.getTime()) / 1000;
+  if (diff < 60) return "agora";
+  if (diff < 3600) return `há ${Math.floor(diff / 60)} min`;
+  if (diff < 86400) return `há ${Math.floor(diff / 3600)} h`;
+  if (diff < 172800) return "ontem";
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+}
 import {
   PERIOD_PRESETS,
   bucketTitle,
@@ -152,6 +177,7 @@ function DashboardContent() {
   const [stats, setStats] = useState<SalesStats>(EMPTY_STATS);
   const [points, setPoints] = useState<SeriesPoint[]>([]);
   const [lifetimeNet, setLifetimeNet] = useState(0);
+  const [recent, setRecent] = useState<RecentTx[]>([]);
   const [loading, setLoading] = useState(true);
   const reqId = useRef(0);
 
@@ -164,17 +190,22 @@ function DashboardContent() {
     if (resolved.end) range.append("endDate", resolved.end.toISOString());
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Sao_Paulo";
     const headers = { Authorization: `Bearer ${token}` };
-    const [rep, ser] = await Promise.allSettled([
+    const [rep, ser, last] = await Promise.allSettled([
       axios.get(`${API}/api/user/transactions-report?page=1&limit=1&${range}`, { headers }),
       axios.get(
         `${API}/api/user/sales-series?bucket=${resolved.bucket}&tz=${encodeURIComponent(tz)}&${range}`,
         { headers }
       ),
+      // "Últimas vendas": as 6 mais recentes, sem filtro de período
+      axios.get(`${API}/api/user/transactions-report?page=1&limit=6`, { headers }),
     ]);
     if (id !== reqId.current) return; // trocou de período no meio: ignora resposta velha
     if (rep.status === "fulfilled" && rep.value.data?.success) {
       setStats(rep.value.data.data.stats || EMPTY_STATS);
       setLifetimeNet(Number(rep.value.data.data.summary?.totalEntradas) || 0);
+    }
+    if (last.status === "fulfilled" && last.value.data?.success) {
+      setRecent(last.value.data.data.transactions || []);
     }
     if (ser.status === "fulfilled" && ser.value.data?.success) {
       setPoints(ser.value.data.data.points || []);
@@ -563,6 +594,56 @@ function DashboardContent() {
 
                 </div>
               </section>
+
+              {/* ÚLTIMAS VENDAS — as mais recentes, de qualquer período */}
+              <motion.section
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.15 }}
+                className="mb-6 rounded-2xl p-4 sm:p-5"
+                style={{ background: T.card, border: `1px solid ${T.border}` }}
+              >
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-[15px] font-semibold text-slate-900">Últimas vendas</h2>
+                    <p className="text-[13px] text-slate-500">As transações mais recentes da sua conta.</p>
+                  </div>
+                  <Link href="/v1/products/sales" className="sp-brand-text text-[13px] font-semibold">
+                    Ver todas →
+                  </Link>
+                </div>
+                {recent.length === 0 ? (
+                  <p className="py-8 text-center text-[13px] text-slate-400">
+                    {loading ? "Carregando…" : "Nenhuma venda ainda."}
+                  </p>
+                ) : (
+                  <ul className="divide-y divide-slate-100">
+                    {recent.map((t) => {
+                      const s = txStatus(t);
+                      const name = t.customer?.name || t.customerName || "Cliente";
+                      return (
+                        <li key={t.id} className="flex items-center gap-3 py-3">
+                          <IconChip>
+                            <CircleDollarSign />
+                          </IconChip>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-[14px] font-medium text-slate-900">{name}</p>
+                            <p className="truncate text-[12.5px] text-slate-500">
+                              {t.product?.name || t.productName || "Produto"} · {timeAgo(t.createdAt)}
+                            </p>
+                          </div>
+                          <span className="hidden sm:inline">
+                            <StatusBadge tone={TX_TONE[s]}>{TX_STATUS_STYLE[s].label}</StatusBadge>
+                          </span>
+                          <span className="w-[96px] shrink-0 text-right text-[14px] font-semibold tabular-nums text-slate-900">
+                            {hideable(fmt(Number(t.grossAmount) || 0))}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </motion.section>
 
             </div>
       </LightShell>

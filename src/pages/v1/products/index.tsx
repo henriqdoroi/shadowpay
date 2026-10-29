@@ -17,10 +17,13 @@ import {
   Trash2,
   ExternalLink,
   MoreHorizontal,
+  CheckCircle2,
+  FilePen,
+  PauseCircle,
 } from "lucide-react";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { StatusBadge, type Tone } from "@/components/PanelBits";
+import { IconChip, StatusBadge, type Tone } from "@/components/PanelBits";
 import { LightShell } from "@/components/LightShell";
 import ShadowPanel from "@/components/ShadowPanel";
 
@@ -340,6 +343,28 @@ function ProductsContent() {
             </div>
           </div>
         </header>
+
+        {/* CONTADORES DO CATÁLOGO */}
+        <section className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[
+            { label: "Produtos", value: products.length, icon: <Package /> },
+            { label: "Ativos", value: products.filter((p) => p.status === "ativo").length, icon: <CheckCircle2 /> },
+            { label: "Rascunhos", value: products.filter((p) => p.status === "rascunho").length, icon: <FilePen /> },
+            {
+              label: "Inativos",
+              value: products.filter((p) => p.status !== "ativo" && p.status !== "rascunho").length,
+              icon: <PauseCircle />,
+            },
+          ].map((c, i) => (
+            <div key={c.label} className={`sp-kpi flex items-center gap-3 rounded-2xl p-4 ${i === 0 ? "sp-kpi-hero sp-glow" : ""}`}>
+              <IconChip>{c.icon}</IconChip>
+              <div className="min-w-0">
+                <p className="sp-kpi-label text-[13px] font-medium">{c.label}</p>
+                <p className="sp-kpi-value text-[22px] font-semibold leading-tight tabular-nums">{c.value}</p>
+              </div>
+            </div>
+          ))}
+        </section>
 
         {/* FILTROS */}
         <section

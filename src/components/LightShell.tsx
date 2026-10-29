@@ -41,9 +41,11 @@ import {
   X,
   Sun,
   Moon,
+  Trophy,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useValuesVisible } from "@/lib/useValuesVisible";
+import { fmtShort, rankFor } from "@/lib/ranks";
 
 /* Painel em UMA superfície só (menu, topo e conteúdo sem linhas dividindo).
    Impacto no estilo dos gateways de referência (BravoPay, Lovy Bot,
@@ -110,6 +112,7 @@ function buildNav(isAdmin: boolean): NavItem[] {
     { label: "Dashboard", href: "/v1/dashboard", icon: LayoutDashboard },
     { label: "Transações", href: "/v1/products/sales", icon: Receipt },
     { label: "Financeiro", href: "/v1/finance", icon: Wallet },
+    { label: "Conquistas", href: "/v1/conquistas", icon: Trophy },
     { label: "Produtos", href: "/v1/products", icon: Package },
     { label: "Domínios", href: "/v1/integrations/domains", icon: Globe },
     { label: "Integrações", href: "/v1/integrations", icon: Plug },
@@ -257,6 +260,54 @@ function RevenueGoal({ value, hidden }: { value: number | null; hidden: boolean 
           {fmtGoal(goal)}
         </span>
       </span>
+    </Link>
+  );
+}
+
+/** Card da patente no rodapé do menu: nível atual + caminho até o próximo. */
+function RankCard({ revenue, hidden }: { revenue: number | null; hidden: boolean }) {
+  const v = revenue ?? 0;
+  const r = rankFor(v);
+  return (
+    <Link
+      href="/v1/conquistas"
+      className="sp-rank mx-3 mb-2 block rounded-2xl p-3 transition-colors"
+      title="Ver suas conquistas"
+    >
+      <div className="flex items-center gap-2.5">
+        <span
+          className="sp-rank-emblem flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+          style={{
+            backgroundImage: "url(/logoshadowpay.png)",
+            backgroundSize: "70%",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "center",
+          }}
+          aria-hidden="true"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="sp-rank-label text-[11.5px] font-medium">Nível nas Sombras</p>
+          <p className="sp-rank-name truncate text-[14px] font-semibold">{r.current.name}</p>
+        </div>
+        <span className="sp-rank-pct text-[12px] font-semibold tabular-nums">{Math.floor(r.pct)}%</span>
+      </div>
+      <div className="sp-rank-track mt-2.5 h-1.5 overflow-hidden rounded-full">
+        <span
+          className="block h-full rounded-full"
+          style={{
+            width: `${v > 0 ? Math.max(r.pct, 3) : 0}%`,
+            background: T.brandGradient,
+            transition: "width 0.8s cubic-bezier(0.22, 1, 0.36, 1)",
+          }}
+        />
+      </div>
+      <p className="sp-rank-next mt-1.5 truncate text-[11.5px]">
+        {r.next
+          ? hidden
+            ? `Próximo: ${r.next.name}`
+            : `Faltam ${fmtShort(r.missing)} para ${r.next.name}`
+          : "Patente máxima"}
+      </p>
     </Link>
   );
 }
@@ -456,6 +507,9 @@ export function LightShell({
             })}
           </ul>
         </nav>
+
+        {/* Nível nas Sombras — patente pelo faturamento (abre Conquistas) */}
+        {!sidebarCollapsed && <RankCard revenue={revenue} hidden={!visible} />}
 
         {/* ===== Footer estilo SyncPay (perfil + ••• + Compactar) ===== */}
         <div className="mt-auto px-3 pb-3">
