@@ -337,18 +337,8 @@ function DashboardContent() {
                 setUser={setLocalUser}
               />
 
-              {/* Período — controla as métricas e o gráfico */}
-              <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-                <div className="min-w-0">
-                  <h2 className="text-[16px] font-semibold text-slate-900">
-                    Resumo de vendas
-                  </h2>
-                  <p className="text-[13px] text-slate-500">{resolved.description}</p>
-                </div>
-                <PeriodPicker value={period} onChange={changePeriod} />
-              </div>
-
-              {/* KPIs — cards separados; o 1º é o destaque roxo com brilho */}
+              {/* KPIs — cards separados; o 1º é o destaque roxo com brilho.
+                  O período (seletor no card do gráfico) vale pra eles também. */}
               <motion.section
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -398,16 +388,20 @@ function DashboardContent() {
                     boxShadow: T.cardShadow,
                   }}
                 >
-                  <div className="mb-5">
-                    <h2
-                      className="text-[15px] font-semibold text-slate-900"
-                      style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
-                    >
-                      Desempenho
-                    </h2>
-                    <p className="text-[13px] text-slate-500">
-                      Faturamento {BUCKET_TEXT[chartBucket]} · {resolved.description}
-                    </p>
+                  <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h2
+                        className="text-[15px] font-semibold text-slate-900"
+                        style={{ fontFamily: "var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif" }}
+                      >
+                        Desempenho
+                      </h2>
+                      <p className="text-[13px] text-slate-500">
+                        Faturamento {BUCKET_TEXT[chartBucket]} · {resolved.description}
+                      </p>
+                    </div>
+                    {/* Período — muda o gráfico E os cards de faturamento acima */}
+                    <PeriodPicker value={period} onChange={changePeriod} />
                   </div>
 
                   {/* Chart */}
