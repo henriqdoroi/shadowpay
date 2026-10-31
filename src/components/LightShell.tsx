@@ -42,10 +42,13 @@ import {
   Sun,
   Moon,
   Trophy,
+  FlaskConical,
+  ArrowLeftRight,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useValuesVisible } from "@/lib/useValuesVisible";
 import { fmtShort, rankFor } from "@/lib/ranks";
+import { enterDemo, exitDemo } from "@/lib/demo";
 
 /* Painel em UMA superfície só (menu, topo e conteúdo sem linhas dividindo).
    Impacto no estilo dos gateways de referência (BravoPay, Lovy Bot,
@@ -107,7 +110,18 @@ function PixIcon({
 /* Menu em LISTA ÚNICA (flat), sem seções — estilo FlevoPay/BravoPay.
    Removidos: Relatórios, UTMs, Tracking, Pixels (pixel agora fica dentro
    do produto). "Vendas" virou "Transações"; "Adquirentes" virou "Nominal". */
-function buildNav(isAdmin: boolean): NavItem[] {
+function buildNav(isAdmin: boolean, isDemo = false): NavItem[] {
+  // Conta demo: só o que a simulação usa (o resto é config de conta real).
+  if (isDemo) {
+    return [
+      { label: "Dashboard", href: "/v1/dashboard", icon: LayoutDashboard },
+      { label: "Simulador", href: "/v1/simulador", icon: FlaskConical },
+      { label: "Transações", href: "/v1/products/sales", icon: Receipt },
+      { label: "Financeiro", href: "/v1/finance", icon: Wallet },
+      { label: "Conquistas", href: "/v1/conquistas", icon: Trophy },
+      { label: "Produtos", href: "/v1/products", icon: Package },
+    ];
+  }
   const items: NavItem[] = [
     { label: "Dashboard", href: "/v1/dashboard", icon: LayoutDashboard },
     { label: "Transações", href: "/v1/products/sales", icon: Receipt },
@@ -388,9 +402,25 @@ export function LightShell({
     );
   }, [sidebarCollapsed]);
 
+  const isDemo = !!user?.isDemo;
+  // Conta demo: admin libera por seller (admin sempre pode).
+  const canDemo = !isDemo && (!!user?.demoAllowed || !!user?.isAdministrator);
+  const [switching, setSwitching] = useState(false);
+  const switchAccount = async () => {
+    if (isDemo) return exitDemo();
+    if (!token || switching) return;
+    setSwitching(true);
+    const r = await enterDemo(token);
+    if (!r.ok) {
+      setSwitching(false);
+      alert(r.message);
+    }
+  };
+  const switchLabel = isDemo ? "Voltar pra minha conta" : switching ? "Abrindo…" : "Abrir conta demo";
+
   const nav = useMemo(
-    () => buildNav(!!user?.isAdministrator),
-    [user?.isAdministrator]
+    () => buildNav(!!user?.isAdministrator, isDemo),
+    [user?.isAdministrator, isDemo]
   );
   const activeHref = pickActiveHref(router.pathname, nav);
 
@@ -566,6 +596,18 @@ export function LightShell({
                       />
                     </span>
                   </button>
+                  {(isDemo || canDemo) && (
+                    <button
+                      onClick={() => {
+                        setFooterMenuOpen(false);
+                        switchAccount();
+                      }}
+                      className="flex w-full items-center gap-3 px-3.5 py-2.5 text-[13px] font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                    >
+                      <ArrowLeftRight className="h-[18px] w-[18px] text-slate-500" />
+                      {switchLabel}
+                    </button>
+                  )}
                   <div className="mx-2 my-1 h-px bg-slate-100" />
                   <button
                     onClick={() => {
@@ -707,8 +749,20 @@ export function LightShell({
               </ul>
             </nav>
 
-            {/* footer logout */}
+            {/* footer: troca de conta (demo) + logout */}
             <div className="px-3 py-3">
+              {(isDemo || canDemo) && (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    switchAccount();
+                  }}
+                  className="mb-1 flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-[14px] font-medium text-[#4B5563] hover:bg-[#F6F6F8]"
+                >
+                  <ArrowLeftRight className="h-4 w-4" />
+                  {switchLabel}
+                </button>
+              )}
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
@@ -790,9 +844,20 @@ export function LightShell({
             {/* Direita: sino + foto */}
             <div className="ml-auto flex shrink-0 items-center gap-1.5">
               {/* Baixar o app (PWA) — some quando já está aberto pelo app */}
+              {isDemo && (
+                <Link
+                  href="/v1/simulador"
+                  className="sp-demo-chip mr-1 inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[11.5px] font-semibold"
+                  title="Conta de simulação: as vendas daqui não são reais"
+                >
+                  <FlaskConical className="h-3.5 w-3.5" />
+                  Simulação
+                </Link>
+              )}
               <InstallAppButton variant="icon" />
-              {/* Sino: abre o painel de notificações push deste aparelho */}
-              <NotificationsBell borderColor={T.border} primary={T.primary} variant="plain" />
+              {/* Sino: abre o painel de notificações push deste aparelho.
+                  Na demo não: o aparelho fica registrado na conta principal. */}
+              {!isDemo && <NotificationsBell borderColor={T.border} primary={T.primary} variant="plain" />}
 
               <div className="relative">
                 <button
@@ -828,7 +893,7 @@ export function LightShell({
                           {user?.companyName || "Operador"}
                         </p>
                         <p className="text-[11px] text-slate-500">
-                          {user?.isAdministrator ? "Administrador" : "Seller Bronze"}
+                          {isDemo ? "Conta demo (simulação)" : user?.isAdministrator ? "Administrador" : "Seller Bronze"}
                         </p>
                       </div>
                       <div className="mx-2 mb-1 h-px bg-slate-100" />
@@ -852,6 +917,18 @@ export function LightShell({
                         Perfil
                       </button>
                       <InstallAppButton variant="menu" />
+                      {(isDemo || canDemo) && (
+                        <button
+                          onClick={() => {
+                            setUserMenuOpen(false);
+                            switchAccount();
+                          }}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-slate-700 hover:bg-slate-50"
+                        >
+                          <ArrowLeftRight className="h-3.5 w-3.5" />
+                          {switchLabel}
+                        </button>
+                      )}
                       <button
                         onClick={() => {
                           setUserMenuOpen(false);

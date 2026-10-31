@@ -325,8 +325,9 @@ function DashboardContent() {
                 />
               </motion.section>
 
-              {/* Convite pra ativar as notificações de venda neste aparelho */}
-              <PushPromptBanner token={token} />
+              {/* Convite pra ativar as notificações de venda neste aparelho
+                  (não na conta demo: o aparelho fica com a conta principal) */}
+              {!user?.isDemo && <PushPromptBanner token={token} />}
 
               {/* 2FA modal (controlado pelo banner do hero) */}
               <TwoFAModal

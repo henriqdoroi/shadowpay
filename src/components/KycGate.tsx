@@ -7,7 +7,7 @@
  * abre o <KycModal> travado (fundo escuro) enquanto o KYC != APPROVED.
  * Não há aba nem página de KYC — é só o popup.
  *
- * Admin (isAdministrator) e páginas de auth/standalone ignoram o gate.
+ * Admin (isAdministrator), conta demo e páginas de auth/standalone ignoram o gate.
  * Status cacheado em window.__shadowKycStatus (limpo no logout).
  */
 import { useEffect, useState } from "react";
@@ -39,7 +39,8 @@ export default function KycGate({ children }: { children: React.ReactNode }) {
     typeof window !== "undefined" && !!window.__shadowKycStatus
   );
 
-  const isAdmin = !!(user as any)?.isAdministrator;
+  // Conta demo (simulação) não faz KYC: não recebe nem saca dinheiro.
+  const isAdmin = !!(user as any)?.isAdministrator || !!user?.isDemo;
 
   // Carrega o status do KYC uma vez por sessão. Espera o AuthContext
   // terminar (sem isso, em F5 token=null e dava ruído).

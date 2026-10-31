@@ -175,6 +175,11 @@ html.dark:has(.sp-shell) .sp-goal-label {
 html.dark:has(.sp-shell) .sp-avatar-ring {
   box-shadow: none !important;
 }
+html.dark:has(.sp-shell) .sp-demo-chip {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.3);
+}
 /* botão flutuante (Shadow AI) */
 html.dark:has(.sp-shell) .sp-fab {
   background: var(--d-card-2) !important;

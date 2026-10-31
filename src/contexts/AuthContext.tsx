@@ -10,6 +10,7 @@ import React, {
 import { useRouter } from "next/router";
 import axios from "axios";
 import { forgetDeviceOnLogout, syncPushIfGranted } from "@/lib/push";
+import { clearMainSession, readMainSession } from "@/lib/demo";
 
 // Tipos para os dados do usuário
 interface Wallet {
@@ -77,6 +78,10 @@ interface Seller {
   statistics?: Statistics;
   /** Foto de perfil (data URL) — vem do /api/user/profile. */
   avatarUrl?: string | null;
+  /** Subconta de simulação (DEMO) — sem saque, sem cobrança. */
+  isDemo?: boolean;
+  /** Admin liberou a conta demo pra este seller. */
+  demoAllowed?: boolean;
 }
 
 interface LoginResponse {
@@ -191,8 +196,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Atualizar dados do usuário após carregar do localStorage
         setTimeout(() => {
           refreshUserData();
-          // Mantém este aparelho registrado no push (só se já permitiu)
-          syncPushIfGranted(savedToken);
+          // Mantém este aparelho registrado no push (só se já permitiu).
+          // Na conta demo NÃO: o aparelho fica com a conta principal.
+          if (!userData.isDemo) syncPushIfGranted(savedToken);
         }, 1000);
       } catch (error) {
         console.error("Erro ao parsear dados do usuário:", error);
@@ -241,6 +247,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         localStorage.setItem("token", authToken);
         localStorage.setItem("user", JSON.stringify(seller));
+        // Login novo = conta principal; sessão guardada de demo antiga não vale mais.
+        clearMainSession();
 
         // Invalida cache do KYC pro KycGate re-checar com este novo seller.
         if (typeof window !== "undefined") {
@@ -297,7 +305,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = () => {
     // Este aparelho para de receber as vendas desta conta (usa o token atual).
-    forgetDeviceOnLogout(token);
+    // Saindo de dentro da conta demo, sai da conta principal também.
+    const main = readMainSession();
+    forgetDeviceOnLogout(user?.isDemo ? main?.token ?? null : token);
+    clearMainSession();
     setUser(null);
     setToken(null);
     localStorage.removeItem("token");

@@ -217,6 +217,13 @@ html:not(.dark) .sp-shell .sp-main[class][style] {
 .sp-rank-pct { color: #8a1ef7; }
 .sp-rank-track { background: rgba(138, 30, 247, 0.12); }
 .sp-rank-next { color: #6b7280; }
+/* selo discreto da conta demo (topo) */
+.sp-demo-chip {
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+  border: 1px solid rgba(245, 158, 11, 0.32);
+}
+.sp-demo-chip:hover { background: rgba(245, 158, 11, 0.18); }
 /* tela baixa: o menu precisa do espaço (a patente segue em Conquistas) */
 @media (max-height: 760px) {
   .sp-sidebar .sp-rank { display: none; }

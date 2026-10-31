@@ -298,6 +298,10 @@ function FinanceContent() {
 
   // Abre a janela de saque (valor + chave PIX são preenchidos nela).
   const openWithdraw = () => {
+    if (user?.isDemo) {
+      toast.error("Conta de simulação não faz saques. Volte pra sua conta principal.");
+      return;
+    }
     if (accountKey) setPixKey(accountKey.pixKey);
     setWithdrawOpen(true);
   };

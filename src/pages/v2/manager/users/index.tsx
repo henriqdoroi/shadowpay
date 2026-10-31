@@ -56,6 +56,7 @@ import {
   Shield,
   Wallet,
   ShieldOff,
+  FlaskConical,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -83,6 +84,8 @@ interface Seller {
   }[];
   /** chave Pix da conta (pra onde vão os saques) */
   kyc?: { pixKey?: string | null; pixKeyType?: string | null };
+  /** conta demo (simulação) liberada pra este seller */
+  demoAllowed?: boolean;
 }
 type UserFormData = {
   id: string;
@@ -666,6 +669,38 @@ function UsersManagerContent() {
 
   const handlePageChange = (newPage: number) => {
     fetchSellers(newPage);
+  };
+
+  // Conta demo (simulação): libera/bloqueia por seller.
+  const [demoBusy, setDemoBusy] = useState<string | null>(null);
+  const toggleDemo = async (seller: Seller) => {
+    const allowed = !seller.demoAllowed;
+    if (
+      !window.confirm(
+        allowed
+          ? `Liberar a conta demo (simulação) pra ${seller.companyName}?`
+          : `Bloquear a conta demo de ${seller.companyName}? O gerador dele para na hora.`
+      )
+    )
+      return;
+    try {
+      setDemoBusy(seller.id);
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `https://shadowpay-backend.onrender.com/api/admin/demo/sellers/${seller.id}`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ allowed }),
+        }
+      );
+      if (!res.ok) throw new Error(String(res.status));
+      setSellers((list) => list.map((s) => (s.id === seller.id ? { ...s, demoAllowed: allowed } : s)));
+    } catch {
+      alert("Não consegui mudar a conta demo. Tente de novo.");
+    } finally {
+      setDemoBusy(null);
+    }
   };
 
   const handleFilterChange = (key: string, value: string) => {
@@ -1341,6 +1376,27 @@ function UsersManagerContent() {
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p>Taxas do seller</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => toggleDemo(seller)}
+                                      disabled={demoBusy === seller.id}
+                                      aria-pressed={!!seller.demoAllowed}
+                                      className={`cursor-pointer h-8 w-8 p-0 ${
+                                        seller.demoAllowed
+                                          ? "text-violet-600 bg-violet-50 hover:bg-violet-100 hover:text-violet-700"
+                                          : "text-slate-400"
+                                      }`}
+                                    >
+                                      <FlaskConical className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{seller.demoAllowed ? "Conta demo liberada (clique pra bloquear)" : "Liberar conta demo"}</p>
                                   </TooltipContent>
                                 </Tooltip>
                                 <Tooltip>
