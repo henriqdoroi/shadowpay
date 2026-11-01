@@ -12,6 +12,56 @@ import { Attribution, attributionPayload, captureAttribution } from "@/lib/attri
 import { OFFLINE_MSG } from "@/lib/axiosErrors";
 import StoreCheckout from "@/components/store-checkout/StoreCheckout";
 import { API_ORIGIN, readStoreConfig } from "@/components/store-checkout/lib";
+import OfferCheckout, { type OfferProduct, type PreviewScreen } from "@/components/checkout/OfferCheckout";
+import { type CheckoutBuilderConfig, normalizeConfig, safeImage } from "@/lib/checkoutConfig";
+
+/** Checkout (oferta) que veio do servidor: config do builder ou null (clássico). */
+type OfferInfo = { id: string; priceCents: number; config: CheckoutBuilderConfig | null };
+
+/** O que o builder manda pra prévia (iframe na mesma origem). */
+type PreviewData = {
+  product: OfferProduct & { priceCents: number; checkoutConfig?: any };
+  offer: { id: string | null; priceCents: number; config: unknown };
+  screen: PreviewScreen;
+};
+
+/** Checkout Loja montado pela config da oferta (template "loja"). */
+function offerStoreCheckout(opts: {
+  product: { id: string; name: string; image?: string | null; checkoutConfig?: any };
+  offerId: string | null;
+  priceCents: number;
+  config: CheckoutBuilderConfig;
+  preview?: boolean;
+  onBack: (() => void) | null;
+  attribution: () => Record<string, unknown>;
+  onInitiateCheckout?: (v: number) => void;
+}) {
+  const { config: c } = opts;
+  const store = { ...readStoreConfig(opts.product.checkoutConfig), enabled: true };
+  return (
+    <StoreCheckout
+      productId={opts.product.id}
+      offerId={opts.offerId}
+      preview={opts.preview}
+      name={c.content.title || opts.product.name}
+      priceCents={opts.priceCents}
+      imageUrl={safeImage(c.content.image) || safeImage(opts.product.image)}
+      logoUrl={safeImage(c.content.logo)}
+      brandColor={store.headerColor || c.colors.header || c.colors.accent || "#8a1ef7"}
+      tag={store.tag || null}
+      variant={store.variant || null}
+      paymentMethods={{ pix: { enabled: true, percent: c.pixDiscountPercent } }}
+      bumps={c.bumps
+        .filter((b) => b.active && b.title && b.priceCents > 0)
+        .map((b) => ({ id: b.id, title: b.title, description: b.description || b.title, priceCents: b.priceCents }))}
+      fields={{ nome: c.fields.name, email: c.fields.email, cpf: c.fields.cpf, celular: c.fields.phone }}
+      store={store}
+      onBack={opts.onBack}
+      attribution={opts.attribution}
+      onInitiateCheckout={opts.onInitiateCheckout}
+    />
+  );
+}
 
 /** Só links http(s) saem do checkout (nada de "javascript:..."). */
 function safeLink(v: unknown): string | null {
@@ -111,6 +161,18 @@ const productTypeMap: Record<string, string> = {
 export default function CheckoutPage() {
   const router = useRouter();
   const { id } = router.query;
+  // ?o= checkout (oferta) do produto; ?preview=1 = prévia do builder (iframe)
+  const offerParam = typeof router.query.o === "string" ? router.query.o : "";
+  // lido da própria URL (depois de montar): não depende do roteador ficar
+  // "pronto" — dentro do iframe do builder isso pode demorar
+  const [isPreview, setIsPreview] = useState(false);
+  useEffect(() => {
+    setIsPreview(new URLSearchParams(window.location.search).get("preview") === "1");
+  }, []);
+  const [offerInfo, setOfferInfo] = useState<OfferInfo | null>(null);
+  const [previewData, setPreviewData] = useState<PreviewData | null>(null);
+  // checkout do builder que cuida sozinho de visita e "voltar" (o Loja usa os desta página)
+  const ownsTracking = !!offerInfo?.config && offerInfo.config.template !== "loja";
   const [product, setProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState<any>({
     name: "",
@@ -251,7 +313,8 @@ export default function CheckoutPage() {
    */
   const visitFiredRef = useRef(false);
   useEffect(() => {
-    if (!isClientSide || !formData?.id || visitFiredRef.current) return;
+    // checkout do builder (menos o Loja) registra a visita ele mesmo (OfferCheckout)
+    if (!isClientSide || !formData?.id || visitFiredRef.current || isPreview || ownsTracking) return;
     visitFiredRef.current = true;
 
     const url = new URL(window.location.href);
@@ -280,7 +343,7 @@ export default function CheckoutPage() {
         referrer: document.referrer || null,
       }),
     }).catch((e) => console.warn("tracking/visit fail:", e));
-  }, [isClientSide, formData?.id]);
+  }, [isClientSide, formData?.id, isPreview, ownsTracking]);
 
   // Check Payment Status — só ACOMPANHA: quem confirma o pagamento é o
   // backend (webhook/consulta ao PSP), e ele mesmo avisa UTMify e pixels.
@@ -328,6 +391,7 @@ export default function CheckoutPage() {
         `${API_ORIGIN}/api/sales/public`,
         {
           productId: formData.id,
+          offerId: offerInfo?.id || undefined,
           bumpIds: selectedBumps,
           paymentType:
             selectedPayment?.toUpperCase() || paymentMethod?.toUpperCase(),
@@ -534,18 +598,17 @@ export default function CheckoutPage() {
       try {
         if (typeof window === "undefined") return;
 
-        // Logado: tenta a versão do dono (prévia). Sessão vencida ou produto de
-        // outra conta: cai na versão pública — antes a página travava em
-        // "Carregando aguarde..." pra sempre.
+        // Versão pública (com o checkout/oferta do link). Produto que não está
+        // ativo (rascunho): o dono logado ainda vê pela versão dele.
+        const offerQs = offerParam ? `?offer=${encodeURIComponent(offerParam)}` : "";
+        let res: Response = await fetch(`${API_ORIGIN}/api/products/${id}/checkout${offerQs}`);
         const token = localStorage.getItem("token");
-        let res: Response | null = null;
-        if (token) {
-          res = await fetch(`${API_ORIGIN}/api/products/${id}`, {
+        if (res.status === 404 && token && !offerParam) {
+          const own = await fetch(`${API_ORIGIN}/api/products/${id}`, {
             headers: { Authorization: `Bearer ${token}` },
           }).catch(() => null);
-          if (res && !res.ok) res = null;
+          if (own?.ok) res = own;
         }
-        if (!res) res = await fetch(`${API_ORIGIN}/api/products/${id}/checkout`);
         if (!res.ok) {
           setLoadError(
             res.status === 404
@@ -565,6 +628,16 @@ export default function CheckoutPage() {
         }
 
         setProduct(p);
+        const offer = (p as any).offer;
+        setOfferInfo(
+          offer?.id
+            ? {
+                id: String(offer.id),
+                priceCents: Number(offer.priceCents) || Math.round(Number(p.price) * 100) || 0,
+                config: offer.config ? normalizeConfig(offer.config) : null,
+              }
+            : null
+        );
 
         // Configurações de checkout
         const checkoutConfig = p?.checkoutConfig || {};
@@ -725,16 +798,35 @@ export default function CheckoutPage() {
       }
     };
 
-    // 1º render: router.query ainda vazio (buscava /products/undefined)
-    if (!id) return;
+    // 1º render: router.query ainda vazio (buscava /products/undefined).
+    // Prévia do builder: os dados chegam por mensagem, sem buscar nada.
+    if (!id || !router.isReady || isPreview) return;
+    if (new URLSearchParams(window.location.search).get("preview") === "1") return;
     fetchData();
-  }, [id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, router.isReady, isPreview, offerParam]);
+
+  // Prévia do Checkout Builder: só dentro do iframe do painel (mesma origem).
+  useEffect(() => {
+    if (!isPreview || typeof window === "undefined" || window.parent === window) return;
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin || e.source !== window.parent) return;
+      const d = e.data;
+      if (d?.type === "sp:checkout-preview" && d.product && d.offer) {
+        setPreviewData({ product: d.product, offer: d.offer, screen: d.screen || "checkout" });
+      }
+    };
+    window.addEventListener("message", onMessage);
+    window.parent.postMessage({ type: "sp:preview-ready" }, window.location.origin);
+    return () => window.removeEventListener("message", onMessage);
+  }, [isPreview]);
   const [showExitModal, setShowExitModal] = useState(false);
   const [pendingRedirect, setPendingRedirect] = useState(false);
   useEffect(() => {
     // Sem Back Redirect configurado, o "voltar" funciona normal (antes o
-    // comprador ficava preso: "Sair" recarregava a mesma página).
-    if (!formData.salesPageUrl) return;
+    // comprador ficava preso: "Sair" recarregava a mesma página). O checkout
+    // do builder (menos o Loja) cuida do "voltar" ele mesmo.
+    if (!formData.salesPageUrl || ownsTracking || isPreview) return;
     // Adiciona um estado falso no histórico para capturar o "voltar"
     history.pushState(null, "", window.location.href);
 
@@ -761,7 +853,7 @@ export default function CheckoutPage() {
       window.removeEventListener("popstate", handleBack);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [formData.salesPageUrl]);
+  }, [formData.salesPageUrl, ownsTracking, isPreview]);
 
   const confirmExit = () => {
     if (formData.salesPageUrl) window.location.href = formData.salesPageUrl;
@@ -799,6 +891,88 @@ export default function CheckoutPage() {
     </div>
   ) : null;
 
+  if (isPreview) {
+    if (!previewData) {
+      return <div className="flex h-screen items-center justify-center text-sm text-gray-500">Carregando prévia…</div>;
+    }
+    const cfg = normalizeConfig(previewData.offer.config);
+    const pp = previewData.product;
+    if (cfg.template === "loja") {
+      return offerStoreCheckout({
+        product: pp,
+        offerId: previewData.offer.id,
+        priceCents: previewData.offer.priceCents,
+        config: cfg,
+        preview: true,
+        onBack: null,
+        attribution: () => ({}),
+      });
+    }
+    return (
+      <OfferCheckout
+        product={pp}
+        offerId={previewData.offer.id}
+        priceCents={previewData.offer.priceCents}
+        config={cfg}
+        preview
+        previewScreen={previewData.screen}
+      />
+    );
+  }
+
+  // Checkout publicado pelo builder (config v1 da oferta)
+  if (product && offerInfo?.config) {
+    const cfgOffer = offerInfo.config;
+    const pc: any = product.checkoutConfig || {};
+    const offerProduct = {
+      id: product.id,
+      sellerId: product.sellerId,
+      name: product.name,
+      description: product.description,
+      image: safeImage(pc.productImageUrl) || safeImage(product.productImage) || null,
+      warrantyDays: Number((product as any).warrantyDays) || 0,
+      backRedirectUrl: safeLink(product.backRedirectUrl ?? product.linkSalesPage),
+      checkoutConfig: pc,
+    };
+    const attribution = () =>
+      attributionPayload(attributionRef.current ?? captureAttribution(product.sellerId));
+    const onInitiate = (value: number) =>
+      trackFacebookPixelEvent("InitiateCheckout", { value, currency: "BRL" });
+    if (cfgOffer.template === "loja") {
+      const canGoBack = isClientSide && (window.history.length > 1 || !!offerProduct.backRedirectUrl);
+      // visita e back redirect: os desta página (mesmo comportamento do Loja clássico)
+      return (
+        <>
+          {offerStoreCheckout({
+            product: offerProduct,
+            offerId: offerInfo.id,
+            priceCents: offerInfo.priceCents,
+            config: cfgOffer,
+            onBack: canGoBack
+              ? () => {
+                  if (window.history.length > 1) window.history.back();
+                  else if (offerProduct.backRedirectUrl) window.location.assign(offerProduct.backRedirectUrl);
+                }
+              : null,
+            attribution,
+            onInitiateCheckout: onInitiate,
+          })}
+          {exitModal}
+        </>
+      );
+    }
+    return (
+      <OfferCheckout
+        product={offerProduct}
+        offerId={offerInfo.id}
+        priceCents={offerInfo.priceCents}
+        config={cfgOffer}
+        attribution={attribution}
+        onInitiateCheckout={onInitiate}
+      />
+    );
+  }
+
   if (!product) {
     return (
       <div className="flex flex-col items-center justify-center h-screen gap-3 px-6 text-center">
@@ -825,6 +999,7 @@ export default function CheckoutPage() {
       <>
         <StoreCheckout
           productId={product.id}
+          offerId={offerInfo?.id || null}
           name={formData.name || product.name}
           priceCents={Math.round(parseFloat(formData.price || "0") * 100)}
           imageUrl={typeof formData.productImage === "string" ? formData.productImage : null}

@@ -41,6 +41,8 @@ interface Product {
   category?: string;
   type?: string;
   imageUrl?: string;
+  /** quantos checkouts (ofertas) o produto tem */
+  checkouts?: number;
 }
 
 function ProductsContent() {
@@ -161,6 +163,7 @@ function ProductsContent() {
             category: p.category || "Finanças e Com",
             type: p.type || "Curso",
             imageUrl: img,
+            checkouts: Number(p.offersCount) || 1,
           };
         });
 
@@ -543,6 +546,17 @@ function ProductsContent() {
                       <span className="inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-[12px] font-medium text-slate-600">
                         {p.category || "Finanças e Com"}
                       </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/v1/products/edit/${p.id}?tab=checkouts`);
+                        }}
+                        className="inline-flex items-center rounded-md bg-violet-50 px-1.5 py-0.5 text-[12px] font-medium text-violet-700 hover:bg-violet-100"
+                        title="Ver os checkouts deste produto"
+                      >
+                        {p.checkouts ?? 1} {(p.checkouts ?? 1) === 1 ? "checkout" : "checkouts"}
+                      </button>
                     </div>
                   </div>
 

@@ -1,5 +1,5 @@
 /**
- * Conta de simulação (subconta DEMO): entrar e voltar pra conta principal.
+ * Painel de amigos (subconta DEMO, de simulação): entrar e voltar pra conta principal.
  *
  * A sessão principal fica guardada em `sp_main_session` enquanto a pessoa
  * está na demo; "Voltar pra minha conta" restaura ela. A conta demo NÃO
@@ -11,6 +11,26 @@ import { apiErrorMessage } from "@/lib/axiosErrors";
 
 const API = "https://shadowpay-backend.onrender.com";
 const MAIN_KEY = "sp_main_session";
+/** Rótulo que o selo do topo mostra (o mesmo das notificações; só exibição). */
+const LABEL_KEY = "sp_demo_label";
+const LABELS = ["Simulação", "Demonstração", "Demo", "Teste", "Venda simulada"];
+
+export function readDemoLabel(): string {
+  try {
+    const v = localStorage.getItem(LABEL_KEY) || "";
+    return LABELS.includes(v) ? v : "Simulação";
+  } catch {
+    return "Simulação";
+  }
+}
+
+export function saveDemoLabel(label: string) {
+  try {
+    if (LABELS.includes(label)) localStorage.setItem(LABEL_KEY, label);
+  } catch {
+    /* ignora */
+  }
+}
 
 type Session = { token: string; user: any };
 
@@ -43,7 +63,7 @@ export async function enterDemo(token: string): Promise<{ ok: boolean; message?:
   try {
     const r = await axios.post(`${API}/api/user/demo/enter`, {}, { headers: { Authorization: `Bearer ${token}` } });
     const demoToken: string | undefined = r.data?.data?.token;
-    if (!demoToken) return { ok: false, message: "Não consegui abrir a conta demo." };
+    if (!demoToken) return { ok: false, message: "Não consegui abrir o painel de amigos." };
     const p = await axios.get(`${API}/api/user/profile`, { headers: { Authorization: `Bearer ${demoToken}` } });
     let mainUser: any = null;
     try {
@@ -55,7 +75,7 @@ export async function enterDemo(token: string): Promise<{ ok: boolean; message?:
     switchTo({ token: demoToken, user: p.data?.data }, "/v1/simulador");
     return { ok: true };
   } catch (e) {
-    return { ok: false, message: apiErrorMessage(e, "Não consegui abrir a conta demo.") };
+    return { ok: false, message: apiErrorMessage(e, "Não consegui abrir o painel de amigos.") };
   }
 }
 

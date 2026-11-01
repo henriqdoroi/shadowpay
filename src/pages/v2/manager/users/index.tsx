@@ -671,15 +671,15 @@ function UsersManagerContent() {
     fetchSellers(newPage);
   };
 
-  // Conta demo (simulação): libera/bloqueia por seller.
+  // Painel de amigos (conta demo de simulação): libera/bloqueia por seller.
   const [demoBusy, setDemoBusy] = useState<string | null>(null);
   const toggleDemo = async (seller: Seller) => {
     const allowed = !seller.demoAllowed;
     if (
       !window.confirm(
         allowed
-          ? `Liberar a conta demo (simulação) pra ${seller.companyName}?`
-          : `Bloquear a conta demo de ${seller.companyName}? O gerador dele para na hora.`
+          ? `Liberar o painel de amigos (simulação) pra ${seller.companyName}?`
+          : `Bloquear o painel de amigos de ${seller.companyName}? O gerador dele para na hora.`
       )
     )
       return;
@@ -697,7 +697,7 @@ function UsersManagerContent() {
       if (!res.ok) throw new Error(String(res.status));
       setSellers((list) => list.map((s) => (s.id === seller.id ? { ...s, demoAllowed: allowed } : s)));
     } catch {
-      alert("Não consegui mudar a conta demo. Tente de novo.");
+      alert("Não consegui mudar o painel de amigos. Tente de novo.");
     } finally {
       setDemoBusy(null);
     }
@@ -1396,7 +1396,7 @@ function UsersManagerContent() {
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    <p>{seller.demoAllowed ? "Conta demo liberada (clique pra bloquear)" : "Liberar conta demo"}</p>
+                                    <p>{seller.demoAllowed ? "Painel de amigos liberado (clique pra bloquear)" : "Liberar painel de amigos"}</p>
                                   </TooltipContent>
                                 </Tooltip>
                                 <Tooltip>

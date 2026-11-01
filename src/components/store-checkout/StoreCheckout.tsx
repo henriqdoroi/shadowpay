@@ -65,6 +65,10 @@ export type StoreCheckoutProps = {
   /** UTMs/src/sck/ids de clique (mesma origem do checkout padrão) */
   attribution: () => Record<string, unknown>;
   onInitiateCheckout?: (valueReais: number) => void;
+  /** checkout (oferta) do produto — o servidor cobra o preço dela */
+  offerId?: string | null;
+  /** prévia do builder: sem cotação no servidor e sem gerar Pix */
+  preview?: boolean;
 };
 
 const METHODS: { key: string; label: string; icon: React.ReactNode; available: boolean }[] = [
@@ -79,7 +83,8 @@ const METHODS: { key: string; label: string; icon: React.ReactNode; available: b
 const EMPTY_BILLING: Billing = { name: "", email: "", cpf: "", phone: "" };
 
 export default function StoreCheckout(props: StoreCheckoutProps) {
-  const { productId, store, fields, bumps, paymentMethods } = props;
+  const { productId, store, fields, bumps, paymentMethods, preview } = props;
+  const offerId = props.offerId || undefined;
   const router = useRouter();
 
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -132,9 +137,11 @@ export default function StoreCheckout(props: StoreCheckoutProps) {
   const runQuote = useCallback(
     async (couponCode: string | null) => {
       const seq = ++quoteSeq.current;
+      // prévia: total local (sem cupom — o servidor é quem confere o código)
+      if (preview) return { ok: false as const, error: new ApiError("Na prévia o cupom não é conferido.", "preview") };
       setQuoting(true);
       try {
-        const q = await fetchQuote({ productId, bumpIds: bumpKey ? bumpKey.split(",") : [], couponCode });
+        const q = await fetchQuote({ productId, offerId, bumpIds: bumpKey ? bumpKey.split(",") : [], couponCode });
         if (seq === quoteSeq.current) setServerQuote(q);
         return { ok: true as const, quote: q };
       } catch (e: any) {
@@ -144,7 +151,7 @@ export default function StoreCheckout(props: StoreCheckoutProps) {
         if (seq === quoteSeq.current) setQuoting(false);
       }
     },
-    [productId, bumpKey],
+    [productId, offerId, bumpKey, preview],
   );
 
   useEffect(() => {
@@ -210,12 +217,17 @@ export default function StoreCheckout(props: StoreCheckoutProps) {
       return;
     }
 
+    if (preview) {
+      toast("Prévia: aqui o comprador vai pra tela do Pix (nenhum Pix foi gerado).");
+      return;
+    }
     submittingRef.current = true;
     setSubmitting(true);
     props.onInitiateCheckout?.(quote.totalCents / 100);
     try {
       const sale = await createSale({
         productId,
+        offerId,
         bumpIds: selectedBumps,
         paymentType: "PIX",
         couponCode: serverQuote?.coupon?.code ?? coupon ?? undefined,

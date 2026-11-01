@@ -33,6 +33,9 @@ export function useOrder(id: string | null) {
 
   useEffect(() => {
     alive.current = true;
+    // pedido novo: o estado do anterior (ex.: "expirado") não vale pra ele
+    setOrder(null);
+    setError(null);
     if (!id) return;
     let stopped = false;
     const tick = async () => {

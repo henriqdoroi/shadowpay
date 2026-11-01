@@ -224,11 +224,11 @@ export default function CreateProduct() {
 
   const [isLoading, setIsLoading] = useState(false);
 
-  // Wizard em etapas: converte as 4 abas existentes em passos guiados
-  // (não mexe em nenhum campo nem no salvar — só a navegação muda).
+  // Wizard em etapas (não mexe em nenhum campo nem no salvar — só a
+  // navegação). O visual do checkout agora é feito no Checkout Builder:
+  // depois de criar, o produto abre direto na aba Checkouts.
   const STEPS = [
     { id: "dados-gerais", label: "Produto" },
-    { id: "aparencia", label: "Checkout" },
     { id: "links", label: "Links" },
     { id: "apis", label: "Avançado" },
   ];
@@ -440,7 +440,9 @@ export default function CreateProduct() {
       const data = await response.json();
       if (!response.ok)
         throw new Error(data.message || "Erro ao salvar produto");
-      router.push("/v1/products");
+      // produto novo: segue pros checkouts (personalizar no builder)
+      const createdId = data?.data?.id || data?.product?.id;
+      router.push(!id && createdId ? `/v1/products/edit/${createdId}?tab=checkouts` : "/v1/products");
     } catch (error) {
       console.error("❌ Erro ao salvar produto:", error);
       alert(error instanceof Error ? error.message : "Erro desconhecido");

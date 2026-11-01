@@ -7,7 +7,7 @@ import React from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { AlertCircle, CheckCircle2, Clock, Loader2, MapPin, Package, RefreshCw, XCircle } from "lucide-react";
-import { FAILED, PAID, brl, deliveryWindow } from "@/components/store-checkout/lib";
+import { FAILED, PAID, brl, checkoutHref, deliveryWindow } from "@/components/store-checkout/lib";
 import { Money, StoreHeader, StoreRoot, s } from "@/components/store-checkout/ui";
 import { useOrder } from "@/components/store-checkout/useOrder";
 
@@ -105,7 +105,7 @@ export default function OrderPage() {
           )}
           {failed && order.productId && (
             <div style={{ marginTop: 16 }}>
-              <a className={s.btn} href={`/v1/checkout/${encodeURIComponent(order.productId)}`} style={{ textDecoration: "none" }}>
+              <a className={s.btn} href={checkoutHref(order)} style={{ textDecoration: "none" }}>
                 Comprar novamente
               </a>
             </div>

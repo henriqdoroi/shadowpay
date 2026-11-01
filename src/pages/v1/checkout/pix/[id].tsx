@@ -24,7 +24,7 @@ import {
   RefreshCw,
   X,
 } from "lucide-react";
-import { FAILED, Order, PAID, brl } from "@/components/store-checkout/lib";
+import { FAILED, Order, PAID, brl, checkoutHref } from "@/components/store-checkout/lib";
 import { StoreRoot, s } from "@/components/store-checkout/ui";
 import { fmtLeft, useCountdown, useOrder } from "@/components/store-checkout/useOrder";
 
@@ -38,6 +38,7 @@ const DEMO: Order = {
   amount: 449.1,
   paidAt: null,
   productId: null,
+  offerId: null,
   productName: "Produto de exemplo",
   createdAt: null,
   expiresAt: null,
@@ -270,7 +271,7 @@ export default function PixPaymentPage() {
               {order.productId ? (
                 <a
                   className={s.btn}
-                  href={`/v1/checkout/${encodeURIComponent(order.productId)}`}
+                  href={checkoutHref(order)}
                   style={{ textDecoration: "none" }}
                 >
                   Gerar novo Pix

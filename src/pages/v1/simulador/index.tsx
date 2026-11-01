@@ -20,7 +20,9 @@ import {
   FlaskConical,
   Package,
   Play,
+  Plus,
   RotateCcw,
+  Trash2,
   Send,
   Square,
   Target,
@@ -33,23 +35,41 @@ import { StatusBadge } from "@/components/PanelBits";
 import { Button, Card, FieldLabel, Hint, IconBox, Switch, TextInput, inputCls } from "@/components/account/ui";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiErrorMessage } from "@/lib/axiosErrors";
-import { enterDemo } from "@/lib/demo";
+import { enterDemo, saveDemoLabel } from "@/lib/demo";
 
 const API = "https://shadowpay-backend.onrender.com";
-/** Fixo no começo de todo título de notificação da simulação (o backend também põe). */
-const SIM_PREFIX = "Simulação · ";
-const TITLE_MAX = 80 - SIM_PREFIX.length;
+/**
+ * O título da notificação SEMPRE começa com um rótulo que deixa claro que a
+ * venda não é real ("Simulação · ..."). Dá pra escolher qual, mas só da lista
+ * que o servidor manda (o servidor também confere).
+ */
+const DEFAULT_LABELS = ["Simulação", "Demonstração", "Demo", "Teste", "Venda simulada"];
+const TITLE_MAX = 80 - "Venda simulada · ".length;
 
 type Scenario = "teste" | "pre" | "escala";
 type Item = { name: string; price: number };
-type Offer = { product: Item; bump?: Item | null; upsell?: Item | null; downsell?: Item | null };
+type Offer = { product: Item; bump?: Item | null; upsells: Item[]; downsell?: Item | null };
+type NotifyMode = "ambas" | "aprovadas";
 type Templates = {
-  notifyPending: boolean;
-  notifyPaid: boolean;
+  label: string;
+  notifyMode: NotifyMode;
   pendingTitle: string;
   pendingBody: string;
   paidTitle: string;
   paidBody: string;
+  customTitle: string;
+  customBody: string;
+};
+/** Mesmos padrões do servidor (demo-engine.ts › DEFAULT_SIM_TEMPLATES). */
+const DEFAULT_TEMPLATES: Templates = {
+  label: "Simulação",
+  notifyMode: "ambas",
+  pendingTitle: "🟡 Venda gerada",
+  pendingBody: "{cliente} gerou um PIX de {valor} · {produto}",
+  paidTitle: "🟢 Venda aprovada!",
+  paidBody: "Você recebeu {valor} de {cliente} · {produto}",
+  customTitle: "",
+  customBody: "",
 };
 type Today = { generated: number; paid: number; pending: number; revenue: number; approval: number };
 type Sim = {
@@ -61,6 +81,8 @@ type Sim = {
   startedAt: string | null;
   today: Today | null;
   scenarios: Record<Scenario, { label: string; approvalFrom: number; approvalTo: number }>;
+  labels?: string[];
+  maxUpsells?: number;
 };
 
 const SCENARIO_ORDER: Scenario[] = ["teste", "pre", "escala"];
@@ -82,12 +104,12 @@ function parseMoney(s: string): number {
 const pct = (v: number) => `${(Number(v) || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
 
 type ItemForm = { on: boolean; name: string; price: string };
-type OfferForm = { product: ItemForm; bump: ItemForm; upsell: ItemForm; downsell: ItemForm };
-const OFFER_KEYS: { key: keyof OfferForm; label: string; hint: string }[] = [
+type FixedKey = "product" | "bump" | "downsell";
+type OfferForm = { product: ItemForm; bump: ItemForm; downsell: ItemForm; upsells: ItemForm[] };
+const OFFER_KEYS: { key: FixedKey; label: string; hint: string }[] = [
   { key: "product", label: "Produto (front)", hint: "Ticket principal do checkout." },
   { key: "bump", label: "Order bump", hint: "Somado ao front em parte dos pedidos." },
-  { key: "upsell", label: "Upsell", hint: "Oferecido depois que o front é pago." },
-  { key: "downsell", label: "Downsell", hint: "Quando o cliente recusa o upsell." },
+  { key: "downsell", label: "Downsell", hint: "Pra quem recusa o 1º upsell. Encerra o funil." },
 ];
 
 function toForm(o: Offer): OfferForm {
@@ -96,7 +118,13 @@ function toForm(o: Offer): OfferForm {
     name: it?.name ?? "",
     price: it ? money(it.price) : "",
   });
-  return { product: f(o.product, true), bump: f(o.bump), upsell: f(o.upsell), downsell: f(o.downsell) };
+  return {
+    product: f(o.product, true),
+    bump: f(o.bump),
+    downsell: f(o.downsell),
+    // oferta salva antes do funil tinha um `upsell` só
+    upsells: (o.upsells ?? ((o as any).upsell ? [(o as any).upsell] : [])).map((u: Item) => f(u, true)),
+  };
 }
 
 function fromForm(f: OfferForm): { offer: any; error?: string } {
@@ -111,19 +139,130 @@ function fromForm(f: OfferForm): { offer: any; error?: string } {
     if (!(price > 0)) return { offer: null, error: `Coloque o preço do ${label.toLowerCase()}.` };
     out[key] = { name: it.name.trim() || label, price };
   }
+  out.upsells = [];
+  for (const [i, u] of f.upsells.entries()) {
+    const price = parseMoney(u.price);
+    if (!(price > 0)) return { offer: null, error: `Coloque o preço do upsell ${i + 1}.` };
+    out.upsells.push({ name: u.name.trim() || `Upsell ${i + 1}`, price });
+  }
   return { offer: out };
 }
 
-/** Prévia do texto com os valores de exemplo. */
-function preview(tpl: string, price: number, product: string) {
+/** Um ticket da oferta (nome + preço), com liga/desliga quando é opcional. */
+function OfferItemBox({
+  label,
+  hint,
+  item,
+  optional,
+  onChange,
+}: {
+  label: string;
+  hint: string;
+  item: ItemForm;
+  optional?: boolean;
+  onChange: (patch: Partial<ItemForm>) => void;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 p-3.5">
+      <div className="mb-2.5 flex items-center justify-between gap-2">
+        <div>
+          <p className="text-[13.5px] font-semibold text-slate-900">{label}</p>
+          <p className="text-[12px] text-slate-500">{hint}</p>
+        </div>
+        {optional && <Switch checked={item.on} onChange={(v) => onChange({ on: v })} label={`Ligar ${label}`} />}
+      </div>
+      {(!optional || item.on) && (
+        <div className="grid grid-cols-[1fr_120px] gap-2">
+          <TextInput
+            aria-label={`Nome do ${label}`}
+            placeholder={label}
+            maxLength={120}
+            value={item.name}
+            onChange={(e) => onChange({ name: e.target.value })}
+          />
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-slate-400">R$</span>
+            <TextInput
+              aria-label={`Preço do ${label}`}
+              inputMode="decimal"
+              className="pl-9 tabular-nums"
+              placeholder="0,00"
+              value={item.price}
+              onChange={(e) => onChange({ price: e.target.value.replace(/[^\d.,]/g, "") })}
+              onBlur={() => {
+                const v = parseMoney(item.price);
+                if (v > 0) onChange({ price: money(v) });
+              }}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Prévia com os MESMOS valores de exemplo do "Enviar teste" (servidor:
+ * DemoService.testPush) — o que aparece aqui é o que chega no celular.
+ */
+function preview(tplIn: string, price: number, product: string, loja: string) {
+  const tpl = String(tplIn ?? "");
   const vars: Record<string, string> = {
     cliente: "Mariana Souza",
     valor: brl(price),
-    liquido: brl(price * 0.95),
+    liquido: brl(Math.round(price * 0.95 * 100) / 100),
     produto: product || "Produto",
-    loja: "Sua loja",
+    loja: loja || "Sua loja",
   };
-  return tpl.replace(/\{(\w+)\}/g, (m, k) => vars[k] ?? m);
+  // mesma regra do servidor (push-templates.ts › renderTemplate)
+  return tpl
+    .replace(/\{(\w+)\}/g, (m, k) => vars[String(k).toLowerCase()] ?? m)
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/·\s*·/g, "·")
+    .replace(/\s*·\s*(?=$|\n)/g, "")
+    .replace(/^\s*·\s*/g, "")
+    .trim();
+}
+
+/** Rótulo colado no começo do texto sai (o servidor faz o mesmo ao salvar) — sem duplicar. */
+const PASTED_LABEL_RE = new RegExp(
+  `^\\s*(?:${[...DEFAULT_LABELS, "simula[cç][aã]o", "demonstra[cç][aã]o"].map((l) => l.replace(/ /g, "\\s+")).join("|")})(?:\\s*[·:\\-–|]\\s*|\\s*$)`,
+  "iu",
+);
+
+/** Título como sai no celular: rótulo + título (vazio = só o rótulo). */
+function previewTitle(label: string, title: string, price: number, product: string, loja: string) {
+  // igual ao servidor (demo-engine.ts › stripLabel): tira o rótulo colado, mesmo repetido
+  let raw = String(title ?? "");
+  for (let i = 0; i < 5; i++) {
+    const next = raw.replace(PASTED_LABEL_RE, "");
+    if (next === raw) break;
+    raw = next;
+  }
+  const t = preview(raw.trim(), price, product, loja).trim();
+  return (t ? `${label} · ${t}` : label).slice(0, 80);
+}
+
+/** Texto que o celular mostra quando a mensagem fica vazia (public/sw.js). */
+const EMPTY_BODY = "Você tem uma nova notificação.";
+
+/** Prévia no formato de notificação do celular (marca ShadowPay). */
+function NotificationPreview({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_6px_18px_-12px_rgba(16,12,24,0.35)]">
+      <div className="flex items-center gap-2">
+        <span
+          aria-hidden="true"
+          className="h-5 w-5 shrink-0 rounded-md bg-[#14101f]"
+          style={{ backgroundImage: "url(/logoshadowpay.png)", backgroundSize: "75%", backgroundPosition: "center", backgroundRepeat: "no-repeat" }}
+        />
+        <span className="text-[11.5px] font-semibold uppercase tracking-wide text-slate-500">ShadowPay</span>
+        <span className="ml-auto text-[11px] text-slate-400">agora</span>
+      </div>
+      <p className="mt-1.5 break-words text-[13.5px] font-semibold text-slate-900">{title}</p>
+      <p className="mt-0.5 whitespace-pre-line break-words text-[13px] text-slate-600">{body || EMPTY_BODY}</p>
+    </div>
+  );
 }
 
 function SimuladorContent() {
@@ -150,7 +289,10 @@ function SimuladorContent() {
     setScenario(s.scenario);
     setTarget(money(s.dailyTarget));
     setOffer(toForm(s.offer));
-    setTpl(s.templates);
+    // campos que faltarem (resposta de servidor antigo) ficam com o padrão
+    const t = { ...DEFAULT_TEMPLATES, ...(s.templates || {}) };
+    setTpl(t);
+    saveDemoLabel(t.label);
     setDirty(false);
   };
 
@@ -256,7 +398,11 @@ function SimuladorContent() {
     }
   };
 
-  const testPush = async (kind: "pending" | "paid") => {
+  const testPush = async (kind: "pending" | "paid" | "custom") => {
+    if (kind === "custom" && tpl && !tpl.customTitle.trim() && !tpl.customBody.trim()) {
+      setMsg({ tone: "error", text: "Escreva o título ou a mensagem antes de enviar o teste." });
+      return;
+    }
     setBusy(`push-${kind}`);
     setMsg(null);
     try {
@@ -279,14 +425,25 @@ function SimuladorContent() {
     }
   };
 
-  const setItem = (key: keyof OfferForm, patch: Partial<ItemForm>) => {
+  const setItem = (key: FixedKey, patch: Partial<ItemForm>) => {
     setOffer((o) => (o ? { ...o, [key]: { ...o[key], ...patch } } : o));
+    setDirty(true);
+  };
+  const setUpsell = (i: number, patch: Partial<ItemForm>) => {
+    setOffer((o) => (o ? { ...o, upsells: o.upsells.map((u, k) => (k === i ? { ...u, ...patch } : u)) } : o));
+    setDirty(true);
+  };
+  const setUpsells = (fn: (list: ItemForm[]) => ItemForm[]) => {
+    setOffer((o) => (o ? { ...o, upsells: fn(o.upsells) } : o));
     setDirty(true);
   };
   const setT = (patch: Partial<Templates>) => {
     setTpl((t) => (t ? { ...t, ...patch } : t));
+    if (patch.label) saveDemoLabel(patch.label);
     setDirty(true);
   };
+  const maxUpsells = sim?.maxUpsells ?? 5;
+  const labels = sim?.labels?.length ? sim.labels : DEFAULT_LABELS;
 
   // ------------------------------------------------------------------ fora da demo
   if (!isDemo) {
@@ -301,11 +458,11 @@ function SimuladorContent() {
               <FlaskConical className="h-5 w-5" />
             </IconBox>
           </span>
-          <h1 className="text-[18px] font-semibold text-slate-900">O simulador fica na conta demo</h1>
+          <h1 className="text-[18px] font-semibold text-slate-900">O simulador fica no painel de amigos</h1>
           <p className="mt-1.5 text-[14px] text-slate-500">
             {canDemo
-              ? "Abra a conta demo pra gerar vendas de simulação. Sua conta principal não muda em nada."
-              : "A conta demo não está liberada pra você. Fale com o administrador."}
+              ? "Abra o painel de amigos pra gerar vendas de simulação. Sua conta principal não muda em nada."
+              : "O painel de amigos não está liberado pra você. Fale com o administrador."}
           </p>
           {canDemo && (
             <Button
@@ -318,11 +475,11 @@ function SimuladorContent() {
                 const r = await enterDemo(token);
                 if (!r.ok) {
                   setBusy(null);
-                  setMsg({ tone: "error", text: r.message || "Não consegui abrir a conta demo." });
+                  setMsg({ tone: "error", text: r.message || "Não consegui abrir o painel de amigos." });
                 }
               }}
             >
-              Abrir conta demo
+              Abrir painel de amigos
             </Button>
           )}
           {msg && <Hint tone={msg.tone}>{msg.text}</Hint>}
@@ -334,7 +491,9 @@ function SimuladorContent() {
   const today = sim?.today;
   const running = !!sim?.running;
   const frontPrice = offer ? parseMoney(offer.product.price) || 0 : 0;
-  const frontName = offer?.product.name || "Produto";
+  // mesmo nome que vai pro servidor quando o campo fica vazio (fromForm)
+  const frontName = offer?.product.name.trim() || "Produto (front)";
+  const lojaName = user?.companyName || "";
 
   return (
     <LightShell>
@@ -346,7 +505,7 @@ function SimuladorContent() {
         <div className="min-w-0">
           <h1 className="text-[22px] font-semibold text-slate-900 sm:text-[26px]">Simulador</h1>
           <p className="mt-1 max-w-2xl text-[14px] text-slate-500">
-            Gera vendas de simulação nesta conta demo pelo dia todo, no ritmo do cenário e da meta que você escolher.
+            Gera vendas de simulação neste painel de amigos pelo dia todo, no ritmo do cenário e da meta que você escolher.
             Nada aqui é dinheiro: não cobra ninguém, não entra saldo de verdade e não dá pra sacar.
           </p>
         </div>
@@ -517,47 +676,81 @@ function SimuladorContent() {
               )}
             </div>
             <div className="space-y-3.5">
-              {OFFER_KEYS.map(({ key, label, hint }) => {
-                const it = offer[key];
-                const optional = key !== "product";
-                return (
-                  <div key={key} className="rounded-xl border border-slate-200 p-3.5">
-                    <div className="mb-2.5 flex items-center justify-between gap-2">
-                      <div>
-                        <p className="text-[13.5px] font-semibold text-slate-900">{label}</p>
-                        <p className="text-[12px] text-slate-500">{hint}</p>
-                      </div>
-                      {optional && <Switch checked={it.on} onChange={(v) => setItem(key, { on: v })} label={`Ligar ${label}`} />}
-                    </div>
-                    {(!optional || it.on) && (
-                      <div className="grid grid-cols-[1fr_120px] gap-2">
+              {OFFER_KEYS.filter((k) => k.key !== "downsell").map(({ key, label, hint }) => (
+                <OfferItemBox
+                  key={key}
+                  label={label}
+                  hint={hint}
+                  item={offer[key]}
+                  optional={key !== "product"}
+                  onChange={(patch) => setItem(key, patch)}
+                />
+              ))}
+
+              {/* funil de upsells: quem paga um vê o próximo */}
+              <div className="rounded-xl border border-slate-200 p-3.5">
+                <div className="mb-2.5">
+                  <p className="text-[13.5px] font-semibold text-slate-900">Upsells (até {maxUpsells})</p>
+                  <p className="text-[12px] text-slate-500">
+                    Em sequência: quem paga o upsell 1 vê o 2, e assim por diante. Cada um gera o seu Pix.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  {offer.upsells.map((u, i) => (
+                    <div key={i} className="grid grid-cols-[22px_1fr_110px_32px] items-center gap-2">
+                      <span className="text-center text-[12px] font-semibold text-slate-400">{i + 1}</span>
+                      <TextInput
+                        aria-label={`Nome do upsell ${i + 1}`}
+                        placeholder={`Upsell ${i + 1}`}
+                        maxLength={120}
+                        value={u.name}
+                        onChange={(e) => setUpsell(i, { name: e.target.value })}
+                      />
+                      <div className="relative">
+                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-slate-400">R$</span>
                         <TextInput
-                          aria-label={`Nome do ${label}`}
-                          placeholder={label}
-                          maxLength={120}
-                          value={it.name}
-                          onChange={(e) => setItem(key, { name: e.target.value })}
+                          aria-label={`Preço do upsell ${i + 1}`}
+                          inputMode="decimal"
+                          className="pl-9 tabular-nums"
+                          placeholder="0,00"
+                          value={u.price}
+                          onChange={(e) => setUpsell(i, { price: e.target.value.replace(/[^\d.,]/g, "") })}
+                          onBlur={() => {
+                            const v = parseMoney(u.price);
+                            if (v > 0) setUpsell(i, { price: money(v) });
+                          }}
                         />
-                        <div className="relative">
-                          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-slate-400">R$</span>
-                          <TextInput
-                            aria-label={`Preço do ${label}`}
-                            inputMode="decimal"
-                            className="pl-9 tabular-nums"
-                            placeholder="0,00"
-                            value={it.price}
-                            onChange={(e) => setItem(key, { price: e.target.value.replace(/[^\d.,]/g, "") })}
-                            onBlur={() => {
-                              const v = parseMoney(it.price);
-                              if (v > 0) setItem(key, { price: money(v) });
-                            }}
-                          />
-                        </div>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
+                      <button
+                        type="button"
+                        aria-label={`Remover upsell ${i + 1}`}
+                        onClick={() => setUpsells((list) => list.filter((_, k) => k !== i))}
+                        className="flex h-9 w-8 items-center justify-center rounded-lg text-rose-500 hover:bg-rose-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                {offer.upsells.length < maxUpsells && (
+                  <Button
+                    variant="ghost"
+                    className="mt-2 h-9 px-3 text-[12.5px]"
+                    icon={<Plus className="h-4 w-4" />}
+                    onClick={() => setUpsells((list) => [...list, { on: true, name: "", price: "" }])}
+                  >
+                    Adicionar upsell
+                  </Button>
+                )}
+              </div>
+
+              <OfferItemBox
+                label="Downsell"
+                hint={OFFER_KEYS.find((k) => k.key === "downsell")!.hint}
+                item={offer.downsell}
+                optional
+                onChange={(patch) => setItem("downsell", patch)}
+              />
             </div>
           </Card>
 
@@ -570,72 +763,137 @@ function SimuladorContent() {
               <div>
                 <h2 className="text-[15px] font-semibold text-slate-900">Notificações</h2>
                 <p className="text-[12.5px] text-slate-500">
-                  Chegam nos aparelhos da sua conta principal. O título sempre começa com “{SIM_PREFIX.trim()}”.
+                  Chegam nos aparelhos da sua conta principal. Toda venda notifica.
                 </p>
               </div>
             </div>
 
+            <FieldLabel>Quais notificações</FieldLabel>
+            <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {(
+                [
+                  { mode: "ambas", title: "Pix gerado + venda aprovada", text: "Avisa quando o Pix é gerado e quando é pago." },
+                  { mode: "aprovadas", title: "Só venda aprovada", text: "Avisa só quando o Pix é pago." },
+                ] as const
+              ).map((m) => {
+                const on = tpl.notifyMode === m.mode;
+                return (
+                  <button
+                    key={m.mode}
+                    type="button"
+                    onClick={() => setT({ notifyMode: m.mode })}
+                    className={`rounded-xl border p-3 text-left transition-colors ${
+                      on ? "border-violet-400 bg-violet-50" : "border-slate-200 bg-white hover:bg-slate-50"
+                    }`}
+                  >
+                    <span className="text-[13.5px] font-semibold text-slate-900">{m.title}</span>
+                    <span className="mt-0.5 block text-[12px] text-slate-500">{m.text}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mb-5">
+              <FieldLabel htmlFor="sim-label">Identificação de demonstração</FieldLabel>
+              <select
+                id="sim-label"
+                className={`${inputCls} h-11 text-[14px]`}
+                value={tpl.label}
+                onChange={(e) => setT({ label: e.target.value })}
+              >
+                {labels.map((l) => (
+                  <option key={l} value={l}>
+                    {l}
+                  </option>
+                ))}
+              </select>
+              <Hint>
+                Vai na frente do título na hora do envio (veja na prévia) e no selo do painel — não entra nos campos que
+                você escreve.
+              </Hint>
+            </div>
+
+            {/* mensagem livre: título e texto do jeito que a pessoa quiser */}
             {(
               [
-                { kind: "pending", label: "Pix gerado (pendente)", on: "notifyPending", title: "pendingTitle", body: "pendingBody" },
-                { kind: "paid", label: "Venda aprovada", on: "notifyPaid", title: "paidTitle", body: "paidBody" },
+                {
+                  kind: "custom",
+                  label: "Mensagem personalizada",
+                  hint: "Título e mensagem livres. Use o Enviar teste pra ver no seu celular.",
+                  title: "customTitle",
+                  body: "customBody",
+                },
+                {
+                  kind: "pending",
+                  label: "Automática: quando o Pix é gerado",
+                  hint: "Enviada pelo simulador a cada Pix gerado (se escolhido acima).",
+                  title: "pendingTitle",
+                  body: "pendingBody",
+                },
+                {
+                  kind: "paid",
+                  label: "Automática: quando o Pix é pago",
+                  hint: "Enviada pelo simulador a cada pagamento.",
+                  title: "paidTitle",
+                  body: "paidBody",
+                },
               ] as const
-            ).map((n) => (
-              <div key={n.kind} className="mb-4 rounded-xl border border-slate-200 p-3.5 last:mb-0">
-                <div className="mb-2.5 flex items-center justify-between gap-2">
-                  <p className="text-[13.5px] font-semibold text-slate-900">{n.label}</p>
-                  <Switch checked={tpl[n.on]} onChange={(v) => setT({ [n.on]: v } as Partial<Templates>)} label={`Notificar ${n.label}`} />
-                </div>
-                <FieldLabel htmlFor={`sim-${n.kind}-title`}>Título</FieldLabel>
-                <div className="flex items-stretch overflow-hidden rounded-xl border border-slate-200 focus-within:border-violet-400 focus-within:ring-4 focus-within:ring-violet-100">
-                  <span
-                    className="flex shrink-0 select-none items-center bg-slate-50 px-3 text-[13.5px] font-medium text-slate-500"
-                    title="Fixo: identifica a notificação como simulação"
-                  >
-                    {SIM_PREFIX.trim()}
-                  </span>
-                  <input
+            ).map((n) => {
+              const off = n.kind === "pending" && tpl.notifyMode === "aprovadas";
+              return (
+                <div key={n.kind} className={`mb-4 rounded-xl border border-slate-200 p-3.5 last:mb-0 ${off ? "opacity-60" : ""}`}>
+                  <div className="mb-2.5 flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-[13.5px] font-semibold text-slate-900">{n.label}</p>
+                      <p className="text-[12px] text-slate-500">{n.hint}</p>
+                    </div>
+                    {off && <span className="shrink-0 text-[11.5px] font-medium text-slate-500">desligada</span>}
+                  </div>
+                  <FieldLabel htmlFor={`sim-${n.kind}-title`}>Título</FieldLabel>
+                  <TextInput
                     id={`sim-${n.kind}-title`}
                     maxLength={TITLE_MAX}
-                    className="h-11 min-w-0 flex-1 bg-white px-3 text-[14px] text-slate-900 outline-none"
+                    placeholder="Escreva o título"
                     value={tpl[n.title]}
                     onChange={(e) => setT({ [n.title]: e.target.value } as Partial<Templates>)}
                   />
+                  <div className="mt-3">
+                    <FieldLabel htmlFor={`sim-${n.kind}-body`}>Mensagem</FieldLabel>
+                    <textarea
+                      id={`sim-${n.kind}-body`}
+                      rows={2}
+                      maxLength={240}
+                      placeholder="Escreva a mensagem"
+                      className={`${inputCls} h-auto resize-none py-2.5`}
+                      value={tpl[n.body]}
+                      onChange={(e) => setT({ [n.body]: e.target.value } as Partial<Templates>)}
+                    />
+                  </div>
+                  <div className="mt-3">
+                    <p className="mb-1.5 text-[11.5px] font-semibold uppercase tracking-[0.06em] text-slate-500">Prévia</p>
+                    <NotificationPreview
+                      title={previewTitle(tpl.label, tpl[n.title], frontPrice, frontName, lojaName)}
+                      body={preview(tpl[n.body], frontPrice, frontName, lojaName)}
+                    />
+                  </div>
+                  <div className="mt-2.5">
+                    <Button
+                      variant="outline"
+                      className="h-9 px-3.5 text-[12.5px]"
+                      loading={busy === `push-${n.kind}`}
+                      icon={<Send className="h-3.5 w-3.5" />}
+                      onClick={() => testPush(n.kind)}
+                    >
+                      Enviar teste
+                    </Button>
+                  </div>
                 </div>
-                <div className="mt-3">
-                  <FieldLabel htmlFor={`sim-${n.kind}-body`}>Texto</FieldLabel>
-                  <textarea
-                    id={`sim-${n.kind}-body`}
-                    rows={2}
-                    maxLength={240}
-                    className={`${inputCls} h-auto resize-none py-2.5`}
-                    value={tpl[n.body]}
-                    onChange={(e) => setT({ [n.body]: e.target.value } as Partial<Templates>)}
-                  />
-                </div>
-                <div className="mt-3 rounded-lg bg-slate-50 px-3 py-2.5">
-                  <p className="text-[12.5px] font-semibold text-slate-800">
-                    {SIM_PREFIX}
-                    {preview(tpl[n.title], frontPrice, frontName)}
-                  </p>
-                  <p className="mt-0.5 text-[12.5px] text-slate-500">{preview(tpl[n.body], frontPrice, frontName)}</p>
-                </div>
-                <div className="mt-2.5">
-                  <Button
-                    variant="outline"
-                    className="h-9 px-3.5 text-[12.5px]"
-                    loading={busy === `push-${n.kind}`}
-                    icon={<Send className="h-3.5 w-3.5" />}
-                    onClick={() => testPush(n.kind)}
-                  >
-                    Enviar teste
-                  </Button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
             <Hint>
-              Variáveis: {"{cliente}"} {"{valor}"} {"{liquido}"} {"{produto}"} {"{loja}"}. Pra receber, a notificação
-              precisa estar ligada na conta principal (Minha conta → Notificações).
+              Variáveis (opcionais): {"{cliente}"} {"{valor}"} {"{liquido}"} {"{produto}"} {"{loja}"}. O teste vai só pros
+              aparelhos da sua conta principal com a notificação ligada (Minha conta → Notificações). Tudo fica salvo
+              nesta conta.
             </Hint>
           </Card>
         </div>
@@ -643,7 +901,7 @@ function SimuladorContent() {
 
       <p className="mb-10 mt-6 text-[12.5px] text-slate-400">
         As vendas simuladas aparecem no <Link href="/v1/dashboard" className="underline">Dashboard</Link> e em{" "}
-        <Link href="/v1/products/sales" className="underline">Transações</Link> desta conta demo, nunca na conta principal.
+        <Link href="/v1/products/sales" className="underline">Transações</Link> deste painel de amigos, nunca na conta principal.
       </p>
     </LightShell>
   );

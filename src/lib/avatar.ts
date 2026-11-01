@@ -7,7 +7,7 @@ export const AVATAR_MAX_BYTES = 10 * 1024 * 1024; // arquivo original: até 10 M
 
 const SIZE = 320;
 
-function readAsDataUrl(file: File): Promise<string> {
+export function readAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const fr = new FileReader();
     fr.onload = () => resolve(String(fr.result));
@@ -16,7 +16,7 @@ function readAsDataUrl(file: File): Promise<string> {
   });
 }
 
-function loadImage(src: string): Promise<HTMLImageElement> {
+export function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const im = new Image();
     im.onload = () => resolve(im);

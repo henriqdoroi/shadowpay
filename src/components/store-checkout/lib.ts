@@ -64,6 +64,8 @@ export type Order = {
   amount: number;
   paidAt: string | null;
   productId: string | null;
+  /** checkout (oferta) da venda — "gerar novo Pix" volta pro mesmo link */
+  offerId: string | null;
   productName: string | null;
   createdAt: string | null;
   expiresAt: string | null;
@@ -229,6 +231,7 @@ async function call<T>(fn: () => Promise<{ data: any }>, fallback: string): Prom
 
 export async function fetchQuote(body: {
   productId: string;
+  offerId?: string;
   bumpIds: string[];
   couponCode?: string | null;
 }): Promise<Quote> {
@@ -260,6 +263,7 @@ export async function fetchOrder(id: string): Promise<Order> {
     amount: Number(r.amount) || 0,
     paidAt: r.paidAt ?? null,
     productId: r.productId ?? null,
+    offerId: r.offerId ?? null,
     productName: r.productName ?? null,
     createdAt: r.createdAt ?? null,
     expiresAt: r.expiresAt ?? null,
@@ -283,6 +287,12 @@ export async function lookupCep(cep: string): Promise<Partial<Address> | null> {
   } catch {
     return null;
   }
+}
+
+/** Link do checkout da venda (mesmo checkout/oferta em que foi feita). */
+export function checkoutHref(order: Pick<Order, "productId" | "offerId">): string {
+  const o = order.offerId ? `?o=${encodeURIComponent(order.offerId)}` : "";
+  return `/v1/checkout/${encodeURIComponent(order.productId ?? "")}${o}`;
 }
 
 export const PAID = (s: string) => s === "approved" || s === "paid";

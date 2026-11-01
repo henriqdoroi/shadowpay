@@ -48,7 +48,7 @@ import {
 import { useTheme } from "next-themes";
 import { useValuesVisible } from "@/lib/useValuesVisible";
 import { fmtShort, rankFor } from "@/lib/ranks";
-import { enterDemo, exitDemo } from "@/lib/demo";
+import { enterDemo, exitDemo, readDemoLabel } from "@/lib/demo";
 
 /* Painel em UMA superfície só (menu, topo e conteúdo sem linhas dividindo).
    Impacto no estilo dos gateways de referência (BravoPay, Lovy Bot,
@@ -416,7 +416,12 @@ export function LightShell({
       alert(r.message);
     }
   };
-  const switchLabel = isDemo ? "Voltar pra minha conta" : switching ? "Abrindo…" : "Abrir conta demo";
+  const switchLabel = isDemo ? "Voltar pra minha conta" : switching ? "Abrindo…" : "Abrir painel de amigos";
+  // selo do topo: o mesmo rótulo das notificações (sempre um que diz que é simulação)
+  const [demoLabel, setDemoLabel] = useState("Simulação");
+  useEffect(() => {
+    if (isDemo) setDemoLabel(readDemoLabel());
+  }, [isDemo, router.asPath]);
 
   const nav = useMemo(
     () => buildNav(!!user?.isAdministrator, isDemo),
@@ -848,10 +853,10 @@ export function LightShell({
                 <Link
                   href="/v1/simulador"
                   className="sp-demo-chip mr-1 inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[11.5px] font-semibold"
-                  title="Conta de simulação: as vendas daqui não são reais"
+                  title="Painel de amigos: as vendas daqui são simuladas, não são reais"
                 >
                   <FlaskConical className="h-3.5 w-3.5" />
-                  Simulação
+                  {demoLabel}
                 </Link>
               )}
               <InstallAppButton variant="icon" />
@@ -893,7 +898,7 @@ export function LightShell({
                           {user?.companyName || "Operador"}
                         </p>
                         <p className="text-[11px] text-slate-500">
-                          {isDemo ? "Conta demo (simulação)" : user?.isAdministrator ? "Administrador" : "Seller Bronze"}
+                          {isDemo ? "Painel de amigos (simulação)" : user?.isAdministrator ? "Administrador" : "Seller Bronze"}
                         </p>
                       </div>
                       <div className="mx-2 mb-1 h-px bg-slate-100" />
