@@ -298,10 +298,6 @@ function FinanceContent() {
 
   // Abre a janela de saque (valor + chave PIX são preenchidos nela).
   const openWithdraw = () => {
-    if (user?.isDemo) {
-      toast.error("Conta de simulação não faz saques. Volte pra sua conta principal.");
-      return;
-    }
     if (accountKey) setPixKey(accountKey.pixKey);
     setWithdrawOpen(true);
   };
@@ -317,6 +313,11 @@ function FinanceContent() {
     }
     if (sacarValor > balance.current) {
       toast.error("Valor maior que o saldo disponível.");
+      return;
+    }
+    // conta demo: saque simulado (sem chave Pix nem 2FA; nada sai daqui)
+    if (user?.isDemo) {
+      await persistWithdraw("");
       return;
     }
     if (!pixKey.trim()) {
@@ -339,13 +340,22 @@ function FinanceContent() {
   const persistWithdraw = async (kind: string, code?: string): Promise<boolean> => {
     setProcessing(true);
     try {
-      const r = await axios.post(
-        `${API}/api/payments/internal/withdraw`,
-        { amount: sacarValor, pixKey: pixKey.trim(), pixKeyType: kind, ...(code ? { code } : {}) },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      // conta demo: registra o saque simulado (nenhum dinheiro sai)
+      const r = user?.isDemo
+        ? await axios.post(
+            `${API}/api/user/demo/withdrawals`,
+            { amount: sacarValor },
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+        : await axios.post(
+            `${API}/api/payments/internal/withdraw`,
+            { amount: sacarValor, pixKey: pixKey.trim(), pixKeyType: kind, ...(code ? { code } : {}) },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
       if (r.data?.success) {
-        toast.success("Saque solicitado!");
+        toast.success(
+          user?.isDemo ? "Saque simulado registrado. Nenhum dinheiro foi movimentado." : "Saque solicitado!"
+        );
         setWithdrawOpen(false);
         setAmountInput("");
         if (!accountKey) setPixKey("");
@@ -655,7 +665,9 @@ function FinanceContent() {
                         <td className="px-5 py-3.5 text-slate-700">
                           {fmt(w.feeAmount)}
                         </td>
-                        <td className="px-5 py-3.5">{statusPill(w.status)}</td>
+                        <td className="px-5 py-3.5">
+                          {user?.isDemo ? <StatusBadge tone="amber">Simulado</StatusBadge> : statusPill(w.status)}
+                        </td>
                       </tr>
                     );
                   })}
@@ -700,7 +712,7 @@ function FinanceContent() {
       <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Solicitar saque</DialogTitle>
+            <DialogTitle>{user?.isDemo ? "Saque simulado" : "Solicitar saque"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-1">
             <div>
@@ -745,6 +757,12 @@ function FinanceContent() {
                 </p>
               )}
             </div>
+            {user?.isDemo ? (
+              <p className="text-[11.5px] text-slate-500">
+                Simulação: nenhum dinheiro sai da conta e nenhuma chave Pix é usada. Líquido simulado:{" "}
+                <b>{fmt(liquido)}</b>, após a taxa de {fmt(totalFee)}.
+              </p>
+            ) : (
             <div>
               <label className="mb-1 block text-[12px] font-semibold text-slate-600">
                 Chave Pix
@@ -771,13 +789,14 @@ function FinanceContent() {
                 {fmt(totalFee)}.
               </p>
             </div>
+            )}
             <button
               onClick={submitWithdraw}
-              disabled={processing || !pixKey.trim() || sacarValor <= 0 || sacarValor > balance.current}
+              disabled={processing || (!user?.isDemo && !pixKey.trim()) || sacarValor <= 0 || sacarValor > balance.current}
               className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg text-[14px] font-medium text-white transition-colors hover:bg-[#6C0DE0] disabled:cursor-not-allowed disabled:opacity-50"
               style={{ background: T.primary }}
             >
-              {processing ? "Processando…" : "Confirmar saque"}
+              {processing ? "Processando…" : user?.isDemo ? "Confirmar saque simulado" : "Confirmar saque"}
             </button>
           </div>
         </DialogContent>

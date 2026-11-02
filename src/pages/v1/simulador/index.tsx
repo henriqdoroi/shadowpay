@@ -87,9 +87,9 @@ type Sim = {
 
 const SCENARIO_ORDER: Scenario[] = ["teste", "pre", "escala"];
 const SCENARIO_TEXT: Record<Scenario, string> = {
-  teste: "Volume baixo, oferta nova sendo validada. Aprovação mais baixa e poucos upsells.",
-  pre: "A oferta já validou e o volume sobe ao longo do dia. Mais order bump e upsell.",
-  escala: "Muito volume o dia todo. A aprovação sobe com o volume, até perto do teto.",
+  teste: "Oferta nova sendo validada: volume baixo e aprovação mais alta. Poucos upsells.",
+  pre: "A oferta já validou e o volume sobe ao longo do dia. A aprovação cai conforme sobe.",
+  escala: "Muito volume o dia todo. É a aprovação mais baixa, e ela segue caindo com o volume.",
 };
 
 const brl = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);

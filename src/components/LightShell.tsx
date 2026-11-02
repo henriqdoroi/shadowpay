@@ -548,6 +548,19 @@ export function LightShell({
 
         {/* ===== Footer estilo SyncPay (perfil + ••• + Compactar) ===== */}
         <div className="mt-auto px-3 pb-3">
+          {/* Painel de amigos: o selo fica aqui embaixo (no computador não aparece no topo) */}
+          {isDemo && (
+            <Link
+              href="/v1/simulador"
+              title="Painel de amigos: as vendas daqui são simuladas, não são reais"
+              className={`sp-demo-chip mb-2 flex h-9 items-center gap-2 rounded-lg text-[12.5px] font-semibold ${
+                sidebarCollapsed ? "mx-auto w-9 justify-center" : "px-3"
+              }`}
+            >
+              <FlaskConical className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && <span className="truncate">{demoLabel}</span>}
+            </Link>
+          )}
           <div className="relative">
             {/* Menu do ••• (abre pra cima) */}
             {footerMenuOpen && (
@@ -754,8 +767,19 @@ export function LightShell({
               </ul>
             </nav>
 
-            {/* footer: troca de conta (demo) + logout */}
+            {/* footer: selo da demo + troca de conta (demo) + logout */}
             <div className="px-3 py-3">
+              {isDemo && (
+                <Link
+                  href="/v1/simulador"
+                  onClick={() => setMobileMenuOpen(false)}
+                  title="Painel de amigos: as vendas daqui são simuladas, não são reais"
+                  className="sp-demo-chip mb-2 flex h-9 items-center gap-2 rounded-lg px-3 text-[12.5px] font-semibold"
+                >
+                  <FlaskConical className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{demoLabel}</span>
+                </Link>
+              )}
               {(isDemo || canDemo) && (
                 <button
                   onClick={() => {
@@ -849,10 +873,11 @@ export function LightShell({
             {/* Direita: sino + foto */}
             <div className="ml-auto flex shrink-0 items-center gap-1.5">
               {/* Baixar o app (PWA) — some quando já está aberto pelo app */}
+              {/* no computador o selo fica no rodapé da barra lateral; no celular fica aqui */}
               {isDemo && (
                 <Link
                   href="/v1/simulador"
-                  className="sp-demo-chip mr-1 inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[11.5px] font-semibold"
+                  className="sp-demo-chip mr-1 inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[11.5px] font-semibold md:hidden"
                   title="Painel de amigos: as vendas daqui são simuladas, não são reais"
                 >
                   <FlaskConical className="h-3.5 w-3.5" />
