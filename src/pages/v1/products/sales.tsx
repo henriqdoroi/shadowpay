@@ -67,7 +67,21 @@ const T = {
 
 type Tx = {
   id: string;
+  transactionId?: string;
   externalId?: string | null;
+  tracking?: {
+    utmSource?: string | null;
+    utmMedium?: string | null;
+    utmCampaign?: string | null;
+    utmContent?: string | null;
+    utmTerm?: string | null;
+    fbclid?: string | null;
+    ttclid?: string | null;
+    gclid?: string | null;
+    src?: string | null;
+    sck?: string | null;
+    referer?: string | null;
+  } | null;
   status: string;
   statusRaw?: string | null;
   method: string;
@@ -106,6 +120,7 @@ function SalesContent() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [selected, setSelected] = useState<Tx | null>(null);
+  const [selectedTab, setSelectedTab] = useState<"sale" | "customer" | "tracking">("sale");
   const limit = 20;
 
   useEffect(() => {
@@ -516,7 +531,7 @@ function SalesContent() {
                         </td>
                         <td className="px-4 py-3.5">
                           <button
-                            onClick={() => setSelected(t)}
+                            onClick={() => { setSelected(t); setSelectedTab("sale"); }}
                             className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
                             aria-label="Ver detalhes"
                           >
@@ -588,74 +603,101 @@ function SalesContent() {
                 Fechar
               </button>
             </div>
-            <div className="space-y-3 text-[13px]">
-              <Row
-                label="ID interno"
-                value={
-                  <span className="font-mono text-[11.5px]">
-                    {selected.id}{" "}
-                    <button
-                      onClick={() => copyId(selected.id)}
-                      className="inline-flex items-center gap-0.5 text-violet-600"
-                    >
-                      <Copy className="h-3 w-3" />
-                    </button>
-                  </span>
-                }
-              />
-              {selected.externalId && (
+            <div className="mb-4 flex gap-1 border-b" style={{ borderColor: T.borderSoft }}>
+              {([
+                ["sale", "Venda"],
+                ["customer", "Cliente"],
+                ["tracking", "Tracking"],
+              ] as const).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setSelectedTab(key)}
+                  className="px-3 py-2 text-[12px] font-semibold transition-colors"
+                  style={{
+                    color: selectedTab === key ? T.primary : T.textMuted,
+                    borderBottom: selectedTab === key ? `2px solid ${T.primary}` : "2px solid transparent",
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {selectedTab === "sale" && (
+              <div className="space-y-3 text-[13px]">
                 <Row
-                  label="ID PSP"
+                  label="ID interno"
                   value={
                     <span className="font-mono text-[11.5px]">
-                      {selected.externalId}
+                      {selected.transactionId || selected.id}{" "}
+                      <button
+                        onClick={() => copyId(selected.transactionId || selected.id)}
+                        className="inline-flex items-center gap-0.5 text-violet-600"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </button>
                     </span>
                   }
                 />
-              )}
-              <Row
-                label="Produto"
-                value={selected.product?.name || selected.productName || "—"}
-              />
-              <Row
-                label="Cliente"
-                value={
-                  selected.customer?.name || selected.customerName || "—"
-                }
-              />
-              <Row
-                label="Email"
-                value={
-                  selected.customer?.email || selected.customerEmail || "—"
-                }
-              />
-              <Row
-                label="Celular"
-                value={fmtPhone(
-                  selected.customer?.phone ||
-                    (selected.customer as any)?.celular ||
-                    ""
+                <Row label="Produto" value={selected.product?.name || selected.productName || "—"} />
+                <Row label="Pagamento" value={methodPill(selected.method)} />
+                <Row label="Status" value={statusPill(selected)} />
+                <Row label="Valor bruto" value={fmt(selected.grossAmount)} />
+                <Row label="Valor líquido" value={fmt(selected.netAmount)} />
+                <Row label="Taxa" value={fmt(selected.feeAmount)} />
+                <Row label="Criado em" value={fmtDate(selected.createdAt)} />
+                {selected.paidAt && <Row label="Pago em" value={fmtDate(selected.paidAt)} />}
+              </div>
+            )}
+
+            {selectedTab === "customer" && (
+              <div className="space-y-3 text-[13px]">
+                <Row label="Cliente" value={selected.customer?.name || selected.customerName || "—"} />
+                <Row label="Email" value={selected.customer?.email || selected.customerEmail || "—"} />
+                <Row
+                  label="Celular"
+                  value={fmtPhone(selected.customer?.phone || (selected.customer as any)?.celular || "")}
+                />
+                <Row
+                  label="Documento"
+                  value={fmtCpfCnpj(selected.customer?.cpf || selected.customerCpfCnpj || (selected.customer as any)?.document || "")}
+                />
+              </div>
+            )}
+
+            {selectedTab === "tracking" && (
+              <div className="space-y-4 text-[13px]">
+                <section>
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">UTMs</p>
+                  {([
+                    ["utm_source", selected.tracking?.utmSource],
+                    ["utm_medium", selected.tracking?.utmMedium],
+                    ["utm_campaign", selected.tracking?.utmCampaign],
+                    ["utm_content", selected.tracking?.utmContent],
+                    ["utm_term", selected.tracking?.utmTerm],
+                  ] as const).map(([label, value]) => (
+                    <Row key={label} label={label} value={value || "—"} />
+                  ))}
+                </section>
+                <section>
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Click IDs</p>
+                  <Row label="fbclid (Facebook)" value={selected.tracking?.fbclid || "—"} />
+                  <Row label="ttclid (TikTok)" value={selected.tracking?.ttclid || "—"} />
+                  <Row label="gclid (Google)" value={selected.tracking?.gclid || "—"} />
+                </section>
+                <section>
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Origem</p>
+                  <Row label="Domínio / caminho" value={selected.tracking?.referer || "—"} />
+                  <Row label="src" value={selected.tracking?.src || "—"} />
+                  <Row label="sck" value={selected.tracking?.sck || "—"} />
+                </section>
+                {!selected.tracking && (
+                  <p className="rounded-lg bg-slate-50 p-3 text-[12px] text-slate-500">
+                    Esta transação não possui dados de rastreamento salvos.
+                  </p>
                 )}
-              />
-              <Row
-                label="Documento"
-                value={fmtCpfCnpj(
-                  selected.customer?.cpf ||
-                    selected.customerCpfCnpj ||
-                    (selected.customer as any)?.document ||
-                    ""
-                )}
-              />
-              <Row label="Pagamento" value={methodPill(selected.method)} />
-              <Row label="Status" value={statusPill(selected)} />
-              <Row label="Valor bruto" value={fmt(selected.grossAmount)} />
-              <Row label="Valor líquido" value={fmt(selected.netAmount)} />
-              <Row label="Taxa" value={fmt(selected.feeAmount)} />
-              <Row label="Criado em" value={fmtDate(selected.createdAt)} />
-              {selected.paidAt && (
-                <Row label="Pago em" value={fmtDate(selected.paidAt)} />
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}
